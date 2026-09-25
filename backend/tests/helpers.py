@@ -1,6 +1,7 @@
 """
 Helpers shared by integration tests: sign-up, a signed-in project session, adding a
-credential, and loading recorded provider fixtures.
+credential, loading recorded provider fixtures, and the pinned image of a Compose
+service (docker-compose.yml is the one place image versions are written down).
 """
 
 import json
@@ -10,9 +11,11 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURES = ROOT / "tests/fixtures"
+COMPOSE_FILE = ROOT.parent / "docker-compose.yml"
 PASSWORD = "correct horse battery"
 
 
@@ -42,3 +45,9 @@ async def add_credential(client: httpx.AsyncClient, session: Session, provider: 
 
 def provider_fixture(provider: str, name: str) -> Any:
     return json.loads((FIXTURES / "providers" / provider / name).read_text())
+
+
+def compose_image(service: str) -> str:
+    services = yaml.safe_load(COMPOSE_FILE.read_text())["services"]
+    image: str = services[service]["image"]
+    return image

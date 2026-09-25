@@ -22,11 +22,11 @@ import pytest
 from testcontainers.core.container import DockerContainer
 from testcontainers.core.wait_strategies import LogMessageWaitStrategy
 
-from tests.helpers import ROOT
+from tests.helpers import ROOT, compose_image
 
 pytestmark = [pytest.mark.integration, pytest.mark.edge]
 
-CADDY_IMAGE = "caddy:2.11.4-alpine"
+CADDY_IMAGE = compose_image("caddy")
 CADDYFILE = ROOT.parent / "infra/Caddyfile"
 SECOND_EVENT_DELAY_S = 1.5
 FIRST_EVENT_BUDGET_S = 0.5
