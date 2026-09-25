@@ -1,0 +1,9 @@
+{
+  "object": "list",
+  "data": [
+    {"id": "llama-3.1-8b-instant", "object": "model", "created": 1693721698, "owned_by": "Meta", "active": true, "context_window": 131072, "public_apps": null, "max_completion_tokens": 131072},
+    {"id": "whisper-large-v3", "object": "model", "created": 1693721698, "owned_by": "OpenAI", "active": true, "context_window": 448, "public_apps": null},
+    {"id": "llama-guard-3-8b", "object": "model", "created": 1693721698, "owned_by": "Meta", "active": true, "context_window": 8192, "public_apps": null},
+    {"id": "gemma-7b-it", "object": "model", "created": 1693721698, "owned_by": "Google", "active": false, "context_window": 8192, "public_apps": null}
+  ]
+}

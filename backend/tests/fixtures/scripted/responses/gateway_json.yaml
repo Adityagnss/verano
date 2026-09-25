@@ -1,0 +1,11 @@
+# Scripted replies for complete_json tests. First match wins, so the repair-turn patterns
+# (which also contain the original prompt) are listed before the first-turn patterns.
+responses:
+  - match: "case:repairable.*could not be used"
+    response: '{"label": "billing", "confidence": 0.9}'
+  - match: "case:repairable"
+    response: '{"label": "billing", "confidence": "very high"}'
+  - match: "case:wrapped"
+    response: "Sure! Here is the result:\n```json\n{\"label\": \"shipping\", \"confidence\": 0.75}\n```\nLet me know if you need more."
+  - match: "case:hopeless"
+    response: "I'm sorry, I can only answer in plain English."

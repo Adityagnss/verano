@@ -1,0 +1,41 @@
+# Mock provider models (DEVELOPMENT.md E1). Each model has a fake price so cost logic is
+# tested with real arithmetic; behaviors are plugins in gateway/plugins/mock_provider.py.
+seed: 1729
+models:
+  echo:
+    behavior: echo
+    display_name: Mock Echo
+    input_price_per_mtok: 0.50
+    output_price_per_mtok: 1.50
+  scripted:
+    behavior: scripted
+    display_name: Mock Scripted
+    input_price_per_mtok: 1.00
+    output_price_per_mtok: 3.00
+  good:
+    behavior: answer_key
+    display_name: Mock Good (~90%)
+    accuracy: 0.9
+    input_price_per_mtok: 2.00
+    output_price_per_mtok: 8.00
+  bad:
+    behavior: answer_key
+    display_name: Mock Bad (~50%)
+    accuracy: 0.5
+    input_price_per_mtok: 0.10
+    output_price_per_mtok: 0.40
+  flaky:
+    behavior: flaky
+    display_name: Mock Flaky
+    inner: scripted
+    failure_rate: 0.35
+    failure_mix: {rate_limit: 0.4, server_error: 0.2, timeout: 0.2, broken_json: 0.2}
+    retry_after_s: 0.2
+    input_price_per_mtok: 0.20
+    output_price_per_mtok: 0.60
+  slow:
+    behavior: echo
+    display_name: Mock Slow
+    latency_ms: 250
+    input_price_per_mtok: 0.30
+    output_price_per_mtok: 0.90

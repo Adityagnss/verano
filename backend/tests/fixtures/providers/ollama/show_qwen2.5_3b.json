@@ -1,0 +1,4 @@
+{"modelfile": "FROM qwen2.5:3b", "parameters": "stop \"<|im_end|>\"", "template": "{{ .Prompt }}",
+ "details": {"parent_model": "", "format": "gguf", "family": "qwen2", "families": ["qwen2"], "parameter_size": "3.1B", "quantization_level": "Q4_K_M"},
+ "model_info": {"general.architecture": "qwen2", "general.parameter_count": 3085938688, "qwen2.context_length": 32768, "qwen2.embedding_length": 2048},
+ "capabilities": ["completion", "tools"], "modified_at": "2026-09-25T12:00:00.000000+02:00"}

@@ -1,0 +1,16 @@
+{
+  "data": [
+    {"id": "openai/gpt-4o-mini", "canonical_slug": "openai/gpt-4o-mini", "name": "OpenAI: GPT-4o-mini", "created": 1721260800,
+     "description": "GPT-4o mini", "context_length": 128000,
+     "architecture": {"modality": "text+image->text", "input_modalities": ["text", "image"], "output_modalities": ["text"], "tokenizer": "GPT", "instruct_type": null},
+     "pricing": {"prompt": "0.00000015", "completion": "0.0000006", "request": "0", "image": "0.000217"},
+     "top_provider": {"context_length": 128000, "max_completion_tokens": 16384, "is_moderated": true},
+     "supported_parameters": ["max_tokens", "temperature", "top_p", "stop", "seed", "response_format", "tools"]},
+    {"id": "black-forest-labs/flux-1-schnell", "canonical_slug": "black-forest-labs/flux-1-schnell", "name": "FLUX.1 schnell", "created": 1730000000,
+     "description": "Image generation", "context_length": 0,
+     "architecture": {"modality": "text->image", "input_modalities": ["text"], "output_modalities": ["image"], "tokenizer": "Other", "instruct_type": null},
+     "pricing": {"prompt": "0", "completion": "0"},
+     "top_provider": {"context_length": null, "max_completion_tokens": null, "is_moderated": false},
+     "supported_parameters": []}
+  ]
+}

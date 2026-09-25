@@ -1,0 +1,6 @@
+# Corrections to model metadata, keyed by LiteLLM model string ("<prefix>/<model>").
+# Values here win over the provider listing and LiteLLM's bundled metadata. Use it when a
+# price, context window or parameter rule is wrong or missing upstream, and cite the source
+# in the pull request. Fields: context_window, max_output_tokens, input_price_per_mtok,
+# output_price_per_mtok, parameters (name -> {min, max}), unsupported_parameters (list).
+models: {}

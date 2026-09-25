@@ -1,0 +1,3 @@
+# Scripted replies for mock/scripted outside the test suite (demo and e2e runs).
+# Each file holds `responses: [{match: <regex>, response: <text>}]`; the first match wins.
+responses: []

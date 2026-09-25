@@ -1,0 +1,27 @@
+/*
+ * Design tokens: the V1 dark-blue palette (DEVELOPMENT.md C2). Every color in the UI comes
+ * from these variables; components never hard-code a color. Charts use blue shades only;
+ * green, amber and red are reserved for status.
+ */
+:root {
+  --bg-base: #0a1628;
+  --bg-surface: #0f1f3d;
+  --bg-elevated: #16294d;
+  --border-color: #1e3a6b;
+
+  --brand-primary: #2563eb;
+  --brand-primary-hover: #1d4ed8;
+  --brand-accent: #3b82f6;
+  --brand-accent-soft: #60a5fa;
+  --brand-accent-muted: #93c5fd;
+
+  --text-primary: #e6edf7;
+  --text-secondary: #9db0cf;
+  --text-muted: #6b7fa3;
+
+  --status-success: #22c55e;
+  --status-warning: #f59e0b;
+  --status-danger: #ef4444;
+
+  --radius-base: 8px;
+}

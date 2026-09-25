@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+# Fast pre-commit checks on staged files only: ruff (lint + format) for backend Python,
+# prettier + eslint for frontend sources. The full gate is `make ci`. Install: `make hooks`.
+set -eu
+staged() { git diff --cached --name-only --diff-filter=ACMR -- "$@"; }
+
+python_files=$(staged 'backend/*.py' | sed 's|^backend/||')
+if [ -n "$python_files" ]; then
+  (cd backend && echo "$python_files" | xargs uv run ruff check && echo "$python_files" | xargs uv run ruff format --check)
+fi
+
+frontend_files=$(staged 'frontend/*.ts' 'frontend/*.tsx' 'frontend/*.css' 'frontend/*.json' 'frontend/*.mjs' | sed 's|^frontend/||')
+if [ -n "$frontend_files" ]; then
+  (cd frontend && echo "$frontend_files" | xargs npx prettier --check)
+  lintable=$(echo "$frontend_files" | grep -E '\.(ts|tsx|mjs)$' || true)
+  [ -z "$lintable" ] || (cd frontend && echo "$lintable" | xargs npx eslint)
+fi

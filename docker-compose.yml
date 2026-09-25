@@ -1,0 +1,160 @@
+# Verano services. `make up` starts the stack; `make up-local` adds an Ollama container.
+# Startup order is enforced with health checks: postgres and valkey must be healthy, then the
+# one-off `migrate` job must finish successfully, and only then do backend and worker start,
+# so two containers can never race to run migrations.
+# Caddy is the only entry point (http://localhost:8080 by default, ADR 0006). Backend and
+# frontend publish no ports; the backend trusts X-Forwarded-For only from Caddy's fixed
+# address on the private `edge` network. Postgres and Valkey are bound to 127.0.0.1 only,
+# for local tools and benchmarks.
+name: verano
+
+x-backend: &backend
+  build:
+    context: ./backend
+    dockerfile: ../infra/backend.Dockerfile
+  image: verano-backend:dev
+  env_file: .env
+  environment:
+    VERANO_DATABASE_URL: postgresql+asyncpg://verano:${POSTGRES_PASSWORD:-verano}@postgres:5432/verano
+    VERANO_VALKEY_URL: redis://valkey:6379/0
+    OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    VERANO_TRUSTED_PROXIES: '["${CADDY_ADDRESS:-172.28.0.250}"]'
+    VERANO_MOCK_PROVIDER_ENABLED: ${VERANO_MOCK_PROVIDER_ENABLED:-false}
+  networks: [edge]
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  restart: unless-stopped
+
+services:
+  postgres:
+    image: postgres:16.15-alpine3.24
+    networks: [edge]
+    environment:
+      POSTGRES_USER: verano
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-verano}
+      POSTGRES_DB: verano
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U verano -d verano"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  valkey:
+    image: valkey/valkey:8.1.10-alpine3.24
+    networks: [edge]
+    command: ["valkey-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - valkey-data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  migrate:
+    <<: *backend
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    healthcheck:
+      disable: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    <<: *backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    <<: *backend
+    command: ["celery", "-A", "app.workers.celery_app", "worker", "--queues", "default,generation,evaluation", "--concurrency", "4", "--loglevel", "INFO"]
+    stop_signal: SIGTERM
+    stop_grace_period: 120s
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.workers.celery_app inspect ping -d celery@$$HOSTNAME --timeout 5 | grep -q pong"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    depends_on:
+      valkey:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../infra/frontend.Dockerfile
+    image: verano-frontend:dev
+    networks: [edge]
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2.11.4-alpine
+    environment:
+      VERANO_SITE_ADDRESS: ${VERANO_SITE_ADDRESS:-:80}
+    ports:
+      - "${VERANO_HTTP_PORT:-8080}:80"
+      - "${VERANO_HTTPS_PORT:-8443}:443"
+    volumes:
+      - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      edge:
+        ipv4_address: ${CADDY_ADDRESS:-172.28.0.250}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/edge-health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:0.34.4
+    profiles: ["local"]
+    networks: [edge]
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+networks:
+  edge:
+    ipam:
+      config:
+        - subnet: ${VERANO_DOCKER_SUBNET:-172.28.0.0/24}
+
+volumes:
+  caddy-data:
+  caddy-config:
+  postgres-data:
+  valkey-data:
+  ollama-models:

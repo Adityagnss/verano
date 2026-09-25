@@ -1,0 +1,67 @@
+# Mock models used by the test suite: the standard behaviors plus deterministic failure
+# sequences (`fail_first`) so each retry rule is tested against an exact scenario.
+seed: 1729
+models:
+  echo:
+    behavior: echo
+    input_price_per_mtok: 0.50
+    output_price_per_mtok: 1.50
+  scripted:
+    behavior: scripted
+    input_price_per_mtok: 1.00
+    output_price_per_mtok: 3.00
+    supported_parameters: [temperature, max_tokens, response_format]
+  good:
+    behavior: answer_key
+    accuracy: 0.9
+    input_price_per_mtok: 2.00
+    output_price_per_mtok: 8.00
+  bad:
+    behavior: answer_key
+    accuracy: 0.5
+    input_price_per_mtok: 0.10
+    output_price_per_mtok: 0.40
+  recovering:
+    behavior: flaky
+    inner: echo
+    fail_first: [rate_limit, server_error]
+    retry_after_s: 2.5
+    input_price_per_mtok: 0.50
+    output_price_per_mtok: 1.50
+  timeouts:
+    behavior: flaky
+    inner: echo
+    fail_first: [timeout]
+    input_price_per_mtok: 0.50
+    output_price_per_mtok: 1.50
+  storm:
+    behavior: flaky
+    inner: echo
+    failure_rate: 1.0
+    failure_mix: {rate_limit: 1.0}
+    retry_after_s: 4.0
+    input_price_per_mtok: 0.50
+    output_price_per_mtok: 1.50
+  unauthorized:
+    behavior: flaky
+    inner: echo
+    fail_first: [auth_error]
+    input_price_per_mtok: 0.50
+    output_price_per_mtok: 1.50
+  rejected:
+    behavior: flaky
+    inner: echo
+    fail_first: [bad_request]
+    input_price_per_mtok: 0.50
+    output_price_per_mtok: 1.50
+  blocked:
+    behavior: flaky
+    inner: echo
+    fail_first: [content_policy]
+    input_price_per_mtok: 0.50
+    output_price_per_mtok: 1.50
+  reporting:
+    behavior: echo
+    response_headers: {x-ratelimit-limit-requests: "900", x-ratelimit-remaining-requests: "899"}
+    input_price_per_mtok: 0.50
+    output_price_per_mtok: 1.50

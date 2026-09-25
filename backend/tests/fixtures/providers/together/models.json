@@ -1,0 +1,9 @@
+[
+  {"id": "meta-llama/Llama-3.3-70B-Instruct-Turbo", "object": "model", "created": 1733448000, "type": "chat", "running": false,
+   "display_name": "Meta Llama 3.3 70B Instruct Turbo", "organization": "Meta", "link": "https://huggingface.co/meta-llama/Llama-3.3-70B-Instruct",
+   "license": "llama3.3", "context_length": 131072, "config": {"chat_template": null, "stop": ["<|eot_id|>"], "bos_token": null, "eos_token": null},
+   "pricing": {"hourly": 0, "input": 0.88, "output": 0.88, "base": 0, "finetune": 0}},
+  {"id": "togethercomputer/m2-bert-80M-8k-retrieval", "object": "model", "created": 1699000000, "type": "embedding", "running": false,
+   "display_name": "M2-BERT-Retrieval-8k", "organization": "Together", "context_length": 8192,
+   "pricing": {"hourly": 0, "input": 0.008, "output": 0.008, "base": 0, "finetune": 0}}
+]

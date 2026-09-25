@@ -1,0 +1,5 @@
+# Correct answers for mock/good and mock/bad, keyed by the exact user message.
+answers:
+  "My card was charged twice": billing
+  "Where is my parcel?": shipping
+  "The app crashes on start": technical

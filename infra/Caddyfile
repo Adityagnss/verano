@@ -1,0 +1,37 @@
+# Verano edge proxy: the only entry point to the stack (ADR 0006).
+#
+# - /api/*, /docs and /openapi.json go to the backend; everything else to the frontend.
+# - Caddy sets X-Forwarded-For to the real client address and ignores any value a client
+#   sends (no upstream proxy is trusted here), so the backend, which trusts only Caddy,
+#   always gets a client IP that cannot be spoofed.
+# - The API route never buffers (flush_interval -1), so Server-Sent Events such as
+#   /api/v1/experiments/{id}/progress reach the browser the moment they are sent.
+# - VERANO_SITE_ADDRESS defaults to ":80": plain HTTP, no certificates, for local use at
+#   http://localhost. Set it to a real domain (e.g. verano.example.com) and Caddy obtains
+#   and renews HTTPS certificates automatically.
+{
+	admin off
+}
+
+{$VERANO_SITE_ADDRESS::80} {
+	handle /edge-health {
+		respond "ok" 200
+	}
+
+	@backend path /api/* /docs /docs/* /openapi.json
+	handle @backend {
+		reverse_proxy {$BACKEND_UPSTREAM:backend:8000} {
+			flush_interval -1
+		}
+	}
+
+	handle {
+		encode zstd gzip
+		reverse_proxy {$FRONTEND_UPSTREAM:frontend:3000}
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}
