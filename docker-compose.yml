@@ -1,7 +1,10 @@
 # Verano services. `make up` starts the stack; `make up-local` adds an Ollama container.
 # Startup order is enforced with health checks: postgres and valkey must be healthy, then the
 # one-off `migrate` job must finish successfully, and only then do backend and worker start,
-# so two containers can never race to run migrations.
+# so two containers can never race to run migrations. The backend image is built once (by
+# `backend`) and reused by `migrate` and `worker`. Builds use local copies of the base
+# images when `make base-images` has fetched them (infra/base-images.lock), so they work
+# offline.
 # Caddy is the only entry point (http://localhost:8080 by default, ADR 0006). Backend and
 # frontend publish no ports; the backend trusts X-Forwarded-For only from Caddy's fixed
 # address on the private `edge` network. Postgres and Valkey are bound to 127.0.0.1 only,
@@ -9,10 +12,8 @@
 name: verano
 
 x-backend: &backend
-  build:
-    context: ./backend
-    dockerfile: ../infra/backend.Dockerfile
   image: verano-backend:dev
+  pull_policy: never
   env_file: .env
   environment:
     VERANO_DATABASE_URL: postgresql+asyncpg://verano:${POSTGRES_PASSWORD:-verano}@postgres:5432/verano
@@ -71,6 +72,10 @@ services:
 
   backend:
     <<: *backend
+    build:
+      context: ./backend
+      dockerfile: ../infra/backend.Dockerfile
+    pull_policy: build
     depends_on:
       postgres:
         condition: service_healthy
@@ -101,6 +106,7 @@ services:
       context: ./frontend
       dockerfile: ../infra/frontend.Dockerfile
     image: verano-frontend:dev
+    pull_policy: build
     networks: [edge]
     depends_on:
       backend:

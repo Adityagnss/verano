@@ -1,14 +1,16 @@
-/** Root layout: fonts (Inter for text, JetBrains Mono for prompts and outputs) and providers. */
+/**
+ * Root layout: fonts and providers. Inter (text) and JetBrains Mono (prompts and outputs)
+ * are self-hosted from npm packages, so neither the build nor the browser contacts a font
+ * service, and the build works offline.
+ */
+import "@fontsource-variable/inter"
+import "@fontsource-variable/jetbrains-mono"
+import "./globals.css"
+
 import type { Metadata } from "next"
-import { Inter, JetBrains_Mono } from "next/font/google"
 import type { ReactNode } from "react"
 
 import { AppProviders } from "@/components/common/app-providers"
-
-import "./globals.css"
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
-const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains-mono" })
 
 export const metadata: Metadata = {
   title: "Verano",
@@ -17,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en">
       <body className="font-sans">
         <AppProviders>{children}</AppProviders>
       </body>

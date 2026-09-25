@@ -13,3 +13,4 @@ frontend/out/
 coverage/
 playwright-report/
 test-results/
+.cache/
