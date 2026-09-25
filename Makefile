@@ -76,13 +76,14 @@ e2e: env builder ## Browser tests (Chromium, WebKit, Firefox) against the stack,
 	@$(MAKE) --no-print-directory clean
 	$(FRONTEND) npx playwright test
 
-ci: builder ## The "CI green" gate: locked installs, lint, types, full tests (incl. migrations), builds, images
+ci: builder ## The "CI green" gate: locked installs, lint, types, full tests (incl. migrations), builds, images (a running stack is moved onto the new images)
 	$(BACKEND) uv sync --frozen
 	$(FRONTEND) npm ci
 	$(MAKE) lint
 	$(BACKEND) uv run pytest -q
 	$(FRONTEND) npm run build
 	$(COMPOSE) build
+	@if [ -n "$$($(COMPOSE) ps -q)" ]; then $(COMPOSE) up -d --wait --no-build; fi
 	@$(MAKE) --no-print-directory clean
 
 clean: ## Remove Verano leftovers only (stopped containers, dangling images, cache over the limit); never volumes
