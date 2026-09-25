@@ -103,6 +103,11 @@ class RegistryRepository:
             query = query.where(ModelProfile.credential_id == credential_id)
         return list((await self._session.scalars(keyset(query, ModelProfile.id, page))).all())
 
+    async def profiles_in(self, project_id: uuid.UUID, ids: Sequence[uuid.UUID] | None) -> list[ModelProfile]:
+        query = select(ModelProfile).where(ModelProfile.project_id == project_id)
+        query = query.where(ModelProfile.id.in_(ids)) if ids is not None else query.where(ModelProfile.is_selected)
+        return list((await self._session.scalars(query.order_by(ModelProfile.id))).all())
+
     async def profile_by_name(self, credential_id: uuid.UUID, model_name: str) -> ModelProfile | None:
         query = select(ModelProfile).where(
             ModelProfile.credential_id == credential_id, ModelProfile.model_name == model_name

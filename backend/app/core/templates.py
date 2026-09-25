@@ -5,13 +5,15 @@ Two kinds of templates are rendered here: user prompt templates (untrusted, from
 database) and the system's own LLM prompts (`<module>/prompts/*.jinja`, versioned in git).
 Both use a sandboxed environment with strict undefined variables, so a template can only
 insert values and can never reach Python internals or silently render a missing variable.
+`template_variables` lists the variables a template reads, straight from its syntax tree,
+and raises `TemplateSyntaxError` (with the line number) for a template that won't parse.
 """
 
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from jinja2 import FileSystemLoader, StrictUndefined
+from jinja2 import FileSystemLoader, StrictUndefined, TemplateSyntaxError, meta
 from jinja2.sandbox import ImmutableSandboxedEnvironment
 
 
@@ -35,3 +37,16 @@ def render_system_prompt(prompts_dir: Path, name: str, **values: Any) -> str:
 
 def render_string(template: str, **values: Any) -> str:
     return sandboxed_environment().from_string(template).render(**values)
+
+
+def template_variables(template: str) -> set[str]:
+    return set(meta.find_undeclared_variables(sandboxed_environment().parse(template)))
+
+
+__all__ = [
+    "TemplateSyntaxError",
+    "render_string",
+    "render_system_prompt",
+    "sandboxed_environment",
+    "template_variables",
+]

@@ -77,6 +77,7 @@ class Settings(BaseSettings):
     llm_backoff_base_s: float = 0.5
     llm_backoff_max_s: float = 30.0
     json_repair_attempts: int = 1
+    prompt_template_max_chars: int = 200_000
     token_estimate_chars_per_token: int = 4
 
     rate_limit_decrease_factor: float = 0.5

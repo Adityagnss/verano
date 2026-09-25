@@ -60,9 +60,10 @@ lint: ## Backend ruff + format check + mypy, frontend eslint + prettier + tsc
 	$(BACKEND) uv run ruff check . ../scripts && uv run ruff format --check . ../scripts && uv run mypy app tests benchmarks ../scripts
 	$(FRONTEND) npm run lint && npm run typecheck
 
-fmt: ## Auto-format and auto-fix
-	$(BACKEND) uv run ruff check --fix . ../scripts && uv run ruff format . ../scripts
+fmt: ## Auto-format, then auto-fix what can be fixed (formatting always runs first)
+	$(BACKEND) uv run ruff format . ../scripts
 	$(FRONTEND) npm run format
+	$(BACKEND) uv run ruff check --fix . ../scripts
 
 models: ## Pull the local Ollama models (once)
 	scripts/pull_models.sh

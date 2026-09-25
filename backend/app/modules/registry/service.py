@@ -167,6 +167,12 @@ class RegistryService:
         rows = await self._repo.profiles(project.id, page, selected_only, credential_id)
         return to_page([profile_out(row) for row in rows], page, lambda p: p.id)
 
+    async def profiles(self, project_id: uuid.UUID, ids: list[uuid.UUID] | None = None) -> list[ModelProfileOut]:
+        return [profile_out(row) for row in await self._repo.profiles_in(project_id, ids)]
+
+    def tunable_parameters(self) -> set[str]:
+        return {*self.catalog.tunable_parameters, self.catalog.json_mode_parameter}
+
     async def select_models(self, project: ProjectOut, selection: ModelSelection) -> None:
         await self._repo.set_selected(project.id, selection.selected, True)
         await self._repo.set_selected(project.id, selection.unselected, False)

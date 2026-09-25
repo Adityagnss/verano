@@ -87,7 +87,7 @@ markers = [
     "unit: pure domain tests, no I/O",
     "integration: real Postgres + Valkey via Testcontainers, mock provider",
     "ollama: needs a running local Ollama (opt-in, VERANO_TEST_OLLAMA=1)",
-    "auth", "projects", "registry", "gateway", "engine", "evaluation", "edge",
+    "auth", "projects", "registry", "gateway", "engine", "evaluation", "edge", "prompts",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning:litellm.*",

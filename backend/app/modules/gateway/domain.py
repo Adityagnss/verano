@@ -71,11 +71,6 @@ def compute_cost(
     return (Decimal(input_tokens) * input_price_per_mtok + Decimal(output_tokens) * output_price_per_mtok) / PER_MILLION
 
 
-def estimate_tokens(messages: list[Message], max_output: int | None, chars_per_token: int) -> int:
-    prompt_chars = sum(len(message.content) for message in messages)
-    return prompt_chars // chars_per_token + 1 + (max_output or 0)
-
-
 def should_retry(error: AppError, attempt: int, max_attempts: int) -> bool:
     return error.retryable and attempt < max_attempts
 

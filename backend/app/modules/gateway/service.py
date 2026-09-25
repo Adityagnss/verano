@@ -32,6 +32,7 @@ from app.core.errors import AppError, ProviderError, RateLimited, StructuredOutp
 from app.core.pagination import Page, PageParams, to_page
 from app.core.security import utcnow
 from app.core.templates import render_system_prompt
+from app.core.tokens import estimate_tokens
 from app.modules.gateway.domain import (
     AdaptivePolicy,
     FilteredParams,
@@ -39,7 +40,6 @@ from app.modules.gateway.domain import (
     allowed_parameters,
     backoff_delay,
     compute_cost,
-    estimate_tokens,
     filter_params,
     parse_json,
     parse_rate_headers,
@@ -177,7 +177,9 @@ class GatewayService:
             trace_id=context.trace_id or secrets.token_hex(16),
             span_id=secrets.token_hex(8),
             estimated_tokens=estimate_tokens(
-                messages, filtered.sent.get("max_tokens"), self._settings.token_estimate_chars_per_token
+                (message.content for message in messages),
+                filtered.sent.get("max_tokens"),
+                self._settings.token_estimate_chars_per_token,
             ),
         )
         while True:
