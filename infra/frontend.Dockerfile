@@ -14,6 +14,7 @@ COPY . .
 RUN npm run build
 
 FROM node:22.23.3-alpine3.24 AS runtime
+LABEL dev.verano.image="frontend"
 WORKDIR /srv
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
 COPY --from=build --chown=node:node /srv/.next/standalone ./

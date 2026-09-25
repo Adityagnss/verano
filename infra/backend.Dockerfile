@@ -18,6 +18,7 @@ RUN find /opt/venv -name "*.so*" -type f -exec strip --strip-unneeded {} + \
  && rm -rf /opt/venv/lib/python3.12/site-packages/litellm/proxy/_experimental/out
 
 FROM python:3.12.14-slim-bookworm AS runtime
+LABEL dev.verano.image="backend"
 ENV PATH=/opt/venv/bin:$PATH PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 DEEPEVAL_TELEMETRY_OPT_OUT=YES \
     LITELLM_MODE=PRODUCTION LITELLM_LOCAL_MODEL_COST_MAP=True
 RUN groupadd --system --gid 10001 verano && useradd --system --uid 10001 --gid verano --no-create-home verano

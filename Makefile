@@ -6,6 +6,7 @@
 export BUILDX_BUILDER := verano
 BUILD_CACHE_LIMIT ?= 3gb
 PROJECT_LABEL := label=com.docker.compose.project=verano
+IMAGE_LABEL := label=dev.verano.image
 COMPOSE := docker compose
 BACKEND := cd backend &&
 LOCAL_OLLAMA := http://ollama:11434
@@ -87,6 +88,7 @@ ci: builder ## The "CI green" gate: locked installs, lint, types, full tests (in
 clean: ## Remove Verano leftovers only (stopped containers, dangling images, cache over the limit); never volumes
 	@docker container prune -f --filter $(PROJECT_LABEL) >/dev/null
 	@docker container prune -f --filter label=org.testcontainers=true >/dev/null
+	@docker image prune -f --filter $(IMAGE_LABEL) >/dev/null
 	@docker image prune -f --filter $(PROJECT_LABEL) >/dev/null
 	@docker buildx prune -f --builder verano --max-used-space $(BUILD_CACHE_LIMIT) >/dev/null 2>&1 || true
 	@rm -rf frontend/test-results frontend/playwright-report
