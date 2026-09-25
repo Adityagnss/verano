@@ -19,7 +19,6 @@ import secrets
 import time
 import uuid
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
@@ -36,6 +35,7 @@ from app.core.templates import render_system_prompt
 from app.modules.gateway.domain import (
     AdaptivePolicy,
     FilteredParams,
+    PendingCall,
     allowed_parameters,
     backoff_delay,
     compute_cost,
@@ -194,7 +194,7 @@ class GatewayService:
                 continue
             return await self._record_success(call, response, latency_ms)
 
-    async def _attempt(self, call: "PendingCall") -> tuple[ProviderResponse, int]:
+    async def _attempt(self, call: PendingCall) -> tuple[ProviderResponse, int]:
         await self._limiter.acquire(call.target, call.estimated_tokens)
         began = time.perf_counter()
         response = await self._client.acompletion(
@@ -211,7 +211,7 @@ class GatewayService:
             self._jitter(),
         )
 
-    async def _record_success(self, call: "PendingCall", response: ProviderResponse, latency_ms: int) -> LLMResult:
+    async def _record_success(self, call: PendingCall, response: ProviderResponse, latency_ms: int) -> LLMResult:
         target, profile = call.target, call.target.profile
         headers = parse_rate_headers(response.headers, self._registry.rate_limit_headers())
         await self._limiter.record_success(
@@ -246,7 +246,7 @@ class GatewayService:
             span_id=call.span_id,
         )
 
-    async def _record_failure(self, call: "PendingCall", error: AppError) -> None:
+    async def _record_failure(self, call: PendingCall, error: AppError) -> None:
         outcome = {"status": CallStatus.FAILED, "error_type": error.code, "error_message": error.message}
         call_id = await self._record(call.record(self._clock()) | outcome)
         error.details["llm_call_id"] = str(call_id)
@@ -256,40 +256,6 @@ class GatewayService:
             call_id = await LLMCallRepository(session).add(values)
             await session.commit()
         return call_id
-
-
-@dataclass
-class PendingCall:
-    target: CallTarget
-    messages: list[Message]
-    filtered: FilteredParams
-    purpose: CallPurpose
-    context: CallContext
-    started_at: datetime
-    trace_id: str
-    span_id: str
-    estimated_tokens: int
-    attempts: int = 0
-
-    def record(self, completed_at: datetime) -> dict[str, Any]:
-        dropped = {"dropped_params": ",".join(self.filtered.dropped)} if self.filtered.dropped else {}
-        return {
-            "project_id": self.context.project_id,
-            "credential_id": self.target.credential_id,
-            "experiment_id": self.context.experiment_id,
-            "test_case_run_id": self.context.test_case_run_id,
-            "purpose": self.purpose,
-            "provider": self.target.provider,
-            "model": self.target.profile.litellm_model,
-            "params": self.filtered.sent,
-            "request_messages": [message.model_dump() for message in self.messages],
-            "attempts": self.attempts,
-            "labels": {**self.context.labels, **dropped},
-            "trace_id": self.trace_id,
-            "span_id": self.span_id,
-            "started_at": self.started_at,
-            "completed_at": completed_at,
-        }
 
 
 class CallHistoryService:

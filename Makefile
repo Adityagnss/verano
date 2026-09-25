@@ -20,7 +20,7 @@ help: ## Show this list
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
 
 env: ## Create .env from .env.example with generated secrets (never overwrites)
-	python3 scripts/init_env.py
+	@python3 scripts/init_env.py
 
 install: ## Install dependencies exactly as locked (uv sync --frozen, npm ci)
 	$(BACKEND) uv sync --frozen
@@ -29,11 +29,11 @@ install: ## Install dependencies exactly as locked (uv sync --frozen, npm ci)
 builder: ## Create the dedicated `verano` image builder (once; later calls are no-ops)
 	@docker buildx inspect verano >/dev/null 2>&1 || docker buildx create --name verano --driver docker-container --bootstrap >/dev/null
 
-up: builder ## Build and start the stack, waiting until every service is healthy
+up: env builder ## Build and start the stack, waiting until every service is healthy (creates .env if missing)
 	$(COMPOSE) up -d --build --wait
 	@$(MAKE) --no-print-directory clean
 
-up-local: builder ## Same as up, plus an Ollama container (clean-machine / demo path)
+up-local: env builder ## Same as up, plus an Ollama container (clean-machine / demo path)
 	OLLAMA_BASE_URL=$(LOCAL_OLLAMA) $(COMPOSE) --profile local up -d --build --wait
 	@$(MAKE) --no-print-directory clean
 
@@ -56,11 +56,11 @@ test-all: ## Run the full test suite (phase checkpoints)
 	$(BACKEND) uv run pytest -q
 
 lint: ## Backend ruff + format check + mypy, frontend eslint + prettier + tsc
-	$(BACKEND) uv run ruff check . && uv run ruff format --check . && uv run mypy app tests benchmarks
+	$(BACKEND) uv run ruff check . ../scripts && uv run ruff format --check . ../scripts && uv run mypy app tests benchmarks ../scripts
 	$(FRONTEND) npm run lint && npm run typecheck
 
 fmt: ## Auto-format and auto-fix
-	$(BACKEND) uv run ruff check --fix . && uv run ruff format .
+	$(BACKEND) uv run ruff check --fix . ../scripts && uv run ruff format . ../scripts
 	$(FRONTEND) npm run format
 
 models: ## Pull the local Ollama models (once)
@@ -70,7 +70,7 @@ api-client: ## Regenerate the frontend API types from the backend OpenAPI schema
 	$(BACKEND) PYTHONPATH=. uv run python ../scripts/export_openapi.py ../$(OPENAPI)
 	$(FRONTEND) npx openapi-typescript src/lib/api/openapi.json -o src/lib/api/schema.d.ts
 
-e2e: builder ## Browser tests (Chromium, WebKit, Firefox) against the stack, with the mock provider on
+e2e: env builder ## Browser tests (Chromium, WebKit, Firefox) against the stack, with the mock provider on
 	VERANO_MOCK_PROVIDER_ENABLED=true $(COMPOSE) up -d --build --wait
 	@$(MAKE) --no-print-directory clean
 	$(FRONTEND) npx playwright test

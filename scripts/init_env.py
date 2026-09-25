@@ -13,6 +13,7 @@ import os
 import re
 import secrets
 import sys
+from collections.abc import Callable
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -22,7 +23,7 @@ LOCAL_NOTE = (
     "http://localhost). Serving over HTTPS? Set VERANO_REFRESH_COOKIE_SECURE=true and "
     "VERANO_ENVIRONMENT=production."
 )
-SECRETS = {
+SECRETS: dict[str, Callable[[], str]] = {
     "VERANO_MASTER_KEYS": lambda: base64.urlsafe_b64encode(os.urandom(32)).decode(),
     "VERANO_JWT_SECRET": lambda: secrets.token_urlsafe(48),
 }

@@ -11,18 +11,20 @@ extraction.
   limit the provider reports in its headers, else the catalog default; a 429 cuts the
   current rate multiplicatively, and each success grows it back by a fraction of the
   ceiling.
+- `PendingCall` carries one logical call through its attempts and builds its record.
 No I/O; the service and plugins apply these decisions.
 """
 
 import json
 import re
 from dataclasses import dataclass, replace
+from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
 from app.core.errors import AppError, InvalidParameter
-from app.modules.gateway.schemas import Message
-from app.modules.registry.schemas import ModelProfileOut, ParameterRange, RateLimitHeaders
+from app.modules.gateway.schemas import CallContext, CallPurpose, Message
+from app.modules.registry.schemas import CallTarget, ModelProfileOut, ParameterRange, RateLimitHeaders
 
 PER_MILLION = Decimal(1_000_000)
 FENCE = re.compile(r"```(?:json|JSON)?\s*(.*?)```", re.DOTALL)
@@ -183,3 +185,37 @@ def with_instruction(messages: list[Message], instruction: str, system_supported
     first_user = next(i for i, m in enumerate(messages) if m.role == "user")
     updated = Message(role="user", content=f"{messages[first_user].content}\n\n{instruction}")
     return [*messages[:first_user], updated, *messages[first_user + 1 :]]
+
+
+@dataclass
+class PendingCall:
+    target: CallTarget
+    messages: list[Message]
+    filtered: FilteredParams
+    purpose: CallPurpose
+    context: CallContext
+    started_at: datetime
+    trace_id: str
+    span_id: str
+    estimated_tokens: int
+    attempts: int = 0
+
+    def record(self, completed_at: datetime) -> dict[str, Any]:
+        dropped = {"dropped_params": ",".join(self.filtered.dropped)} if self.filtered.dropped else {}
+        return {
+            "project_id": self.context.project_id,
+            "credential_id": self.target.credential_id,
+            "experiment_id": self.context.experiment_id,
+            "test_case_run_id": self.context.test_case_run_id,
+            "purpose": self.purpose,
+            "provider": self.target.provider,
+            "model": self.target.profile.litellm_model,
+            "params": self.filtered.sent,
+            "request_messages": [message.model_dump() for message in self.messages],
+            "attempts": self.attempts,
+            "labels": {**self.context.labels, **dropped},
+            "trace_id": self.trace_id,
+            "span_id": self.span_id,
+            "started_at": self.started_at,
+            "completed_at": completed_at,
+        }
