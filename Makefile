@@ -77,6 +77,7 @@ models: ## Pull the local Ollama models (once)
 
 api-client: ## Regenerate the frontend API types from the backend OpenAPI schema
 	$(BACKEND) PYTHONPATH=. uv run python ../scripts/export_openapi.py ../$(OPENAPI)
+	$(FRONTEND) npx prettier --write src/lib/api/openapi.json >/dev/null
 	$(FRONTEND) npx openapi-typescript src/lib/api/openapi.json -o src/lib/api/schema.d.ts
 
 e2e: env base-images ## Browser tests (Chromium, WebKit, Firefox) against the stack, with the mock provider on

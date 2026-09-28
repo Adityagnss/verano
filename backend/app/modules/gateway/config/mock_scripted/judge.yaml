@@ -1,0 +1,7 @@
+# Scripted replies for DeepEval G-Eval through the gateway: the evaluation-steps prompt,
+# then the scoring prompt (matched on DeepEval's own template wording).
+responses:
+  - match: "generate 3-4 concise evaluation steps"
+    response: '{"steps": ["Check the answer against the expected output.", "Penalize anything invented."]}'
+  - match: "You are an evaluator\\. Given the following"
+    response: '{"score": 8, "reason": "Mostly correct and faithful."}'

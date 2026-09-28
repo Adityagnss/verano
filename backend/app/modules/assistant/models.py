@@ -34,6 +34,9 @@ class OptimizationSession(IdMixin, CreatedAtMixin, Base):
     project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"))
     root_prompt_version_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("prompt_versions.id", ondelete="CASCADE"))
     status: Mapped[OptimizationStatus] = mapped_column(str_enum(OptimizationStatus, "optimization_status"))
+    baseline_experiment_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("experiments.id", ondelete="SET NULL"))
+    stage: Mapped[str] = mapped_column(String(32), default="analyzing", server_default="analyzing")
+    message: Mapped[str | None] = mapped_column(Text)
 
 
 class PromptCandidate(IdMixin, CreatedAtMixin, Base):

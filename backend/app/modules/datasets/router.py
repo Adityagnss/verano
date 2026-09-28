@@ -58,7 +58,7 @@ async def delete_file(file_id: uuid.UUID, project: ProjectScope, service: Ingest
 
 @router.get(f"{FILE}/events")
 async def file_events(file_id: uuid.UUID, project: ProjectScope, service: IngestServiceDep) -> StreamingResponse:
-    return sse_response(service.progress(project, file_id))
+    return sse_response(await service.progress(project, file_id))
 
 
 @router.put(f"{FILE}/sheet")

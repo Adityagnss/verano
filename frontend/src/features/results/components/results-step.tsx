@@ -29,7 +29,7 @@ export function ResultsStep({ projectId, experimentId }: { projectId: string; ex
   const router = useRouter()
   const experiments = useExperiments(projectId)
   const finished = (experiments.data ?? []).filter((e) => FINISHED.has(e.status))
-  const chosen = experimentId ?? finished[0]?.id ?? null
+  const chosen = experimentId ?? finished.find((e) => e.origin === "manual")?.id ?? finished[0]?.id ?? null
   const results = useResults(projectId, chosen)
   const scored = Boolean(results.data?.evaluation_run)
   const [failedOnly, setFailedOnly] = useState(false)

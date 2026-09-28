@@ -28,7 +28,7 @@ async def estimate_experiment(
 async def start_experiment(
     body: ExperimentCreate, project: ProjectScope, principal: CurrentPrincipal, service: ExperimentServiceDep
 ) -> ExperimentOut:
-    return await service.start(project, principal, body)
+    return await service.start(project.id, principal, body)
 
 
 @router.get("")

@@ -229,12 +229,11 @@ class FileIngestService:
         return file_out(await self._file(row.id))
 
     async def progress(self, project: ProjectOut, file_id: uuid.UUID) -> AsyncIterator[ProgressEvent | None]:
+        """Reads the file before streaming starts; the stream itself only reads the progress hub."""
         row = await self._file(file_id, project.id)
         if row.status in TERMINAL and await self._progress.snapshot(channel(row.id)) is None:
-            yield self._settled_event(row)
-            return
-        async for event in self._progress.stream(channel(row.id), self._settings.sse_keepalive_s):
-            yield event
+            return _once(self._settled_event(row))
+        return self._progress.stream(channel(row.id), self._settings.sse_keepalive_s)
 
     @staticmethod
     def _settled_event(row: InputFile) -> ProgressEvent:
@@ -263,3 +262,7 @@ class FileIngestService:
         if row is None:
             raise NotFound(FILE_NOT_FOUND)
         return row
+
+
+async def _once(event: ProgressEvent) -> AsyncIterator[ProgressEvent | None]:
+    yield event

@@ -5,6 +5,7 @@ Adding a module's routes to the API is one line here.
 
 from fastapi import APIRouter
 
+from app.modules.assistant.router import router as improve_router
 from app.modules.auth.router import router as auth_router
 from app.modules.datasets.review_router import router as review_router
 from app.modules.datasets.router import router as datasets_router
@@ -30,5 +31,6 @@ for module_router in (
     review_router,
     engine_router,
     results_router,
+    improve_router,
 ):
     api_router.include_router(module_router)

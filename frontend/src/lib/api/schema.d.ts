@@ -556,6 +556,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/improvements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start Improvement */
+        post: operations["start_improvement_api_v1_projects__project_id__improvements_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/improvements/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Latest Improvement */
+        get: operations["latest_improvement_api_v1_projects__project_id__improvements_latest_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/improvements/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Improvement */
+        get: operations["get_improvement_api_v1_projects__project_id__improvements__session_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/improvements/{session_id}/candidates/{candidate_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept Candidate */
+        post: operations["accept_candidate_api_v1_projects__project_id__improvements__session_id__candidates__candidate_id__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/input-files": {
         parameters: {
             query?: never;
@@ -969,6 +1037,41 @@ export interface components {
          * @enum {string}
          */
         CallStatus: "succeeded" | "failed";
+        /** CandidateOut */
+        CandidateOut: {
+            /** Change Reasons */
+            change_reasons: unknown[];
+            /** Diff */
+            diff: string;
+            /** Holdout Experiment Id */
+            holdout_experiment_id: string | null;
+            /** Holdout Quality */
+            holdout_quality: number | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Optimize Experiment Id */
+            optimize_experiment_id: string | null;
+            /** Optimize Quality */
+            optimize_quality: number | null;
+            outcome: components["schemas"]["CandidateOutcome"];
+            /**
+             * Prompt Version Id
+             * Format: uuid
+             */
+            prompt_version_id: string;
+            /** Strategy */
+            strategy: string;
+            /** Target Cluster Ids */
+            target_cluster_ids: unknown[];
+        };
+        /**
+         * CandidateOutcome
+         * @enum {string}
+         */
+        CandidateOutcome: "pending" | "better" | "not_better" | "accepted" | "rejected";
         /**
          * CaseCategory
          * @enum {string}
@@ -1039,6 +1142,28 @@ export interface components {
             sample_inputs?: {
                 [key: string]: unknown;
             } | null;
+        };
+        /** ClusterOut */
+        ClusterOut: {
+            /** Affected Models */
+            affected_models: unknown[];
+            /** Categories */
+            categories: unknown[];
+            /** Example Case Ids */
+            example_case_ids: unknown[];
+            /** Hypothesis */
+            hypothesis: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Rule Tag */
+            rule_tag: string | null;
+            /** Size */
+            size: number;
         };
         /** ColumnMapping */
         ColumnMapping: {
@@ -1531,6 +1656,46 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** ImproveRequest */
+        ImproveRequest: {
+            /**
+             * Experiment Id
+             * Format: uuid
+             */
+            experiment_id: string;
+        };
+        /** ImprovementOut */
+        ImprovementOut: {
+            /** Baseline Experiment Id */
+            baseline_experiment_id: string | null;
+            /** Baseline Holdout Quality */
+            baseline_holdout_quality: number | null;
+            /** Baseline Optimize Quality */
+            baseline_optimize_quality: number | null;
+            /** Candidates */
+            candidates: components["schemas"]["CandidateOut"][];
+            /** Clusters */
+            clusters: components["schemas"]["ClusterOut"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Message */
+            message: string | null;
+            /**
+             * Root Prompt Version Id
+             * Format: uuid
+             */
+            root_prompt_version_id: string;
+            stage: components["schemas"]["SessionStage"];
+            status: components["schemas"]["OptimizationStatus"];
+        };
         /**
          * InputFileKind
          * @enum {string}
@@ -1968,6 +2133,11 @@ export interface components {
              */
             unselected: string[];
         };
+        /**
+         * OptimizationStatus
+         * @enum {string}
+         */
+        OptimizationStatus: "active" | "closed";
         /** OrganizationOut */
         OrganizationOut: {
             /**
@@ -2328,6 +2498,11 @@ export interface components {
             token_type: string;
             user: components["schemas"]["UserOut"];
         };
+        /**
+         * SessionStage
+         * @enum {string}
+         */
+        SessionStage: "analyzing" | "testing" | "confirming" | "done" | "failed";
         /** SheetRequest */
         SheetRequest: {
             /** Sheet */
@@ -3896,6 +4071,139 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GeneratorSuggestion"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_improvement_api_v1_projects__project_id__improvements_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImproveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImprovementOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    latest_improvement_api_v1_projects__project_id__improvements_latest_get: {
+        parameters: {
+            query: {
+                experiment_id: string;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImprovementOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_improvement_api_v1_projects__project_id__improvements__session_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImprovementOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_candidate_api_v1_projects__project_id__improvements__session_id__candidates__candidate_id__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+                candidate_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImprovementOut"];
                 };
             };
             /** @description Validation Error */

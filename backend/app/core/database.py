@@ -5,7 +5,9 @@ One async engine and session factory per process, owned by a `Database` object t
 app lifespan (or a worker) creates and disposes. Tables across all modules share one
 `Base` with a constraint naming convention so Alembic migrations are deterministic.
 Request handlers receive an `AsyncSession` through `SessionDep`; the session commits when
-the handler returns normally and rolls back on any exception. `load_all_models` imports
+the handler returns normally, before the response is sent (so a client never reads data
+that isn't committed yet, and never gets a success for a commit that failed), and rolls
+back on any exception. `load_all_models` imports
 every module's tables; `Database` calls it, so every process (API, worker, Alembic, tests)
 knows every table a foreign key can point to.
 """
@@ -94,4 +96,4 @@ async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
             raise
 
 
-SessionDep = Annotated[AsyncSession, Depends(get_session)]
+SessionDep = Annotated[AsyncSession, Depends(get_session, scope="function")]

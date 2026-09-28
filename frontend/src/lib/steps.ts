@@ -14,5 +14,5 @@ export const STEPS: StepDefinition[] = [
   { key: "tests", label: "Test Cases", segment: "tests", available: true },
   { key: "run", label: "Run", segment: "run", available: true },
   { key: "results", label: "Results", segment: "results", available: true },
-  { key: "improve", label: "Improve", segment: "improve", available: false },
+  { key: "improve", label: "Improve", segment: "improve", available: true },
 ]

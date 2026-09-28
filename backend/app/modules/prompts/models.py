@@ -4,7 +4,9 @@ Prompt tables: prompts and prompt_versions.
 Versions are immutable: every save inserts a new row with `parent_version_id`, a `source`
 (manual or assistant) and a `change_reason`. A version holds a system template, a user
 template, or both (a check constraint enforces at least one), plus the detected
-`{{variables}}` and default parameters.
+`{{variables}}` and default parameters. A version with `is_candidate` is an improvement the
+assistant is testing; it never becomes the prompt's latest version unless the user accepts
+it, which saves a new, normal version.
 """
 
 import uuid
@@ -41,4 +43,5 @@ class PromptVersion(IdMixin, CreatedAtMixin, Base):
     default_params: Mapped[dict[str, Any]]
     source: Mapped[PromptSource] = mapped_column(str_enum(PromptSource, "prompt_source"))
     change_reason: Mapped[str | None] = mapped_column(Text)
+    is_candidate: Mapped[bool] = mapped_column(default=False, server_default="false")
     created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))

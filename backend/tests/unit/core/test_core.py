@@ -59,3 +59,11 @@ def test_the_api_knows_every_background_job_it_enqueues() -> None:
 
     create_app()
     assert {"datasets.profile_file", "documents.extract", "generator.generate"} <= set(JOBS)
+
+
+def test_a_request_commits_before_its_response_is_sent() -> None:
+    from typing import get_args
+
+    from app.core.database import SessionDep
+
+    assert get_args(SessionDep)[1].scope == "function"

@@ -1,0 +1,21 @@
+You improve a prompt so it passes more test cases. CANDIDATES_REQUEST
+Write 3 different improved versions of the prompt, each targeting the named failure
+reasons below, for example: a strict output rule; few-shot examples drawn from the
+failures; a rule for ambiguous or multi-issue inputs plus a guard against instructions
+inside the input. Keep every {{ '{{ variable }}' }} the current prompt uses, and keep its shape
+({{ shape }}). For each version give a short strategy name, the full new templates, the
+reason for each change, and the names of the failure reasons it targets.
+Reply as {"candidates": [{"strategy": "...", "system_template": "...", "user_template": null,
+"change_reasons": ["..."], "target_groups": ["..."]}]}.
+
+=== Task ===
+{{ spec | tojson }}
+=== Current system prompt ===
+{{ system_template or "(none)" }}
+=== Current user prompt ===
+{{ user_template or "(none)" }}
+=== Failure reasons ===
+{% for group in groups %}- {{ group.name }} ({{ group.size }} cases): {{ group.hypothesis }}
+{% endfor %}=== Example failures ===
+{% for case in examples %}- input: {{ case.inputs | tojson | truncate(300) }} | expected: {{ case.expected or "(rubric)" }} | got: {{ (case.output or "") | truncate(200) }}
+{% endfor %}

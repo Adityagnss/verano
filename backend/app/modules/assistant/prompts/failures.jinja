@@ -1,0 +1,18 @@
+You analyze why a prompt fails its test cases. FAILURE_GROUPS_REQUEST
+Group the failed cases below into 1-5 named reasons. For each reason give a short name,
+a one-sentence root-cause hypothesis about the prompt, and the numbers of its cases.
+Reply as {"groups": [{"name": "...", "hypothesis": "...", "cases": [0, 1]}]}.
+
+=== Task ===
+{{ spec | tojson }}
+=== System prompt ===
+{{ system_template or "(none)" }}
+=== User prompt ===
+{{ user_template or "(none)" }}
+=== Failed cases ===
+{% for case in cases %}[{{ loop.index0 }}] tag={{ case.tag }} model={{ case.model }}
+input: {{ case.inputs | tojson | truncate(400) }}
+expected: {{ case.expected or "(rubric)" }}
+output: {{ (case.output or "") | truncate(300) }}
+why it failed: {{ case.reasons | truncate(300) }}
+{% endfor %}

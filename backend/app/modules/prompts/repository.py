@@ -44,7 +44,7 @@ class PromptRepository:
             return {}
         query = (
             select(PromptVersion)
-            .where(PromptVersion.prompt_id.in_(prompt_ids))
+            .where(PromptVersion.prompt_id.in_(prompt_ids), PromptVersion.is_candidate.is_(False))
             .ext(distinct_on(PromptVersion.prompt_id))
             .order_by(PromptVersion.prompt_id, PromptVersion.version.desc())
         )

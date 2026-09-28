@@ -57,7 +57,7 @@ async def save_version(
     principal: CurrentPrincipal,
     service: PromptServiceDep,
 ) -> PromptVersionOut:
-    return await service.save_version(project, principal, prompt_id, body)
+    return await service.save_version(project.id, principal, prompt_id, body)
 
 
 @router.get("/prompts/{prompt_id}/versions")

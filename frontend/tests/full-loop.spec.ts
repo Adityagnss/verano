@@ -1,7 +1,9 @@
 /**
- * Steps 2-4 on the mock provider: write a prompt, upload a golden set and map its columns,
- * let mock/scripted describe the task and generate test cases, review them by category and
- * approve. Needs the stack started with VERANO_MOCK_PROVIDER_ENABLED=true (`make e2e`).
+ * The whole loop on the mock provider: write a prompt, upload a golden set and map its
+ * columns, let mock/scripted describe the task and generate test cases, review and approve
+ * them, run them on mock/echo, see the results, and let Improve analyze the failures, test
+ * 3 candidates and report its holdout verdict. Needs the stack started with
+ * VERANO_MOCK_PROVIDER_ENABLED=true (`make e2e`).
  */
 import { expect, test } from "@playwright/test"
 
@@ -10,9 +12,9 @@ import { signUp, uniqueEmail } from "./helpers"
 const GOLDEN =
   "ticket,expected\nMy card was charged twice,billing\nWhere is my parcel?,shipping\nThe app crashes on start,technical\n"
 
-test("a prompt and a golden set become approved test cases", async ({ page, browserName }) => {
+test("the whole loop runs from keys to an improvement verdict", async ({ page, browserName }) => {
   test.skip(browserName !== "chromium", "UI flow is engine-independent; covered once")
-  test.setTimeout(120_000)
+  test.setTimeout(360_000)
   await signUp(page, uniqueEmail("tests"))
   await page.getByLabel("Project name").fill("Support triage")
   await page.getByRole("button", { name: "Create project" }).click()
@@ -20,8 +22,10 @@ test("a prompt and a golden set become approved test cases", async ({ page, brow
   const mock = page.locator('[data-slot="card"]', { hasText: "Mock (development)" })
   await mock.getByRole("button", { name: "Connect" }).click()
   await page.getByRole("button", { name: "Check and save" }).click()
+  await expect(page.getByText(/Key saved\. Found \d+ chat models\./)).toBeVisible()
   await page.getByRole("listitem").filter({ hasText: "Mock Scripted" }).getByRole("checkbox").click()
-  await page.getByRole("button", { name: "Use 1 selected model" }).click()
+  await page.getByRole("listitem").filter({ hasText: "Mock Echo" }).getByRole("checkbox").click()
+  await page.getByRole("button", { name: "Use 2 selected models" }).click()
   await expect(page.getByText("Selection saved.")).toBeVisible()
 
   await page.getByRole("link", { name: "Prompt" }).click()
@@ -59,4 +63,22 @@ test("a prompt and a golden set become approved test cases", async ({ page, brow
   await page.getByRole("button", { name: "Approve test cases" }).click()
   await expect(page.getByText("Test cases approved (version 1)").first()).toBeVisible()
   await expect(page.getByText(/held back to check the result/)).toBeVisible()
+
+  await page.getByRole("link", { name: "Run" }).click()
+  await page.getByRole("checkbox", { name: "Mock Scripted" }).click()
+  await expect(page.getByText(/Estimated total/)).toBeVisible()
+  await page.getByRole("button", { name: "Start experiment" }).click()
+  await page.getByRole("button", { name: "See results" }).click({ timeout: 90_000 })
+
+  await expect(page.getByRole("columnheader", { name: "Quality" })).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByRole("cell", { name: "echo" })).toBeVisible()
+  await expect(page.getByText("Passed test cases")).toBeVisible()
+  await page.getByRole("button", { name: "Next: improve the prompt" }).click()
+
+  await page.getByRole("button", { name: "Find what's failing and suggest fixes" }).click()
+  await expect(page.getByText("Echoes the ticket")).toBeVisible({ timeout: 90_000 })
+  await expect(page.getByText("strict output rule")).toBeVisible()
+  await expect(page.getByText(/No candidate beat the current prompt|beat the current prompt/)).toBeVisible({
+    timeout: 120_000,
+  })
 })

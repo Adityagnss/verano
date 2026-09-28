@@ -70,7 +70,7 @@ export function RunStep({ projectId }: { projectId: string }) {
   const approved = version.data?.status === "approved"
   const body = useDebounced(approved ? toBody(selected, rows, budget) : null, 300)
   const estimate = useExperimentEstimate(projectId, body)
-  const latest = experiments.data?.[0]
+  const latest = experiments.data?.find((e) => e.origin === "manual")
 
   if (version.data !== undefined && !approved)
     return (

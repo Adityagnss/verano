@@ -73,18 +73,21 @@ class PromptService:
 
     async def save_version(
         self,
-        project: ProjectOut,
+        project_id: uuid.UUID,
         principal: Principal | None,
         prompt_id: uuid.UUID,
         body: PromptVersionCreate,
         source: PromptSource = PromptSource.MANUAL,
+        candidate: bool = False,
     ) -> PromptVersionOut:
-        prompt = await self._prompt(project.id, prompt_id, lock=True)
+        prompt = await self._prompt(project_id, prompt_id, lock=True)
         parent = body.parent_version_id or (await self._repo.latest_versions([prompt.id]))[prompt.id].id
-        if (await self._version(project.id, parent)).prompt_id != prompt.id:
+        if (await self._version(project_id, parent)).prompt_id != prompt.id:
             raise ValidationFailed(PARENT_ELSEWHERE)
         number = await self._repo.next_version_number(prompt.id)
-        return await self._save(prompt, principal, body, parent_version_id=parent, number=number, source=source)
+        return await self._save(
+            prompt, principal, body, parent_version_id=parent, number=number, source=source, candidate=candidate
+        )
 
     async def list_prompts(self, project: ProjectOut, page: PageParams) -> Page[PromptOut]:
         prompts = await self._repo.prompts(project.id, page)
@@ -187,6 +190,7 @@ class PromptService:
         parent_version_id: uuid.UUID | None,
         number: int,
         source: PromptSource = PromptSource.MANUAL,
+        candidate: bool = False,
     ) -> PromptVersionOut:
         self._check_lengths(body)
         self._check_params(body.default_params)
@@ -201,6 +205,7 @@ class PromptService:
             default_params=body.default_params,
             source=source,
             change_reason=body.change_reason,
+            is_candidate=candidate,
             created_by=principal.user_id if principal else None,
         )
         await self._repo.add(version)

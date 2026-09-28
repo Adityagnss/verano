@@ -83,7 +83,7 @@ async def regenerate_category(
 async def generation_events(
     version_id: uuid.UUID, project: ProjectScope, service: GeneratorServiceDep
 ) -> StreamingResponse:
-    return sse_response(service.events(project, version_id))
+    return sse_response(await service.events(project, version_id))
 
 
 @router.get(f"{VERSION}/evaluators")

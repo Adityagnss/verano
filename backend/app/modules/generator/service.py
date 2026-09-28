@@ -237,14 +237,13 @@ class GeneratorService:
         return await self._evaluators.get_version(project.id, version.evaluator_set_version_id)
 
     async def events(self, project: ProjectOut, version_id: uuid.UUID) -> AsyncIterator[ProgressEvent | None]:
+        """Reads the version before streaming starts; the stream itself only reads the progress hub."""
         version = await self._datasets.get_version(project.id, version_id)
         status = (version.generation or {}).get("status")
         if status != GenerationStatus.RUNNING and await self._progress.snapshot(channel(version_id)) is None:
             settled = ProgressStatus.FAILED if status == GenerationStatus.FAILED else ProgressStatus.SUCCEEDED
-            yield ProgressEvent(stage="done", status=settled, message=(version.generation or {}).get("message"))
-            return
-        async for event in self._progress.stream(channel(version_id), self._settings.sse_keepalive_s):
-            yield event
+            return _once(ProgressEvent(stage="done", status=settled, message=(version.generation or {}).get("message")))
+        return self._progress.stream(channel(version_id), self._settings.sse_keepalive_s)
 
     async def _launch(
         self,
@@ -275,3 +274,7 @@ class GeneratorService:
         if row is None:
             raise NotFound(SPEC_NOT_FOUND)
         return row
+
+
+async def _once(event: ProgressEvent) -> AsyncIterator[ProgressEvent | None]:
+    yield event

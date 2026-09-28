@@ -98,16 +98,16 @@ class ExperimentService:
 
     async def start(
         self,
-        project: ProjectOut,
+        project_id: uuid.UUID,
         principal: Principal | None,
         body: ExperimentCreate,
         origin: ExperimentOrigin = ExperimentOrigin.MANUAL,
         prompt_version_id: uuid.UUID | None = None,
     ) -> ExperimentOut:
-        plan = await self._plan_inputs(project.id, body, prompt_version_id)
+        plan = await self._plan_inputs(project_id, body, prompt_version_id)
         estimate = self._estimate(plan, body)
         experiment = Experiment(
-            project_id=project.id,
+            project_id=project_id,
             name=body.name or experiment_name(plan.profiles),
             status=ExperimentStatus.DRAFT,
             origin=origin,
@@ -129,7 +129,7 @@ class ExperimentService:
         await self._session.commit()
         for ids in chunks(await self._repo.run_ids(experiment.id, RunStatus.PENDING), self._settings.engine_chunk_size):
             self._jobs.enqueue(RUN_CHUNK_JOB, experiment_id=str(experiment.id), run_ids=[str(i) for i in ids])
-        return await self.get(project.id, experiment.id)
+        return await self.get(project_id, experiment.id)
 
     async def cancel(self, project: ProjectOut, experiment_id: uuid.UUID) -> ExperimentOut:
         experiment = await self._experiment(project.id, experiment_id)

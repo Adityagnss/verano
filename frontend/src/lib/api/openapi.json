@@ -68,6 +68,107 @@
         "title": "CallStatus",
         "type": "string"
       },
+      "CandidateOut": {
+        "properties": {
+          "change_reasons": {
+            "items": {},
+            "title": "Change Reasons",
+            "type": "array"
+          },
+          "diff": {
+            "title": "Diff",
+            "type": "string"
+          },
+          "holdout_experiment_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holdout Experiment Id"
+          },
+          "holdout_quality": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holdout Quality"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "optimize_experiment_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Optimize Experiment Id"
+          },
+          "optimize_quality": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Optimize Quality"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/CandidateOutcome"
+          },
+          "prompt_version_id": {
+            "format": "uuid",
+            "title": "Prompt Version Id",
+            "type": "string"
+          },
+          "strategy": {
+            "title": "Strategy",
+            "type": "string"
+          },
+          "target_cluster_ids": {
+            "items": {},
+            "title": "Target Cluster Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "prompt_version_id",
+          "strategy",
+          "diff",
+          "change_reasons",
+          "target_cluster_ids",
+          "outcome",
+          "optimize_experiment_id",
+          "holdout_experiment_id",
+          "optimize_quality",
+          "holdout_quality"
+        ],
+        "title": "CandidateOut",
+        "type": "object"
+      },
+      "CandidateOutcome": {
+        "enum": ["pending", "better", "not_better", "accepted", "rejected"],
+        "title": "CandidateOutcome",
+        "type": "string"
+      },
       "CaseCategory": {
         "enum": ["happy_path", "edge_case", "tricky", "format_stress", "adversarial"],
         "title": "CaseCategory",
@@ -290,6 +391,65 @@
           }
         },
         "title": "CheckRequest",
+        "type": "object"
+      },
+      "ClusterOut": {
+        "properties": {
+          "affected_models": {
+            "items": {},
+            "title": "Affected Models",
+            "type": "array"
+          },
+          "categories": {
+            "items": {},
+            "title": "Categories",
+            "type": "array"
+          },
+          "example_case_ids": {
+            "items": {},
+            "title": "Example Case Ids",
+            "type": "array"
+          },
+          "hypothesis": {
+            "title": "Hypothesis",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "rule_tag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Tag"
+          },
+          "size": {
+            "title": "Size",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "hypothesis",
+          "rule_tag",
+          "size",
+          "affected_models",
+          "categories",
+          "example_case_ids"
+        ],
+        "title": "ClusterOut",
         "type": "object"
       },
       "ColumnMapping": {
@@ -1563,6 +1723,117 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "ImproveRequest": {
+        "properties": {
+          "experiment_id": {
+            "format": "uuid",
+            "title": "Experiment Id",
+            "type": "string"
+          }
+        },
+        "required": ["experiment_id"],
+        "title": "ImproveRequest",
+        "type": "object"
+      },
+      "ImprovementOut": {
+        "properties": {
+          "baseline_experiment_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Experiment Id"
+          },
+          "baseline_holdout_quality": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Holdout Quality"
+          },
+          "baseline_optimize_quality": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Optimize Quality"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/CandidateOut"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "clusters": {
+            "items": {
+              "$ref": "#/components/schemas/ClusterOut"
+            },
+            "title": "Clusters",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "root_prompt_version_id": {
+            "format": "uuid",
+            "title": "Root Prompt Version Id",
+            "type": "string"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/SessionStage"
+          },
+          "status": {
+            "$ref": "#/components/schemas/OptimizationStatus"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "stage",
+          "message",
+          "root_prompt_version_id",
+          "baseline_experiment_id",
+          "baseline_optimize_quality",
+          "baseline_holdout_quality",
+          "clusters",
+          "candidates",
+          "created_at"
+        ],
+        "title": "ImprovementOut",
+        "type": "object"
+      },
       "InputFileKind": {
         "enum": ["golden_set", "raw_inputs", "reference_document"],
         "title": "InputFileKind",
@@ -2748,6 +3019,11 @@
         "title": "ModelSelection",
         "type": "object"
       },
+      "OptimizationStatus": {
+        "enum": ["active", "closed"],
+        "title": "OptimizationStatus",
+        "type": "string"
+      },
       "OrganizationOut": {
         "properties": {
           "id": {
@@ -3657,6 +3933,11 @@
         "required": ["access_token", "expires_in", "user"],
         "title": "SessionOut",
         "type": "object"
+      },
+      "SessionStage": {
+        "enum": ["analyzing", "testing", "confirming", "done", "failed"],
+        "title": "SessionStage",
+        "type": "string"
       },
       "SheetRequest": {
         "properties": {
@@ -6693,6 +6974,248 @@
         ],
         "summary": "Suggest Generator",
         "tags": ["generator"]
+      }
+    },
+    "/api/v1/projects/{project_id}/improvements": {
+      "post": {
+        "operationId": "start_improvement_api_v1_projects__project_id__improvements_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImproveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImprovementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Start Improvement",
+        "tags": ["improve"]
+      }
+    },
+    "/api/v1/projects/{project_id}/improvements/latest": {
+      "get": {
+        "operationId": "latest_improvement_api_v1_projects__project_id__improvements_latest_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ImprovementOut"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Latest Improvement Api V1 Projects  Project Id  Improvements Latest Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Latest Improvement",
+        "tags": ["improve"]
+      }
+    },
+    "/api/v1/projects/{project_id}/improvements/{session_id}": {
+      "get": {
+        "operationId": "get_improvement_api_v1_projects__project_id__improvements__session_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImprovementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Improvement",
+        "tags": ["improve"]
+      }
+    },
+    "/api/v1/projects/{project_id}/improvements/{session_id}/candidates/{candidate_id}/accept": {
+      "post": {
+        "operationId": "accept_candidate_api_v1_projects__project_id__improvements__session_id__candidates__candidate_id__accept_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "candidate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Candidate Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImprovementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Accept Candidate",
+        "tags": ["improve"]
       }
     },
     "/api/v1/projects/{project_id}/input-files": {
