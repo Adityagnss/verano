@@ -1,4 +1,7 @@
-/** Project hooks: list, create, one project, its running cost, and step completion. */
+/**
+ * Project hooks: list, create, one project, its running cost, and step completion (a key
+ * with selected models, a saved prompt, imported data, approved test cases).
+ */
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -40,16 +43,43 @@ export function useCostSummary(projectId: string) {
   })
 }
 
+async function optional<T>(send: () => Promise<T>): Promise<T | null> {
+  try {
+    return await send()
+  } catch {
+    return null
+  }
+}
+
 export function useStepCompletion(projectId: string) {
+  const params = { params: { path: { project_id: projectId } } }
   return useQuery({
-    queryKey: ["projects", projectId, "models", "selected-count"],
+    queryKey: ["projects", projectId, "step-completion"],
     queryFn: async () => {
-      const page = await call(() =>
-        api.GET("/api/v1/projects/{project_id}/models", {
-          params: { path: { project_id: projectId }, query: { selected: true, limit: 1 } },
-        }),
-      )
-      return { keys: page.items.length > 0 }
+      const [models, prompts, files, version] = await Promise.all([
+        call(() =>
+          api.GET("/api/v1/projects/{project_id}/models", {
+            params: { path: { project_id: projectId }, query: { selected: true, limit: 1 } },
+          }),
+        ),
+        call(() =>
+          api.GET("/api/v1/projects/{project_id}/prompts", {
+            params: { path: { project_id: projectId }, query: { limit: 1 } },
+          }),
+        ),
+        call(() =>
+          api.GET("/api/v1/projects/{project_id}/input-files", {
+            params: { path: { project_id: projectId }, query: { limit: 100 } },
+          }),
+        ),
+        optional(() => call(() => api.GET("/api/v1/projects/{project_id}/dataset-versions/current", params))),
+      ])
+      return {
+        keys: models.items.length > 0,
+        prompt: prompts.items.length > 0,
+        data: files.items.some((file) => file.status === "imported" || file.status === "extracted"),
+        tests: version?.status === "approved",
+      }
     },
   })
 }

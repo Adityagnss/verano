@@ -6,7 +6,8 @@ app lifespan (or a worker) creates and disposes. Tables across all modules share
 `Base` with a constraint naming convention so Alembic migrations are deterministic.
 Request handlers receive an `AsyncSession` through `SessionDep`; the session commits when
 the handler returns normally and rolls back on any exception. `load_all_models` imports
-every module's tables for Alembic and test setup.
+every module's tables; `Database` calls it, so every process (API, worker, Alembic, tests)
+knows every table a foreign key can point to.
 """
 
 import importlib
@@ -69,6 +70,7 @@ def load_all_models() -> None:
 
 class Database:
     def __init__(self, settings: Settings) -> None:
+        load_all_models()
         self.engine: AsyncEngine = create_async_engine(
             settings.database_url,
             pool_size=settings.db_pool_size,

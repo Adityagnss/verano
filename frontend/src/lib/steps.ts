@@ -9,9 +9,9 @@ export type StepDefinition = { key: StepKey; label: string; segment: string; ava
 
 export const STEPS: StepDefinition[] = [
   { key: "keys", label: "Keys", segment: "keys", available: true },
-  { key: "prompt", label: "Prompt", segment: "prompt", available: false },
-  { key: "data", label: "Your Data", segment: "data", available: false },
-  { key: "tests", label: "Test Cases", segment: "tests", available: false },
+  { key: "prompt", label: "Prompt", segment: "prompt", available: true },
+  { key: "data", label: "Your Data", segment: "data", available: true },
+  { key: "tests", label: "Test Cases", segment: "tests", available: true },
   { key: "run", label: "Run", segment: "run", available: false },
   { key: "results", label: "Results", segment: "results", available: false },
   { key: "improve", label: "Improve", segment: "improve", available: false },

@@ -18,7 +18,10 @@ from app.modules.datasets.schemas import (
     ItemCreate,
     ItemFilter,
     ItemOut,
+    ItemSource,
     ItemUpdate,
+    ReviewStatus,
+    Split,
 )
 from app.modules.projects.dependencies import ProjectScope
 
@@ -43,8 +46,12 @@ async def list_items(
     project: ProjectScope,
     service: DatasetServiceDep,
     page: PageDep,
-    where: Annotated[ItemFilter, Query()],
+    source: Annotated[ItemSource | None, Query()] = None,
+    category: Annotated[str | None, Query(max_length=64)] = None,
+    review_status: Annotated[ReviewStatus | None, Query()] = None,
+    split: Annotated[Split | None, Query()] = None,
 ) -> Page[ItemOut]:
+    where = ItemFilter(source=source, category=category, review_status=review_status, split=split)
     return await service.list_items(project.id, version_id, where, page)
 
 

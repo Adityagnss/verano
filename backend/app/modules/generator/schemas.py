@@ -9,6 +9,7 @@ failure analysis all read it, which is why it is a strict, versioned schema.
 
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -140,3 +141,13 @@ class DraftAnswer(BaseModel):
 
 class DraftAnswers(BaseModel):
     answers: list[DraftAnswer]
+
+
+class GenerationEstimate(BaseModel):
+    cases_to_generate: int
+    answers_to_draft: int
+    calls: int
+    input_tokens: int
+    output_tokens: int
+    cost: Decimal | None
+    price_known: bool

@@ -4,7 +4,9 @@
 # Size: the build stage strips debug symbols from native libraries (-58 MB) and drops
 # LiteLLM's proxy admin web UI, static files the SDK never serves (-18 MB). Bytecode is kept
 # compiled: removing it would save 99 MB but make every process start ~1.8 s slower.
-# The runtime stage imports the app once at build time, so a bad strip can never ship.
+# Vendored wheel libraries (`*.libs/`, e.g. NumPy's OpenBLAS) are left alone: stripping
+# them breaks their ELF alignment. The runtime stage imports the app and the native
+# libraries once at build time, so a bad strip can never ship.
 FROM astral/uv:0.12.19 AS uv
 
 FROM python:3.12.14-slim-bookworm AS build
@@ -14,13 +16,13 @@ ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=never UV_PROJECT
 WORKDIR /srv
 COPY pyproject.toml uv.lock .python-version ./
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev --no-install-project
-RUN find /opt/venv -name "*.so*" -type f -exec strip --strip-unneeded {} + \
+RUN find /opt/venv -name "*.so*" -type f -not -path "*.libs/*" -exec strip --strip-unneeded {} + \
  && rm -rf /opt/venv/lib/python3.12/site-packages/litellm/proxy/_experimental/out
 
 FROM python:3.12.14-slim-bookworm AS runtime
 LABEL dev.verano.image="backend"
 ENV PATH=/opt/venv/bin:$PATH PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 DEEPEVAL_TELEMETRY_OPT_OUT=YES \
-    LITELLM_MODE=PRODUCTION LITELLM_LOCAL_MODEL_COST_MAP=True
+    LITELLM_MODE=PRODUCTION LITELLM_LOCAL_MODEL_COST_MAP=True HF_HOME=/srv/data/models/huggingface
 RUN groupadd --system --gid 10001 verano && useradd --system --uid 10001 --gid verano --no-create-home verano \
  && mkdir -p /srv/data && chown verano:verano /srv/data
 COPY --from=build /opt/venv /opt/venv
@@ -28,7 +30,7 @@ WORKDIR /srv
 COPY --chown=verano:verano alembic.ini ./
 COPY --chown=verano:verano migrations ./migrations
 COPY --chown=verano:verano app ./app
-RUN python -c "import app.main, app.workers.tasks"
+RUN python -c "import app.main, app.workers.tasks, numpy, onnxruntime, fastembed"
 USER verano
 EXPOSE 8000
 HEALTHCHECK --interval=10s --timeout=3s --start-period=20s --retries=5 \

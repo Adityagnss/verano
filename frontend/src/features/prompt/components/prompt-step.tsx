@@ -1,0 +1,193 @@
+/**
+ * Step 2, Prompt: two optional text areas (at least one filled), default parameters and a
+ * live check on the right. Saving always creates a new version; the previous ones stay.
+ */
+"use client"
+
+import { useRouter } from "next/navigation"
+import { useMemo, useState } from "react"
+import { toast } from "sonner"
+
+import { ErrorMessage } from "@/components/common/error-message"
+import { PageActions } from "@/components/common/page-actions"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { useModels } from "@/features/keys/hooks"
+import { useFirstCase } from "@/features/tests/hooks"
+import type { PromptVersionOut } from "@/lib/api/types"
+import { useDebounced } from "@/lib/use-debounced"
+
+import { PROMPT_COPY } from "../copy"
+import { type Draft, defaultParams, useCurrentPrompt, useInspect, useSavePrompt } from "../hooks"
+import { PromptCheck } from "./prompt-check"
+
+const EMPTY: Draft = {
+  name: "",
+  system_template: "",
+  user_template: "",
+  temperature: "",
+  max_tokens: "",
+  change_reason: "",
+}
+
+function fromVersion(name: string, version: PromptVersionOut): Draft {
+  const params = version.default_params as Record<string, unknown>
+  return {
+    name,
+    system_template: version.system_template ?? "",
+    user_template: version.user_template ?? "",
+    temperature: params.temperature === undefined ? "" : String(params.temperature),
+    max_tokens: params.max_tokens === undefined ? "" : String(params.max_tokens),
+    change_reason: "",
+  }
+}
+
+function sameAsSaved(draft: Draft, saved: Draft | null): boolean {
+  if (!saved) return false
+  return (
+    draft.system_template === saved.system_template &&
+    draft.user_template === saved.user_template &&
+    JSON.stringify(defaultParams(draft)) === JSON.stringify(defaultParams(saved))
+  )
+}
+
+export function PromptStep({ projectId }: { projectId: string }) {
+  const router = useRouter()
+  const current = useCurrentPrompt(projectId)
+  const models = useModels(projectId)
+  const firstCase = useFirstCase(projectId)
+  const saved = useMemo(
+    () => (current.data ? fromVersion(current.data.name, current.data.latest_version) : null),
+    [current.data],
+  )
+  const [edits, setDraft] = useState<Draft | null>(null)
+  const draft = edits ?? saved ?? EMPTY
+
+  const selectedIds = useMemo(
+    () => (models.data ?? []).filter((m) => m.is_selected).map((m) => m.id),
+    [models.data],
+  )
+  const settled = useDebounced(draft, 400)
+  const inspect = useInspect(projectId, settled, selectedIds, firstCase.data?.inputs ?? null)
+  const save = useSavePrompt(projectId, current.data?.id ?? null)
+
+  const set = (field: keyof Draft) => (event: { target: { value: string } }) =>
+    setDraft({ ...draft, [field]: event.target.value })
+  const empty = !draft.system_template.trim() && !draft.user_template.trim()
+  const unchanged = sameAsSaved(draft, saved)
+
+  async function submit() {
+    const version = await save.mutateAsync(draft)
+    toast.success(PROMPT_COPY.version(version.version))
+    router.push(`/projects/${projectId}/data`)
+  }
+
+  return (
+    <div className="flex max-w-6xl flex-col gap-6">
+      <div>
+        <h2 className="text-xl font-semibold">{PROMPT_COPY.title}</h2>
+        <p className="text-muted-foreground mt-1 max-w-3xl text-sm">{PROMPT_COPY.subtitle}</p>
+      </div>
+      <ErrorMessage error={current.error} />
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="flex flex-col gap-5">
+          {current.data ? null : (
+            <div className="flex max-w-sm flex-col gap-1.5">
+              <Label htmlFor="name">{PROMPT_COPY.name}</Label>
+              <Input
+                id="name"
+                value={draft.name}
+                onChange={set("name")}
+                placeholder={PROMPT_COPY.namePlaceholder}
+              />
+            </div>
+          )}
+          {(["system_template", "user_template"] as const).map((field) => (
+            <div key={field} className="flex flex-col gap-1.5">
+              <Label htmlFor={field}>
+                {field === "system_template" ? PROMPT_COPY.system : PROMPT_COPY.user}
+              </Label>
+              <p className="text-muted-foreground text-xs">
+                {field === "system_template" ? PROMPT_COPY.systemHint : PROMPT_COPY.userHint}
+              </p>
+              <Textarea
+                id={field}
+                value={draft[field]}
+                onChange={set(field)}
+                rows={field === "system_template" ? 8 : 5}
+                className="font-mono"
+                spellCheck={false}
+              />
+            </div>
+          ))}
+          <div className="flex flex-col gap-2">
+            <h3 className="text-sm font-medium">{PROMPT_COPY.parameters}</h3>
+            <div className="grid max-w-md grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="temperature">{PROMPT_COPY.temperature}</Label>
+                <Input
+                  id="temperature"
+                  type="number"
+                  step="0.1"
+                  min={0}
+                  max={2}
+                  value={draft.temperature}
+                  onChange={set("temperature")}
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="max_tokens">{PROMPT_COPY.maxTokens}</Label>
+                <Input
+                  id="max_tokens"
+                  type="number"
+                  min={1}
+                  value={draft.max_tokens}
+                  onChange={set("max_tokens")}
+                />
+              </div>
+            </div>
+          </div>
+          {current.data ? (
+            <div className="flex max-w-xl flex-col gap-1.5">
+              <Label htmlFor="change_reason">{PROMPT_COPY.changeReason}</Label>
+              <Input id="change_reason" value={draft.change_reason} onChange={set("change_reason")} />
+            </div>
+          ) : null}
+        </div>
+        <Card size="sm" className="h-fit lg:sticky lg:top-4">
+          <CardHeader>
+            <CardTitle>{PROMPT_COPY.review}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PromptCheck result={empty ? undefined : inspect.data} error={empty ? null : inspect.error} />
+          </CardContent>
+        </Card>
+      </div>
+      <PageActions
+        summary={
+          <div className="flex flex-col gap-1">
+            {unchanged ? <span>{PROMPT_COPY.unchanged}</span> : null}
+            <ErrorMessage error={save.error} />
+          </div>
+        }
+      >
+        {unchanged ? (
+          <Button size="lg" onClick={() => router.push(`/projects/${projectId}/data`)}>
+            {PROMPT_COPY.next}
+          </Button>
+        ) : (
+          <Button
+            size="lg"
+            onClick={() => void submit().catch(() => undefined)}
+            disabled={empty || save.isPending}
+          >
+            {save.isPending ? PROMPT_COPY.saving : current.data ? PROMPT_COPY.saveVersion : PROMPT_COPY.save}
+          </Button>
+        )}
+      </PageActions>
+    </div>
+  )
+}

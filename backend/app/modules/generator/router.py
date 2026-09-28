@@ -17,6 +17,7 @@ from app.modules.evaluation.schemas import EvaluatorSetUpdate, EvaluatorSetVersi
 from app.modules.generator.dependencies import GeneratorServiceDep
 from app.modules.generator.schemas import (
     CaseCategory,
+    GenerationEstimate,
     GenerationRequest,
     GeneratorSuggestion,
     TaskSpecDraftRequest,
@@ -55,6 +56,13 @@ async def confirm_task_spec(
     spec_id: uuid.UUID, body: TaskSpecUpdate, project: ProjectScope, service: GeneratorServiceDep
 ) -> TaskSpecOut:
     return await service.confirm_spec(project, spec_id, body.spec)
+
+
+@router.post("/generations/estimate")
+async def estimate_generation(
+    body: GenerationRequest, project: ProjectScope, service: GeneratorServiceDep
+) -> GenerationEstimate:
+    return await service.estimate(project, body)
 
 
 @router.post("/generations", status_code=status.HTTP_202_ACCEPTED)

@@ -84,9 +84,10 @@ async def test_generate_review_and_approve(
     await jobs.drain()
     spec_id = await confirmed_spec(client, session, prompt["id"])
 
-    started = await client.post(
-        api(session, "/generations"), json={"task_spec_id": spec_id, "target_size": 20}, headers=session.headers
-    )
+    request = {"task_spec_id": spec_id, "target_size": 20}
+    estimate = (await client.post(api(session, "/generations/estimate"), json=request, headers=session.headers)).json()
+    assert (estimate["cases_to_generate"], estimate["answers_to_draft"], estimate["price_known"]) == (16, 17, True)
+    started = await client.post(api(session, "/generations"), json=request, headers=session.headers)
     assert started.status_code == 202, started.text
     version_id = started.json()["id"]
     await jobs.drain()

@@ -84,6 +84,9 @@ class DatasetService:
         await self._repo.add(version)
         return version
 
+    async def find_draft(self, project_id: uuid.UUID) -> DatasetVersion | None:
+        return await self._repo.draft_version(project_id)
+
     async def current(self, project_id: uuid.UUID) -> DatasetVersionOut:
         version = await self._repo.latest_version(project_id)
         if version is None:

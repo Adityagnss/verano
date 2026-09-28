@@ -13,6 +13,7 @@ Pure Eval Generator logic (DEVELOPMENT.md 2.3). No I/O.
 - `missing_labels` lists allowed classification labels no case covers yet.
 - `answer_label` matches a drafted classification answer to its allowed label, or None.
 - `select_evaluators` turns the Task Spec into the evaluator set (Step E).
+- `estimate_calls` sizes a run for the cost preview shown before generating.
 """
 
 import math
@@ -161,3 +162,28 @@ def select_evaluators(spec: TaskSpec, catalog: EvaluatorCatalog) -> list[Evaluat
             )
         )
     return choices
+
+
+# Rough token sizes behind the cost preview; a preview, not a bill (the gateway records the real cost).
+CALL_OVERHEAD_TOKENS = 1_200
+TOKENS_PER_CASE_OUT = 60
+TOKENS_PER_ANSWER_IN = 80
+TOKENS_PER_ANSWER_OUT = 40
+
+
+@dataclass(frozen=True)
+class Estimate:
+    calls: int
+    input_tokens: int
+    output_tokens: int
+
+
+def estimate_calls(targets: dict[CaseCategory, int], answers: int, batch: int, answer_batch: int) -> Estimate:
+    case_calls = sum(math.ceil(count / batch) for count in targets.values())
+    answer_calls = math.ceil(answers / answer_batch)
+    cases = sum(targets.values())
+    return Estimate(
+        calls=case_calls + answer_calls,
+        input_tokens=(case_calls + answer_calls) * CALL_OVERHEAD_TOKENS + answers * TOKENS_PER_ANSWER_IN,
+        output_tokens=cases * TOKENS_PER_CASE_OUT + answers * TOKENS_PER_ANSWER_OUT,
+    )

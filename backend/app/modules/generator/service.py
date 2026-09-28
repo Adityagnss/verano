@@ -1,8 +1,9 @@
 """
 Eval Generator use cases, request side (DEVELOPMENT.md 2.3): the generator-model
 suggestion, the Task Spec (drafted by one LLM call, then confirmed or edited by the user),
-starting generation, regenerating one category, editing the evaluator set, and the live
-progress stream. The generation itself runs as a background job (`pipeline.py`).
+the cost preview shown before generating, starting generation, regenerating one category,
+editing the evaluator set, and the live progress stream. The generation itself runs as a
+background job (`pipeline.py`).
 
 The Task Spec's `input_variables` always equal the prompt's required inputs, whatever the
 model wrote, because cases must fill exactly those. Nothing is generated from an
@@ -33,11 +34,13 @@ from app.modules.gateway.dependencies import build_gateway
 from app.modules.gateway.schemas import CallContext, CallPurpose, Message
 from app.modules.gateway.service import GatewayService
 from app.modules.generator.domain import suggest_generator
+from app.modules.generator.estimate import estimate_generation
 from app.modules.generator.models import TaskSpecRecord
 from app.modules.generator.repository import TaskSpecRepository
 from app.modules.generator.schemas import (
     TASK_SPEC_SCHEMA_VERSION,
     CaseCategory,
+    GenerationEstimate,
     GenerationRequest,
     GenerationState,
     GenerationStatus,
@@ -203,6 +206,10 @@ class GeneratorService:
             golden_only=body.golden_only,
         )
         return await self._launch(project, draft.id, state, regenerate=None, task_spec_id=row.id)
+
+    async def estimate(self, project: ProjectOut, body: GenerationRequest) -> GenerationEstimate:
+        row = await self._spec(project.id, body.task_spec_id)
+        return await estimate_generation(self._settings, self._registry, self._datasets, project.id, row, body)
 
     async def regenerate(self, project: ProjectOut, version_id: uuid.UUID, category: CaseCategory) -> DatasetVersionOut:
         draft = await self._datasets.draft_for_edit(project.id, version_id)

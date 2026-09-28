@@ -1,0 +1,116 @@
+/**
+ * The project's files with their status. A rows file that has been read shows its sheet
+ * choice (XLSX with several sheets) and its column mapping; documents show their sections.
+ */
+"use client"
+
+import { Loader2, Trash2 } from "lucide-react"
+
+import { EmptyState } from "@/components/common/empty-state"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { NativeSelect } from "@/components/ui/select"
+import type { InputFileOut } from "@/lib/api/types"
+
+import { DATA_COPY } from "../copy"
+import { isBusy, useDeleteFile, useSelectSheet } from "../hooks"
+import { MappingPanel, Report } from "./mapping-panel"
+
+const MAPPABLE = new Set(["ready", "validated", "imported"])
+
+function Detail({ file }: { file: InputFileOut }) {
+  const parts = [DATA_COPY.kind[file.kind]]
+  if (file.row_count !== null) parts.push(DATA_COPY.rows(file.row_count))
+  if (file.section_count !== null) parts.push(DATA_COPY.sections(file.section_count))
+  if (file.imported_rows !== null) parts.push(DATA_COPY.imported(file.imported_rows))
+  return <>{parts.join(" · ")}</>
+}
+
+function FileCard({
+  projectId,
+  file,
+  promptVersionId,
+}: {
+  projectId: string
+  file: InputFileOut
+  promptVersionId: string | null
+}) {
+  const remove = useDeleteFile(projectId)
+  const sheet = useSelectSheet(projectId)
+  const sheets = file.profile?.sheets ?? []
+  const rows = file.kind !== "reference_document"
+  return (
+    <Card size="sm">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <span className="truncate">{file.filename}</span>
+          <Badge variant={file.status === "failed" ? "destructive" : "secondary"}>
+            {isBusy(file) ? <Loader2 className="animate-spin" /> : null}
+            {DATA_COPY.status[file.status]}
+          </Badge>
+        </CardTitle>
+        <CardDescription>
+          <Detail file={file} />
+        </CardDescription>
+        <CardAction>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={DATA_COPY.remove}
+            onClick={() => remove.mutate(file.id)}
+          >
+            <Trash2 />
+          </Button>
+        </CardAction>
+      </CardHeader>
+      {file.error_message || (rows && (MAPPABLE.has(file.status) || sheets.length > 1)) ? (
+        <CardContent className="flex flex-col gap-4">
+          {file.error_message ? <p className="text-destructive text-sm">{file.error_message}</p> : null}
+          {rows && sheets.length > 1 ? (
+            <div className="flex max-w-xs flex-col gap-1.5">
+              <Label htmlFor={`${file.id}-sheet`}>{DATA_COPY.sheet}</Label>
+              <NativeSelect
+                id={`${file.id}-sheet`}
+                value={file.profile?.sheet ?? ""}
+                onChange={(event) => sheet.mutate({ fileId: file.id, sheet: event.target.value })}
+              >
+                {sheets.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </NativeSelect>
+            </div>
+          ) : null}
+          {rows && file.status === "imported" && file.validation_report ? (
+            <Report report={file.validation_report} />
+          ) : null}
+          {rows && (file.status === "ready" || file.status === "validated") ? (
+            <MappingPanel projectId={projectId} file={file} promptVersionId={promptVersionId} />
+          ) : null}
+        </CardContent>
+      ) : null}
+    </Card>
+  )
+}
+
+export function FileList({
+  projectId,
+  files,
+  promptVersionId,
+}: {
+  projectId: string
+  files: InputFileOut[]
+  promptVersionId: string | null
+}) {
+  if (files.length === 0) return <EmptyState title={DATA_COPY.filesHeading} description={DATA_COPY.noFiles} />
+  return (
+    <div className="flex flex-col gap-3">
+      {files.map((file) => (
+        <FileCard key={file.id} projectId={projectId} file={file} promptVersionId={promptVersionId} />
+      ))}
+    </div>
+  )
+}

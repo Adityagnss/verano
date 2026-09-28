@@ -39,3 +39,23 @@ def test_sandboxed_templates_fail_loudly_on_missing_variables() -> None:
     assert render_string("Ticket: {{ ticket }}", ticket="refund please") == "Ticket: refund please"
     with pytest.raises(UndefinedError):
         render_string("Ticket: {{ tickt }}", ticket="refund please")
+
+
+def test_a_worker_process_knows_every_table_and_job() -> None:
+    import subprocess
+    import sys
+
+    script = (
+        "from app.core.config import Settings; from app.core.database import Database, Base; "
+        "Database(Settings(_env_file=None)); "
+        "assert {'projects', 'evaluator_set_versions', 'dataset_versions'} <= set(Base.metadata.tables)"
+    )
+    subprocess.run([sys.executable, "-c", script], check=True)
+
+
+def test_the_api_knows_every_background_job_it_enqueues() -> None:
+    from app.core.jobs import JOBS
+    from app.main import create_app
+
+    create_app()
+    assert {"datasets.profile_file", "documents.extract", "generator.generate"} <= set(JOBS)

@@ -1,7 +1,8 @@
 """
 FastAPI application factory.
 
-`create_app` wires the process: structured logging, the LiteLLM runtime (including the
+`create_app` wires the process: the background-job registry (the API enqueues jobs by
+name, so it must know them), structured logging, the LiteLLM runtime (including the
 mock provider when enabled), the infrastructure container (DB engine, Valkey pool, HTTP
 client, security primitives, storage, progress hub, job queue) created once in the
 lifespan and closed on shutdown; tests pass their own job queue, the
@@ -19,7 +20,7 @@ from app.api import api_router
 from app.core.config import Settings, get_settings
 from app.core.container import Container
 from app.core.errors import install_error_handlers
-from app.core.jobs import JobQueue
+from app.core.jobs import JobQueue, load_all_jobs
 from app.core.logging import configure_logging
 from app.modules.gateway.service import configure_llm_runtime
 from app.workers.queue import CeleryJobQueue
@@ -27,6 +28,7 @@ from app.workers.queue import CeleryJobQueue
 
 def create_app(settings: Settings | None = None, jobs: JobQueue | None = None) -> FastAPI:
     settings = settings or get_settings()
+    load_all_jobs()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
