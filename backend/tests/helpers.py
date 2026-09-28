@@ -93,3 +93,35 @@ async def import_file(client: httpx.AsyncClient, session: Session, file_id: str)
     return await client.post(
         f"/api/v1/projects/{session.project_id}/input-files/{file_id}/import", headers=session.headers
     )
+
+
+GOLDEN_TICKETS = (
+    "ticket,expected\nMy card was charged twice,billing\nWhere is my parcel?,shipping\n"
+    "The app crashes on start,technical\n"
+)
+
+
+async def approved_project(client: httpx.AsyncClient, session: Session, jobs: Any) -> dict[str, str]:
+    """A project with mock models, a system-only prompt, and the 3 golden tickets approved
+    (golden only, so no generation). Returns mock model profile ids by model name."""
+    base = f"/api/v1/projects/{session.project_id}"
+    credential = await add_credential(client, session, "mock")
+    version = await create_prompt(client, session, system_template="Classify the support ticket. Reply with one word.")
+    response = await upload(client, session, "golden.csv", GOLDEN_TICKETS.encode())
+    file_id = response.json()["id"]
+    await jobs.drain()
+    mapping = {"inputs": {"user_message": "ticket"}, "expected_output": "expected"}
+    assert (await map_file(client, session, file_id, version["id"], mapping)).status_code == 200
+    await jobs.drain()
+    await import_file(client, session, file_id)
+    await jobs.drain()
+    spec_body = {"prompt_version_id": version["id"], "credential_id": credential["id"], "model": "scripted"}
+    spec = (await client.post(f"{base}/task-specs", json=spec_body, headers=session.headers)).json()
+    await client.put(f"{base}/task-specs/{spec['id']}", json={"spec": spec["spec"]}, headers=session.headers)
+    generation = {"task_spec_id": spec["id"], "golden_only": True}
+    started = await client.post(f"{base}/generations", json=generation, headers=session.headers)
+    await jobs.drain()
+    approved = await client.post(f"{base}/dataset-versions/{started.json()['id']}/approve", headers=session.headers)
+    assert approved.status_code == 200, approved.text
+    models = await client.get(f"{base}/models", params={"limit": 200}, headers=session.headers)
+    return {model["model_name"]: model["id"] for model in models.json()["items"]}

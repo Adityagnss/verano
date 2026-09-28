@@ -67,6 +67,17 @@ providers:
     exclude_id_patterns: [whisper, guard, tts, distil]
     rate_limits: {rpm: 30, tpm: 6000}
 
+  xai:
+    display_name: xAI (Grok)
+    client: openai_compatible
+    litellm_prefix: xai
+    base_url: https://api.x.ai/v1
+    requires_key: true
+    auth_error_markers: [Incorrect API key]
+    listing: {items_path: data}
+    exclude_id_patterns: [image, imagine, vision, embed]
+    rate_limits: {rpm: 60, tpm: 100000}
+
   mistral:
     display_name: Mistral
     client: openai_compatible

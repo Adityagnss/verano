@@ -50,6 +50,7 @@ ROUTES: dict[str, Callable[[respx.MockRouter], object]] = {
         ),
     ),
     "groq": lambda m: m.get("https://api.groq.com/openai/v1/models").mock(fixture_response("groq", "models.json")),
+    "xai": lambda m: m.get("https://api.x.ai/v1/models").mock(fixture_response("xai", "models.json")),
     "mistral": lambda m: m.get("https://api.mistral.ai/v1/models").mock(fixture_response("mistral", "models.json")),
     "together": lambda m: m.get("https://api.together.xyz/v1/models").mock(fixture_response("together", "models.json")),
     "openrouter": lambda m: m.get("https://openrouter.ai/api/v1/models").mock(
@@ -66,6 +67,7 @@ AUTH_URLS = {
     "anthropic": ("https://api.anthropic.com/v1/models", 401),
     "gemini": ("https://generativelanguage.googleapis.com/v1beta/models", 400),
     "groq": ("https://api.groq.com/openai/v1/models", 401),
+    "xai": ("https://api.x.ai/v1/models", 400),
     "mistral": ("https://api.mistral.ai/v1/models", 401),
     "together": ("https://api.together.xyz/v1/models", 401),
     "openrouter": ("https://openrouter.ai/api/v1/models", 401),
@@ -101,6 +103,7 @@ EXPECTED: dict[str, Expected] = {
         },
     ),
     "groq": Expected({"llama-3.1-8b-instant"}, {"llama-3.1-8b-instant": {"context_window": 131072}}),
+    "xai": Expected({"grok-4", "grok-3-mini"}),
     "mistral": Expected({"mistral-small-latest"}, {"mistral-small-latest": {"context_window": 32768}}),
     "together": Expected(
         {"meta-llama/Llama-3.3-70B-Instruct-Turbo"},

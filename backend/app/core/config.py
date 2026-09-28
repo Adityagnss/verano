@@ -114,6 +114,11 @@ class Settings(BaseSettings):
     embedding_model: str = "BAAI/bge-small-en-v1.5"
     embedding_cache_dir: Path = APP_DIR.parent / "data" / "models"
     dedupe_similarity: float = 0.92
+    engine_chunk_size: int = 50
+    engine_provider_concurrency: int = 4
+    engine_chunk_timeout_s: float = 1_800.0
+    judge_concurrency: int = 4
+    evaluation_timeout_s: float = 3_600.0
     document_max_chars: int = 5_000_000
     token_estimate_chars_per_token: int = 4
 

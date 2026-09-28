@@ -12,7 +12,7 @@ export const STEPS: StepDefinition[] = [
   { key: "prompt", label: "Prompt", segment: "prompt", available: true },
   { key: "data", label: "Your Data", segment: "data", available: true },
   { key: "tests", label: "Test Cases", segment: "tests", available: true },
-  { key: "run", label: "Run", segment: "run", available: false },
+  { key: "run", label: "Run", segment: "run", available: true },
   { key: "results", label: "Results", segment: "results", available: false },
   { key: "improve", label: "Improve", segment: "improve", available: false },
 ]

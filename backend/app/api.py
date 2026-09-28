@@ -9,6 +9,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.datasets.review_router import router as review_router
 from app.modules.datasets.router import router as datasets_router
 from app.modules.documents.router import router as documents_router
+from app.modules.engine.router import router as engine_router
 from app.modules.gateway.router import router as gateway_router
 from app.modules.generator.router import router as generator_router
 from app.modules.projects.router import router as projects_router
@@ -26,5 +27,6 @@ for module_router in (
     documents_router,
     generator_router,
     review_router,
+    engine_router,
 ):
     api_router.include_router(module_router)

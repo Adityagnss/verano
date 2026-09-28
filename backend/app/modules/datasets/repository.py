@@ -114,8 +114,10 @@ class DatasetRepository:
         query = query.order_by(DatasetItem.id).limit(page.limit + 1)
         return list((await self._session.scalars(query)).all())
 
-    async def items(self, version_id: uuid.UUID, where: ItemFilter | None = None) -> list[DatasetItem]:
-        query = _scoped(select(DatasetItem), version_id, where).order_by(DatasetItem.position)
+    async def items(
+        self, version_id: uuid.UUID, where: ItemFilter | None = None, ids: Sequence[uuid.UUID] | None = None
+    ) -> list[DatasetItem]:
+        query = _scoped(select(DatasetItem), version_id, where, ids).order_by(DatasetItem.position)
         return list((await self._session.scalars(query.execution_options(populate_existing=True))).all())
 
     async def item(self, version_id: uuid.UUID, item_id: uuid.UUID) -> DatasetItem | None:

@@ -119,6 +119,12 @@ class PromptService:
         rows = await self._repo.versions(prompt.id, page)
         return to_page([version_out(row) for row in rows], page, lambda item: item.id)
 
+    async def latest_version_id(self, project_id: uuid.UUID) -> uuid.UUID | None:
+        prompts = await self._repo.prompts(project_id, PageParams(limit=1, cursor=None))
+        if not prompts:
+            return None
+        return (await self._repo.latest_versions([prompts[0].id]))[prompts[0].id].id
+
     async def get_version(self, project_id: uuid.UUID, version_id: uuid.UUID) -> PromptVersionOut:
         return version_out(await self._version(project_id, version_id))
 

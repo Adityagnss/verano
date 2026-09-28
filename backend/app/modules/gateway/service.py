@@ -114,6 +114,17 @@ class GatewayService:
         context: CallContext,
     ) -> LLMResult:
         target = await self._registry.call_target(context.project_id, credential_id, model_id)
+        return await self.complete_target(target, messages, params, purpose, context)
+
+    async def complete_target(
+        self,
+        target: CallTarget,
+        messages: list[Message],
+        params: dict[str, Any],
+        purpose: CallPurpose,
+        context: CallContext,
+    ) -> LLMResult:
+        """`complete` for a target resolved beforehand, so no database transaction stays open during the call."""
         json_param = self._registry.catalog.json_mode_parameter
         filtered = filter_params(params, allowed_parameters(target.profile, json_param))
         return await self._run(target, messages, filtered, purpose, context)

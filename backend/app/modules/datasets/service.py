@@ -224,8 +224,10 @@ class DatasetService:
         return await self.summary(await self._version(project_id, version.id))
 
     # Used by the Eval Generator.
-    async def items(self, version_id: uuid.UUID, where: ItemFilter | None = None) -> list[DatasetItem]:
-        return await self._repo.items(version_id, where)
+    async def items(
+        self, version_id: uuid.UUID, where: ItemFilter | None = None, ids: list[uuid.UUID] | None = None
+    ) -> list[DatasetItem]:
+        return await self._repo.items(version_id, where, ids)
 
     async def add_items(self, version_id: uuid.UUID, rows: list[dict[str, Any]]) -> None:
         position = await self._repo.next_position(version_id)

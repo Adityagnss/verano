@@ -792,6 +792,304 @@
         "title": "EvaluatorSetVersionOut",
         "type": "object"
       },
+      "ExperimentCreate": {
+        "properties": {
+          "budget_cap": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Cap"
+          },
+          "dataset_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Version Id"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/ModelRun"
+            },
+            "minItems": 1,
+            "title": "Models",
+            "type": "array"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "split_scope": {
+            "$ref": "#/components/schemas/SplitScope",
+            "default": "all"
+          }
+        },
+        "required": ["models"],
+        "title": "ExperimentCreate",
+        "type": "object"
+      },
+      "ExperimentEstimate": {
+        "properties": {
+          "calls": {
+            "title": "Calls",
+            "type": "integer"
+          },
+          "cases": {
+            "title": "Cases",
+            "type": "integer"
+          },
+          "generation_cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generation Cost"
+          },
+          "input_tokens": {
+            "title": "Input Tokens",
+            "type": "integer"
+          },
+          "judge_calls": {
+            "title": "Judge Calls",
+            "type": "integer"
+          },
+          "judge_cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Judge Cost"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/ModelEstimate"
+            },
+            "title": "Models",
+            "type": "array"
+          },
+          "output_tokens": {
+            "title": "Output Tokens",
+            "type": "integer"
+          },
+          "price_known": {
+            "title": "Price Known",
+            "type": "boolean"
+          },
+          "total_cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Cost"
+          }
+        },
+        "required": [
+          "cases",
+          "calls",
+          "input_tokens",
+          "output_tokens",
+          "generation_cost",
+          "judge_calls",
+          "judge_cost",
+          "total_cost",
+          "price_known",
+          "models"
+        ],
+        "title": "ExperimentEstimate",
+        "type": "object"
+      },
+      "ExperimentOrigin": {
+        "enum": ["manual", "optimization"],
+        "title": "ExperimentOrigin",
+        "type": "string"
+      },
+      "ExperimentOut": {
+        "properties": {
+          "budget_cap": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Cap"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "config": {
+            "additionalProperties": true,
+            "title": "Config",
+            "type": "object"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dataset_version_id": {
+            "format": "uuid",
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "estimate": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimate"
+          },
+          "evaluator_set_version_id": {
+            "format": "uuid",
+            "title": "Evaluator Set Version Id",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "origin": {
+            "$ref": "#/components/schemas/ExperimentOrigin"
+          },
+          "progress": {
+            "items": {
+              "$ref": "#/components/schemas/ModelProgress"
+            },
+            "title": "Progress",
+            "type": "array"
+          },
+          "project_id": {
+            "format": "uuid",
+            "title": "Project Id",
+            "type": "string"
+          },
+          "prompt_version_id": {
+            "format": "uuid",
+            "title": "Prompt Version Id",
+            "type": "string"
+          },
+          "split_scope": {
+            "$ref": "#/components/schemas/SplitScope"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ExperimentStatus"
+          },
+          "stop_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Reason"
+          },
+          "total_calls": {
+            "title": "Total Calls",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "project_id",
+          "name",
+          "status",
+          "origin",
+          "prompt_version_id",
+          "dataset_version_id",
+          "evaluator_set_version_id",
+          "split_scope",
+          "config",
+          "estimate",
+          "budget_cap",
+          "total_calls",
+          "stop_reason",
+          "progress",
+          "created_at",
+          "started_at",
+          "completed_at"
+        ],
+        "title": "ExperimentOut",
+        "type": "object"
+      },
+      "ExperimentStatus": {
+        "enum": ["draft", "planned", "running", "paused", "evaluating", "completed", "cancelled", "failed"],
+        "title": "ExperimentStatus",
+        "type": "string"
+      },
       "FileFormat": {
         "enum": ["csv", "xlsx", "json", "jsonl", "pdf", "docx", "txt", "md"],
         "title": "FileFormat",
@@ -1875,6 +2173,46 @@
         "title": "Message",
         "type": "object"
       },
+      "ModelEstimate": {
+        "properties": {
+          "calls": {
+            "title": "Calls",
+            "type": "integer"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "input_tokens": {
+            "title": "Input Tokens",
+            "type": "integer"
+          },
+          "model_profile_id": {
+            "format": "uuid",
+            "title": "Model Profile Id",
+            "type": "string"
+          },
+          "output_tokens": {
+            "title": "Output Tokens",
+            "type": "integer"
+          }
+        },
+        "required": ["model_profile_id", "display_name", "calls", "input_tokens", "output_tokens", "cost"],
+        "title": "ModelEstimate",
+        "type": "object"
+      },
       "ModelProfileOut": {
         "properties": {
           "context_window": {
@@ -1995,6 +2333,73 @@
         "title": "ModelProfileOut",
         "type": "object"
       },
+      "ModelProgress": {
+        "properties": {
+          "cost": {
+            "default": "0",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Cost",
+            "type": "string"
+          },
+          "failed": {
+            "default": 0,
+            "title": "Failed",
+            "type": "integer"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "model_profile_id": {
+            "format": "uuid",
+            "title": "Model Profile Id",
+            "type": "string"
+          },
+          "skipped": {
+            "default": 0,
+            "title": "Skipped",
+            "type": "integer"
+          },
+          "succeeded": {
+            "default": 0,
+            "title": "Succeeded",
+            "type": "integer"
+          },
+          "total": {
+            "default": 0,
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": ["model_profile_id", "model"],
+        "title": "ModelProgress",
+        "type": "object"
+      },
+      "ModelRun": {
+        "properties": {
+          "model_profile_id": {
+            "format": "uuid",
+            "title": "Model Profile Id",
+            "type": "string"
+          },
+          "params": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Params",
+            "type": "object"
+          },
+          "runs": {
+            "default": 1,
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Runs",
+            "type": "integer"
+          }
+        },
+        "required": ["model_profile_id"],
+        "title": "ModelRun",
+        "type": "object"
+      },
       "ModelSelection": {
         "properties": {
           "selected": {
@@ -2046,6 +2451,31 @@
         "enum": ["single_label", "multi_label", "json", "free_text", "list"],
         "title": "OutputFormat",
         "type": "string"
+      },
+      "Page_ExperimentOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ExperimentOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": ["items", "next_cursor"],
+        "title": "Page[ExperimentOut]",
+        "type": "object"
       },
       "Page_InputFileOut_": {
         "properties": {
@@ -2759,6 +3189,11 @@
         "title": "ReviewStatus",
         "type": "string"
       },
+      "RunStatus": {
+        "enum": ["pending", "running", "succeeded", "failed", "skipped"],
+        "title": "RunStatus",
+        "type": "string"
+      },
       "SectionOut": {
         "properties": {
           "char_count": {
@@ -2858,6 +3293,11 @@
       "Split": {
         "enum": ["optimize", "holdout"],
         "title": "Split",
+        "type": "string"
+      },
+      "SplitScope": {
+        "enum": ["all", "optimize", "holdout"],
+        "title": "SplitScope",
         "type": "string"
       },
       "TaskSpec": {
@@ -3105,6 +3545,288 @@
         },
         "required": ["credential_id", "model", "messages"],
         "title": "TestCallRequest",
+        "type": "object"
+      },
+      "TestCaseRunOut": {
+        "properties": {
+          "attempts": {
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          },
+          "dataset_item_id": {
+            "format": "uuid",
+            "title": "Dataset Item Id",
+            "type": "string"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "error_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Type"
+          },
+          "experiment_id": {
+            "format": "uuid",
+            "title": "Experiment Id",
+            "type": "string"
+          },
+          "finish_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finish Reason"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          },
+          "llm_call_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Call Id"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "model_profile_id": {
+            "format": "uuid",
+            "title": "Model Profile Id",
+            "type": "string"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "param_set_key": {
+            "title": "Param Set Key",
+            "type": "string"
+          },
+          "params": {
+            "additionalProperties": true,
+            "title": "Params",
+            "type": "object"
+          },
+          "parsed_output": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parsed Output"
+          },
+          "prompt_version_id": {
+            "format": "uuid",
+            "title": "Prompt Version Id",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "raw_output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Output"
+          },
+          "rendered_system_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rendered System Prompt"
+          },
+          "rendered_user_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rendered User Prompt"
+          },
+          "run_number": {
+            "title": "Run Number",
+            "type": "integer"
+          },
+          "span_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Span Id"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RunStatus"
+          },
+          "trace_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trace Id"
+          },
+          "ttft_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ttft Ms"
+          }
+        },
+        "required": [
+          "id",
+          "experiment_id",
+          "dataset_item_id",
+          "prompt_version_id",
+          "model_profile_id",
+          "provider",
+          "model",
+          "param_set_key",
+          "params",
+          "run_number",
+          "status",
+          "rendered_system_prompt",
+          "rendered_user_prompt",
+          "raw_output",
+          "parsed_output",
+          "finish_reason",
+          "error_type",
+          "error_message",
+          "attempts",
+          "input_tokens",
+          "output_tokens",
+          "cost",
+          "latency_ms",
+          "ttft_ms",
+          "llm_call_id",
+          "started_at",
+          "completed_at",
+          "trace_id",
+          "span_id"
+        ],
+        "title": "TestCaseRunOut",
         "type": "object"
       },
       "UploadPurpose": {
@@ -4748,6 +5470,373 @@
         ],
         "summary": "Regenerate Category",
         "tags": ["generator"]
+      }
+    },
+    "/api/v1/projects/{project_id}/experiments": {
+      "get": {
+        "operationId": "list_experiments_api_v1_projects__project_id__experiments_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_ExperimentOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Experiments",
+        "tags": ["experiments"]
+      },
+      "post": {
+        "operationId": "start_experiment_api_v1_projects__project_id__experiments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExperimentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Start Experiment",
+        "tags": ["experiments"]
+      }
+    },
+    "/api/v1/projects/{project_id}/experiments/estimate": {
+      "post": {
+        "operationId": "estimate_experiment_api_v1_projects__project_id__experiments_estimate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExperimentCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentEstimate"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Estimate Experiment",
+        "tags": ["experiments"]
+      }
+    },
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}": {
+      "get": {
+        "operationId": "get_experiment_api_v1_projects__project_id__experiments__experiment_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Experiment",
+        "tags": ["experiments"]
+      }
+    },
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/cancel": {
+      "post": {
+        "operationId": "cancel_experiment_api_v1_projects__project_id__experiments__experiment_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cancel Experiment",
+        "tags": ["experiments"]
+      }
+    },
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/runs/{run_id}": {
+      "get": {
+        "operationId": "get_run_api_v1_projects__project_id__experiments__experiment_id__runs__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestCaseRunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Run",
+        "tags": ["experiments"]
       }
     },
     "/api/v1/projects/{project_id}/generations": {

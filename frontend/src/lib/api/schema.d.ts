@@ -351,6 +351,92 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/experiments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Experiments */
+        get: operations["list_experiments_api_v1_projects__project_id__experiments_get"];
+        put?: never;
+        /** Start Experiment */
+        post: operations["start_experiment_api_v1_projects__project_id__experiments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/experiments/estimate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Estimate Experiment */
+        post: operations["estimate_experiment_api_v1_projects__project_id__experiments_estimate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Experiment */
+        get: operations["get_experiment_api_v1_projects__project_id__experiments__experiment_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Experiment */
+        post: operations["cancel_experiment_api_v1_projects__project_id__experiments__experiment_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Run */
+        get: operations["get_run_api_v1_projects__project_id__experiments__experiment_id__runs__run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/generations": {
         parameters: {
             query?: never;
@@ -1077,6 +1163,110 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** ExperimentCreate */
+        ExperimentCreate: {
+            /** Budget Cap */
+            budget_cap?: number | string | null;
+            /** Dataset Version Id */
+            dataset_version_id?: string | null;
+            /** Models */
+            models: components["schemas"]["ModelRun"][];
+            /** Name */
+            name?: string | null;
+            /** @default all */
+            split_scope: components["schemas"]["SplitScope"];
+        };
+        /** ExperimentEstimate */
+        ExperimentEstimate: {
+            /** Calls */
+            calls: number;
+            /** Cases */
+            cases: number;
+            /** Generation Cost */
+            generation_cost: string | null;
+            /** Input Tokens */
+            input_tokens: number;
+            /** Judge Calls */
+            judge_calls: number;
+            /** Judge Cost */
+            judge_cost: string | null;
+            /** Models */
+            models: components["schemas"]["ModelEstimate"][];
+            /** Output Tokens */
+            output_tokens: number;
+            /** Price Known */
+            price_known: boolean;
+            /** Total Cost */
+            total_cost: string | null;
+        };
+        /**
+         * ExperimentOrigin
+         * @enum {string}
+         */
+        ExperimentOrigin: "manual" | "optimization";
+        /** ExperimentOut */
+        ExperimentOut: {
+            /** Budget Cap */
+            budget_cap: string | null;
+            /** Completed At */
+            completed_at: string | null;
+            /** Config */
+            config: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Dataset Version Id
+             * Format: uuid
+             */
+            dataset_version_id: string;
+            /** Estimate */
+            estimate: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Evaluator Set Version Id
+             * Format: uuid
+             */
+            evaluator_set_version_id: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            origin: components["schemas"]["ExperimentOrigin"];
+            /** Progress */
+            progress: components["schemas"]["ModelProgress"][];
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /**
+             * Prompt Version Id
+             * Format: uuid
+             */
+            prompt_version_id: string;
+            split_scope: components["schemas"]["SplitScope"];
+            /** Started At */
+            started_at: string | null;
+            status: components["schemas"]["ExperimentStatus"];
+            /** Stop Reason */
+            stop_reason: string | null;
+            /** Total Calls */
+            total_calls: number;
+        };
+        /**
+         * ExperimentStatus
+         * @enum {string}
+         */
+        ExperimentStatus: "draft" | "planned" | "running" | "paused" | "evaluating" | "completed" | "cancelled" | "failed";
         /**
          * FileFormat
          * @enum {string}
@@ -1464,6 +1654,24 @@ export interface components {
              */
             role: "system" | "user" | "assistant";
         };
+        /** ModelEstimate */
+        ModelEstimate: {
+            /** Calls */
+            calls: number;
+            /** Cost */
+            cost: string | null;
+            /** Display Name */
+            display_name: string;
+            /** Input Tokens */
+            input_tokens: number;
+            /**
+             * Model Profile Id
+             * Format: uuid
+             */
+            model_profile_id: string;
+            /** Output Tokens */
+            output_tokens: number;
+        };
         /** ModelProfileOut */
         ModelProfileOut: {
             /** Context Window */
@@ -1506,6 +1714,61 @@ export interface components {
             /** Supports System Prompt */
             supports_system_prompt: boolean;
         };
+        /** ModelProgress */
+        ModelProgress: {
+            /**
+             * Cost
+             * @default 0
+             */
+            cost: string;
+            /**
+             * Failed
+             * @default 0
+             */
+            failed: number;
+            /** Model */
+            model: string;
+            /**
+             * Model Profile Id
+             * Format: uuid
+             */
+            model_profile_id: string;
+            /**
+             * Skipped
+             * @default 0
+             */
+            skipped: number;
+            /**
+             * Succeeded
+             * @default 0
+             */
+            succeeded: number;
+            /**
+             * Total
+             * @default 0
+             */
+            total: number;
+        };
+        /** ModelRun */
+        ModelRun: {
+            /**
+             * Model Profile Id
+             * Format: uuid
+             */
+            model_profile_id: string;
+            /**
+             * Params
+             * @default {}
+             */
+            params: {
+                [key: string]: unknown;
+            };
+            /**
+             * Runs
+             * @default 1
+             */
+            runs: number;
+        };
         /** ModelSelection */
         ModelSelection: {
             /**
@@ -1537,6 +1800,13 @@ export interface components {
          * @enum {string}
          */
         OutputFormat: "single_label" | "multi_label" | "json" | "free_text" | "list";
+        /** Page[ExperimentOut] */
+        Page_ExperimentOut_: {
+            /** Items */
+            items: components["schemas"]["ExperimentOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
         /** Page[InputFileOut] */
         Page_InputFileOut_: {
             /** Items */
@@ -1804,6 +2074,11 @@ export interface components {
          * @enum {string}
          */
         ReviewStatus: "trusted" | "draft" | "approved";
+        /**
+         * RunStatus
+         * @enum {string}
+         */
+        RunStatus: "pending" | "running" | "succeeded" | "failed" | "skipped";
         /** SectionOut */
         SectionOut: {
             /** Char Count */
@@ -1860,6 +2135,11 @@ export interface components {
          * @enum {string}
          */
         Split: "optimize" | "holdout";
+        /**
+         * SplitScope
+         * @enum {string}
+         */
+        SplitScope: "all" | "optimize" | "holdout";
         /** TaskSpec */
         TaskSpec: {
             /** Allowed Outputs */
@@ -1970,6 +2250,85 @@ export interface components {
             params: {
                 [key: string]: unknown;
             };
+        };
+        /** TestCaseRunOut */
+        TestCaseRunOut: {
+            /** Attempts */
+            attempts: number;
+            /** Completed At */
+            completed_at: string | null;
+            /** Cost */
+            cost: string | null;
+            /**
+             * Dataset Item Id
+             * Format: uuid
+             */
+            dataset_item_id: string;
+            /** Error Message */
+            error_message: string | null;
+            /** Error Type */
+            error_type: string | null;
+            /**
+             * Experiment Id
+             * Format: uuid
+             */
+            experiment_id: string;
+            /** Finish Reason */
+            finish_reason: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Input Tokens */
+            input_tokens: number | null;
+            /** Latency Ms */
+            latency_ms: number | null;
+            /** Llm Call Id */
+            llm_call_id: string | null;
+            /** Model */
+            model: string;
+            /**
+             * Model Profile Id
+             * Format: uuid
+             */
+            model_profile_id: string;
+            /** Output Tokens */
+            output_tokens: number | null;
+            /** Param Set Key */
+            param_set_key: string;
+            /** Params */
+            params: {
+                [key: string]: unknown;
+            };
+            /** Parsed Output */
+            parsed_output: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Prompt Version Id
+             * Format: uuid
+             */
+            prompt_version_id: string;
+            /** Provider */
+            provider: string;
+            /** Raw Output */
+            raw_output: string | null;
+            /** Rendered System Prompt */
+            rendered_system_prompt: string | null;
+            /** Rendered User Prompt */
+            rendered_user_prompt: string | null;
+            /** Run Number */
+            run_number: number;
+            /** Span Id */
+            span_id: string | null;
+            /** Started At */
+            started_at: string | null;
+            status: components["schemas"]["RunStatus"];
+            /** Trace Id */
+            trace_id: string | null;
+            /** Ttft Ms */
+            ttft_ms: number | null;
         };
         /**
          * UploadPurpose
@@ -2881,6 +3240,207 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DatasetVersionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_experiments_api_v1_projects__project_id__experiments_get: {
+        parameters: {
+            query?: {
+                limit?: number | null;
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_ExperimentOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_experiment_api_v1_projects__project_id__experiments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExperimentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperimentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    estimate_experiment_api_v1_projects__project_id__experiments_estimate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExperimentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperimentEstimate"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_experiment_api_v1_projects__project_id__experiments__experiment_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                experiment_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperimentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_experiment_api_v1_projects__project_id__experiments__experiment_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                experiment_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperimentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_run_api_v1_projects__project_id__experiments__experiment_id__runs__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                experiment_id: string;
+                run_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestCaseRunOut"];
                 };
             };
             /** @description Validation Error */
