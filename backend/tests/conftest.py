@@ -6,9 +6,11 @@ session by Testcontainers, or the services named by VERANO_TEST_DATABASE_URL and
 VERANO_TEST_VALKEY_URL (CI runs them as service containers). Either way the database is
 migrated with the real Alembic migrations. Before every integration test the tables are
 truncated, Valkey is flushed and a fresh mock provider is installed, so tests are
-independent and deterministic. Unit tests never request these
-fixtures and therefore never start a container. No test touches the network: providers
-are replayed with respx and every LLM call goes to the mock provider.
+independent and deterministic. Background jobs run on an inline queue in the test's event
+loop (`await jobs.drain()` waits for them), and uploads go to a temporary storage folder.
+Unit tests never request these fixtures and therefore never start a container. No test
+touches the network: providers are replayed with respx and every LLM call goes to the
+mock provider.
 """
 
 import os
@@ -31,6 +33,7 @@ from testcontainers.community.redis import RedisContainer
 from app.core.config import Settings
 from app.core.container import Container
 from app.core.database import Base, load_all_models
+from app.core.jobs import InlineJobQueue, load_all_jobs
 from app.main import create_app
 from app.modules.gateway.plugins.mock_provider import install_mock_provider
 from tests.helpers import FIXTURES, ROOT, Session, compose_image, sign_up
@@ -57,9 +60,10 @@ def infra() -> Iterator[Infra]:
 
 
 @pytest.fixture(scope="session")
-def settings(infra: Infra) -> Settings:
+def settings(infra: Infra, tmp_path_factory: pytest.TempPathFactory) -> Settings:
     return Settings(
         _env_file=None,
+        storage_root=tmp_path_factory.mktemp("storage"),
         database_url=infra.database_url,
         valkey_url=infra.valkey_url,
         master_keys=SecretStr(Fernet.generate_key().decode()),
@@ -83,10 +87,17 @@ def migrated(settings: Settings) -> None:
 
 
 @pytest.fixture(scope="session")
-async def app(settings: Settings, migrated: None) -> AsyncIterator[FastAPI]:
+def jobs() -> InlineJobQueue:
+    load_all_jobs()
+    return InlineJobQueue()
+
+
+@pytest.fixture(scope="session")
+async def app(settings: Settings, migrated: None, jobs: InlineJobQueue) -> AsyncIterator[FastAPI]:
     litellm.disable_aiohttp_transport = True
-    application = create_app(settings)
+    application = create_app(settings, jobs=jobs)
     async with application.router.lifespan_context(application):
+        jobs.container = application.state.container
         yield application
 
 

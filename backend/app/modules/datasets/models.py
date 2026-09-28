@@ -1,8 +1,10 @@
 """
 Dataset tables: input_files, datasets, dataset_versions, dataset_items.
 
-An input file is the original upload (kept in Storage under `storage_key`); parsed rows
-become dataset items. A dataset version is editable while `draft` and frozen once
+An input file is the original upload (kept in Storage under `storage_key`) plus what was
+learned about it: its profile, the confirmed column mapping, the validation report and the
+outcome of its import or text extraction. Parsed rows become dataset items.
+A dataset version is editable while `draft` and frozen once
 `approved`; approval assigns every item its `split` (optimize / holdout), stratified by
 category and source. Each item records its `source` (golden / input_file / generated) and
 `review_status`, so golden answers are distinguishable and never overwritten by generation.
@@ -18,6 +20,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base, CreatedAtMixin, IdMixin, str_enum
 from app.modules.datasets.schemas import (
     DatasetVersionStatus,
+    FileFormat,
     InputFileKind,
     InputFileStatus,
     ItemSource,
@@ -33,6 +36,7 @@ class InputFile(IdMixin, CreatedAtMixin, Base):
     project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"))
     kind: Mapped[InputFileKind] = mapped_column(str_enum(InputFileKind, "input_file_kind"))
     status: Mapped[InputFileStatus] = mapped_column(str_enum(InputFileStatus, "input_file_status"))
+    format: Mapped[FileFormat] = mapped_column(str_enum(FileFormat, "file_format"))
     filename: Mapped[str] = mapped_column(String(500))
     content_type: Mapped[str] = mapped_column(String(200))
     size_bytes: Mapped[int] = mapped_column(BigInteger)
@@ -40,8 +44,14 @@ class InputFile(IdMixin, CreatedAtMixin, Base):
     storage_key: Mapped[str] = mapped_column(String(1000))
     sheet_name: Mapped[str | None] = mapped_column(String(200))
     row_count: Mapped[int | None]
+    profile: Mapped[dict[str, Any] | None]
     column_mapping: Mapped[dict[str, Any] | None]
     validation_report: Mapped[dict[str, Any] | None]
+    prompt_version_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("prompt_versions.id", ondelete="SET NULL"))
+    dataset_version_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("dataset_versions.id", ondelete="SET NULL"))
+    imported_rows: Mapped[int | None]
+    section_count: Mapped[int | None]
+    error_message: Mapped[str | None] = mapped_column(Text)
     created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
 
 
@@ -73,6 +83,7 @@ class DatasetItem(IdMixin, CreatedAtMixin, Base):
         Index(None, "dataset_version_id", "id"),
         Index(None, "dataset_version_id", "split"),
         Index(None, "dataset_version_id", "category"),
+        Index(None, "input_file_id"),
     )
 
     dataset_version_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("dataset_versions.id", ondelete="CASCADE"))

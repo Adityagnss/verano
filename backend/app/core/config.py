@@ -78,6 +78,28 @@ class Settings(BaseSettings):
     llm_backoff_max_s: float = 30.0
     json_repair_attempts: int = 1
     prompt_template_max_chars: int = 200_000
+
+    storage_backend: str = "local"
+    storage_root: Path = APP_DIR.parent / "data"
+    upload_max_bytes: int = 100_000_000
+    upload_max_rows: int = 200_000
+    file_parse_timeout_s: float = 300.0
+    job_hard_limit_grace_s: float = 30.0
+    csv_field_max_chars: int = 1_000_000
+    zip_max_uncompressed_bytes: int = 1_000_000_000
+    zip_max_entries: int = 10_000
+    zip_max_ratio: float = 200.0
+    document_max_pages: int = 500
+    document_section_max_chars: int = 3_000
+    profile_sample_rows: int = 20
+    report_max_listed_rows: int = 100
+    import_batch_size: int = 1_000
+    progress_every_rows: int = 2_000
+    progress_ttl_s: int = 86_400
+    sse_keepalive_s: float = 15.0
+    dataset_default_category: str = "happy_path"
+    dataset_default_name: str = "Test cases"
+    document_max_chars: int = 5_000_000
     token_estimate_chars_per_token: int = 4
 
     rate_limit_decrease_factor: float = 0.5

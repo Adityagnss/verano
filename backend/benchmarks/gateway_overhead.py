@@ -24,6 +24,7 @@ from sqlalchemy import delete
 
 from app.core.config import Settings
 from app.core.container import Container
+from app.core.jobs import InlineJobQueue
 from app.core.security import Principal
 from app.core.throttle import FixedWindowLimiter
 from app.modules.auth.models import Organization, User
@@ -74,7 +75,7 @@ async def main() -> None:
         mock_provider_enabled=True,
     )
     configure_llm_runtime(settings)
-    container = Container.build(settings)
+    container = Container.build(settings, jobs=InlineJobQueue())
     email = f"bench-{uuid.uuid4().hex[:10]}@example.com"
     created: list[uuid.UUID] = []
     try:

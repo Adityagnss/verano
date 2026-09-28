@@ -21,6 +21,9 @@ x-backend: &backend
     OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
     VERANO_TRUSTED_PROXIES: '["${CADDY_ADDRESS:-172.28.0.250}"]'
     VERANO_MOCK_PROVIDER_ENABLED: ${VERANO_MOCK_PROVIDER_ENABLED:-false}
+    VERANO_STORAGE_ROOT: /srv/data
+  volumes:
+    - files:/srv/data
   networks: [edge]
   extra_hosts:
     - "host.docker.internal:host-gateway"
@@ -159,6 +162,7 @@ networks:
         - subnet: ${VERANO_DOCKER_SUBNET:-172.28.0.0/24}
 
 volumes:
+  files:
   caddy-data:
   caddy-config:
   postgres-data:

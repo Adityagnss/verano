@@ -6,3 +6,4 @@
 .testmondata
 tests
 .env
+data/

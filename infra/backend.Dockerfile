@@ -21,7 +21,8 @@ FROM python:3.12.14-slim-bookworm AS runtime
 LABEL dev.verano.image="backend"
 ENV PATH=/opt/venv/bin:$PATH PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 DEEPEVAL_TELEMETRY_OPT_OUT=YES \
     LITELLM_MODE=PRODUCTION LITELLM_LOCAL_MODEL_COST_MAP=True
-RUN groupadd --system --gid 10001 verano && useradd --system --uid 10001 --gid verano --no-create-home verano
+RUN groupadd --system --gid 10001 verano && useradd --system --uid 10001 --gid verano --no-create-home verano \
+ && mkdir -p /srv/data && chown verano:verano /srv/data
 COPY --from=build /opt/venv /opt/venv
 WORKDIR /srv
 COPY --chown=verano:verano alembic.ini ./
