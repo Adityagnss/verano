@@ -1,9 +1,9 @@
 /**
- * Root layout: fonts and providers. Inter (text) and JetBrains Mono (prompts and outputs)
+ * Root layout: fonts and providers. Instrument Sans (text) and JetBrains Mono (prompts and outputs)
  * are self-hosted from npm packages, so neither the build nor the browser contacts a font
  * service, and the build works offline.
  */
-import "@fontsource-variable/inter"
+import "@fontsource-variable/instrument-sans/standard.css"
 import "@fontsource-variable/jetbrains-mono"
 import "./globals.css"
 

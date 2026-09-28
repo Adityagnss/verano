@@ -6,8 +6,8 @@ import type { ReactNode } from "react"
 
 export function PageActions({ summary, children }: { summary?: ReactNode; children: ReactNode }) {
   return (
-    <div className="border-border bg-background/95 sticky bottom-0 mt-8 flex items-center justify-end gap-4 border-t py-4 backdrop-blur">
-      {summary ? <div className="text-muted-foreground mr-auto text-sm">{summary}</div> : null}
+    <div className="bg-card/95 ring-border shadow-float sticky bottom-4 z-10 mt-8 flex items-center justify-end gap-4 rounded-xl px-5 py-3 ring-1 backdrop-blur">
+      {summary ? <div className="text-text-secondary mr-auto text-sm">{summary}</div> : null}
       {children}
     </div>
   )

@@ -5,13 +5,13 @@
  */
 "use client"
 
-import { RefreshCw, Trash2 } from "lucide-react"
+import { CircleAlert, CircleCheck, RefreshCw, Trash2 } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 
 import { EmptyState } from "@/components/common/empty-state"
 import { ErrorMessage } from "@/components/common/error-message"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -52,7 +52,7 @@ export function CredentialList({ projectId, credentials, providerNames }: Props)
   return (
     <div className="flex flex-col gap-2">
       <ErrorMessage error={refresh.error} />
-      <ul className="border-border divide-border divide-y rounded-lg border">
+      <ul className="border-border divide-border bg-card divide-y rounded-lg border">
         {credentials.map((credential) => (
           <li key={credential.id} className="flex items-center gap-4 px-4 py-3 text-sm">
             <span className="font-medium">{providerNames[credential.provider] ?? credential.provider}</span>
@@ -60,9 +60,15 @@ export function CredentialList({ projectId, credentials, providerNames }: Props)
             {credential.key_last4 ? (
               <span className="text-muted-foreground font-mono">••••{credential.key_last4}</span>
             ) : null}
-            <Badge variant={credential.status === "valid" ? "secondary" : "destructive"}>
-              {credential.status === "valid" ? KEYS_COPY.valid : KEYS_COPY.invalid}
-            </Badge>
+            {credential.status === "valid" ? (
+              <StatusBadge tone="success" icon={<CircleCheck />}>
+                {KEYS_COPY.valid}
+              </StatusBadge>
+            ) : (
+              <StatusBadge tone="danger" icon={<CircleAlert />}>
+                {KEYS_COPY.invalid}
+              </StatusBadge>
+            )}
             <span className="text-muted-foreground">{KEYS_COPY.models(credential.model_count)}</span>
             <div className="ml-auto flex gap-1">
               <Button

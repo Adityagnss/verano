@@ -11,6 +11,9 @@ import { toast } from "sonner"
 import { EmptyState } from "@/components/common/empty-state"
 import { ErrorMessage } from "@/components/common/error-message"
 import { PageActions } from "@/components/common/page-actions"
+import { Section } from "@/components/common/section"
+import { StatusBadge } from "@/components/common/status-badge"
+import { StepHeader } from "@/components/common/step-header"
 import { Button } from "@/components/ui/button"
 import type { ProviderOut } from "@/lib/api/types"
 
@@ -20,26 +23,6 @@ import { AddKeyDialog } from "./add-key-dialog"
 import { CredentialList } from "./credential-list"
 import { ModelTable } from "./model-table"
 import { ProviderGrid } from "./provider-grid"
-
-function Section({
-  title,
-  description,
-  children,
-}: {
-  title: string
-  description?: string
-  children: React.ReactNode
-}) {
-  return (
-    <section className="flex flex-col gap-3">
-      <div>
-        <h3 className="text-sm font-medium">{title}</h3>
-        {description ? <p className="text-muted-foreground text-sm">{description}</p> : null}
-      </div>
-      {children}
-    </section>
-  )
-}
 
 export function KeysStep({ projectId }: { projectId: string }) {
   const providers = useProviders()
@@ -78,23 +61,41 @@ export function KeysStep({ projectId }: { projectId: string }) {
 
   const unknownPrice = (models.data ?? []).some((m) => selected.has(m.id) && !m.price_known)
   return (
-    <div className="flex max-w-5xl flex-col gap-8">
-      <div>
-        <h2 className="text-xl font-semibold">{KEYS_COPY.title}</h2>
-        <p className="text-muted-foreground mt-1 max-w-3xl text-sm">{KEYS_COPY.subtitle}</p>
-      </div>
+    <div className="flex max-w-6xl flex-col gap-6">
+      <StepHeader
+        step="keys"
+        title={KEYS_COPY.title}
+        description={KEYS_COPY.subtitle}
+        howItWorks={KEYS_COPY.howItWorks}
+      />
       <ErrorMessage error={providers.error ?? credentials.error ?? models.error} />
-      <Section title={KEYS_COPY.providersHeading}>
+      <Section number={1} title={KEYS_COPY.providersHeading} description={KEYS_COPY.providersDescription}>
         <ProviderGrid providers={providers.data ?? []} onAdd={setAdding} />
       </Section>
-      <Section title={KEYS_COPY.keysHeading}>
+      <Section
+        number={2}
+        title={KEYS_COPY.keysHeading}
+        description={KEYS_COPY.keysDescription}
+        badge={
+          credentials.data?.length ? (
+            <StatusBadge tone="success">{credentials.data.length}</StatusBadge>
+          ) : null
+        }
+      >
         <CredentialList
           projectId={projectId}
           credentials={credentials.data ?? []}
           providerNames={providerNames}
         />
       </Section>
-      <Section title={KEYS_COPY.modelsHeading} description={KEYS_COPY.modelsDescription}>
+      <Section
+        number={3}
+        title={KEYS_COPY.modelsHeading}
+        description={KEYS_COPY.modelsDescription}
+        badge={
+          selected.size ? <StatusBadge tone="brand">{KEYS_COPY.selected(selected.size)}</StatusBadge> : null
+        }
+      >
         {models.data && models.data.length > 0 ? (
           <ModelTable
             models={models.data}
@@ -110,7 +111,9 @@ export function KeysStep({ projectId }: { projectId: string }) {
         summary={
           <div className="flex flex-col gap-1">
             <span>{KEYS_COPY.selected(selected.size)}</span>
-            {unknownPrice ? <span className="text-warning">{KEYS_COPY.unknownPriceWarning}</span> : null}
+            {unknownPrice ? (
+              <span className="text-warning-strong">{KEYS_COPY.unknownPriceWarning}</span>
+            ) : null}
             <ErrorMessage error={save.error} />
           </div>
         }

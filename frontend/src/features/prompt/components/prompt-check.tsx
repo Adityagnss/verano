@@ -14,7 +14,7 @@ import { PROMPT_COPY } from "../copy"
 
 function Line({ tone, children }: { tone: "ok" | "bad" | "unknown"; children: React.ReactNode }) {
   const Icon = tone === "ok" ? CircleCheck : tone === "bad" ? CircleAlert : CircleHelp
-  const color = tone === "ok" ? "text-success" : tone === "bad" ? "text-destructive" : "text-warning"
+  const color = tone === "ok" ? "text-success" : tone === "bad" ? "text-danger" : "text-warning"
   return (
     <li className="flex items-start gap-2 text-sm">
       <Icon className={`mt-0.5 size-4 shrink-0 ${color}`} />
@@ -48,10 +48,10 @@ export function PromptCheck({ result, error }: { result: InspectOut | undefined;
       </ul>
       {preview ? (
         <div className="flex flex-col gap-2">
-          <h4 className="text-muted-foreground text-xs font-medium uppercase">{PROMPT_COPY.preview}</h4>
+          <h4 className="text-text-secondary text-sm font-medium">{PROMPT_COPY.preview}</h4>
           {preview.messages.map((message, index) => (
-            <div key={index} className="bg-secondary rounded-lg p-3">
-              <div className="text-muted-foreground mb-1 text-xs">{message.role}</div>
+            <div key={index} className="bg-subtle ring-border rounded-lg p-3 ring-1">
+              <div className="text-text-secondary mb-1 text-xs font-medium capitalize">{message.role}</div>
               <pre className="font-mono text-xs whitespace-pre-wrap">{message.content}</pre>
             </div>
           ))}

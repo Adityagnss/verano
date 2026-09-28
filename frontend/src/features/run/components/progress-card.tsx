@@ -3,13 +3,23 @@
 
 import Link from "next/link"
 
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge, type Tone } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import type { ExperimentOut } from "@/lib/api/types"
 import { formatCost } from "@/lib/format"
+import { cn } from "@/lib/utils"
 
 import { RUN_COPY } from "../copy"
+
+const TONE: Record<string, Tone> = {
+  running: "info",
+  planned: "info",
+  evaluating: "info",
+  completed: "success",
+  cancelled: "warning",
+  failed: "danger",
+}
 
 type Props = { projectId: string; experiment: ExperimentOut; onCancel: () => void; cancelling: boolean }
 
@@ -17,13 +27,13 @@ export function ProgressCard({ projectId, experiment, onCancel, cancelling }: Pr
   const running = experiment.status === "running" || experiment.status === "planned"
   const finished = ["completed", "cancelled", "failed"].includes(experiment.status)
   return (
-    <Card>
+    <Card size="sm" className="shadow-none">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           {experiment.name}
-          <Badge variant={experiment.status === "failed" ? "destructive" : "secondary"}>
+          <StatusBadge tone={TONE[experiment.status] ?? "neutral"}>
             {RUN_COPY.status[experiment.status]}
-          </Badge>
+          </StatusBadge>
         </CardTitle>
         {experiment.stop_reason ? <CardDescription>{experiment.stop_reason}</CardDescription> : null}
         <CardAction>
@@ -53,11 +63,14 @@ export function ProgressCard({ projectId, experiment, onCancel, cancelling }: Pr
                 <span className="ml-auto">{formatCost(model.cost)}</span>
               </div>
               <div
-                className="bg-secondary h-2 overflow-hidden rounded-full"
+                className="bg-chart-track h-2 overflow-hidden rounded-full"
                 role="progressbar"
                 aria-valuenow={share}
               >
-                <div className="bg-primary h-full transition-all" style={{ width: `${share}%` }} />
+                <div
+                  className={cn("h-full rounded-full transition-all", finished ? "bg-success" : "bg-lagoon")}
+                  style={{ width: `${share}%` }}
+                />
               </div>
             </div>
           )

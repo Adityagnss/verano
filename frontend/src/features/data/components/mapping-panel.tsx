@@ -48,20 +48,22 @@ function ColumnSelect({
 
 export function Report({ report }: { report: ValidationReport }) {
   return (
-    <div className="flex flex-col gap-2 text-sm">
-      <p>{DATA_COPY.report(report.valid_rows, report.skipped_rows, report.duplicates_removed)}</p>
+    <div className="bg-subtle ring-border flex flex-col gap-2 rounded-lg p-3 text-sm ring-1">
+      <p className="font-medium">
+        {DATA_COPY.report(report.valid_rows, report.skipped_rows, report.duplicates_removed)}
+      </p>
       {report.issues.length ? (
         <ul className="text-muted-foreground flex flex-col gap-1">
           {report.issues.map((issue) => (
             <li key={`${issue.kind}-${issue.field ?? ""}`}>
-              <span className="text-warning">{issue.message}</span> (
+              <span className="text-warning-strong">{issue.message}</span> (
               {DATA_COPY.rowsList(issue.rows, issue.count)})
             </li>
           ))}
         </ul>
       ) : null}
       {report.warnings.map((warning) => (
-        <p key={warning} className="text-warning">
+        <p key={warning} className="text-warning-strong">
           {warning}
         </p>
       ))}

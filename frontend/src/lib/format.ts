@@ -8,7 +8,12 @@ const COUNT = new Intl.NumberFormat("en-US")
 const COMPACT = new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 })
 
 export function formatCost(value: string | number | null | undefined): string {
-  return USD.format(Number(value ?? 0))
+  const amount = Number(value ?? 0)
+  return amount > 0 && amount < 0.0001 ? "< $0.0001" : USD.format(amount)
+}
+
+export function formatMs(value: number): string {
+  return value < 1 ? "< 1 ms" : value < 1000 ? `${Math.round(value)} ms` : `${(value / 1000).toFixed(1)} s`
 }
 
 export function formatCount(value: number): string {

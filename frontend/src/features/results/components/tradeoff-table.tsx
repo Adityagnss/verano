@@ -1,68 +1,127 @@
 /**
- * The tradeoff table (quality, pass rate, consistency, time, cost per model) and one bar
- * chart of the pass rate, in blue shades only (DEVELOPMENT.md C2).
+ * The tradeoff table (quality, pass rate, consistency, time, cost per model) with the best
+ * value in each column highlighted, and one horizontal bar chart of the pass rate: a single
+ * series in one hue (so no legend; the title names it), direct value labels, and a hover
+ * tooltip with the counts.
  */
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { ModelMetricsOut } from "@/lib/api/types"
 import { formatCost } from "@/lib/format"
+import { cn } from "@/lib/utils"
 
 import { RESULTS_COPY } from "../copy"
+import { type Column, isBest } from "../insights"
 
-const percent = (value: number | null | undefined) =>
+export const percent = (value: number | null | undefined) =>
   value === null || value === undefined ? "—" : `${Math.round(value * 100)}%`
+
+function Cell({
+  models,
+  model,
+  column,
+  children,
+}: {
+  models: ModelMetricsOut[]
+  model: ModelMetricsOut
+  column: Column
+  children: React.ReactNode
+}) {
+  const best = isBest(models, model, column)
+  return (
+    <TableCell className="tabular-nums">
+      <span
+        className={cn(
+          best &&
+            "bg-marigold-soft text-marigold-strong ring-marigold/40 rounded-md px-1.5 py-0.5 font-semibold ring-1",
+        )}
+      >
+        {children}
+      </span>
+    </TableCell>
+  )
+}
 
 export function TradeoffTable({ models }: { models: ModelMetricsOut[] }) {
   const c = RESULTS_COPY.columns
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>{c.model}</TableHead>
-          <TableHead>{c.quality}</TableHead>
-          <TableHead>{c.passRate}</TableHead>
-          <TableHead title={RESULTS_COPY.consistencyHint}>{c.consistency}</TableHead>
-          <TableHead>{c.latency}</TableHead>
-          <TableHead>{c.cost}</TableHead>
-          <TableHead>{c.perCall}</TableHead>
-          <TableHead>{c.failed}</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {models.map((m) => (
-          <TableRow key={m.model_profile_id}>
-            <TableCell className="font-medium">{m.model}</TableCell>
-            <TableCell>{percent(m.quality)}</TableCell>
-            <TableCell>{percent(m.pass_rate)}</TableCell>
-            <TableCell>{percent(m.consistency)}</TableCell>
-            <TableCell>{m.latency_ms === null ? "—" : RESULTS_COPY.ms(m.latency_ms)}</TableCell>
-            <TableCell>{m.cost === null ? "—" : formatCost(m.cost)}</TableCell>
-            <TableCell>{m.cost_per_call === null ? "—" : formatCost(m.cost_per_call)}</TableCell>
-            <TableCell className={m.failed_calls ? "text-destructive" : undefined}>
-              {m.failed_calls}
-            </TableCell>
+    <div className="border-border overflow-hidden rounded-lg border">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-subtle">
+            <TableHead>{c.model}</TableHead>
+            <TableHead>{c.quality}</TableHead>
+            <TableHead>{c.passRate}</TableHead>
+            <TableHead title={RESULTS_COPY.consistencyHint}>{c.consistency}</TableHead>
+            <TableHead>{c.latency}</TableHead>
+            <TableHead>{c.cost}</TableHead>
+            <TableHead>{c.perCall}</TableHead>
+            <TableHead>{c.failed}</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {models.map((m) => (
+            <TableRow key={m.model_profile_id}>
+              <TableCell className="font-medium">{m.model}</TableCell>
+              <Cell models={models} model={m} column="quality">
+                {percent(m.quality)}
+              </Cell>
+              <Cell models={models} model={m} column="pass_rate">
+                {percent(m.pass_rate)}
+              </Cell>
+              <Cell models={models} model={m} column="consistency">
+                {percent(m.consistency)}
+              </Cell>
+              <Cell models={models} model={m} column="latency_ms">
+                {m.latency_ms === null ? "—" : RESULTS_COPY.ms(m.latency_ms)}
+              </Cell>
+              <TableCell className="tabular-nums">{m.cost === null ? "—" : formatCost(m.cost)}</TableCell>
+              <Cell models={models} model={m} column="cost_per_call">
+                {m.cost_per_call === null ? "—" : formatCost(m.cost_per_call)}
+              </Cell>
+              <TableCell
+                className={cn(
+                  "tabular-nums",
+                  m.failed_calls ? "text-danger-strong font-semibold" : undefined,
+                )}
+              >
+                {m.failed_calls}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   )
 }
 
 export function PassRateChart({ models }: { models: ModelMetricsOut[] }) {
   return (
-    <figure className="flex flex-col gap-2" aria-label={RESULTS_COPY.chartTitle}>
-      <figcaption className="text-sm font-medium">{RESULTS_COPY.chartTitle}</figcaption>
-      {models.map((m) => (
-        <div key={m.model_profile_id} className="grid grid-cols-[10rem_1fr_3rem] items-center gap-3 text-sm">
-          <span className="truncate">{m.model}</span>
-          <div className="bg-secondary h-3 overflow-hidden rounded-full">
-            <div
-              className="h-full bg-[var(--brand-accent)]"
-              style={{ width: `${Math.round(m.pass_rate * 100)}%` }}
-            />
+    <figure className="flex flex-col gap-3" aria-label={RESULTS_COPY.chartTitle}>
+      <figcaption className="text-sm font-semibold">{RESULTS_COPY.chartTitle}</figcaption>
+      {models.map((m) => {
+        const passed = Math.round(m.pass_rate * m.cases)
+        return (
+          <div
+            key={m.model_profile_id}
+            className="group relative grid grid-cols-[8rem_1fr_3rem] items-center gap-3 text-sm"
+          >
+            <span className="text-text-secondary truncate">{m.model}</span>
+            <div className="bg-chart-track h-4 rounded-sm">
+              <div
+                className="bg-chart-1 h-full rounded-r-[4px]"
+                style={{ width: `${Math.max(Math.round(m.pass_rate * 100), 0)}%` }}
+              />
+            </div>
+            <span className="text-right font-medium tabular-nums">{percent(m.pass_rate)}</span>
+            <span
+              role="tooltip"
+              className="bg-foreground text-background pointer-events-none absolute -top-8 left-32 z-10 hidden rounded-md px-2 py-1 text-xs whitespace-nowrap group-hover:block"
+            >
+              {m.model}: {passed} of {m.cases} passed
+            </span>
           </div>
-          <span className="text-right">{percent(m.pass_rate)}</span>
-        </div>
-      ))}
+        )
+      })}
     </figure>
   )
 }

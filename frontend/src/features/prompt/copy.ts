@@ -3,6 +3,16 @@ export const PROMPT_COPY = {
   title: "Write the prompt to test",
   subtitle:
     "Fill in a system prompt, a user prompt, or both. Use {{ name }} for anything that changes per test case, for example {{ ticket }}.",
+  howItWorks: [
+    "Write the instructions (system prompt), the message per case (user prompt), or both.",
+    "Put anything that changes per case in {{ double braces }}, e.g. {{ ticket }}.",
+    "The check on the right shows what each case needs and if it fits each model.",
+    "Saving keeps every version, so you can always compare or go back.",
+  ],
+  editorHeading: "Your prompt",
+  editorHint: "At least one of the two boxes must be filled.",
+  versionBadge: (n: number) => `Version ${n}`,
+  reviewHint: "Updates as you type.",
   name: "Prompt name",
   namePlaceholder: "e.g. Ticket triage",
   system: "System prompt",

@@ -5,12 +5,12 @@
  */
 "use client"
 
-import { Pencil, RefreshCw, Trash2 } from "lucide-react"
+import { CircleCheck, Pencil, RefreshCw, Trash2 } from "lucide-react"
 import { useMemo, useState } from "react"
 
 import { EmptyState } from "@/components/common/empty-state"
 import { ErrorMessage } from "@/components/common/error-message"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge, type Tone } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { ItemOut } from "@/lib/api/types"
@@ -22,6 +22,7 @@ import { EditCaseDialog } from "./edit-case-dialog"
 
 const REGENERABLE = new Set(Object.keys(TESTS_COPY.categories))
 const SOURCES = ["golden", "input_file", "generated"] as const
+const SOURCE_TONE: Record<string, Tone> = { golden: "gold", input_file: "info", generated: "violet" }
 
 function inputText(item: ItemOut): string {
   const values = Object.values(item.inputs)
@@ -38,7 +39,7 @@ function Answer({ item }: { item: ItemOut }) {
         ))}
       </ul>
     )
-  return <span className="text-warning text-xs">{TESTS_COPY.noAnswer}</span>
+  return <span className="text-warning-strong text-xs">{TESTS_COPY.noAnswer}</span>
 }
 
 type Props = { projectId: string; versionId: string; items: ItemOut[]; frozen: boolean }
@@ -63,26 +64,37 @@ export function CaseTable({ projectId, versionId, items, frozen }: Props) {
     actions.editItem.error
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex gap-2" role="group" aria-label="Filter by source">
+      <div
+        className="bg-subtle ring-border inline-flex self-start rounded-lg p-1 ring-1"
+        role="group"
+        aria-label="Filter by source"
+      >
         {[null, ...SOURCES].map((value) => (
-          <Button
+          <button
             key={value ?? "all"}
-            size="sm"
-            variant={source === value ? "secondary" : "ghost"}
+            type="button"
+            aria-pressed={source === value}
             onClick={() => setSource(value)}
+            className={cn(
+              "rounded-md px-3 py-1 text-sm transition-colors",
+              source === value
+                ? "bg-card text-foreground ring-border font-medium ring-1"
+                : "text-text-secondary hover:text-foreground",
+            )}
           >
             {value === null ? TESTS_COPY.filterAll : TESTS_COPY.sources[value]}
-          </Button>
+          </button>
         ))}
       </div>
       <ErrorMessage error={error} />
       {groups.map(([category, rows]) => {
         const drafts = rows.filter((r) => r.review_status === "draft").length
         return (
-          <section key={category} className="border-border rounded-lg border">
-            <header className="bg-secondary/50 flex items-center gap-3 px-3 py-2">
-              <h4 className="text-sm font-medium">{TESTS_COPY.categories[category] ?? category}</h4>
-              <span className="text-muted-foreground text-xs">{rows.length}</span>
+          <section key={category} className="border-border overflow-hidden rounded-lg border">
+            <header className="bg-subtle border-border flex items-center gap-3 border-b px-3 py-2">
+              <h4 className="text-sm font-semibold">{TESTS_COPY.categories[category] ?? category}</h4>
+              <StatusBadge tone="neutral">{rows.length}</StatusBadge>
+              {drafts ? <StatusBadge tone="warning">{TESTS_COPY.draftCount(drafts)}</StatusBadge> : null}
               <div className="ml-auto flex gap-2">
                 {!frozen && drafts > 0 ? (
                   <Button size="sm" variant="outline" onClick={() => actions.approveDrafts.mutate(category)}>
@@ -102,7 +114,7 @@ export function CaseTable({ projectId, versionId, items, frozen }: Props) {
                 <TableRow>
                   <TableHead className="w-1/2">Input</TableHead>
                   <TableHead>{TESTS_COPY.expected}</TableHead>
-                  <TableHead className="w-40" />
+                  <TableHead className="w-56" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -123,13 +135,18 @@ export function CaseTable({ projectId, versionId, items, frozen }: Props) {
                       <Answer item={item} />
                     </TableCell>
                     <TableCell className="align-top">
-                      <div className="flex flex-wrap items-center justify-end gap-1">
-                        <Badge variant="outline">{TESTS_COPY.sources[item.source]}</Badge>
+                      <div className="flex flex-nowrap items-center justify-end gap-1">
+                        <StatusBadge tone={SOURCE_TONE[item.source]}>
+                          {TESTS_COPY.sources[item.source]}
+                        </StatusBadge>
                         {item.review_status === "draft" ? (
-                          <Badge variant="secondary" className={cn("text-warning")}>
-                            {TESTS_COPY.draft}
-                          </Badge>
-                        ) : null}
+                          <StatusBadge tone="warning">{TESTS_COPY.draft}</StatusBadge>
+                        ) : (
+                          <CircleCheck
+                            className="text-success size-4"
+                            aria-label={TESTS_COPY.approvedBadge}
+                          />
+                        )}
                         {frozen ? null : (
                           <>
                             <Button

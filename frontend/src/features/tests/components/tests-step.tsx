@@ -5,6 +5,7 @@
  */
 "use client"
 
+import { CircleCheck, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
@@ -12,9 +13,10 @@ import { toast } from "sonner"
 import { EmptyState } from "@/components/common/empty-state"
 import { ErrorMessage } from "@/components/common/error-message"
 import { PageActions } from "@/components/common/page-actions"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Section } from "@/components/common/section"
+import { StatusBadge } from "@/components/common/status-badge"
+import { StepHeader } from "@/components/common/step-header"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -43,12 +45,31 @@ const DEFAULT_SIZE = 100
 
 function Approved({ version }: { version: DatasetVersionOut }) {
   return (
-    <Alert>
-      <AlertDescription>
-        <p className="font-medium">{TESTS_COPY.approvedTitle(version.version)}</p>
+    <div className="bg-success-soft ring-success/25 text-success-strong flex items-start gap-3 rounded-xl p-4 ring-1">
+      <CircleCheck className="mt-0.5 size-5 shrink-0" />
+      <div className="text-sm">
+        <p className="font-semibold">{TESTS_COPY.approvedTitle(version.version)}</p>
         <p>{TESTS_COPY.split(version.by_split.optimize ?? 0, version.by_split.holdout ?? 0)}</p>
-      </AlertDescription>
-    </Alert>
+      </div>
+    </div>
+  )
+}
+
+function Counts({ total, drafts }: { total: number; drafts: number }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      <StatusBadge tone="neutral">
+        {TESTS_COPY.total}: {total}
+      </StatusBadge>
+      {drafts ? (
+        <StatusBadge tone="warning">
+          {TESTS_COPY.needReview}: {drafts}
+        </StatusBadge>
+      ) : null}
+      <StatusBadge tone="success">
+        {TESTS_COPY.reviewed}: {total - drafts}
+      </StatusBadge>
+    </div>
   )
 }
 
@@ -171,10 +192,12 @@ export function TestsStep({ projectId }: { projectId: string }) {
 
   return (
     <div className="flex max-w-6xl flex-col gap-6">
-      <div>
-        <h2 className="text-xl font-semibold">{TESTS_COPY.title}</h2>
-        <p className="text-muted-foreground mt-1 max-w-3xl text-sm">{TESTS_COPY.subtitle}</p>
-      </div>
+      <StepHeader
+        step="tests"
+        title={TESTS_COPY.title}
+        description={TESTS_COPY.subtitle}
+        howItWorks={TESTS_COPY.howItWorks}
+      />
       <ErrorMessage
         error={prompt.error ?? version.error ?? suggestion.error ?? spec.error ?? draftSpec.error}
       />
@@ -191,67 +214,82 @@ export function TestsStep({ projectId }: { projectId: string }) {
         onConfirmed={() => undefined}
         locked={frozen || running}
       />
-      {confirmed && !frozen ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>{TESTS_COPY.generateHeading}</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-end gap-6">
-              <div className="flex w-40 flex-col gap-1.5">
-                <Label htmlFor="size">{TESTS_COPY.size}</Label>
-                <Input
-                  id="size"
-                  type="number"
-                  min={20}
-                  max={1000}
-                  value={size}
-                  disabled={goldenOnly}
-                  onChange={(e) => setSize(e.target.value)}
-                />
-              </div>
-              {hasGolden ? (
-                <label className="flex items-center gap-2 text-sm">
-                  <Checkbox checked={goldenOnly} onCheckedChange={(checked) => setGoldenOnly(checked)} />
-                  {TESTS_COPY.goldenOnly}
-                </label>
-              ) : null}
+      {!frozen ? (
+        <Section
+          number={2}
+          title={TESTS_COPY.generateHeading}
+          description={TESTS_COPY.generateHint}
+          muted={!confirmed}
+          badge={
+            running ? (
+              <StatusBadge tone="info" icon={<Loader2 className="animate-spin" />}>
+                {TESTS_COPY.generating}
+              </StatusBadge>
+            ) : current?.generation?.status === "failed" ? (
+              <StatusBadge tone="danger">{TESTS_COPY.failed}</StatusBadge>
+            ) : null
+          }
+        >
+          <div className="flex flex-wrap items-end gap-6">
+            <div className="flex w-40 flex-col gap-1.5">
+              <Label htmlFor="size">{TESTS_COPY.size}</Label>
+              <Input
+                id="size"
+                type="number"
+                min={20}
+                max={1000}
+                value={size}
+                disabled={goldenOnly || !confirmed}
+                onChange={(e) => setSize(e.target.value)}
+              />
             </div>
-            <p className="text-muted-foreground text-xs">{TESTS_COPY.sizeHint}</p>
-            {estimate.data && !goldenOnly ? (
-              <p className="text-sm">
-                {TESTS_COPY.estimate(estimate.data.cases_to_generate, estimate.data.calls)} ·{" "}
-                {TESTS_COPY.estimatedCost}:{" "}
-                {estimate.data.price_known ? (
-                  <span className="font-medium">{formatCost(estimate.data.cost)}</span>
-                ) : (
-                  <span className="text-warning">{TESTS_COPY.priceUnknown}</span>
-                )}
-              </p>
+            {hasGolden ? (
+              <label className="flex items-center gap-2 pb-1.5 text-sm">
+                <Checkbox checked={goldenOnly} onCheckedChange={(checked) => setGoldenOnly(checked)} />
+                {TESTS_COPY.goldenOnly}
+              </label>
             ) : null}
-            <ErrorMessage error={estimate.error ?? start.error} />
-            {running ? <p className="text-sm">{TESTS_COPY.progress(total)}</p> : null}
-            {current?.generation?.status === "failed" ? (
-              <p className="text-destructive text-sm">
-                {TESTS_COPY.failed}: {String(current.generation.message ?? "")}
-              </p>
+            {estimate.data && !goldenOnly && confirmed ? (
+              <div className="bg-subtle ring-border ml-auto flex items-center gap-4 rounded-lg px-4 py-2 text-sm ring-1">
+                <span className="text-text-secondary">
+                  {TESTS_COPY.estimate(estimate.data.cases_to_generate, estimate.data.calls)}
+                </span>
+                <span>
+                  {TESTS_COPY.estimatedCost}:{" "}
+                  {estimate.data.price_known ? (
+                    <span className="font-semibold">{formatCost(estimate.data.cost)}</span>
+                  ) : (
+                    <span className="text-warning-strong">{TESTS_COPY.priceUnknown}</span>
+                  )}
+                </span>
+              </div>
             ) : null}
-          </CardContent>
-        </Card>
+          </div>
+          <p className="text-text-muted text-xs">{TESTS_COPY.sizeHint}</p>
+          <ErrorMessage error={estimate.error ?? start.error} />
+          {running ? <p className="text-sm">{TESTS_COPY.progress(total)}</p> : null}
+          {current?.generation?.status === "failed" ? (
+            <p className="text-danger-strong text-sm">{String(current.generation.message ?? "")}</p>
+          ) : null}
+        </Section>
       ) : null}
       {current && total > 0 ? (
-        <section className="flex flex-col gap-3">
-          <div>
-            <h3 className="text-base font-medium">{TESTS_COPY.tableHeading}</h3>
-            <p className="text-muted-foreground text-sm">{TESTS_COPY.reviewHint}</p>
-          </div>
+        <Section
+          number={frozen ? 2 : 3}
+          title={TESTS_COPY.tableHeading}
+          description={TESTS_COPY.reviewHint}
+          action={<Counts total={total} drafts={drafts} />}
+        >
           {current.warnings.map((warning) => (
-            <p key={warning} className="text-warning text-sm">
+            <p
+              key={warning}
+              className="bg-warning-soft text-warning-strong ring-warning/25 rounded-lg p-3 text-sm ring-1"
+            >
               {warning}
             </p>
           ))}
           <CaseTable projectId={projectId} versionId={current.id} items={items.data ?? []} frozen={frozen} />
-        </section>
+        </Section>
       ) : null}
       {current && evaluators.data ? (
         <EvaluatorCard projectId={projectId} versionId={current.id} set={evaluators.data} frozen={frozen} />

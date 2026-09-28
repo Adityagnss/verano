@@ -1,6 +1,7 @@
 /**
  * The frame around every project step (DEVELOPMENT.md C3): logo and stepper on the left,
- * project name and the project's running LLM cost at the top, the step's content below.
+ * a breadcrumb with the project name and the project's running LLM cost at the top, the
+ * step's content below.
  * When some calls used models with an unknown price, the cost says so instead of looking
  * complete.
  */
@@ -11,6 +12,7 @@ import { usePathname } from "next/navigation"
 import type { ReactNode } from "react"
 
 import { COMMON_COPY } from "@/components/common/copy"
+import { Logo } from "@/components/common/logo"
 import { type StepItem, type StepState, Stepper } from "@/components/common/stepper"
 import { formatCost } from "@/lib/format"
 import { type StepKey, STEPS } from "@/lib/steps"
@@ -32,7 +34,7 @@ function stepItems(projectId: string, pathname: string, done: Partial<Record<Ste
           : step.key === firstOpen
             ? "next"
             : "upcoming"
-    return { key: step.key, number: index + 1, label: step.label, href, state }
+    return { key: step.key, number: index + 1, label: step.label, hint: step.hint, href, state }
   })
 }
 
@@ -41,11 +43,12 @@ function CostBadge({ projectId }: { projectId: string }) {
   const unknown = (summary?.calls_with_unknown_price ?? 0) > 0
   return (
     <span
-      className="text-muted-foreground text-sm"
+      className="text-text-secondary inline-flex items-baseline gap-1.5 text-sm"
       title={unknown ? COMMON_COPY.unknownPriceNote : undefined}
     >
-      {COMMON_COPY.cost}: <span className="text-foreground font-medium">{formatCost(summary?.cost)}</span>
-      {unknown ? <span className="text-warning"> +?</span> : null}
+      {COMMON_COPY.costSpent}
+      <span className="text-foreground font-semibold tabular-nums">{formatCost(summary?.cost)}</span>
+      {unknown ? <span className="text-warning-strong">+?</span> : null}
     </span>
   )
 }
@@ -55,22 +58,28 @@ export function ProjectShell({ projectId, children }: { projectId: string; child
   const project = useProject(projectId).data
   const done = useStepCompletion(projectId).data ?? {}
   return (
-    <div className="grid min-h-screen grid-cols-[15rem_1fr]">
-      <aside className="border-border bg-card flex flex-col gap-6 border-r px-3 py-5">
-        <Link href="/projects" className="px-3 text-lg font-semibold tracking-tight">
-          {COMMON_COPY.appName}
+    <div className="grid min-h-screen grid-cols-[17.5rem_1fr]">
+      <aside className="border-border bg-card sticky top-0 flex h-screen flex-col gap-7 border-r px-3 py-5">
+        <Link href="/projects" className="px-3">
+          <Logo />
         </Link>
         <Stepper steps={stepItems(projectId, pathname, done)} />
       </aside>
       <div className="flex min-w-0 flex-col">
-        <header className="border-border flex items-center justify-between border-b px-8 py-4">
-          <h1 className="truncate text-base font-medium">{project?.name ?? COMMON_COPY.loading}</h1>
-          <div className="flex items-center gap-6">
+        <header className="border-border bg-card/80 sticky top-0 z-10 flex items-center justify-between border-b px-8 py-3 backdrop-blur">
+          <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-sm">
+            <Link href="/projects" className="text-text-muted hover:text-foreground">
+              {COMMON_COPY.projects}
+            </Link>
+            <span className="text-text-muted">/</span>
+            <h1 className="truncate font-medium">{project?.name ?? COMMON_COPY.loading}</h1>
+          </nav>
+          <div className="flex items-center gap-4">
             <CostBadge projectId={projectId} />
             <AccountMenu />
           </div>
         </header>
-        <main className="flex-1 px-8 py-6">{children}</main>
+        <main className="flex-1 px-10 py-8">{children}</main>
       </div>
     </div>
   )

@@ -10,8 +10,10 @@ import { toast } from "sonner"
 
 import { ErrorMessage } from "@/components/common/error-message"
 import { PageActions } from "@/components/common/page-actions"
+import { Section } from "@/components/common/section"
+import { StatusBadge } from "@/components/common/status-badge"
+import { StepHeader } from "@/components/common/step-header"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -86,14 +88,27 @@ export function PromptStep({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="flex max-w-6xl flex-col gap-6">
-      <div>
-        <h2 className="text-xl font-semibold">{PROMPT_COPY.title}</h2>
-        <p className="text-muted-foreground mt-1 max-w-3xl text-sm">{PROMPT_COPY.subtitle}</p>
-      </div>
+    <div className="flex max-w-7xl flex-col gap-6">
+      <StepHeader
+        step="prompt"
+        title={PROMPT_COPY.title}
+        description={PROMPT_COPY.subtitle}
+        howItWorks={PROMPT_COPY.howItWorks}
+      />
       <ErrorMessage error={current.error} />
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="flex flex-col gap-5">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
+        <Section
+          number={1}
+          title={PROMPT_COPY.editorHeading}
+          description={PROMPT_COPY.editorHint}
+          badge={
+            current.data ? (
+              <StatusBadge tone="neutral">
+                {PROMPT_COPY.versionBadge(current.data.latest_version.version)}
+              </StatusBadge>
+            ) : null
+          }
+        >
           {current.data ? null : (
             <div className="flex max-w-sm flex-col gap-1.5">
               <Label htmlFor="name">{PROMPT_COPY.name}</Label>
@@ -156,15 +171,15 @@ export function PromptStep({ projectId }: { projectId: string }) {
               <Input id="change_reason" value={draft.change_reason} onChange={set("change_reason")} />
             </div>
           ) : null}
-        </div>
-        <Card size="sm" className="h-fit lg:sticky lg:top-4">
-          <CardHeader>
-            <CardTitle>{PROMPT_COPY.review}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <PromptCheck result={empty ? undefined : inspect.data} error={empty ? null : inspect.error} />
-          </CardContent>
-        </Card>
+        </Section>
+        <Section
+          number={2}
+          title={PROMPT_COPY.review}
+          description={PROMPT_COPY.reviewHint}
+          className="h-fit lg:sticky lg:top-20"
+        >
+          <PromptCheck result={empty ? undefined : inspect.data} error={empty ? null : inspect.error} />
+        </Section>
       </div>
       <PageActions
         summary={

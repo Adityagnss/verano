@@ -11,9 +11,9 @@ export function EmptyState({
   action?: ReactNode
 }) {
   return (
-    <div className="border-border flex flex-col items-center gap-3 rounded-lg border border-dashed px-6 py-12 text-center">
-      <h3 className="text-base font-medium">{title}</h3>
-      <p className="text-muted-foreground max-w-md text-sm">{description}</p>
+    <div className="border-border-strong bg-card flex flex-col items-center gap-3 rounded-xl border border-dashed px-6 py-12 text-center">
+      <h3 className="text-base font-semibold">{title}</h3>
+      <p className="text-text-secondary max-w-md text-sm">{description}</p>
       {action}
     </div>
   )

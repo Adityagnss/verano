@@ -7,7 +7,7 @@
 import { Loader2, Trash2 } from "lucide-react"
 
 import { EmptyState } from "@/components/common/empty-state"
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge, type Tone } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -19,6 +19,15 @@ import { isBusy, useDeleteFile, useSelectSheet } from "../hooks"
 import { MappingPanel, Report } from "./mapping-panel"
 
 const MAPPABLE = new Set(["ready", "validated", "imported"])
+const DONE = new Set(["imported", "extracted"])
+const ACTION = new Set(["ready", "validated"])
+
+function statusTone(file: InputFileOut): Tone {
+  if (file.status === "failed") return "danger"
+  if (DONE.has(file.status)) return "success"
+  if (ACTION.has(file.status)) return "brand"
+  return "info"
+}
 
 function Detail({ file }: { file: InputFileOut }) {
   const parts = [DATA_COPY.kind[file.kind]]
@@ -46,10 +55,12 @@ function FileCard({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <span className="truncate">{file.filename}</span>
-          <Badge variant={file.status === "failed" ? "destructive" : "secondary"}>
-            {isBusy(file) ? <Loader2 className="animate-spin" /> : null}
+          <StatusBadge
+            tone={statusTone(file)}
+            icon={isBusy(file) ? <Loader2 className="animate-spin" /> : null}
+          >
             {DATA_COPY.status[file.status]}
-          </Badge>
+          </StatusBadge>
         </CardTitle>
         <CardDescription>
           <Detail file={file} />
@@ -67,7 +78,7 @@ function FileCard({
       </CardHeader>
       {file.error_message || (rows && (MAPPABLE.has(file.status) || sheets.length > 1)) ? (
         <CardContent className="flex flex-col gap-4">
-          {file.error_message ? <p className="text-destructive text-sm">{file.error_message}</p> : null}
+          {file.error_message ? <p className="text-danger-strong text-sm">{file.error_message}</p> : null}
           {rows && sheets.length > 1 ? (
             <div className="flex max-w-xs flex-col gap-1.5">
               <Label htmlFor={`${file.id}-sheet`}>{DATA_COPY.sheet}</Label>

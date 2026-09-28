@@ -3,7 +3,15 @@ export const KEYS_COPY = {
   title: "Connect your model providers",
   subtitle:
     "Add a key for each provider you want to test. Verano checks the key right away and lists the chat models it can reach. Keys are encrypted and only their last 4 characters are ever shown.",
-  providersHeading: "Providers",
+  howItWorks: [
+    "Add a key for each provider you use (or connect local Ollama, free).",
+    "Verano checks the key with a free request and lists its chat models.",
+    "Tick the models you want to compare, then save your choice.",
+    "Keys are stored encrypted; only the last 4 characters are ever shown.",
+  ],
+  providersHeading: "Add a provider",
+  providersDescription: "Pick a provider and paste its API key. Nothing is spent to check it.",
+  keysDescription: "Keys saved for this project.",
   addKey: "Add key",
   connect: "Connect",
   free: "Free · local",

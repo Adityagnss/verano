@@ -4,14 +4,14 @@
  */
 "use client"
 
+import { CircleCheck } from "lucide-react"
 import { useState } from "react"
 import { toast } from "sonner"
 
 import { ErrorMessage } from "@/components/common/error-message"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
+import { Section } from "@/components/common/section"
+import { StatusBadge } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { NativeSelect } from "@/components/ui/select"
@@ -103,15 +103,10 @@ function SpecForm({
 
   return (
     <div className="flex flex-col gap-4">
-      {!editing ? (
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary">{TESTS_COPY.specConfirmed}</Badge>
-          {locked ? null : (
-            <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
-              {TESTS_COPY.editSpec}
-            </Button>
-          )}
-        </div>
+      {!editing && !locked ? (
+        <Button variant="outline" size="sm" className="self-start" onClick={() => setEditing(true)}>
+          {TESTS_COPY.editSpec}
+        </Button>
       ) : null}
       <fieldset disabled={!editing} className="grid gap-4 md:grid-cols-2">
         <div className="flex flex-col gap-1.5">
@@ -168,46 +163,58 @@ function SpecForm({
 }
 
 export function TaskSpecCard({ projectId, spec, models, chosen, onChoose, onConfirmed, locked }: Props) {
+  const status = spec?.status
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{TESTS_COPY.specHeading}</CardTitle>
-        <CardDescription>{TESTS_COPY.specHint}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        <div className="flex max-w-md flex-col gap-1.5">
-          <Label htmlFor="generator">{TESTS_COPY.generator}</Label>
-          <NativeSelect
-            id="generator"
-            value={chosen}
-            onChange={(e) => onChoose(e.target.value)}
-            disabled={locked}
-          >
-            {models.map((model) => (
-              <option key={modelKey(model)} value={modelKey(model)}>
-                {model.model}
-              </option>
-            ))}
-          </NativeSelect>
+    <Section
+      number={1}
+      title={TESTS_COPY.specHeading}
+      description={TESTS_COPY.specHint}
+      badge={
+        status === "confirmed" ? (
+          <StatusBadge tone="success" icon={<CircleCheck />}>
+            {TESTS_COPY.specConfirmed}
+          </StatusBadge>
+        ) : status === "draft" ? (
+          <StatusBadge tone="warning">{TESTS_COPY.specDraft}</StatusBadge>
+        ) : null
+      }
+    >
+      <div className="flex max-w-md flex-col gap-1.5">
+        <Label htmlFor="generator">{TESTS_COPY.generator}</Label>
+        <NativeSelect
+          id="generator"
+          value={chosen}
+          onChange={(e) => onChoose(e.target.value)}
+          disabled={locked}
+        >
+          {models.map((model) => (
+            <option key={modelKey(model)} value={modelKey(model)}>
+              {model.model}
+            </option>
+          ))}
+        </NativeSelect>
+        <p className="text-text-muted text-xs">{TESTS_COPY.generatorHint}</p>
+      </div>
+      {spec?.warnings.map((warning) => (
+        <div
+          key={warning}
+          className="bg-warning-soft text-warning-strong ring-warning/25 rounded-lg p-3 text-sm ring-1"
+        >
+          <span className="font-medium">{TESTS_COPY.generatorWarning}: </span>
+          {warning}
         </div>
-        {spec?.warnings.map((warning) => (
-          <Alert key={warning}>
-            <AlertDescription>
-              <span className="text-warning font-medium">{TESTS_COPY.generatorWarning}: </span>
-              {warning}
-            </AlertDescription>
-          </Alert>
-        ))}
-        {spec ? (
-          <SpecForm
-            key={`${spec.id}-${spec.status}`}
-            projectId={projectId}
-            spec={spec}
-            locked={locked}
-            onConfirmed={onConfirmed}
-          />
-        ) : null}
-      </CardContent>
-    </Card>
+      ))}
+      {spec ? (
+        <SpecForm
+          key={`${spec.id}-${spec.status}`}
+          projectId={projectId}
+          spec={spec}
+          locked={locked}
+          onConfirmed={onConfirmed}
+        />
+      ) : (
+        <p className="text-text-secondary text-sm">{TESTS_COPY.specEmpty}</p>
+      )}
+    </Section>
   )
 }

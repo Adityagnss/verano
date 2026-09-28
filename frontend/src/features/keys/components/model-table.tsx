@@ -137,8 +137,8 @@ export function ModelTable({ models, providerNames, selected, onToggle }: Props)
         className="max-w-sm"
         aria-label={KEYS_COPY.search}
       />
-      <div className="border-border overflow-hidden rounded-lg border text-sm">
-        <div className={`${GRID} bg-secondary text-muted-foreground h-10 text-xs font-medium`}>
+      <div className="border-border bg-card overflow-hidden rounded-lg border text-sm">
+        <div className={`${GRID} bg-subtle text-text-secondary h-10 text-xs font-medium`}>
           {table.getHeaderGroups()[0].headers.map((header) => (
             <div key={header.id}>
               <table.FlexRender header={header} />
@@ -158,7 +158,7 @@ export function ModelTable({ models, providerNames, selected, onToggle }: Props)
                 <div
                   key={row.id}
                   role="listitem"
-                  className={`${GRID} border-border absolute inset-x-0 border-b`}
+                  className={`${GRID} border-border hover:bg-subtle/60 absolute inset-x-0 border-b transition-colors`}
                   style={{ height: item.size, transform: `translateY(${item.start}px)` }}
                 >
                   {row.getAllCells().map((cell) => (

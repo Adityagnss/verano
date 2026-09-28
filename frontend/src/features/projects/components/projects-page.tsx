@@ -1,11 +1,13 @@
 /** The projects list, with a one-field form to create a project and open its first step. */
 "use client"
 
+import { ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import type { FormEvent } from "react"
 
 import { EmptyState } from "@/components/common/empty-state"
+import { Logo } from "@/components/common/logo"
 import { ErrorMessage } from "@/components/common/error-message"
 import { PageActions } from "@/components/common/page-actions"
 import { Button } from "@/components/ui/button"
@@ -33,11 +35,14 @@ export function ProjectsPage() {
 
   const items = projects.data?.items ?? []
   return (
-    <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 px-6 py-10">
+    <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 py-10">
       <header className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">{PROJECTS_COPY.title}</h1>
-          <p className="text-muted-foreground mt-1 text-sm">{PROJECTS_COPY.subtitle}</p>
+        <div className="flex items-start gap-3">
+          <Logo size={32} className="[&>span]:hidden" />
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">{PROJECTS_COPY.title}</h1>
+            <p className="text-text-secondary mt-1 text-sm">{PROJECTS_COPY.subtitle}</p>
+          </div>
         </div>
         <AccountMenu />
       </header>
@@ -48,9 +53,12 @@ export function ProjectsPage() {
       <div className="grid gap-3 sm:grid-cols-2">
         {items.map((project) => (
           <Link key={project.id} href={`/projects/${project.id}/${FIRST_STEP}`}>
-            <Card className="transition-colors hover:border-[var(--brand-accent)]">
+            <Card className="hover:ring-primary/40 transition-shadow hover:shadow-md">
               <CardHeader>
-                <CardTitle>{project.name}</CardTitle>
+                <CardTitle className="flex items-center justify-between gap-2">
+                  {project.name}
+                  <ArrowRight className="text-text-muted size-4" />
+                </CardTitle>
                 {project.description ? <CardDescription>{project.description}</CardDescription> : null}
               </CardHeader>
             </Card>
@@ -60,7 +68,7 @@ export function ProjectsPage() {
       <form onSubmit={(event) => void submit(event).catch(() => undefined)}>
         <PageActions
           summary={
-            <div className="flex max-w-md flex-col gap-1.5">
+            <div className="flex w-full max-w-lg flex-col gap-1.5">
               <Label htmlFor="name">{PROJECTS_COPY.nameLabel}</Label>
               <Input
                 id="name"

@@ -3,6 +3,15 @@ export const DATA_COPY = {
   title: "Add your data (optional)",
   subtitle:
     "Real data makes the test cases realistic. Everything here is optional: without data, Verano writes the test cases for you.",
+  howItWorks: [
+    "Golden set: inputs with the correct answers. Used as they are.",
+    "Input files: real inputs without answers. Answers are drafted for you to check.",
+    "Reference documents: test cases are written from them and checked against them.",
+    "No data? Skip this step and Verano writes all the test cases.",
+  ],
+  uploadHeading: "Upload files",
+  uploadHint: "Drop in any mix of the three; all are optional.",
+  filesHint: "Match each file's columns to your prompt, check the rows, then import.",
   cards: {
     golden: {
       title: "Golden set",

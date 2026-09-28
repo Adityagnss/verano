@@ -3,6 +3,16 @@ export const RUN_COPY = {
   title: "Run your test cases on each model",
   subtitle:
     "Every test case is sent to every chosen model. Run a model more than once to see how consistent it is. You see the cost before anything starts.",
+  howItWorks: [
+    "Every approved test case is sent to every model you include.",
+    "Run a model 2+ times to see how consistent it is.",
+    "Check the cost preview and set a budget cap if you like.",
+    "Results are scored automatically when the run finishes.",
+  ],
+  modelsHeading: "Choose models and settings",
+  modelsHint: "The models you ticked in step 1. Untick any you want to leave out of this run.",
+  previewHint: "Nothing is spent until you press Start experiment.",
+  runningHint: "Updates live while the models answer.",
   notApproved: "Approve your test cases first (step 4).",
   noModels: "Pick the models to compare in step 1.",
   columns: { model: "Model", runs: "Runs", temperature: "Temperature", maxTokens: "Max reply tokens" },

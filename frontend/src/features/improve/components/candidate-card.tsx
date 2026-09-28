@@ -1,5 +1,5 @@
 /** One candidate prompt: its strategy, why each change was made, the diff, and its score. */
-import { Badge } from "@/components/ui/badge"
+import { StatusBadge } from "@/components/common/status-badge"
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { CandidateOut } from "@/lib/api/types"
 
@@ -20,17 +20,21 @@ function DiffLine({ line }: { line: string }) {
 
 export function CandidateCard({ candidate, baseline }: { candidate: CandidateOut; baseline: number | null }) {
   return (
-    <Card size="sm">
+    <Card size="sm" className="shadow-none">
       <CardHeader>
         <CardTitle className="capitalize">{candidate.strategy}</CardTitle>
         <CardAction>
-          <Badge
-            variant={
-              candidate.outcome === "better" || candidate.outcome === "accepted" ? "default" : "secondary"
+          <StatusBadge
+            tone={
+              candidate.outcome === "better" || candidate.outcome === "accepted"
+                ? "success"
+                : candidate.outcome === "pending"
+                  ? "info"
+                  : "neutral"
             }
           >
             {IMPROVE_COPY.outcome[candidate.outcome]}
-          </Badge>
+          </StatusBadge>
         </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 text-sm">
@@ -46,7 +50,7 @@ export function CandidateCard({ candidate, baseline }: { candidate: CandidateOut
             <li key={index}>{String(reason)}</li>
           ))}
         </ul>
-        <pre className="bg-secondary max-h-72 overflow-auto rounded-lg p-3 font-mono text-xs whitespace-pre-wrap">
+        <pre className="bg-card ring-border max-h-72 overflow-auto rounded-lg p-2 font-mono text-xs whitespace-pre-wrap ring-1">
           {candidate.diff.split("\n").map((line, index) => (
             <DiffLine key={index} line={line} />
           ))}

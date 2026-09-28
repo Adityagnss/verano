@@ -8,6 +8,8 @@ import { useRouter } from "next/navigation"
 
 import { ErrorMessage } from "@/components/common/error-message"
 import { PageActions } from "@/components/common/page-actions"
+import { Section } from "@/components/common/section"
+import { StepHeader } from "@/components/common/step-header"
 import { Button } from "@/components/ui/button"
 import { useCurrentPrompt } from "@/features/prompt/hooks"
 
@@ -24,17 +26,20 @@ export function DataStep({ projectId }: { projectId: string }) {
   const hasData = (files.data ?? []).some((f) => f.status === "imported" || f.status === "extracted")
   const next = () => router.push(`/projects/${projectId}/tests`)
   return (
-    <div className="flex max-w-5xl flex-col gap-8">
-      <div>
-        <h2 className="text-xl font-semibold">{DATA_COPY.title}</h2>
-        <p className="text-muted-foreground mt-1 max-w-3xl text-sm">{DATA_COPY.subtitle}</p>
-      </div>
+    <div className="flex max-w-6xl flex-col gap-6">
+      <StepHeader
+        step="data"
+        title={DATA_COPY.title}
+        description={DATA_COPY.subtitle}
+        howItWorks={DATA_COPY.howItWorks}
+      />
       <ErrorMessage error={files.error ?? prompt.error} />
-      <UploadCards projectId={projectId} />
-      <section className="flex flex-col gap-3">
-        <h3 className="text-sm font-medium">{DATA_COPY.filesHeading}</h3>
+      <Section number={1} title={DATA_COPY.uploadHeading} description={DATA_COPY.uploadHint}>
+        <UploadCards projectId={projectId} />
+      </Section>
+      <Section number={2} title={DATA_COPY.filesHeading} description={DATA_COPY.filesHint}>
         <FileList projectId={projectId} files={files.data ?? []} promptVersionId={promptVersionId} />
-      </section>
+      </Section>
       <PageActions
         summary={
           hasData ? null : (

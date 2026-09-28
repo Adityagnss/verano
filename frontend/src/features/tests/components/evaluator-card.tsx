@@ -8,8 +8,9 @@ import { useState } from "react"
 import { toast } from "sonner"
 
 import { ErrorMessage } from "@/components/common/error-message"
+import { Section } from "@/components/common/section"
+import { StatusBadge } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import type { EvaluatorSetVersionOut } from "@/lib/api/types"
@@ -57,15 +58,21 @@ export function EvaluatorCard({
   }
 
   return (
-    <Card size="sm">
-      <CardHeader>
-        <CardTitle>{TESTS_COPY.evaluatorsHeading}</CardTitle>
-        <CardDescription>{TESTS_COPY.evaluatorsHint}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-3">
+    <Section
+      number={frozen ? 3 : 4}
+      title={TESTS_COPY.evaluatorsHeading}
+      description={TESTS_COPY.evaluatorsHint}
+    >
+      <div className="grid gap-3 md:grid-cols-2">
         {set.evaluators.map((e) => (
-          <div key={e.id} className="flex flex-col gap-1.5">
-            <span className="text-sm font-medium">{e.evaluator_name.replaceAll("_", " ")}</span>
+          <div key={e.id} className="bg-subtle ring-border flex flex-col gap-1.5 rounded-lg p-3 ring-1">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium capitalize">{e.evaluator_name.replaceAll("_", " ")}</span>
+              <StatusBadge tone={(e.config as Config).kind === "deepeval" ? "violet" : "neutral"}>
+                {(e.config as Config).kind === "deepeval" ? TESTS_COPY.judgeKind : TESTS_COPY.ruleKind}
+              </StatusBadge>
+              {e.required ? <StatusBadge tone="brand">{TESTS_COPY.requiredKind}</StatusBadge> : null}
+            </div>
             {e.position in criteria ? (
               <>
                 <Label htmlFor={`criteria-${e.position}`} className="text-muted-foreground text-xs">
@@ -82,13 +89,13 @@ export function EvaluatorCard({
             ) : null}
           </div>
         ))}
-        <ErrorMessage error={edit.error} />
-        {changed && !frozen ? (
-          <Button className="self-start" variant="outline" onClick={() => void save().catch(() => undefined)}>
-            {TESTS_COPY.saveEvaluators}
-          </Button>
-        ) : null}
-      </CardContent>
-    </Card>
+      </div>
+      <ErrorMessage error={edit.error} />
+      {changed && !frozen ? (
+        <Button className="self-start" variant="outline" onClick={() => void save().catch(() => undefined)}>
+          {TESTS_COPY.saveEvaluators}
+        </Button>
+      ) : null}
+    </Section>
   )
 }

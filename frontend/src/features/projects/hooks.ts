@@ -1,6 +1,7 @@
 /**
  * Project hooks: list, create, one project, its running cost, and step completion (a key
- * with selected models, a saved prompt, imported data, approved test cases).
+ * with selected models, a saved prompt, imported data, approved test cases, an experiment
+ * started, one finished and scored, an improvement tested).
  */
 "use client"
 
@@ -56,7 +57,7 @@ export function useStepCompletion(projectId: string) {
   return useQuery({
     queryKey: ["projects", projectId, "step-completion"],
     queryFn: async () => {
-      const [models, prompts, files, version] = await Promise.all([
+      const [models, prompts, files, version, experiments] = await Promise.all([
         call(() =>
           api.GET("/api/v1/projects/{project_id}/models", {
             params: { path: { project_id: projectId }, query: { selected: true, limit: 1 } },
@@ -73,12 +74,21 @@ export function useStepCompletion(projectId: string) {
           }),
         ),
         optional(() => call(() => api.GET("/api/v1/projects/{project_id}/dataset-versions/current", params))),
+        call(() =>
+          api.GET("/api/v1/projects/{project_id}/experiments", {
+            params: { path: { project_id: projectId }, query: { limit: 20 } },
+          }),
+        ),
       ])
+      const manual = experiments.items.filter((e) => e.origin === "manual")
       return {
         keys: models.items.length > 0,
         prompt: prompts.items.length > 0,
         data: files.items.some((file) => file.status === "imported" || file.status === "extracted"),
         tests: version?.status === "approved",
+        run: manual.length > 0,
+        results: manual.some((e) => e.status === "completed"),
+        improve: experiments.items.some((e) => e.origin === "optimization" && e.status === "completed"),
       }
     },
   })
