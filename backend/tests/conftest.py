@@ -72,6 +72,7 @@ def settings(infra: Infra, tmp_path_factory: pytest.TempPathFactory) -> Settings
         mock_models_path=FIXTURES / "mock_models.yaml",
         mock_scripted_dir=FIXTURES / "scripted/responses",
         mock_answer_key_path=FIXTURES / "scripted/answer_key.yaml",
+        embedder="lexical",
         ollama_base_url="http://ollama.test:11434",
         auth_rate_limit_per_ip=10,
         auth_rate_limit_per_email=4,

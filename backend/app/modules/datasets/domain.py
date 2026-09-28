@@ -18,6 +18,8 @@ No I/O.
 
 import hashlib
 import json
+import math
+import random
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass, field
@@ -30,6 +32,8 @@ from app.modules.datasets.schemas import (
     FileFormat,
     InputFileKind,
     IssueKind,
+    ItemSource,
+    Split,
     ValidationIssue,
     ValidationReport,
 )
@@ -242,3 +246,38 @@ class ReportBuilder:
             ],
             warnings=warnings,
         )
+
+
+@dataclass(frozen=True)
+class SplitCandidate:
+    id: Any
+    category: str
+    source: ItemSource
+
+
+def assign_splits(items: list[SplitCandidate], holdout_ratio: float, seed: int) -> dict[Any, Split]:
+    """
+    Stratified optimize / holdout split (DEVELOPMENT.md 2.4). Each (category, source)
+    stratum gets its share of the holdout; the rounding remainders go to the strata with
+    the largest fractional parts, so the overall holdout is round(N x ratio). If golden rows
+    exist, at least one lands in the holdout. Deterministic for a given seed.
+    """
+    strata: dict[tuple[str, ItemSource], list[SplitCandidate]] = {}
+    for item in sorted(items, key=lambda i: str(i.id)):
+        strata.setdefault((item.category, item.source), []).append(item)
+    rng = random.Random(seed)
+    for members in strata.values():
+        rng.shuffle(members)
+    exact = {key: len(members) * holdout_ratio for key, members in strata.items()}
+    counts = {key: math.floor(value) for key, value in exact.items()}
+    remainder = round(len(items) * holdout_ratio) - sum(counts.values())
+    for key in sorted(exact, key=lambda k: (counts[k] - exact[k], k[0], k[1]))[:remainder]:
+        counts[key] += 1
+    golden = [key for key in strata if key[1] is ItemSource.GOLDEN]
+    if golden and not any(counts[key] for key in golden):
+        counts[max(golden, key=lambda k: len(strata[k]))] += 1
+    return {
+        item.id: Split.HOLDOUT if index < counts[key] else Split.OPTIMIZE
+        for key, members in strata.items()
+        for index, item in enumerate(members)
+    }

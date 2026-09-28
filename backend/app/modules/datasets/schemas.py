@@ -8,6 +8,8 @@ dataset items). Reference documents go `uploaded → extracting → extracted`. 
 end in `failed`, always with a message that says what to do.
 A file is a golden set when its mapping includes an expected output or a rubric;
 otherwise its rows are raw inputs whose answers will be drafted (DEVELOPMENT.md 2.2).
+The review schemas (items, filters, bulk approval, the version summary) serve the Review &
+Approve step (DEVELOPMENT.md 2.4).
 """
 
 import uuid
@@ -15,7 +17,7 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class InputFileKind(StrEnum):
@@ -184,3 +186,75 @@ class StoredFile(BaseModel):
     format: FileFormat
     storage_key: str
     filename: str
+
+
+class ItemOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    dataset_version_id: uuid.UUID
+    inputs: dict[str, Any]
+    expected_output: str | None
+    rubric: list[Any] | None
+    category: str
+    tags: list[Any]
+    source: ItemSource
+    review_status: ReviewStatus
+    split: Split | None
+    input_file_id: uuid.UUID | None
+    source_row: int | None
+    context: list[Any]
+    extra: dict[str, Any]
+    position: int
+
+
+class ItemFilter(BaseModel):
+    source: ItemSource | None = None
+    category: str | None = None
+    review_status: ReviewStatus | None = None
+    split: Split | None = None
+
+
+class ItemCreate(BaseModel):
+    inputs: dict[str, Any]
+    expected_output: str | None = None
+    rubric: list[str] | None = None
+    category: str = Field(default="happy_path", min_length=1, max_length=64)
+    tags: list[str] = []
+
+
+class ItemUpdate(BaseModel):
+    inputs: dict[str, Any] | None = None
+    expected_output: str | None = None
+    rubric: list[str] | None = None
+    category: str | None = Field(default=None, min_length=1, max_length=64)
+    tags: list[str] | None = None
+
+
+class BulkApprove(BaseModel):
+    category: str | None = None
+    source: ItemSource | None = None
+
+
+class GroupCount(BaseModel):
+    total: int = 0
+    draft: int = 0
+    without_answer: int = 0
+
+
+class DatasetVersionOut(BaseModel):
+    id: uuid.UUID
+    dataset_id: uuid.UUID
+    version: int
+    status: DatasetVersionStatus
+    task_spec_id: uuid.UUID | None
+    evaluator_set_version_id: uuid.UUID | None
+    generation: dict[str, Any] | None
+    holdout_ratio: float | None
+    split_seed: int | None
+    approved_at: datetime | None
+    item_count: int
+    by_source: dict[str, GroupCount]
+    by_category: dict[str, GroupCount]
+    by_split: dict[str, int]
+    warnings: list[str]

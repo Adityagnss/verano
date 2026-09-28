@@ -1,0 +1,15 @@
+You draft the correct answers for test cases. ANSWERS_REQUEST
+{% if single_answer %}Each case has one correct answer: give it as "expected_output"{% if spec.allowed_outputs %}, using only one of: {{ spec.allowed_outputs | join(", ") }}{% endif %}.
+{% else %}Each case has many acceptable answers: give "rubric", a list of 2-5 short criteria a good answer meets.
+{% endif %}
+Reply as {"answers": [{"id": 0, {% if single_answer %}"expected_output": "..."{% else %}"rubric": ["..."]{% endif %}}]}, one entry per case id.
+
+=== Task ===
+{{ spec | tojson }}
+=== System prompt ===
+{{ system_template or "(none)" }}
+=== User prompt ===
+{{ user_template or "(none)" }}
+=== Cases ===
+{% for case in cases %}[{{ case.id }}] {{ case.inputs | tojson }}{% if case.context %} (source: {{ case.context | join(" ") | truncate(600) }}){% endif %}
+{% endfor %}

@@ -1,6 +1,6 @@
 """
 Reference-document use cases: extract a document's text into sections (a background job),
-and list a document's sections.
+list a document's sections, and the project's sections the Eval Generator grounds cases in.
 
 Extraction reads the stored upload through its format's extractor, which enforces the
 page, text and zip limits and the parse deadline, splits the text into sections, and
@@ -91,3 +91,6 @@ class DocumentService:
         await self._files.get_file(project, file_id)
         rows = await self._repo.sections(file_id, page)
         return to_page([SectionOut.model_validate(row) for row in rows], page, lambda item: item.id)
+
+    async def project_sections(self, project_id: uuid.UUID, limit: int) -> list[SectionOut]:
+        return [SectionOut.model_validate(row) for row in await self._repo.project_sections(project_id, limit)]

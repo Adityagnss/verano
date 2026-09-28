@@ -99,6 +99,21 @@ class Settings(BaseSettings):
     sse_keepalive_s: float = 15.0
     dataset_default_category: str = "happy_path"
     dataset_default_name: str = "Test cases"
+    dataset_holdout_ratio: float = 0.3
+    dataset_min_holdout: int = 30
+    generator_default_size: int = 100
+    generator_batch_size: int = 10
+    generator_example_rows: int = 5
+    generator_task_spec_rows: int = 10
+    generator_max_sections: int = 8
+    generator_section_chars: int = 1_500
+    generator_answer_batch_size: int = 20
+    generator_top_up_rounds: int = 2
+    generator_timeout_s: float = 3_600.0
+    embedder: str = "fastembed"
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
+    embedding_cache_dir: Path = APP_DIR.parent / "data" / "models"
+    dedupe_similarity: float = 0.92
     document_max_chars: int = 5_000_000
     token_estimate_chars_per_token: int = 4
 

@@ -1,0 +1,22 @@
+You write test cases for a prompt. CASES_REQUEST category: {{ category }}
+Write {{ count }} new, varied test inputs of this kind: {{ instruction }}
+{% if target_label %}The correct answer for every case must be the label: {{ target_label }}
+{% endif %}
+Each case has "inputs" with exactly these keys: {{ input_variables | join(", ") }}.
+Do not repeat the examples; match their style and realism.
+{% if sections %}Ground every case in one of the numbered document sections and give its number as "section".
+{% endif %}
+Reply as {"cases": [{"inputs": {...}{% if sections %}, "section": 0{% endif %}}]}.
+
+=== Task ===
+{{ spec | tojson }}
+=== System prompt ===
+{{ system_template or "(none)" }}
+=== User prompt ===
+{{ user_template or "(none)" }}
+=== Examples of real inputs ===
+{% for row in examples %}- {{ row | tojson }}
+{% else %}(none)
+{% endfor %}{% if sections %}=== Document sections ===
+{% for section in sections %}[{{ loop.index0 }}] {{ section }}
+{% endfor %}{% endif %}

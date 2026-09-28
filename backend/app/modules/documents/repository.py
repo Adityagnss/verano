@@ -8,6 +8,7 @@ from sqlalchemy import delete, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.pagination import PageParams
+from app.modules.datasets.models import InputFile
 from app.modules.documents.models import DocumentSection
 
 
@@ -25,4 +26,14 @@ class DocumentRepository:
         if page.cursor is not None:
             query = query.where(DocumentSection.id > page.cursor)
         query = query.order_by(DocumentSection.id).limit(page.limit + 1)
+        return list((await self._session.scalars(query)).all())
+
+    async def project_sections(self, project_id: uuid.UUID, limit: int) -> list[DocumentSection]:
+        query = (
+            select(DocumentSection)
+            .join(InputFile, InputFile.id == DocumentSection.input_file_id)
+            .where(InputFile.project_id == project_id)
+            .order_by(InputFile.id, DocumentSection.position)
+            .limit(limit)
+        )
         return list((await self._session.scalars(query)).all())

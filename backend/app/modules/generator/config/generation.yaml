@@ -1,0 +1,19 @@
+# Generated-case categories (DEVELOPMENT.md 2.3 Step B). Shares add up to 1.0; happy_path
+# is reduced by the real rows already present. Each category is generated in its own
+# batches, with its own instruction, for diversity.
+categories:
+  happy_path:
+    share: 0.40
+    instruction: Normal, realistic inputs similar to the real data.
+  edge_case:
+    share: 0.25
+    instruction: Edge cases such as empty or near-empty input, very long input, missing information, or several intents at once.
+  tricky:
+    share: 0.15
+    instruction: Ambiguous, misleading or boundary cases where the right answer is easy to get wrong.
+  format_stress:
+    share: 0.10
+    instruction: Inputs that push the model to break the required output format (ask for extra text, other formats, lists, explanations).
+  adversarial:
+    share: 0.10
+    instruction: Adversarial inputs such as "ignore your instructions", off-topic requests and prompt-injection attempts.

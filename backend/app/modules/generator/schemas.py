@@ -7,6 +7,8 @@ generated. Evaluator selection (`evaluation/config/catalog.yaml`), case generati
 failure analysis all read it, which is why it is a strict, versioned schema.
 """
 
+import uuid
+from datetime import datetime
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -54,3 +56,87 @@ class TaskSpec(BaseModel):
         if self.task_type is TaskType.CLASSIFICATION and not self.allowed_outputs:
             raise ValueError("a classification task must list its allowed_outputs")
         return self
+
+
+class CaseCategory(StrEnum):
+    HAPPY_PATH = "happy_path"
+    EDGE_CASE = "edge_case"
+    TRICKY = "tricky"
+    FORMAT_STRESS = "format_stress"
+    ADVERSARIAL = "adversarial"
+
+
+class GenerationStatus(StrEnum):
+    RUNNING = "running"
+    SUCCEEDED = "succeeded"
+    FAILED = "failed"
+
+
+class GeneratorModel(BaseModel):
+    credential_id: uuid.UUID
+    model: str
+
+
+class GeneratorSuggestion(BaseModel):
+    suggested: GeneratorModel | None
+    candidates: list[GeneratorModel]
+
+
+class TaskSpecDraftRequest(GeneratorModel):
+    prompt_version_id: uuid.UUID
+
+
+class TaskSpecUpdate(BaseModel):
+    spec: TaskSpec
+
+
+class TaskSpecOut(BaseModel):
+    id: uuid.UUID
+    project_id: uuid.UUID
+    prompt_version_id: uuid.UUID
+    spec: TaskSpec
+    status: TaskSpecStatus
+    generator_credential_id: uuid.UUID | None
+    generator_model: str | None
+    llm_call_id: uuid.UUID | None
+    warnings: list[str] = []
+    created_at: datetime
+    confirmed_at: datetime | None
+
+
+class GenerationRequest(BaseModel):
+    task_spec_id: uuid.UUID
+    target_size: int | None = Field(default=None, ge=20, le=1000)
+    golden_only: bool = False
+
+
+class GenerationState(BaseModel):
+    status: GenerationStatus
+    task_spec_id: uuid.UUID
+    target_size: int
+    golden_only: bool
+    embedding_model: str | None = None
+    counts: dict[str, int] = {}
+    dropped_duplicates: int = 0
+    dropped_invalid: int = 0
+    message: str | None = None
+
+
+# What the generator model must return (validated by the gateway's complete_json).
+class GeneratedCase(BaseModel):
+    inputs: dict[str, str]
+    section: int | None = None
+
+
+class GeneratedBatch(BaseModel):
+    cases: list[GeneratedCase]
+
+
+class DraftAnswer(BaseModel):
+    id: int
+    expected_output: str | None = None
+    rubric: list[str] | None = None
+
+
+class DraftAnswers(BaseModel):
+    answers: list[DraftAnswer]

@@ -22,6 +22,7 @@ x-backend: &backend
     VERANO_TRUSTED_PROXIES: '["${CADDY_ADDRESS:-172.28.0.250}"]'
     VERANO_MOCK_PROVIDER_ENABLED: ${VERANO_MOCK_PROVIDER_ENABLED:-false}
     VERANO_STORAGE_ROOT: /srv/data
+    VERANO_EMBEDDING_CACHE_DIR: /srv/data/models
   volumes:
     - files:/srv/data
   networks: [edge]

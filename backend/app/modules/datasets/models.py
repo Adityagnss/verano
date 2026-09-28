@@ -5,7 +5,9 @@ An input file is the original upload (kept in Storage under `storage_key`) plus 
 learned about it: its profile, the confirmed column mapping, the validation report and the
 outcome of its import or text extraction. Parsed rows become dataset items.
 A dataset version is editable while `draft` and frozen once
-`approved`; approval assigns every item its `split` (optimize / holdout), stratified by
+`approved`; `generation` holds the Eval Generator's settings, progress outcome and the
+embedding model behind its dedupe decisions, and `evaluator_set_version_id` the evaluator
+set frozen with it. Approval assigns every item its `split` (optimize / holdout), stratified by
 category and source. Each item records its `source` (golden / input_file / generated) and
 `review_status`, so golden answers are distinguishable and never overwritten by generation.
 """
@@ -73,6 +75,10 @@ class DatasetVersion(IdMixin, CreatedAtMixin, Base):
     task_spec_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("task_specs.id", ondelete="SET NULL"))
     holdout_ratio: Mapped[float | None]
     split_seed: Mapped[int | None]
+    generation: Mapped[dict[str, Any] | None]
+    evaluator_set_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("evaluator_set_versions.id", ondelete="SET NULL")
+    )
     approved_at: Mapped[datetime | None]
     approved_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
 

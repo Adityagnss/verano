@@ -1,0 +1,36 @@
+# Evaluators chosen automatically from the Task Spec's task type (DEVELOPMENT.md 2.3
+# Step E). `kind: rule` is ours; `kind: deepeval` runs through the DeepEval adapter with
+# judge calls through the gateway. `criteria` is the visible, editable judge rubric;
+# "{rubric}" means the case's own rubric is used. `from_spec` copies Task Spec fields
+# into the evaluator's config. The constraints evaluator is added for every task type
+# whose Task Spec lists constraints.
+defaults: {threshold: 0.5, weight: 1.0, required: false}
+constraints:
+  name: constraints
+  version: "1"
+  kind: rule
+  from_spec: [constraints]
+task_types:
+  classification:
+    - {name: exact_match, version: "1", kind: rule, threshold: 1.0, required: true, config: {normalize: true}}
+    - {name: allowed_values, version: "1", kind: rule, threshold: 1.0, required: true, from_spec: [allowed_outputs]}
+  extraction:
+    - {name: json_valid, version: "1", kind: rule, threshold: 1.0, required: true}
+    - {name: json_schema, version: "1", kind: rule, threshold: 1.0, from_spec: [output_schema]}
+    - {name: field_match, version: "1", kind: rule, threshold: 0.8}
+  summarization:
+    - {name: length, version: "1", kind: rule, threshold: 1.0}
+    - {name: g_eval_faithfulness, version: "1", kind: deepeval, config: {metric: g_eval, criteria: "Every statement in the summary is supported by the input; nothing is invented."}}
+    - {name: g_eval_coverage, version: "1", kind: deepeval, config: {metric: g_eval, criteria: "The summary covers the main points of the input."}}
+    - {name: g_eval_conciseness, version: "1", kind: deepeval, config: {metric: g_eval, criteria: "The summary is concise, with no repetition or filler."}}
+  question_answering:
+    - {name: g_eval_correctness, version: "1", kind: deepeval, config: {metric: g_eval, criteria: "The answer is factually consistent with the expected output."}}
+    - {name: answer_relevancy, version: "1", kind: deepeval, config: {metric: answer_relevancy}}
+  generation:
+    - {name: g_eval_rubric, version: "1", kind: deepeval, config: {metric: g_eval, criteria: "{rubric}"}}
+  transformation:
+    - {name: g_eval_rubric, version: "1", kind: deepeval, config: {metric: g_eval, criteria: "{rubric}"}}
+  conversation:
+    - {name: g_eval_helpfulness, version: "1", kind: deepeval, config: {metric: g_eval, criteria: "The reply helps the user with what they asked."}}
+    - {name: g_eval_tone, version: "1", kind: deepeval, config: {metric: g_eval, criteria: "The tone is polite, clear and appropriate."}}
+    - {name: g_eval_policy, version: "1", kind: deepeval, config: {metric: g_eval, criteria: "The reply follows the instructions and policies in the prompt."}}

@@ -5,19 +5,20 @@ A project's test cases live in one dataset whose latest version is the working d
 `lock_project` takes a transaction-scoped advisory lock per project, so two imports that
 start at the same time can't both create a draft. Items are written in batches with one
 multi-row INSERT each, and a file's items are replaced as a whole, which makes re-running an
-import produce the same result instead of duplicates.
+import produce the same result instead of duplicates. Item reads and writes for review
+are always scoped to one dataset version, plus an optional filter or id list.
 """
 
 import uuid
 from collections.abc import Sequence
-from typing import Any
+from typing import Any, TypeVar
 
-from sqlalchemy import delete, func, insert, select, update
+from sqlalchemy import Delete, Select, Update, delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.pagination import PageParams, keyset
 from app.modules.datasets.models import Dataset, DatasetItem, DatasetVersion, InputFile
-from app.modules.datasets.schemas import DatasetVersionStatus
+from app.modules.datasets.schemas import DatasetVersionStatus, ItemFilter, Split
 
 
 class DatasetRepository:
@@ -83,3 +84,73 @@ class DatasetRepository:
     async def insert_items(self, rows: Sequence[dict[str, Any]]) -> None:
         if rows:
             await self._session.execute(insert(DatasetItem), list(rows))
+
+    async def version(self, project_id: uuid.UUID, version_id: uuid.UUID, lock: bool = False) -> DatasetVersion | None:
+        query = (
+            select(DatasetVersion)
+            .join(Dataset, Dataset.id == DatasetVersion.dataset_id)
+            .where(DatasetVersion.id == version_id, Dataset.project_id == project_id)
+            .execution_options(populate_existing=True)
+        )
+        return await self._session.scalar(query.with_for_update(of=DatasetVersion) if lock else query)
+
+    async def latest_version(self, project_id: uuid.UUID) -> DatasetVersion | None:
+        query = (
+            select(DatasetVersion)
+            .join(Dataset, Dataset.id == DatasetVersion.dataset_id)
+            .where(Dataset.project_id == project_id)
+            .order_by(DatasetVersion.id.desc())
+            .limit(1)
+        )
+        return await self._session.scalar(query)
+
+    async def update_version(self, version_id: uuid.UUID, values: dict[str, Any]) -> None:
+        await self._session.execute(update(DatasetVersion).where(DatasetVersion.id == version_id).values(**values))
+
+    async def items_page(self, version_id: uuid.UUID, where: ItemFilter, page: PageParams) -> list[DatasetItem]:
+        query = _scoped(select(DatasetItem), version_id, where)
+        if page.cursor is not None:
+            query = query.where(DatasetItem.id > page.cursor)
+        query = query.order_by(DatasetItem.id).limit(page.limit + 1)
+        return list((await self._session.scalars(query)).all())
+
+    async def items(self, version_id: uuid.UUID, where: ItemFilter | None = None) -> list[DatasetItem]:
+        query = _scoped(select(DatasetItem), version_id, where).order_by(DatasetItem.position)
+        return list((await self._session.scalars(query.execution_options(populate_existing=True))).all())
+
+    async def item(self, version_id: uuid.UUID, item_id: uuid.UUID) -> DatasetItem | None:
+        query = _scoped(select(DatasetItem), version_id, None, [item_id])
+        item: DatasetItem | None = await self._session.scalar(query.execution_options(populate_existing=True))
+        return item
+
+    async def update_items(
+        self,
+        version_id: uuid.UUID,
+        values: dict[str, Any],
+        where: ItemFilter | None = None,
+        ids: Sequence[uuid.UUID] | None = None,
+    ) -> None:
+        await self._session.execute(_scoped(update(DatasetItem), version_id, where, ids).values(**values))
+
+    async def delete_items(
+        self, version_id: uuid.UUID, where: ItemFilter | None = None, ids: Sequence[uuid.UUID] | None = None
+    ) -> None:
+        await self._session.execute(_scoped(delete(DatasetItem), version_id, where, ids))
+
+    async def set_splits(self, splits: dict[uuid.UUID, Split]) -> None:
+        for split in Split:
+            ids = [item_id for item_id, value in splits.items() if value is split]
+            if ids:
+                await self._session.execute(update(DatasetItem).where(DatasetItem.id.in_(ids)).values(split=split))
+
+
+Q = TypeVar("Q", Select[Any], Update, Delete)
+
+
+def _scoped(query: Q, version_id: uuid.UUID, where: ItemFilter | None, ids: Sequence[uuid.UUID] | None = None) -> Q:
+    query = query.where(DatasetItem.dataset_version_id == version_id)
+    for name, value in (where.model_dump(exclude_none=True) if where else {}).items():
+        query = query.where(getattr(DatasetItem, name) == value)
+    if ids is not None:
+        query = query.where(DatasetItem.id.in_(ids))
+    return query
