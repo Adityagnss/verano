@@ -420,6 +420,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/cases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Cases */
+        get: operations["get_cases_api_v1_projects__project_id__experiments__experiment_id__cases_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/export.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Csv */
+        get: operations["export_csv_api_v1_projects__project_id__experiments__experiment_id__export_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/rescore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rescore */
+        post: operations["rescore_api_v1_projects__project_id__experiments__experiment_id__rescore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Results */
+        get: operations["get_results_api_v1_projects__project_id__experiments__experiment_id__results_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/experiments/{experiment_id}/runs/{run_id}": {
         parameters: {
             query?: never;
@@ -906,6 +974,61 @@ export interface components {
          * @enum {string}
          */
         CaseCategory: "happy_path" | "edge_case" | "tricky" | "format_stress" | "adversarial";
+        /** CaseOutput */
+        CaseOutput: {
+            /** Cost */
+            cost: string | null;
+            /** Error */
+            error: string | null;
+            /** Latency Ms */
+            latency_ms: number | null;
+            /** Model */
+            model: string;
+            /**
+             * Model Profile Id
+             * Format: uuid
+             */
+            model_profile_id: string;
+            /** Output */
+            output: string | null;
+            /** Passed */
+            passed: boolean;
+            /** Quality */
+            quality: number;
+            /** Run Number */
+            run_number: number;
+            /** Scores */
+            scores: components["schemas"]["ScoreOut"][];
+            /**
+             * Test Case Run Id
+             * Format: uuid
+             */
+            test_case_run_id: string;
+        };
+        /** CaseResultOut */
+        CaseResultOut: {
+            /** Category */
+            category: string;
+            /**
+             * Dataset Item Id
+             * Format: uuid
+             */
+            dataset_item_id: string;
+            /** Expected Output */
+            expected_output: string | null;
+            /** Inputs */
+            inputs: {
+                [key: string]: unknown;
+            };
+            /** Outputs */
+            outputs: components["schemas"]["CaseOutput"][];
+            /** Rubric */
+            rubric: unknown[] | null;
+            /** Source */
+            source: string;
+            /** Split */
+            split: string | null;
+        };
         /** CheckRequest */
         CheckRequest: {
             /** Columns */
@@ -1079,6 +1202,43 @@ export interface components {
          * @enum {string}
          */
         DatasetVersionStatus: "draft" | "approved";
+        /** EvaluationRunOut */
+        EvaluationRunOut: {
+            /** Completed At */
+            completed_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Evaluator Set Version Id
+             * Format: uuid
+             */
+            evaluator_set_version_id: string;
+            /**
+             * Experiment Id
+             * Format: uuid
+             */
+            experiment_id: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            status: components["schemas"]["EvaluationRunStatus"];
+            trigger: components["schemas"]["EvaluationTrigger"];
+        };
+        /**
+         * EvaluationRunStatus
+         * @enum {string}
+         */
+        EvaluationRunStatus: "pending" | "running" | "completed" | "failed";
+        /**
+         * EvaluationTrigger
+         * @enum {string}
+         */
+        EvaluationTrigger: "initial" | "rescore";
         /** EvaluatorConfigIn */
         EvaluatorConfigIn: {
             /**
@@ -1672,6 +1832,32 @@ export interface components {
             /** Output Tokens */
             output_tokens: number;
         };
+        /** ModelMetricsOut */
+        ModelMetricsOut: {
+            /** Cases */
+            cases: number;
+            /** Consistency */
+            consistency: number | null;
+            /** Cost */
+            cost: string | null;
+            /** Cost Per Call */
+            cost_per_call: string | null;
+            /** Failed Calls */
+            failed_calls: number;
+            /** Latency Ms */
+            latency_ms: number | null;
+            /** Model */
+            model: string;
+            /**
+             * Model Profile Id
+             * Format: uuid
+             */
+            model_profile_id: string;
+            /** Pass Rate */
+            pass_rate: number;
+            /** Quality */
+            quality: number;
+        };
         /** ModelProfileOut */
         ModelProfileOut: {
             /** Context Window */
@@ -2069,6 +2255,24 @@ export interface components {
             messages: components["schemas"]["Message"][];
             shape: components["schemas"]["PromptShape"];
         };
+        /** RescoreRequest */
+        RescoreRequest: {
+            /** Evaluator Set Version Id */
+            evaluator_set_version_id?: string | null;
+        };
+        /** ResultsOut */
+        ResultsOut: {
+            evaluation_run: components["schemas"]["EvaluationRunOut"] | null;
+            /** Evaluation Runs */
+            evaluation_runs: components["schemas"]["EvaluationRunOut"][];
+            /**
+             * Experiment Id
+             * Format: uuid
+             */
+            experiment_id: string;
+            /** Models */
+            models: components["schemas"]["ModelMetricsOut"][];
+        };
         /**
          * ReviewStatus
          * @enum {string}
@@ -2079,6 +2283,17 @@ export interface components {
          * @enum {string}
          */
         RunStatus: "pending" | "running" | "succeeded" | "failed" | "skipped";
+        /** ScoreOut */
+        ScoreOut: {
+            /** Evaluator Name */
+            evaluator_name: string;
+            /** Passed */
+            passed: boolean;
+            /** Reason */
+            reason: string;
+            /** Value */
+            value: number;
+        };
         /** SectionOut */
         SectionOut: {
             /** Char Count */
@@ -3408,6 +3623,145 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExperimentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_cases_api_v1_projects__project_id__experiments__experiment_id__cases_get: {
+        parameters: {
+            query?: {
+                evaluation_run_id?: string | null;
+                failed_only?: boolean;
+            };
+            header?: never;
+            path: {
+                experiment_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseResultOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_csv_api_v1_projects__project_id__experiments__experiment_id__export_csv_get: {
+        parameters: {
+            query?: {
+                evaluation_run_id?: string | null;
+            };
+            header?: never;
+            path: {
+                experiment_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rescore_api_v1_projects__project_id__experiments__experiment_id__rescore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                experiment_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RescoreRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_results_api_v1_projects__project_id__experiments__experiment_id__results_get: {
+        parameters: {
+            query?: {
+                evaluation_run_id?: string | null;
+            };
+            header?: never;
+            path: {
+                experiment_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResultsOut"];
                 };
             };
             /** @description Validation Error */

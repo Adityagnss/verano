@@ -12,8 +12,9 @@ from fastapi import Depends
 
 from app.core.container import Container, ContainerDep
 from app.core.database import SessionDep
+from app.modules.gateway.history import CallHistoryService
 from app.modules.gateway.plugins.rate_limiter import ValkeyRateLimiter
-from app.modules.gateway.service import CallHistoryService, GatewayService, adaptive_policy
+from app.modules.gateway.service import GatewayService, adaptive_policy
 from app.modules.registry.dependencies import RegistryServiceDep
 from app.modules.registry.service import RegistryService
 

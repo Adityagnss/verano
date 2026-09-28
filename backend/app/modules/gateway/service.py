@@ -20,7 +20,6 @@ import time
 import uuid
 from collections.abc import Awaitable, Callable
 from datetime import datetime
-from decimal import Decimal
 from pathlib import Path
 from typing import Any, TypeVar
 
@@ -29,7 +28,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.config import Settings
 from app.core.errors import AppError, ProviderError, RateLimited, StructuredOutputError
-from app.core.pagination import Page, PageParams, to_page
 from app.core.security import utcnow
 from app.core.templates import render_system_prompt
 from app.core.tokens import estimate_tokens
@@ -54,19 +52,15 @@ from app.modules.gateway.schemas import (
     CallContext,
     CallPurpose,
     CallStatus,
-    CostSummary,
-    LLMCallOut,
     LLMResult,
     Message,
     ProviderResponse,
-    PurposeCost,
 )
 from app.modules.registry.schemas import CallTarget
 from app.modules.registry.service import RegistryService
 
 M = TypeVar("M", bound=BaseModel)
 PROMPTS_DIR = Path(__file__).parent / "prompts"
-ZERO = Decimal(0)
 
 
 def configure_llm_runtime(settings: Settings) -> None:
@@ -140,6 +134,18 @@ class GatewayService:
         params: dict[str, Any] | None = None,
     ) -> M:
         target = await self._registry.call_target(context.project_id, credential_id, model_id)
+        return await self.complete_json_target(target, messages, schema, purpose, context, params)
+
+    async def complete_json_target(
+        self,
+        target: CallTarget,
+        messages: list[Message],
+        schema: type[M],
+        purpose: CallPurpose,
+        context: CallContext,
+        params: dict[str, Any] | None = None,
+    ) -> M:
+        """`complete_json` for a target resolved beforehand (no transaction open during the call)."""
         json_param = self._registry.catalog.json_mode_parameter
         request_params = dict(params or {})
         if target.profile.supports_json_mode:
@@ -269,25 +275,3 @@ class GatewayService:
             call_id = await LLMCallRepository(session).add(values)
             await session.commit()
         return call_id
-
-
-class CallHistoryService:
-    def __init__(self, session: AsyncSession) -> None:
-        self._repo = LLMCallRepository(session)
-
-    async def calls(self, project_id: uuid.UUID, page: PageParams, purpose: CallPurpose | None) -> Page[LLMCallOut]:
-        rows = await self._repo.page(project_id, page, purpose)
-        return to_page([LLMCallOut.model_validate(row) for row in rows], page, lambda c: c.id)
-
-    async def cost_summary(self, project_id: uuid.UUID) -> CostSummary:
-        rows = await self._repo.cost_by_purpose(project_id)
-        by_purpose = {
-            purpose: PurposeCost(calls=calls, cost=cost, calls_with_unknown_price=unknown)
-            for purpose, calls, cost, unknown in rows
-        }
-        return CostSummary(
-            calls=sum(p.calls for p in by_purpose.values()),
-            cost=sum((p.cost for p in by_purpose.values()), start=ZERO),
-            calls_with_unknown_price=sum(p.calls_with_unknown_price for p in by_purpose.values()),
-            by_purpose=by_purpose,
-        )

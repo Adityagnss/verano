@@ -1,0 +1,33 @@
+/** User-facing text for the Results step. */
+export const RESULTS_COPY = {
+  title: "See how each model did",
+  subtitle:
+    "Quality and pass rate come from the scoring you approved in step 4. Plain averages over all test cases.",
+  none: "No finished experiment yet. Start one in step 5.",
+  experiment: "Experiment",
+  scoring: "Scoring…",
+  notScored: "This experiment is still being scored.",
+  columns: {
+    model: "Model",
+    quality: "Quality",
+    passRate: "Passed",
+    consistency: "How consistent",
+    latency: "Avg. time",
+    cost: "Cost",
+    perCall: "Per call",
+    failed: "Failed calls",
+  },
+  consistencyHint: "Share of test cases where every run got the same pass/fail result. Needs 2+ runs.",
+  chartTitle: "Passed test cases",
+  casesHeading: "Test cases",
+  failedOnly: "Only cases with a failure",
+  expected: "Correct answer",
+  rubric: "Grading criteria",
+  run: (n: number) => `run ${n}`,
+  pass: "Pass",
+  fail: "Fail",
+  export: "Export CSV",
+  noCases: "No cases to show.",
+  next: "Next: improve the prompt",
+  ms: (value: number) => `${Math.round(value)} ms`,
+}

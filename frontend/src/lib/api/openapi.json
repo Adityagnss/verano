@@ -73,6 +73,178 @@
         "title": "CaseCategory",
         "type": "string"
       },
+      "CaseOutput": {
+        "properties": {
+          "cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "model_profile_id": {
+            "format": "uuid",
+            "title": "Model Profile Id",
+            "type": "string"
+          },
+          "output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "quality": {
+            "title": "Quality",
+            "type": "number"
+          },
+          "run_number": {
+            "title": "Run Number",
+            "type": "integer"
+          },
+          "scores": {
+            "items": {
+              "$ref": "#/components/schemas/ScoreOut"
+            },
+            "title": "Scores",
+            "type": "array"
+          },
+          "test_case_run_id": {
+            "format": "uuid",
+            "title": "Test Case Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "test_case_run_id",
+          "model_profile_id",
+          "model",
+          "run_number",
+          "output",
+          "error",
+          "passed",
+          "quality",
+          "latency_ms",
+          "cost",
+          "scores"
+        ],
+        "title": "CaseOutput",
+        "type": "object"
+      },
+      "CaseResultOut": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "dataset_item_id": {
+            "format": "uuid",
+            "title": "Dataset Item Id",
+            "type": "string"
+          },
+          "expected_output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Output"
+          },
+          "inputs": {
+            "additionalProperties": true,
+            "title": "Inputs",
+            "type": "object"
+          },
+          "outputs": {
+            "items": {
+              "$ref": "#/components/schemas/CaseOutput"
+            },
+            "title": "Outputs",
+            "type": "array"
+          },
+          "rubric": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "split": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Split"
+          }
+        },
+        "required": [
+          "dataset_item_id",
+          "inputs",
+          "expected_output",
+          "rubric",
+          "category",
+          "source",
+          "split",
+          "outputs"
+        ],
+        "title": "CaseResultOut",
+        "type": "object"
+      },
       "CheckRequest": {
         "properties": {
           "columns": {
@@ -628,6 +800,69 @@
       "DatasetVersionStatus": {
         "enum": ["draft", "approved"],
         "title": "DatasetVersionStatus",
+        "type": "string"
+      },
+      "EvaluationRunOut": {
+        "properties": {
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "evaluator_set_version_id": {
+            "format": "uuid",
+            "title": "Evaluator Set Version Id",
+            "type": "string"
+          },
+          "experiment_id": {
+            "format": "uuid",
+            "title": "Experiment Id",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/EvaluationRunStatus"
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/EvaluationTrigger"
+          }
+        },
+        "required": [
+          "id",
+          "experiment_id",
+          "evaluator_set_version_id",
+          "status",
+          "trigger",
+          "created_at",
+          "completed_at"
+        ],
+        "title": "EvaluationRunOut",
+        "type": "object"
+      },
+      "EvaluationRunStatus": {
+        "enum": ["pending", "running", "completed", "failed"],
+        "title": "EvaluationRunStatus",
+        "type": "string"
+      },
+      "EvaluationTrigger": {
+        "enum": ["initial", "rescore"],
+        "title": "EvaluationTrigger",
         "type": "string"
       },
       "EvaluatorConfigIn": {
@@ -2213,6 +2448,95 @@
         "title": "ModelEstimate",
         "type": "object"
       },
+      "ModelMetricsOut": {
+        "properties": {
+          "cases": {
+            "title": "Cases",
+            "type": "integer"
+          },
+          "consistency": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consistency"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          },
+          "cost_per_call": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Call"
+          },
+          "failed_calls": {
+            "title": "Failed Calls",
+            "type": "integer"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "model_profile_id": {
+            "format": "uuid",
+            "title": "Model Profile Id",
+            "type": "string"
+          },
+          "pass_rate": {
+            "title": "Pass Rate",
+            "type": "number"
+          },
+          "quality": {
+            "title": "Quality",
+            "type": "number"
+          }
+        },
+        "required": [
+          "model_profile_id",
+          "model",
+          "cases",
+          "quality",
+          "pass_rate",
+          "consistency",
+          "latency_ms",
+          "cost",
+          "cost_per_call",
+          "failed_calls"
+        ],
+        "title": "ModelMetricsOut",
+        "type": "object"
+      },
       "ModelProfileOut": {
         "properties": {
           "context_window": {
@@ -3184,6 +3508,60 @@
         "title": "RenderedPrompt",
         "type": "object"
       },
+      "RescoreRequest": {
+        "properties": {
+          "evaluator_set_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evaluator Set Version Id"
+          }
+        },
+        "title": "RescoreRequest",
+        "type": "object"
+      },
+      "ResultsOut": {
+        "properties": {
+          "evaluation_run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvaluationRunOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evaluation_runs": {
+            "items": {
+              "$ref": "#/components/schemas/EvaluationRunOut"
+            },
+            "title": "Evaluation Runs",
+            "type": "array"
+          },
+          "experiment_id": {
+            "format": "uuid",
+            "title": "Experiment Id",
+            "type": "string"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/ModelMetricsOut"
+            },
+            "title": "Models",
+            "type": "array"
+          }
+        },
+        "required": ["experiment_id", "evaluation_run", "evaluation_runs", "models"],
+        "title": "ResultsOut",
+        "type": "object"
+      },
       "ReviewStatus": {
         "enum": ["trusted", "draft", "approved"],
         "title": "ReviewStatus",
@@ -3193,6 +3571,29 @@
         "enum": ["pending", "running", "succeeded", "failed", "skipped"],
         "title": "RunStatus",
         "type": "string"
+      },
+      "ScoreOut": {
+        "properties": {
+          "evaluator_name": {
+            "title": "Evaluator Name",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": ["evaluator_name", "value", "passed", "reason"],
+        "title": "ScoreOut",
+        "type": "object"
       },
       "SectionOut": {
         "properties": {
@@ -5771,6 +6172,303 @@
         ],
         "summary": "Cancel Experiment",
         "tags": ["experiments"]
+      }
+    },
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/cases": {
+      "get": {
+        "operationId": "get_cases_api_v1_projects__project_id__experiments__experiment_id__cases_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "evaluation_run_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Evaluation Run Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "failed_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Failed Only",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CaseResultOut"
+                  },
+                  "title": "Response Get Cases Api V1 Projects  Project Id  Experiments  Experiment Id  Cases Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Cases",
+        "tags": ["results"]
+      }
+    },
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/export.csv": {
+      "get": {
+        "operationId": "export_csv_api_v1_projects__project_id__experiments__experiment_id__export_csv_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "evaluation_run_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Evaluation Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Export Csv",
+        "tags": ["results"]
+      }
+    },
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/rescore": {
+      "post": {
+        "operationId": "rescore_api_v1_projects__project_id__experiments__experiment_id__rescore_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RescoreRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Rescore",
+        "tags": ["results"]
+      }
+    },
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/results": {
+      "get": {
+        "operationId": "get_results_api_v1_projects__project_id__experiments__experiment_id__results_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "evaluation_run_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Evaluation Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResultsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Results",
+        "tags": ["results"]
       }
     },
     "/api/v1/projects/{project_id}/experiments/{experiment_id}/runs/{run_id}": {
