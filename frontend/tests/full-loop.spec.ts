@@ -91,4 +91,13 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   await expect(page.getByText(/No candidate beat the current prompt|beat the current prompt/)).toBeVisible({
     timeout: 120_000,
   })
+
+  await page.getByRole("link", { name: /Dashboard/ }).click()
+  await expect(page.getByRole("heading", { name: "How your prompts and models are doing" })).toBeVisible()
+  await expect(page.getByText("Best pass rate (latest)")).toBeVisible()
+  await expect(page.getByText("Latest experiment: models side by side")).toBeVisible()
+  await expect(page.getByText("Where the money went")).toBeVisible()
+
+  await page.getByRole("link", { name: /Prompt guide/ }).click()
+  await expect(page.getByRole("heading", { name: "The one habit: measure first" })).toBeVisible()
 })

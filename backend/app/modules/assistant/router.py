@@ -5,9 +5,11 @@ accepting the winning candidate as the prompt's new version.
 """
 
 import uuid
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, Query, status
+from pydantic import BaseModel
 
 from app.core.security import CurrentPrincipal
 from app.modules.assistant.dependencies import ImprovementServiceDep
@@ -15,6 +17,18 @@ from app.modules.assistant.schemas import ImprovementOut, ImproveRequest
 from app.modules.projects.dependencies import ProjectScope
 
 router = APIRouter(prefix="/projects/{project_id}/improvements", tags=["improve"])
+notes_router = APIRouter(prefix="/prompt-notes", tags=["improve"])
+NOTES = Path(__file__).parent / "prompts" / "technique_notes.md"
+
+
+class PromptNotes(BaseModel):
+    markdown: str
+
+
+@notes_router.get("")
+async def prompt_notes(principal: CurrentPrincipal) -> PromptNotes:
+    """The measured prompt-technique notes Improve reads, shown to users as the Prompt guide."""
+    return PromptNotes(markdown=NOTES.read_text(encoding="utf-8"))
 
 
 @router.post("", status_code=status.HTTP_202_ACCEPTED)

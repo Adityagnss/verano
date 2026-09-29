@@ -9,7 +9,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BookOpen, Menu, X } from "lucide-react"
+import { BookOpen, LayoutDashboard, Menu, X } from "lucide-react"
 import { type ReactNode, useState } from "react"
 
 import { COMMON_COPY } from "@/components/common/copy"
@@ -38,6 +38,31 @@ function stepItems(projectId: string, pathname: string, done: Partial<Record<Ste
             : "upcoming"
     return { key: step.key, number: index + 1, label: step.label, hint: step.hint, href, state }
   })
+}
+
+function ToolLinks({ projectId, pathname }: { projectId: string; pathname: string }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <DashboardLink projectId={projectId} active={pathname.endsWith("/dashboard")} />
+      <GuideLink projectId={projectId} active={pathname.endsWith("/guide")} />
+    </div>
+  )
+}
+
+function DashboardLink({ projectId, active }: { projectId: string; active: boolean }) {
+  return (
+    <Link
+      href={`/projects/${projectId}/dashboard`}
+      aria-current={active ? "page" : undefined}
+      className={`hover:bg-subtle flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${active ? "bg-lagoon-soft font-semibold" : "font-medium"}`}
+    >
+      <LayoutDashboard className="text-lagoon-strong size-4" />
+      <span className="flex flex-col leading-tight">
+        Dashboard
+        <span className="text-text-muted text-xs font-normal">Models, cost, trends</span>
+      </span>
+    </Link>
+  )
 }
 
 function GuideLink({ projectId, active }: { projectId: string; active: boolean }) {
@@ -85,7 +110,7 @@ export function ProjectShell({ projectId, children }: { projectId: string; child
         </Link>
         <Stepper steps={steps} />
         <div className="border-border mt-auto border-t pt-3">
-          <GuideLink projectId={projectId} active={pathname.endsWith("/guide")} />
+          <ToolLinks projectId={projectId} pathname={pathname} />
         </div>
       </aside>
       {open ? (
@@ -110,7 +135,7 @@ export function ProjectShell({ projectId, children }: { projectId: string; child
             </div>
             <Stepper steps={steps} />
             <div className="border-border border-t pt-3">
-              <GuideLink projectId={projectId} active={pathname.endsWith("/guide")} />
+              <ToolLinks projectId={projectId} pathname={pathname} />
             </div>
           </div>
         </div>

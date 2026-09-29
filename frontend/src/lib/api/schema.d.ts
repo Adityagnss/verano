@@ -987,6 +987,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/prompt-notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Prompt Notes
+         * @description The measured prompt-technique notes Improve reads, shown to users as the Prompt guide.
+         */
+        get: operations["prompt_notes_api_v1_prompt_notes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/providers": {
         parameters: {
             query?: never;
@@ -2278,6 +2298,11 @@ export interface components {
             system_template?: string | null;
             /** User Template */
             user_template?: string | null;
+        };
+        /** PromptNotes */
+        PromptNotes: {
+            /** Markdown */
+            markdown: string;
         };
         /** PromptOut */
         PromptOut: {
@@ -5109,6 +5134,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    prompt_notes_api_v1_prompt_notes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptNotes"];
                 };
             };
         };

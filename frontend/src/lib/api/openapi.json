@@ -3460,6 +3460,17 @@
         "title": "PromptCreate",
         "type": "object"
       },
+      "PromptNotes": {
+        "properties": {
+          "markdown": {
+            "title": "Markdown",
+            "type": "string"
+          }
+        },
+        "required": ["markdown"],
+        "title": "PromptNotes",
+        "type": "object"
+      },
       "PromptOut": {
         "properties": {
           "created_at": {
@@ -8922,6 +8933,31 @@
         ],
         "summary": "Confirm Task Spec",
         "tags": ["generator"]
+      }
+    },
+    "/api/v1/prompt-notes": {
+      "get": {
+        "description": "The measured prompt-technique notes Improve reads, shown to users as the Prompt guide.",
+        "operationId": "prompt_notes_api_v1_prompt_notes_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromptNotes"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Prompt Notes",
+        "tags": ["improve"]
       }
     },
     "/api/v1/providers": {

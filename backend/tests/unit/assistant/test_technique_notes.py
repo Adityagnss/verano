@@ -16,5 +16,5 @@ def test_the_candidate_request_includes_the_technique_notes_and_keeps_its_marker
         examples=[],
     )
     assert "CANDIDATES_REQUEST" in text
-    assert "Measure, don't assume" in text
-    assert "Personas" in text
+    assert "The one habit: measure first" in text
+    assert "Expert personas" in text
