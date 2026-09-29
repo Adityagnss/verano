@@ -102,13 +102,12 @@ export function TestsStep({ projectId }: { projectId: string }) {
   const actions = useVersionActions(projectId, current?.id ?? "")
   const confirmed = spec.data?.status === "confirmed"
   const hasGolden = (current?.by_source.golden?.total ?? 0) > 0
-  const request = useDebounced<GenerationRequest | null>(
+  const request: GenerationRequest | null =
     confirmed && specId
       ? { task_spec_id: specId, target_size: Number(size) || DEFAULT_SIZE, golden_only: goldenOnly }
-      : null,
-    300,
-  )
-  const estimate = useEstimate(projectId, frozen || running ? null : request)
+      : null
+  const settledRequest = useDebounced(request, 300)
+  const estimate = useEstimate(projectId, frozen || running ? null : settledRequest)
 
   if (prompt.data === null)
     return (

@@ -32,9 +32,18 @@ export const PROMPT_COPY = {
     user_only: "User prompt only: each test case fills the variables, no system message.",
   } as Record<string, string>,
   variables: (names: string[]) => (names.length ? `Variables: ${names.join(", ")}` : "No variables"),
-  inputsNeeded: (names: string[]) => `Each test case needs: ${names.join(", ")}`,
-  fits: (model: string, tokens: number) => `Fits ${model} (about ${tokens} tokens)`,
-  tooLong: (model: string, tokens: number) => `Too long for ${model} (about ${tokens} tokens)`,
+  inputsNeeded: (names: string[]) =>
+    names.length === 1 && names[0] === "user_message"
+      ? "Each input file is sent to the model as the user message."
+      : `Each test case needs: ${names.join(", ")}. An input file fills {{ attachment }}.`,
+  fits: (model: string, tokens: number) => `Fits ${model} (about ${tokens.toLocaleString()} tokens)`,
+  fitsAll: (count: number, tokens: number) =>
+    `Fits all ${count} selected models (about ${tokens.toLocaleString()} tokens)`,
+  showAll: "Show all",
+  showLess: "Show less",
+  characters: (count: number) => `${count.toLocaleString()} characters`,
+  tooLong: (model: string, tokens: number) =>
+    `Too long for ${model} (about ${tokens.toLocaleString()} tokens)`,
   unknownWindow: (model: string) => `${model}: context size unknown`,
   noModels: "Select models in step 1 to check the context size.",
   preview: "Preview with your first test case",

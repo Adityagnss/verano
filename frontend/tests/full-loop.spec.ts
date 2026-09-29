@@ -42,7 +42,7 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
       buffer: Buffer.from(text),
     })),
   )
-  await expect(page.getByText("case3.txt")).toBeVisible()
+  await expect(page.getByText("case3.txt", { exact: true })).toBeVisible()
   await page.getByTestId("upload-golden").setInputFiles({
     name: "golden.csv",
     mimeType: "text/csv",
@@ -84,7 +84,7 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
 
   await page.getByRole("button", { name: "Find what's failing and suggest fixes" }).click()
   await expect(page.getByText("Echoes the ticket")).toBeVisible({ timeout: 90_000 })
-  await expect(page.getByText("strict output rule").first()).toBeVisible()
+  await expect(page.getByText("strict output rule").first()).toBeVisible({ timeout: 90_000 })
   await expect(page.getByText(/No candidate beat the current prompt|beat the current prompt/)).toBeVisible({
     timeout: 120_000,
   })

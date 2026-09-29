@@ -132,7 +132,7 @@ export function PromptStep({ projectId }: { projectId: string }) {
                 id={field}
                 value={draft[field]}
                 onChange={set(field)}
-                rows={field === "system_template" ? 8 : 5}
+                rows={field === "system_template" ? 14 : 6}
                 className="font-mono"
                 spellCheck={false}
               />
@@ -176,7 +176,7 @@ export function PromptStep({ projectId }: { projectId: string }) {
           number={2}
           title={PROMPT_COPY.review}
           description={PROMPT_COPY.reviewHint}
-          className="h-fit lg:sticky lg:top-20"
+          className="h-fit lg:sticky lg:top-20 lg:max-h-[calc(100vh-6.5rem)] lg:overflow-y-auto"
         >
           <PromptCheck result={empty ? undefined : inspect.data} error={empty ? null : inspect.error} />
         </Section>

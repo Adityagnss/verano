@@ -6,6 +6,7 @@
 "use client"
 
 import { CircleAlert, CircleCheck, CircleHelp } from "lucide-react"
+import { useState } from "react"
 
 import { ErrorMessage } from "@/components/common/error-message"
 import type { InspectOut } from "@/lib/api/types"
@@ -23,10 +24,42 @@ function Line({ tone, children }: { tone: "ok" | "bad" | "unknown"; children: Re
   )
 }
 
+function PreviewMessage({ role, content }: { role: string; content: string }) {
+  const [open, setOpen] = useState(false)
+  const long = content.length > 600
+  return (
+    <div className="bg-subtle ring-border rounded-lg p-3 ring-1">
+      <div className="text-text-secondary mb-1 flex items-center justify-between gap-2 text-xs font-medium">
+        <span className="capitalize">{role}</span>
+        <span className="font-normal">{PROMPT_COPY.characters(content.length)}</span>
+      </div>
+      <pre
+        className={`font-mono text-xs break-words whitespace-pre-wrap ${open ? "max-h-96 overflow-y-auto" : "max-h-32 overflow-hidden"}`}
+      >
+        {content}
+      </pre>
+      {long ? (
+        <button
+          type="button"
+          className="text-lagoon-strong mt-1 text-xs font-medium hover:underline"
+          onClick={() => setOpen(!open)}
+        >
+          {open ? PROMPT_COPY.showLess : PROMPT_COPY.showAll}
+        </button>
+      ) : null}
+    </div>
+  )
+}
+
 export function PromptCheck({ result, error }: { result: InspectOut | undefined; error: unknown }) {
   if (error) return <ErrorMessage error={error} />
   if (!result) return <p className="text-muted-foreground text-sm">{PROMPT_COPY.reviewEmpty}</p>
   const { check, preview } = result
+  const allFit =
+    check.context.length > 1 &&
+    check.context.every(
+      (fit) => fit.fits === true && fit.estimated_tokens === check.context[0].estimated_tokens,
+    )
   return (
     <div className="flex flex-col gap-4">
       <ul className="flex flex-col gap-2">
@@ -36,7 +69,12 @@ export function PromptCheck({ result, error }: { result: InspectOut | undefined;
           <Line tone="ok">{PROMPT_COPY.inputsNeeded(check.required_inputs)}</Line>
         ) : null}
         {check.context.length === 0 ? <Line tone="unknown">{PROMPT_COPY.noModels}</Line> : null}
-        {check.context.map((fit) => (
+        {allFit ? (
+          <Line tone="ok">
+            {PROMPT_COPY.fitsAll(check.context.length, check.context[0].estimated_tokens)}
+          </Line>
+        ) : null}
+        {(allFit ? [] : check.context).map((fit) => (
           <Line key={fit.model_profile_id} tone={fit.fits === null ? "unknown" : fit.fits ? "ok" : "bad"}>
             {fit.fits === null
               ? PROMPT_COPY.unknownWindow(fit.display_name)
@@ -50,10 +88,7 @@ export function PromptCheck({ result, error }: { result: InspectOut | undefined;
         <div className="flex flex-col gap-2">
           <h4 className="text-text-secondary text-sm font-medium">{PROMPT_COPY.preview}</h4>
           {preview.messages.map((message, index) => (
-            <div key={index} className="bg-subtle ring-border rounded-lg p-3 ring-1">
-              <div className="text-text-secondary mb-1 text-xs font-medium capitalize">{message.role}</div>
-              <pre className="font-mono text-xs whitespace-pre-wrap">{message.content}</pre>
-            </div>
+            <PreviewMessage key={index} role={message.role} content={message.content} />
           ))}
         </div>
       ) : null}

@@ -94,6 +94,23 @@ export const TESTS_COPY = {
   evaluatorsHint:
     "Chosen from the task type. Judge criteria can be edited; each edit is saved as a new version.",
   criteria: "Judge criteria",
+  ruleInfo: {
+    exact_match: "Passes when the answer equals the golden answer (case and spaces ignored).",
+    allowed_values: "Passes when the answer is one of the allowed values from the task.",
+    json_valid: "Passes when the answer is valid JSON.",
+    json_schema: "Passes when the JSON answer follows the task's schema.",
+    field_match: "Share of the golden JSON's top-level fields the answer gets exactly right.",
+    length: "Passes when the answer length is inside the task's limits.",
+    constraints: "Checks the task's constraints (for example one word, lowercase, valid JSON).",
+  } as Record<string, string>,
+  judgeInfo: "An AI judge reads the answer and scores it against the criteria below.",
+  noConstraints:
+    "Checks the constraints written in the task above (for example: valid JSON). If the task has none, nothing is checked.",
+  constraintsList: "Checks",
+  noCriteria:
+    "No criteria yet, so the judge is skipped. Write what a good answer looks like (for example: names every field the golden answer has), or leave it.",
+  criteriaPlaceholder: "A good answer …",
+  perCase: "Uses each test case's own grading criteria.",
   saveEvaluators: "Save scoring",
   evaluatorsSaved: "Scoring saved as a new version.",
   approve: "Approve test cases",

@@ -20,6 +20,18 @@ import { useEditEvaluators } from "../hooks"
 
 type Config = Record<string, unknown>
 
+function ConstraintList({ list }: { list: unknown }) {
+  const items = Array.isArray(list) ? list.map(String) : []
+  if (items.length === 0) return <p className="text-text-secondary text-xs">{TESTS_COPY.noConstraints}</p>
+  return (
+    <ul className="text-text-secondary list-disc pl-5 text-xs">
+      {items.map((item) => (
+        <li key={item}>{item}</li>
+      ))}
+    </ul>
+  )
+}
+
 export function EvaluatorCard({
   projectId,
   versionId,
@@ -73,13 +85,28 @@ export function EvaluatorCard({
               </StatusBadge>
               {e.required ? <StatusBadge tone="brand">{TESTS_COPY.requiredKind}</StatusBadge> : null}
             </div>
+            <p className="text-text-secondary text-xs leading-relaxed">
+              {(e.config as Config).kind === "deepeval"
+                ? TESTS_COPY.judgeInfo
+                : (TESTS_COPY.ruleInfo[e.evaluator_name] ?? "")}
+            </p>
+            {e.evaluator_name === "constraints" ? (
+              <ConstraintList list={(e.config as Config).constraints} />
+            ) : null}
             {e.position in criteria ? (
               <>
                 <Label htmlFor={`criteria-${e.position}`} className="text-muted-foreground text-xs">
                   {TESTS_COPY.criteria}
                 </Label>
+                {criteria[e.position].trim() === "" && !frozen ? (
+                  <p className="text-warning-strong text-xs">{TESTS_COPY.noCriteria}</p>
+                ) : null}
+                {criteria[e.position] === "{rubric}" ? (
+                  <p className="text-text-secondary text-xs">{TESTS_COPY.perCase}</p>
+                ) : null}
                 <Textarea
                   id={`criteria-${e.position}`}
+                  placeholder={TESTS_COPY.criteriaPlaceholder}
                   rows={2}
                   disabled={frozen}
                   value={criteria[e.position]}
