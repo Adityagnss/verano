@@ -80,11 +80,11 @@ async def get_file(client: httpx.AsyncClient, session: Session, file_id: str) ->
 
 
 async def map_file(
-    client: httpx.AsyncClient, session: Session, file_id: str, version_id: str, mapping: dict[str, Any]
+    client: httpx.AsyncClient, session: Session, file_id: str, mapping: dict[str, Any]
 ) -> httpx.Response:
     return await client.put(
         f"/api/v1/projects/{session.project_id}/input-files/{file_id}/mapping",
-        json={"prompt_version_id": version_id, "mapping": mapping},
+        json={"mapping": mapping},
         headers=session.headers,
     )
 
@@ -93,6 +93,32 @@ async def import_file(client: httpx.AsyncClient, session: Session, file_id: str)
     return await client.post(
         f"/api/v1/projects/{session.project_id}/input-files/{file_id}/import", headers=session.headers
     )
+
+
+async def add_input_files(client: httpx.AsyncClient, session: Session, jobs: Any, texts: list[str]) -> list[str]:
+    """Uploads one input file per text (each becomes one test case); returns the file ids."""
+    ids = []
+    for number, text in enumerate(texts, start=1):
+        response = await upload(client, session, f"case{number}.txt", text.encode(), purpose="input")
+        assert response.status_code == 201, response.text
+        await jobs.drain()
+        ids.append(response.json()["id"])
+    return ids
+
+
+async def add_golden(
+    client: httpx.AsyncClient, session: Session, jobs: Any, name: str, content: bytes, mapping: dict[str, Any]
+) -> dict[str, Any]:
+    """Uploads a golden set, confirms its mapping and imports it onto the input files."""
+    response = await upload(client, session, name, content)
+    assert response.status_code == 201, response.text
+    file_id = response.json()["id"]
+    await jobs.drain()
+    assert (await map_file(client, session, file_id, mapping)).status_code == 200
+    await jobs.drain()
+    assert (await import_file(client, session, file_id)).status_code == 200
+    await jobs.drain()
+    return await get_file(client, session, file_id)
 
 
 GOLDEN_TICKETS = (
@@ -107,14 +133,10 @@ async def approved_project(client: httpx.AsyncClient, session: Session, jobs: An
     base = f"/api/v1/projects/{session.project_id}"
     credential = await add_credential(client, session, "mock")
     version = await create_prompt(client, session, system_template="Classify the support ticket. Reply with one word.")
-    response = await upload(client, session, "golden.csv", GOLDEN_TICKETS.encode())
-    file_id = response.json()["id"]
-    await jobs.drain()
-    mapping = {"inputs": {"user_message": "ticket"}, "expected_output": "expected"}
-    assert (await map_file(client, session, file_id, version["id"], mapping)).status_code == 200
-    await jobs.drain()
-    await import_file(client, session, file_id)
-    await jobs.drain()
+    await add_input_files(
+        client, session, jobs, ["My card was charged twice", "Where is my parcel?", "The app crashes on start"]
+    )
+    await add_golden(client, session, jobs, "golden.csv", GOLDEN_TICKETS.encode(), {"expected_output": "expected"})
     spec_body = {"prompt_version_id": version["id"], "credential_id": credential["id"], "model": "scripted"}
     spec = (await client.post(f"{base}/task-specs", json=spec_body, headers=session.headers)).json()
     await client.put(f"{base}/task-specs/{spec['id']}", json={"spec": spec["spec"]}, headers=session.headers)

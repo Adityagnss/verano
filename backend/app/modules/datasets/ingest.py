@@ -29,7 +29,7 @@ from app.core.pagination import Page, PageParams, to_page
 from app.core.progress import ProgressEvent, ProgressHub, ProgressStatus
 from app.core.security import Principal
 from app.core.storage import Storage
-from app.modules.datasets.domain import ColumnSynonyms, kind_of, mapping_problems, suggest_mapping
+from app.modules.datasets.domain import ColumnSynonyms, mapping_problems, suggest_mapping
 from app.modules.datasets.models import InputFile
 from app.modules.datasets.repository import DatasetRepository
 from app.modules.datasets.schemas import (
@@ -43,15 +43,13 @@ from app.modules.datasets.schemas import (
     UploadPurpose,
 )
 from app.modules.projects.schemas import ProjectOut
-from app.modules.prompts.service import PromptService
-from app.modules.registry.service import RegistryService
 
 CONFIG = Path(__file__).parent / "config"
 FILE_NOT_FOUND = "This file doesn't exist in this project."
 UNKNOWN_TYPE = "'{name}' isn't a supported file type. Use {labels}."
 WRONG_CARD = "This card takes {labels} files."
 NOT_READY = "This file isn't ready for that yet (it is {status})."
-MAPPING_INVALID = "The column mapping needs a few fixes before the rows can be checked."
+MAPPING_INVALID = "The column mapping needs a few fixes before the entries can be checked."
 FILENAME_MAX = 500
 TERMINAL = {
     InputFileStatus.READY: "profile",
@@ -107,7 +105,6 @@ class FileIngestService:
         jobs: JobQueue,
         progress: ProgressHub,
         settings: Settings,
-        prompts: PromptService,
     ) -> None:
         self._session = session
         self._repo = DatasetRepository(session)
@@ -115,14 +112,12 @@ class FileIngestService:
         self._jobs = jobs
         self._progress = progress
         self._settings = settings
-        self._prompts = prompts
         self.formats = load_yaml(CONFIG / "formats.yaml", FormatCatalog)
         self._synonyms = load_yaml(CONFIG / "column_synonyms.yaml", ColumnSynonyms)
 
     @classmethod
     def from_container(cls, session: AsyncSession, container: Container) -> "FileIngestService":
-        prompts = PromptService(session, RegistryService(session, container), container.settings)
-        return cls(session, container.storage, container.jobs, container.progress, container.settings, prompts)
+        return cls(session, container.storage, container.jobs, container.progress, container.settings)
 
     async def upload(
         self,
@@ -182,6 +177,8 @@ class FileIngestService:
         row = await self._file(file_id, project.id)
         if row.dataset_version_id is not None:
             await self._repo.delete_file_items(row.dataset_version_id, row.id)
+            if row.kind is InputFileKind.GOLDEN_SET:
+                await self._repo.unpair_golden(row.dataset_version_id, row.id, self._settings.dataset_default_category)
         await self._repo.delete_file(row.id)
         await self._storage.delete_prefix(str(PurePath(row.storage_key).parent))
 
@@ -192,31 +189,17 @@ class FileIngestService:
         self._jobs.enqueue("datasets.profile_file", file_id=str(row.id))
         return file_out(await self._file(row.id))
 
-    async def suggest_mapping(
-        self, project: ProjectOut, file_id: uuid.UUID, prompt_version_id: uuid.UUID
-    ) -> MappingSuggestion:
+    async def suggest_mapping(self, project: ProjectOut, file_id: uuid.UUID) -> MappingSuggestion:
         row = await self._require(file_id, project.id, MAPPABLE)
-        required = (await self._prompts.get_version(project.id, prompt_version_id)).required_inputs
-        columns = self._profile(row).columns
-        mapping = suggest_mapping(columns, required, self._synonyms)
-        return MappingSuggestion(
-            prompt_version_id=prompt_version_id,
-            required_inputs=required,
-            mapping=mapping,
-            unmapped_inputs=[name for name in required if name not in mapping.inputs],
-            kind=kind_of(mapping),
-        )
+        return MappingSuggestion(mapping=suggest_mapping(self._profile(row).columns, self._synonyms))
 
     async def submit_mapping(self, project: ProjectOut, file_id: uuid.UUID, body: MappingRequest) -> InputFileOut:
         row = await self._require(file_id, project.id, MAPPABLE)
-        required = (await self._prompts.get_version(project.id, body.prompt_version_id)).required_inputs
-        problems = mapping_problems(body.mapping, self._profile(row).columns, required)
+        problems = mapping_problems(body.mapping, self._profile(row).columns)
         if problems:
             raise ValidationFailed(MAPPING_INVALID, {"problems": problems})
         values = {
             "column_mapping": body.mapping.model_dump(),
-            "prompt_version_id": body.prompt_version_id,
-            "kind": kind_of(body.mapping),
             "status": InputFileStatus.VALIDATING,
             "validation_report": None,
             "error_message": None,

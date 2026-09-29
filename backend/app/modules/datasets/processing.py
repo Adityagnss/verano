@@ -26,7 +26,7 @@ from app.core.ids import uuid7
 from app.core.progress import ProgressEvent, ProgressHub, ProgressStatus
 from app.core.registry import load_plugins
 from app.core.storage import Storage
-from app.modules.datasets.domain import ItemDraft, ReportBuilder, TableSummary, duplicate_key, evaluate_row
+from app.modules.datasets.domain import ItemDraft, Pairing, ReportBuilder, TableSummary, evaluate_row
 from app.modules.datasets.ingest import channel
 from app.modules.datasets.models import InputFile
 from app.modules.datasets.plugins.importers.base import (
@@ -44,6 +44,7 @@ from app.modules.datasets.schemas import (
     FileProfile,
     InputFileKind,
     InputFileStatus,
+    ItemFilter,
     ItemSource,
     ReviewStatus,
     StoredFile,
@@ -51,8 +52,6 @@ from app.modules.datasets.schemas import (
 )
 from app.modules.datasets.service import DatasetService
 from app.modules.prompts.schemas import ATTACHMENT_INPUT
-from app.modules.prompts.service import PromptService
-from app.modules.registry.service import RegistryService
 
 load_plugins("app.modules.datasets.plugins.importers")
 
@@ -81,7 +80,6 @@ class FileProcessor:
         storage: Storage,
         progress: ProgressHub,
         settings: Settings,
-        prompts: PromptService,
         datasets: DatasetService,
     ) -> None:
         self._session = session
@@ -89,14 +87,12 @@ class FileProcessor:
         self._storage = storage
         self._progress = progress
         self._settings = settings
-        self._prompts = prompts
         self._datasets = datasets
 
     @classmethod
     def from_container(cls, session: AsyncSession, container: Container) -> "FileProcessor":
-        prompts = PromptService(session, RegistryService(session, container), container.settings)
         datasets = DatasetService(session, container.settings)
-        return cls(session, container.storage, container.progress, container.settings, prompts, datasets)
+        return cls(session, container.storage, container.progress, container.settings, datasets)
 
     async def run(self, stage: str, file_id: uuid.UUID, work: Callable[[uuid.UUID], Awaitable[None]]) -> None:
         try:
@@ -176,19 +172,25 @@ class FileProcessor:
         await self._finish(row, values, self._done("validate", built.total_rows, row.row_count))
 
     async def import_rows(self, file_id: uuid.UUID) -> None:
+        """A golden set holds expected outputs only: each entry is written onto the input
+        file it pairs with (DEVELOPMENT.md 2.2), replacing any earlier import of this file."""
         row = await self._stage(file_id, InputFileStatus.IMPORTING, "import")
         version = await self._datasets.ensure_draft(row.project_id)
-        await self._repo.delete_file_items(version.id, row.id)
-        position = await self._repo.next_position(version.id)
+        await self._repo.unpair_golden(version.id, row.id, self._settings.dataset_default_category)
         report = ReportBuilder(max_listed=self._settings.report_max_listed_rows)
-        batch: list[dict[str, Any]] = []
+        targets = await self._datasets.items(version.id, ItemFilter(source=ItemSource.INPUT_FILE))
+        pairing = Pairing([str(target.extra.get("filename")) for target in targets])
         async with self._rows(row) as stream:
-            async for item in self._valid_items(row, stream, report, self._ticker(row, "import")):
-                batch.append(self._item_values(row, version.id, item, position + len(batch)))
-                if len(batch) >= self._settings.import_batch_size:
-                    await self._repo.insert_items(batch)
-                    position, batch = position + len(batch), []
-        await self._repo.insert_items(batch)
+            async for entry in self._valid_items(row, stream, report, self._ticker(row, "import")):
+                pairing.add(entry)
+        pairs, unpaired = pairing.finish()
+        for entry, at in pairs:
+            extra = {**targets[at].extra, "golden_file_id": str(row.id), "golden_row": entry.source_row}
+            await self._repo.update_items(
+                version.id, self._answer_values(entry) | {"extra": extra}, ids=[targets[at].id]
+            )
+        for number in unpaired:
+            report.unpaired(number)
         built = self._report(row, stream, report)
         values = {
             "status": InputFileStatus.IMPORTED,
@@ -201,23 +203,29 @@ class FileProcessor:
     async def _valid_items(
         self, row: InputFile, stream: RowStream, report: ReportBuilder, ticker: Ticker
     ) -> AsyncIterator[ItemDraft]:
-        if row.prompt_version_id is None or row.column_mapping is None:
+        if row.column_mapping is None:
             raise NotFound(NO_MAPPING)
         mapping = ColumnMapping.model_validate(row.column_mapping)
-        required = (await self._prompts.get_version(row.project_id, row.prompt_version_id)).required_inputs
         default_category = self._settings.dataset_default_category
-        seen: set[bytes] = set()
         for count, source in enumerate(stream.rows, start=1):
             await ticker.tick(count)
-            outcome = evaluate_row(source, mapping, required, default_category)
+            outcome = evaluate_row(source, mapping, default_category)
             if isinstance(outcome, list):
                 report.reject(source.number, outcome)
-            elif (key := duplicate_key(outcome)) in seen:
-                report.duplicate(source.number)
             else:
-                seen.add(key)
                 report.accept()
                 yield outcome
+
+    @staticmethod
+    def _answer_values(item: ItemDraft) -> dict[str, Any]:
+        return {
+            "expected_output": item.expected_output,
+            "rubric": item.rubric,
+            "category": item.category,
+            "tags": item.tags,
+            "source": ItemSource.GOLDEN,
+            "review_status": ReviewStatus.TRUSTED,
+        }
 
     @staticmethod
     def _item_values(row: InputFile, version_id: uuid.UUID, item: ItemDraft, position: int) -> dict[str, Any]:

@@ -25,6 +25,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from app.core.text import clip
 from app.modules.generator.schemas import CaseCategory, OutputFormat, TaskSpec, TaskType
 from app.modules.registry.schemas import ModelProfileOut
 
@@ -139,7 +140,7 @@ def missing_labels(spec: TaskSpec, answers: Sequence[str | None]) -> list[str]:
 
 
 def case_text(inputs: dict[str, Any]) -> str:
-    return "\n".join(f"{key}: {value}" for key, value in sorted(inputs.items()))
+    return "\n".join(str(value) for _, value in sorted(clip(inputs).items()))
 
 
 def select_evaluators(spec: TaskSpec, catalog: EvaluatorCatalog) -> list[EvaluatorChoice]:

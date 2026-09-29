@@ -1,7 +1,8 @@
 # Column names that suggest a mapping target (compared after lowercasing and replacing
-# spaces and punctuation with "_"). Prompt variables are matched by their own name first.
+# spaces and punctuation with "_"). 
 # The user always confirms the suggestion; this only saves typing.
 expected_output: [expected_output, expected, expected_answer, answer, gold, gold_answer, ground_truth, target, label, correct_answer, reference, output]
 rubric: [rubric, criteria, grading, grading_criteria, guidelines, evaluation_criteria]
 category: [category, case_type, test_category, segment, group]
 tags: [tags, labels, keywords]
+input_file: [input_file, file, filename, file_name, input]

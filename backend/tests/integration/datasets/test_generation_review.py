@@ -15,7 +15,7 @@ from app.core.container import Container
 from app.core.jobs import InlineJobQueue
 from app.modules.gateway.models import LLMCall
 from tests.files import rows_file
-from tests.helpers import Session, add_credential, create_prompt, import_file, map_file, upload
+from tests.helpers import Session, add_credential, add_golden, add_input_files, create_prompt, upload
 
 pytestmark = [pytest.mark.integration, pytest.mark.datasets]
 
@@ -31,19 +31,11 @@ def api(session: Session, path: str) -> str:
     return f"/api/v1/projects/{session.project_id}{path}"
 
 
-async def ingest(
-    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue, version_id: str, rows: list[dict[str, Any]]
-) -> None:
-    response = await upload(client, session, "rows.csv", rows_file(rows, "csv"))
-    file_id = response.json()["id"]
-    await jobs.drain()
-    mapping: dict[str, Any] = {"inputs": {"ticket": "ticket"}}
-    if "expected" in rows[0]:
-        mapping["expected_output"] = "expected"
-    assert (await map_file(client, session, file_id, version_id, mapping)).status_code == 200
-    await jobs.drain()
-    assert (await import_file(client, session, file_id)).status_code == 200
-    await jobs.drain()
+async def ingest(client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue, rows: list[dict[str, Any]]) -> None:
+    """Each row is an input file (its ticket text) with a golden answer."""
+    await add_input_files(client, session, jobs, [row["ticket"] for row in rows])
+    content = rows_file([{"expected": row["expected"]} for row in rows], "csv")
+    await add_golden(client, session, jobs, "golden.csv", content, {"expected_output": "expected"})
 
 
 async def confirmed_spec(client: httpx.AsyncClient, session: Session, version_id: str) -> str:
@@ -78,7 +70,7 @@ async def test_generate_review_and_approve(
     client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue, container: Container
 ) -> None:
     prompt = await create_prompt(client, session)
-    await ingest(client, session, jobs, prompt["id"], GOLDEN)
+    await ingest(client, session, jobs, GOLDEN)
     await upload(client, session, "policy.txt", DOCUMENT, purpose="document")
     await jobs.drain()
     spec_id = await confirmed_spec(client, session, prompt["id"])
@@ -157,7 +149,7 @@ async def test_golden_only_makes_no_generation_calls(
     client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue, container: Container
 ) -> None:
     prompt = await create_prompt(client, session)
-    await ingest(client, session, jobs, prompt["id"], GOLDEN)
+    await ingest(client, session, jobs, GOLDEN)
     spec_id = await confirmed_spec(client, session, prompt["id"])
     async with container.database.sessions() as db:
         calls_before = await db.scalar(select(func.count()).select_from(LLMCall))

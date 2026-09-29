@@ -65,4 +65,4 @@ async def test_improve_uses_only_optimize_failures_and_reports_honestly(
     assert {call.labels["step"] for call in calls} == {"failure_groups", "candidates"}
     sent = " ".join(str(call.request_messages) for call in calls)
     assert holdout
-    assert all(str(item["inputs"]["user_message"]) not in sent for item in holdout)
+    assert all(str(item["inputs"]["attachment"]) not in sent for item in holdout)

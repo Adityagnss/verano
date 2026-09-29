@@ -16,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
 from app.core.templates import render_system_prompt
+from app.core.text import clip
 from app.modules.datasets.domain import is_blank
 from app.modules.datasets.models import DatasetItem
 from app.modules.datasets.schemas import ItemFilter, ItemSource, ReviewStatus
@@ -176,7 +177,7 @@ class GenerationRun:
             spec=self.spec.model_dump(mode="json"),
             system_template=self.prompt.system_template,
             user_template=self.prompt.user_template,
-            examples=[item.inputs for item in examples[: self.settings.generator_example_rows]],
+            examples=[clip(item.inputs) for item in examples[: self.settings.generator_example_rows]],
             sections=[section[: self.settings.generator_section_chars] for section in self.sections],
         )
 

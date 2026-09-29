@@ -58,6 +58,11 @@ SMALL_HOLDOUT = (
 )
 
 
+def _unanswered(item: DatasetItem) -> bool:
+    """An input file without a golden answer is simply not scored, so it isn't a problem."""
+    return item.source is not ItemSource.INPUT_FILE and item.expected_output is None and not item.rubric
+
+
 def item_out(row: DatasetItem) -> ItemOut:
     return ItemOut.model_validate(row)
 
@@ -118,7 +123,7 @@ class DatasetService:
                 group = groups.setdefault(key, GroupCount())
                 group.total += 1
                 group.draft += item.review_status is ReviewStatus.DRAFT
-                group.without_answer += item.expected_output is None and not item.rubric
+                group.without_answer += _unanswered(item)
             if item.split is not None:
                 by_split[item.split.value] = by_split.get(item.split.value, 0) + 1
         holdout = by_split.get("holdout", round(len(items) * self._settings.dataset_holdout_ratio))
@@ -200,7 +205,7 @@ class DatasetService:
         drafts = sum(item.review_status is ReviewStatus.DRAFT for item in items)
         if drafts:
             problems.append(UNREVIEWED.format(count=drafts))
-        unanswered = sum(item.expected_output is None and not item.rubric for item in items)
+        unanswered = sum(_unanswered(item) for item in items)
         if unanswered:
             problems.append(NO_ANSWER.format(count=unanswered))
         if version.evaluator_set_version_id is None:

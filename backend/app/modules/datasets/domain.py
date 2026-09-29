@@ -1,22 +1,25 @@
 """
-Pure dataset logic: suggesting and checking a column mapping, turning one source row into a
-test case (or into the reasons it can't be one), and building the validation report.
+Pure dataset logic for golden sets: suggesting and checking a column mapping, turning one
+golden-set row into an expected output (or into the reasons it can't be one), pairing
+those entries with input files, and building the validation report.
 
-- `suggest_mapping` matches prompt inputs by name, then answer / rubric / category / tags
-  columns by synonym (config/column_synonyms.yaml). For a system-only prompt, whose one
-  required input is the "User message input", a single remaining column is suggested for it.
-- `mapping_problems` lists everything wrong with a mapping at once: unknown columns, a
-  column used for two things, required inputs left unmapped.
-- `evaluate_row` is the single definition of a valid row: every required input has a
-  value, and a golden-set row has an expected output or a rubric.
+- `suggest_mapping` matches answer / rubric / category / tags / input-file-name columns by
+  synonym (config/column_synonyms.yaml). Nothing is required: a row with no expected-output
+  column is itself the expected output (a JSON answer), minus any mapped columns.
+- `mapping_problems` lists everything wrong with a mapping at once: unknown columns and a
+  column used for two things.
+- `evaluate_row` is the single definition of a valid entry: it has an expected output or a
+  rubric.
+- `Pairing` pairs entries with input files: by file name where the entry names one, the
+  rest in order.
 - `clean_header` makes header cells usable as column names: blanks become `column_N`,
   repeats get a suffix, a stray byte-order mark is dropped.
 - `ReportBuilder` counts issues with their row numbers (the file's own numbering: the
   spreadsheet row, the JSONL line, the JSON item), listing at most N rows per issue.
+- `TableSummary` is what a model sees of a table file (see `processing.attach`).
 No I/O.
 """
 
-import hashlib
 import json
 import math
 import random
@@ -38,17 +41,13 @@ from app.modules.datasets.schemas import (
     ValidationIssue,
     ValidationReport,
 )
-from app.modules.prompts.schemas import USER_MESSAGE_INPUT
 
 SEPARATORS = re.compile(r"[^0-9a-z]+")
 LIST_SPLIT = re.compile(r"\s*[,;]\s*")
-MISSING_VALUE = "No value for {field}"
 MISSING_ANSWER = "No expected output or rubric"
-DUPLICATE = "Exact duplicate of an earlier row"
+UNPAIRED = "No input file to pair this entry with. Upload the input files first."
 UNKNOWN_COLUMN = "Column '{column}' isn't in this file."
 COLUMN_TWICE = "Column '{column}' is mapped to more than one target."
-INPUT_UNMAPPED = "The prompt input '{name}' needs a column."
-UNKNOWN_INPUT = "'{name}' isn't an input of this prompt."
 
 
 class ColumnSynonyms(BaseModel):
@@ -56,6 +55,7 @@ class ColumnSynonyms(BaseModel):
     rubric: list[str]
     category: list[str]
     tags: list[str]
+    input_file: list[str]
 
 
 @dataclass(frozen=True)
@@ -74,6 +74,7 @@ class ItemDraft:
     tags: list[str]
     extra: dict[str, Any]
     source_row: int
+    input_file: str | None = None
 
 
 @dataclass(frozen=True)
@@ -92,37 +93,21 @@ def _first_match(columns: list[str], candidates: Iterable[str], taken: set[str])
     return next((by_name[normalize(c)] for c in candidates if normalize(c) in by_name), None)
 
 
-def suggest_mapping(columns: list[str], required_inputs: list[str], synonyms: ColumnSynonyms) -> ColumnMapping:
+def suggest_mapping(columns: list[str], synonyms: ColumnSynonyms) -> ColumnMapping:
     taken: set[str] = set()
-    inputs: dict[str, str] = {}
-    for name in required_inputs:
-        column = _first_match(columns, [name], taken)
-        if column is not None:
-            inputs[name] = column
-            taken.add(column)
     targets: dict[str, str | None] = {}
-    for target in ("expected_output", "rubric", "category", "tags"):
+    for target in ("expected_output", "rubric", "category", "tags", "input_file"):
         targets[target] = _first_match(columns, getattr(synonyms, target), taken)
         taken.update(column for column in [targets[target]] if column)
-    remaining = [column for column in columns if column not in taken]
-    if USER_MESSAGE_INPUT in required_inputs and USER_MESSAGE_INPUT not in inputs and len(remaining) == 1:
-        inputs[USER_MESSAGE_INPUT] = remaining[0]
-    return ColumnMapping(inputs=inputs, **targets)
+    return ColumnMapping(**targets)
 
 
-def mapping_problems(mapping: ColumnMapping, columns: list[str], required_inputs: list[str]) -> list[str]:
+def mapping_problems(mapping: ColumnMapping, columns: list[str]) -> list[str]:
     known = set(columns)
-    assigned = mapping.assigned()
-    used = [column for _, column in assigned] + mapping.ignored
+    used = [column for _, column in mapping.assigned()] + mapping.ignored
     problems = [UNKNOWN_COLUMN.format(column=column) for column in dict.fromkeys(used) if column not in known]
     problems += [COLUMN_TWICE.format(column=column) for column in dict.fromkeys(used) if used.count(column) > 1]
-    problems += [UNKNOWN_INPUT.format(name=name) for name in mapping.inputs if name not in required_inputs]
-    problems += [INPUT_UNMAPPED.format(name=name) for name in required_inputs if name not in mapping.inputs]
     return problems
-
-
-def kind_of(mapping: ColumnMapping) -> InputFileKind:
-    return InputFileKind.GOLDEN_SET if mapping.has_answers else InputFileKind.RAW_INPUTS
 
 
 def is_blank(value: Any) -> bool:
@@ -144,34 +129,68 @@ def as_list(value: Any, splitter: re.Pattern[str]) -> list[str]:
 RUBRIC_SPLIT = re.compile(r"\s*(?:\r?\n)+\s*")
 
 
-def evaluate_row(
-    row: SourceRow, mapping: ColumnMapping, required_inputs: list[str], default_category: str
-) -> ItemDraft | list[RowIssue]:
+def evaluate_row(row: SourceRow, mapping: ColumnMapping, default_category: str) -> ItemDraft | list[RowIssue]:
     if row.values is None:
         return [RowIssue(IssueKind.INVALID_ROW, None, row.error or "This row can't be read")]
     values = row.values
-    issues = [
-        RowIssue(IssueKind.MISSING_VALUE, name, MISSING_VALUE.format(field=name))
-        for name in required_inputs
-        if is_blank(values.get(mapping.inputs.get(name, "")))
-    ]
-    expected = values.get(mapping.expected_output) if mapping.expected_output else None
-    rubric = as_list(values.get(mapping.rubric), RUBRIC_SPLIT) if mapping.rubric else []
-    if mapping.has_answers and is_blank(expected) and not rubric:
-        issues.append(RowIssue(IssueKind.MISSING_ANSWER, None, MISSING_ANSWER))
-    if issues:
-        return issues
     used = {column for _, column in mapping.assigned()} | set(mapping.ignored)
+    rubric = as_list(values.get(mapping.rubric), RUBRIC_SPLIT) if mapping.rubric else []
+    if mapping.expected_output:
+        expected = values.get(mapping.expected_output)
+    elif rubric:
+        expected = None
+    else:
+        rest = {column: value for column, value in values.items() if column not in used and not is_blank(value)}
+        expected = json.dumps(rest, ensure_ascii=False, default=str) if rest else None
+    if is_blank(expected) and not rubric:
+        return [RowIssue(IssueKind.MISSING_ANSWER, None, MISSING_ANSWER)]
     category = values.get(mapping.category) if mapping.category else None
+    name = values.get(mapping.input_file) if mapping.input_file else None
     return ItemDraft(
-        inputs={name: values[column] for name, column in mapping.inputs.items()},
+        inputs={},
         expected_output=None if is_blank(expected) else as_text(expected).strip(),
         rubric=rubric or None,
         category=default_category if is_blank(category) else as_text(category).strip(),
         tags=as_list(values.get(mapping.tags), LIST_SPLIT) if mapping.tags else [],
-        extra={column: value for column, value in values.items() if column not in used},
+        extra={},
         source_row=row.number,
+        input_file=None if is_blank(name) else as_text(name).strip(),
     )
+
+
+class Pairing:
+    """Pairs golden entries with input files as the entries stream past, holding at most one
+    entry per input file: an entry naming a file takes it, the others take the files left,
+    in order, once all entries are seen."""
+
+    def __init__(self, filenames: list[str]) -> None:
+        self._filenames = filenames
+        self._taken: set[int] = set()
+        self._pending: list[ItemDraft] = []
+        self._pairs: list[tuple[ItemDraft, int]] = []
+        self._unpaired: list[int] = []
+
+    def add(self, entry: ItemDraft) -> None:
+        if entry.input_file is not None:
+            at = next(
+                (i for i, name in enumerate(self._filenames) if name == entry.input_file and i not in self._taken), None
+            )
+            if at is None:
+                self._unpaired.append(entry.source_row)
+            else:
+                self._taken.add(at)
+                self._pairs.append((entry, at))
+        elif len(self._pending) < len(self._filenames):
+            self._pending.append(entry)
+        else:
+            self._unpaired.append(entry.source_row)
+
+    def finish(self) -> tuple[list[tuple[ItemDraft, int]], list[int]]:
+        free = [i for i in range(len(self._filenames)) if i not in self._taken]
+        for entry, at in zip(self._pending, free, strict=False):
+            self._pairs.append((entry, at))
+        self._unpaired += [entry.source_row for entry in self._pending[len(free) :]]
+        return self._pairs, sorted(self._unpaired)
 
 
 def clean_header(cells: list[Any]) -> list[str]:
@@ -183,11 +202,6 @@ def clean_header(cells: list[Any]) -> list[str]:
             name, suffix = f"{base}_{suffix}", suffix + 1
         names.append(name)
     return names
-
-
-def duplicate_key(item: ItemDraft) -> bytes:
-    payload = json.dumps([item.inputs, item.expected_output, item.rubric], sort_keys=True, default=str)
-    return hashlib.blake2b(payload.encode(), digest_size=16).digest()
 
 
 @dataclass
@@ -205,7 +219,6 @@ class ReportBuilder:
     total_rows: int = 0
     valid_rows: int = 0
     skipped_rows: int = 0
-    duplicates: int = 0
     _issues: dict[tuple[IssueKind, str | None], _IssueTally] = field(default_factory=dict)
 
     def _note(self, kind: IssueKind, target: str | None, message: str, row: int) -> None:
@@ -220,10 +233,10 @@ class ReportBuilder:
         for issue in issues:
             self._note(issue.kind, issue.target, issue.message, row)
 
-    def duplicate(self, row: int) -> None:
-        self.total_rows += 1
-        self.duplicates += 1
-        self._note(IssueKind.DUPLICATE, None, DUPLICATE, row)
+    def unpaired(self, row: int) -> None:
+        self.valid_rows -= 1
+        self.skipped_rows += 1
+        self._note(IssueKind.UNPAIRED, None, UNPAIRED, row)
 
     def accept(self) -> None:
         self.total_rows += 1
@@ -240,7 +253,6 @@ class ReportBuilder:
             total_rows=self.total_rows,
             valid_rows=self.valid_rows,
             skipped_rows=self.skipped_rows,
-            duplicates_removed=self.duplicates,
             issues=[
                 ValidationIssue(kind=t.kind, field=t.target, message=t.message, count=t.count, rows=t.rows)
                 for t in self._issues.values()

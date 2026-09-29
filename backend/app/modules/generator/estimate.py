@@ -47,7 +47,7 @@ async def estimate_generation(
     for item in items:
         real[item.category] = real.get(item.category, 0) + 1
     targets = plan_targets(CATEGORIES, body.target_size or settings.generator_default_size, real, {})
-    answers = sum(targets.values()) + sum(1 for i in items if i.expected_output is None and not i.rubric)
+    answers = sum(targets.values())
     sizes = estimate_calls(targets, answers, settings.generator_batch_size, settings.generator_answer_batch_size)
     profile = (await registry.call_target(project_id, row.generator_credential_id, row.generator_model)).profile
     cost = compute_cost(

@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.pagination import PageParams, keyset
 from app.modules.datasets.models import Dataset, DatasetItem, DatasetVersion, InputFile
-from app.modules.datasets.schemas import DatasetVersionStatus, ItemFilter, Split
+from app.modules.datasets.schemas import DatasetVersionStatus, ItemFilter, ItemSource, Split
 
 
 class DatasetRepository:
@@ -80,6 +80,22 @@ class DatasetRepository:
                 DatasetItem.dataset_version_id == version_id, DatasetItem.input_file_id == file_id
             )
         )
+
+    async def unpair_golden(self, version_id: uuid.UUID, golden_file_id: uuid.UUID, default_category: str) -> None:
+        """Takes back the answers a golden-set file wrote onto input-file items."""
+        paired = await self.items(version_id, ItemFilter(source=ItemSource.GOLDEN))
+        for item in paired:
+            if item.extra.get("golden_file_id") == str(golden_file_id):
+                extra = {k: v for k, v in item.extra.items() if k not in ("golden_file_id", "golden_row")}
+                values: dict[str, Any] = {
+                    "expected_output": None,
+                    "rubric": None,
+                    "category": default_category,
+                    "tags": [],
+                    "source": ItemSource.INPUT_FILE,
+                    "extra": extra,
+                }
+                await self.update_items(version_id, values, ids=[item.id])
 
     async def insert_items(self, rows: Sequence[dict[str, Any]]) -> None:
         if rows:

@@ -107,7 +107,7 @@ class TaskSpecOut(BaseModel):
 
 class GenerationRequest(BaseModel):
     task_spec_id: uuid.UUID
-    target_size: int | None = Field(default=None, ge=20, le=1000)
+    target_size: int | None = Field(default=None, ge=5, le=1000)
     golden_only: bool = False
 
 

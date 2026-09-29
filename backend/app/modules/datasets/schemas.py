@@ -91,11 +91,11 @@ class FileProfile(BaseModel):
 
 
 class ColumnMapping(BaseModel):
-    inputs: dict[str, str] = {}
     expected_output: str | None = None
     rubric: str | None = None
     category: str | None = None
     tags: str | None = None
+    input_file: str | None = None
     ignored: list[str] = []
 
     def assigned(self) -> list[tuple[str, str]]:
@@ -104,22 +104,13 @@ class ColumnMapping(BaseModel):
             ("rubric", self.rubric),
             ("category", self.category),
             ("tags", self.tags),
+            ("input_file", self.input_file),
         ]
-        return [(f"input:{name}", column) for name, column in self.inputs.items()] + [
-            (target, column) for target, column in targets if column is not None
-        ]
-
-    @property
-    def has_answers(self) -> bool:
-        return self.expected_output is not None or self.rubric is not None
+        return [(target, column) for target, column in targets if column is not None]
 
 
 class MappingSuggestion(BaseModel):
-    prompt_version_id: uuid.UUID
-    required_inputs: list[str]
     mapping: ColumnMapping
-    unmapped_inputs: list[str]
-    kind: InputFileKind
 
 
 class SheetRequest(BaseModel):
@@ -127,14 +118,12 @@ class SheetRequest(BaseModel):
 
 
 class MappingRequest(BaseModel):
-    prompt_version_id: uuid.UUID
     mapping: ColumnMapping
 
 
 class IssueKind(StrEnum):
-    MISSING_VALUE = "missing_value"
     MISSING_ANSWER = "missing_answer"
-    DUPLICATE = "duplicate"
+    UNPAIRED = "unpaired"
     INVALID_ROW = "invalid_row"
 
 
@@ -154,7 +143,6 @@ class ValidationReport(BaseModel):
     total_rows: int
     valid_rows: int
     skipped_rows: int
-    duplicates_removed: int
     issues: list[ValidationIssue]
     warnings: list[str]
 

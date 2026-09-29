@@ -8,7 +8,7 @@ import uuid
 from collections.abc import AsyncIterator
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, Query, UploadFile, status
+from fastapi import APIRouter, File, Form, UploadFile, status
 from fastapi.responses import StreamingResponse
 
 from app.core.events import sse_response
@@ -69,13 +69,8 @@ async def select_sheet(
 
 
 @router.get(f"{FILE}/mapping-suggestion")
-async def suggest_mapping(
-    file_id: uuid.UUID,
-    project: ProjectScope,
-    service: IngestServiceDep,
-    prompt_version_id: Annotated[uuid.UUID, Query()],
-) -> MappingSuggestion:
-    return await service.suggest_mapping(project, file_id, prompt_version_id)
+async def suggest_mapping(file_id: uuid.UUID, project: ProjectScope, service: IngestServiceDep) -> MappingSuggestion:
+    return await service.suggest_mapping(project, file_id)
 
 
 @router.put(f"{FILE}/mapping")

@@ -25,6 +25,7 @@ from app.core.jobs import JobQueue
 from app.core.progress import ProgressEvent, ProgressHub, ProgressStatus
 from app.core.security import Principal, utcnow
 from app.core.templates import render_system_prompt
+from app.core.text import clip
 from app.modules.datasets.schemas import DatasetVersionOut, ItemSource
 from app.modules.datasets.service import DatasetService
 from app.modules.documents.service import DocumentService
@@ -154,7 +155,7 @@ class GeneratorService:
             input_variables=version.required_inputs,
             system_template=version.system_template,
             user_template=version.user_template,
-            rows=[item.inputs for item in real[: self._settings.generator_task_spec_rows]],
+            rows=[clip(item.inputs) for item in real[: self._settings.generator_task_spec_rows]],
             documents=[section.text[:SUMMARY_CHARS] for section in sections],
         )
         spec = await self._gateway.complete_json(

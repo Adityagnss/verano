@@ -8,6 +8,7 @@ import uuid
 from collections import Counter
 from typing import Any
 
+from app.core.text import clip
 from app.modules.analysis.models import FailureCluster
 from app.modules.assistant.domain import prompt_diff, rule_tag
 from app.modules.assistant.models import OptimizationSession, PromptCandidate
@@ -37,7 +38,7 @@ def failures_of(cases: list[CaseResultOut]) -> list[dict[str, Any]]:
                     "tag": rule_tag(output.output, failed),
                     "model": output.model,
                     "category": case.category,
-                    "inputs": case.inputs,
+                    "inputs": clip(case.inputs),
                     "expected": case.expected_output,
                     "output": output.output or output.error,
                     "reasons": "; ".join(s.reason for s in output.scores if not s.passed),
