@@ -1,7 +1,7 @@
 /**
- * The three optional upload cards (DEVELOPMENT.md C3): golden set, input files, reference
- * documents. Golden set and input files take row files; whether a file is a golden set is
- * decided by its column mapping (a correct-answer column), so both cards upload the same way.
+ * The three optional upload cards (DEVELOPMENT.md 2.2): input files (each sent to the models
+ * as one attachment), the golden set (correct answers, one per input file) and reference
+ * documents.
  */
 "use client"
 
@@ -16,7 +16,8 @@ import type { UploadPurpose } from "@/lib/api/types"
 import { DATA_COPY } from "../copy"
 import { useUpload } from "../hooks"
 
-const ROWS_ACCEPT = ".csv,.tsv,.xlsx,.json,.jsonl,.ndjson"
+const GOLDEN_ACCEPT = ".csv,.tsv,.xlsx,.json,.jsonl,.ndjson"
+const INPUT_ACCEPT = `${GOLDEN_ACCEPT},.txt,.md,.markdown`
 const DOCUMENT_ACCEPT = ".pdf,.docx,.txt,.md,.markdown"
 const CARDS: {
   key: keyof typeof DATA_COPY.cards
@@ -24,8 +25,8 @@ const CARDS: {
   accept: string
   formats: string
 }[] = [
-  { key: "golden", purpose: "rows", accept: ROWS_ACCEPT, formats: DATA_COPY.rowsFormats },
-  { key: "inputs", purpose: "rows", accept: ROWS_ACCEPT, formats: DATA_COPY.rowsFormats },
+  { key: "inputs", purpose: "input", accept: INPUT_ACCEPT, formats: DATA_COPY.inputFormats },
+  { key: "golden", purpose: "golden", accept: GOLDEN_ACCEPT, formats: DATA_COPY.goldenFormats },
   { key: "documents", purpose: "document", accept: DOCUMENT_ACCEPT, formats: DATA_COPY.documentFormats },
 ]
 

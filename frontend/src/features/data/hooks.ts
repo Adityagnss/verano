@@ -1,6 +1,7 @@
 /**
  * Your Data hooks: the project's input files (polled while any is still being processed),
- * upload, sheet choice, the suggested and confirmed column mapping, import, and delete.
+ * upload, sheet choice, the golden set's suggested and confirmed column mapping, import,
+ * and delete.
  */
 "use client"
 
@@ -74,35 +75,27 @@ export function useSelectSheet(projectId: string) {
   })
 }
 
-export function useMappingSuggestion(projectId: string, fileId: string, promptVersionId: string | null) {
+export function useMappingSuggestion(projectId: string, fileId: string, enabled: boolean) {
   return useQuery({
-    queryKey: ["projects", projectId, "files", fileId, "suggestion", promptVersionId],
+    queryKey: ["projects", projectId, "files", fileId, "suggestion"],
     queryFn: () =>
       call(() =>
         api.GET("/api/v1/projects/{project_id}/input-files/{file_id}/mapping-suggestion", {
-          params: { ...fileParams(projectId, fileId), query: { prompt_version_id: promptVersionId ?? "" } },
+          params: fileParams(projectId, fileId),
         }),
       ),
-    enabled: promptVersionId !== null,
+    enabled,
   })
 }
 
 export function useSubmitMapping(projectId: string) {
   const invalidate = useInvalidate(projectId)
   return useMutation({
-    mutationFn: ({
-      fileId,
-      promptVersionId,
-      mapping,
-    }: {
-      fileId: string
-      promptVersionId: string
-      mapping: ColumnMapping
-    }) =>
+    mutationFn: ({ fileId, mapping }: { fileId: string; mapping: ColumnMapping }) =>
       call(() =>
         api.PUT("/api/v1/projects/{project_id}/input-files/{file_id}/mapping", {
           params: fileParams(projectId, fileId),
-          body: { prompt_version_id: promptVersionId, mapping },
+          body: { mapping },
         }),
       ),
     onSettled: invalidate,

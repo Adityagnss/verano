@@ -484,13 +484,16 @@
             "title": "Ignored",
             "type": "array"
           },
-          "inputs": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "default": {},
-            "title": "Inputs",
-            "type": "object"
+          "input_file": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input File"
           },
           "rubric": {
             "anyOf": [
@@ -1630,7 +1633,7 @@
             "anyOf": [
               {
                 "maximum": 1000.0,
-                "minimum": 20.0,
+                "minimum": 5.0,
                 "type": "integer"
               },
               {
@@ -2112,7 +2115,7 @@
         "type": "object"
       },
       "IssueKind": {
-        "enum": ["missing_value", "missing_answer", "duplicate", "invalid_row"],
+        "enum": ["missing_answer", "unpaired", "invalid_row"],
         "title": "IssueKind",
         "type": "string"
       },
@@ -2598,46 +2601,19 @@
         "properties": {
           "mapping": {
             "$ref": "#/components/schemas/ColumnMapping"
-          },
-          "prompt_version_id": {
-            "format": "uuid",
-            "title": "Prompt Version Id",
-            "type": "string"
           }
         },
-        "required": ["prompt_version_id", "mapping"],
+        "required": ["mapping"],
         "title": "MappingRequest",
         "type": "object"
       },
       "MappingSuggestion": {
         "properties": {
-          "kind": {
-            "$ref": "#/components/schemas/InputFileKind"
-          },
           "mapping": {
             "$ref": "#/components/schemas/ColumnMapping"
-          },
-          "prompt_version_id": {
-            "format": "uuid",
-            "title": "Prompt Version Id",
-            "type": "string"
-          },
-          "required_inputs": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Required Inputs",
-            "type": "array"
-          },
-          "unmapped_inputs": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Unmapped Inputs",
-            "type": "array"
           }
         },
-        "required": ["prompt_version_id", "required_inputs", "mapping", "unmapped_inputs", "kind"],
+        "required": ["mapping"],
         "title": "MappingSuggestion",
         "type": "object"
       },
@@ -4512,7 +4488,7 @@
         "type": "object"
       },
       "UploadPurpose": {
-        "enum": ["rows", "document"],
+        "enum": ["input", "golden", "document"],
         "title": "UploadPurpose",
         "type": "string"
       },
@@ -4615,10 +4591,6 @@
       },
       "ValidationReport": {
         "properties": {
-          "duplicates_removed": {
-            "title": "Duplicates Removed",
-            "type": "integer"
-          },
           "encoding": {
             "anyOf": [
               {
@@ -4682,7 +4654,6 @@
           "total_rows",
           "valid_rows",
           "skipped_rows",
-          "duplicates_removed",
           "issues",
           "warnings"
         ],
@@ -7651,16 +7622,6 @@
             "schema": {
               "format": "uuid",
               "title": "Project Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "prompt_version_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Prompt Version Id",
               "type": "string"
             }
           }

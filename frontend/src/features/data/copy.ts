@@ -2,31 +2,33 @@
 export const DATA_COPY = {
   title: "Add your data (optional)",
   subtitle:
-    "Real data makes the test cases realistic. Everything here is optional: without data, Verano writes the test cases for you.",
+    "Send your real files to the models and compare their answers with your golden answers. Everything here is optional: without data, Verano writes the test cases for you.",
   howItWorks: [
-    "Golden set: inputs with the correct answers. Used as they are.",
-    "Input files: real inputs without answers. Answers are drafted for you to check.",
+    "Input files: each file is sent to every model together with your prompt, as it is. One file is one test case.",
+    "Golden set: the correct answer for each input file. Upload it after the input files.",
     "Reference documents: test cases are written from them and checked against them.",
-    "No data? Skip this step and Verano writes all the test cases.",
+    "Every model's answer is saved for each file and compared with the golden answer.",
   ],
   uploadHeading: "Upload files",
-  uploadHint: "Drop in any mix of the three; all are optional.",
-  filesHint: "Match each file's columns to your prompt, check the rows, then import.",
+  uploadHint: "Add your input files first, then the golden set. All are optional.",
+  filesHint:
+    "Input files are ready as soon as they are read. Import the golden set once its columns look right.",
   cards: {
-    golden: {
-      title: "Golden set",
-      description: "Inputs with correct answers. Used as they are and trusted.",
-    },
     inputs: {
       title: "Input files",
-      description: "Real inputs without answers. Verano drafts the answers for you to review.",
+      description: "The files your prompt works on. Each one is sent to the models as it is.",
+    },
+    golden: {
+      title: "Golden set",
+      description: "The correct answer for each input file, in the same order (or named per file).",
     },
     documents: {
       title: "Reference documents",
       description: "Policies, manuals, FAQs. Test cases are written from them and checked against them.",
     },
   },
-  rowsFormats: "CSV, XLSX, JSON or JSONL",
+  inputFormats: "CSV, XLSX, JSON, JSONL, TXT or MD",
+  goldenFormats: "JSON, JSONL, CSV or XLSX",
   documentFormats: "PDF, DOCX, TXT or MD",
   choose: "Choose file",
   uploading: "Uploading…",
@@ -51,26 +53,26 @@ export const DATA_COPY = {
   >,
   rows: (count: number) => `${count.toLocaleString()} rows`,
   sections: (count: number) => `${count} sections`,
-  imported: (count: number) => `${count.toLocaleString()} test cases added`,
+  imported: (count: number) => `${count.toLocaleString()} answers matched`,
   sheet: "Sheet",
   mappingHeading: "Match your columns",
-  mappingHint: "Tell Verano which column holds what. The suggestion is based on the column names.",
-  input: (name: string) => (name === "user_message" ? "User message" : `Prompt variable: ${name}`),
+  mappingHint:
+    "Optional. With no correct-answer column, each row is itself the correct answer (for example a JSON rule).",
   targets: {
     expected_output: "Correct answer",
     rubric: "Grading criteria",
     category: "Category",
     tags: "Tags",
+    input_file: "Input file name",
   } as Record<string, string>,
   none: "— none —",
-  noPrompt: "Save a prompt first (step 2), so Verano knows which columns it needs.",
-  check: "Check rows",
+  check: "Check entries",
   checking: "Checking…",
-  report: (valid: number, skipped: number, duplicates: number) =>
-    `${valid.toLocaleString()} valid rows, ${skipped.toLocaleString()} skipped, ${duplicates.toLocaleString()} duplicates removed`,
+  report: (valid: number, skipped: number) =>
+    `${valid.toLocaleString()} answers matched to input files, ${skipped.toLocaleString()} skipped`,
   rowsList: (rows: number[], count: number) =>
     `rows ${rows.join(", ")}${count > rows.length ? ` and ${count - rows.length} more` : ""}`,
-  importRows: (count: number) => `Import ${count.toLocaleString()} rows`,
+  importRows: (count: number) => `Import ${count.toLocaleString()} answers`,
   remove: "Remove",
   generateForMe: "I don't have data, generate it for me",
   next: "Next: test cases",

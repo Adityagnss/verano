@@ -41,7 +41,7 @@ import { CaseTable } from "./case-table"
 import { EvaluatorCard } from "./evaluator-card"
 import { modelKey, TaskSpecCard } from "./task-spec-card"
 
-const DEFAULT_SIZE = 100
+const DEFAULT_SIZE = 10
 
 function Approved({ version }: { version: DatasetVersionOut }) {
   return (
@@ -236,7 +236,7 @@ export function TestsStep({ projectId }: { projectId: string }) {
               <Input
                 id="size"
                 type="number"
-                min={20}
+                min={5}
                 max={1000}
                 value={size}
                 disabled={goldenOnly || !confirmed}

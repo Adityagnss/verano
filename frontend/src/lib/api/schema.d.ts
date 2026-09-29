@@ -1176,13 +1176,8 @@ export interface components {
              * @default []
              */
             ignored: string[];
-            /**
-             * Inputs
-             * @default {}
-             */
-            inputs: {
-                [key: string]: string;
-            };
+            /** Input File */
+            input_file?: string | null;
             /** Rubric */
             rubric?: string | null;
             /** Tags */
@@ -1772,7 +1767,7 @@ export interface components {
          * IssueKind
          * @enum {string}
          */
-        IssueKind: "missing_value" | "missing_answer" | "duplicate" | "invalid_row";
+        IssueKind: "missing_answer" | "unpaired" | "invalid_row";
         /** ItemCreate */
         ItemCreate: {
             /**
@@ -1938,25 +1933,10 @@ export interface components {
         /** MappingRequest */
         MappingRequest: {
             mapping: components["schemas"]["ColumnMapping"];
-            /**
-             * Prompt Version Id
-             * Format: uuid
-             */
-            prompt_version_id: string;
         };
         /** MappingSuggestion */
         MappingSuggestion: {
-            kind: components["schemas"]["InputFileKind"];
             mapping: components["schemas"]["ColumnMapping"];
-            /**
-             * Prompt Version Id
-             * Format: uuid
-             */
-            prompt_version_id: string;
-            /** Required Inputs */
-            required_inputs: string[];
-            /** Unmapped Inputs */
-            unmapped_inputs: string[];
         };
         /** MeOut */
         MeOut: {
@@ -2724,7 +2704,7 @@ export interface components {
          * UploadPurpose
          * @enum {string}
          */
-        UploadPurpose: "rows" | "document";
+        UploadPurpose: "input" | "golden" | "document";
         /** UserOut */
         UserOut: {
             /**
@@ -2769,8 +2749,6 @@ export interface components {
         };
         /** ValidationReport */
         ValidationReport: {
-            /** Duplicates Removed */
-            duplicates_removed: number;
             /** Encoding */
             encoding: string | null;
             format: components["schemas"]["FileFormat"];
@@ -4450,9 +4428,7 @@ export interface operations {
     };
     suggest_mapping_api_v1_projects__project_id__input_files__file_id__mapping_suggestion_get: {
         parameters: {
-            query: {
-                prompt_version_id: string;
-            };
+            query?: never;
             header?: never;
             path: {
                 file_id: string;

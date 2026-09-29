@@ -30,26 +30,33 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
 
   await page.getByRole("link", { name: "Prompt" }).click()
   await page.getByLabel("Prompt name").fill("Triage")
-  await page.getByLabel("User prompt").fill("Classify this ticket: {{ ticket }}")
-  await expect(page.getByText("Each test case needs: ticket")).toBeVisible()
+  await page.getByLabel("System prompt").fill("Classify the support ticket. Reply with one word.")
   await page.getByRole("button", { name: "Save prompt" }).click()
   await expect(page).toHaveURL(/\/data$/)
 
+  const tickets = ["My card was charged twice", "Where is my parcel?", "The app crashes on start"]
+  await page.getByTestId("upload-inputs").setInputFiles(
+    tickets.map((text, i) => ({
+      name: `case${i + 1}.txt`,
+      mimeType: "text/plain",
+      buffer: Buffer.from(text),
+    })),
+  )
+  await expect(page.getByText("case3.txt")).toBeVisible()
   await page.getByTestId("upload-golden").setInputFiles({
     name: "golden.csv",
     mimeType: "text/csv",
     buffer: Buffer.from(GOLDEN),
   })
-  await page.getByRole("button", { name: "Check rows" }).click()
-  await page.getByRole("button", { name: "Import 3 rows" }).click()
-  await expect(page.getByText("3 test cases added")).toBeVisible()
+  await page.getByRole("button", { name: "Check entries" }).click()
+  await page.getByRole("button", { name: "Import 3 answers" }).click()
+  await expect(page.getByText("3 answers matched").first()).toBeVisible()
   await page.getByRole("button", { name: "Next: test cases" }).click()
 
   await page.getByRole("button", { name: "Describe the task" }).click()
   await expect(page.getByLabel("Goal")).toHaveValue("Classify support tickets into categories")
   await page.getByRole("button", { name: "Confirm task" }).click()
-  await page.getByLabel("How many test cases").fill("20")
-  await expect(page.getByText(/Estimated cost/)).toBeVisible()
+  await page.getByRole("checkbox", { name: "Use only my files (no generation)" }).click()
   await page.getByRole("button", { name: "Generate test cases" }).click()
 
   await expect(page.getByRole("button", { name: "Approve test cases" })).toBeVisible({ timeout: 90_000 })

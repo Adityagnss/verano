@@ -1,7 +1,8 @@
 /**
- * Column mapping for one rows file: the suggested mapping (by column name) shown as
- * choices the user confirms, then "Check rows" produces the validation report with row
- * numbers, and "Import" turns the valid rows into test cases.
+ * Golden-set mapping: which column holds the correct answer, the grading criteria, the
+ * category, tags and the input file an entry belongs to. All are optional: with no answer
+ * column, each row is itself the expected answer. "Check entries" produces the report with
+ * row numbers, and "Import" writes the answers onto the input files.
  */
 "use client"
 
@@ -16,7 +17,7 @@ import type { ColumnMapping, InputFileOut, ValidationReport } from "@/lib/api/ty
 import { DATA_COPY } from "../copy"
 import { useImport, useMappingSuggestion, useSubmitMapping } from "../hooks"
 
-const TARGETS = ["expected_output", "rubric", "category", "tags"] as const
+const TARGETS = ["expected_output", "rubric", "category", "tags", "input_file"] as const
 
 function ColumnSelect({
   id,
@@ -49,9 +50,7 @@ function ColumnSelect({
 export function Report({ report }: { report: ValidationReport }) {
   return (
     <div className="bg-subtle ring-border flex flex-col gap-2 rounded-lg p-3 text-sm ring-1">
-      <p className="font-medium">
-        {DATA_COPY.report(report.valid_rows, report.skipped_rows, report.duplicates_removed)}
-      </p>
+      <p className="font-medium">{DATA_COPY.report(report.valid_rows, report.skipped_rows)}</p>
       {report.issues.length ? (
         <ul className="text-muted-foreground flex flex-col gap-1">
           {report.issues.map((issue) => (
@@ -71,25 +70,17 @@ export function Report({ report }: { report: ValidationReport }) {
   )
 }
 
-type Props = { projectId: string; file: InputFileOut; promptVersionId: string | null }
+type Props = { projectId: string; file: InputFileOut }
 
-export function MappingPanel({ projectId, file, promptVersionId }: Props) {
-  const suggestion = useMappingSuggestion(projectId, file.id, promptVersionId)
+export function MappingPanel({ projectId, file }: Props) {
+  const suggestion = useMappingSuggestion(projectId, file.id, true)
   const submit = useSubmitMapping(projectId)
   const importRows = useImport(projectId)
   const [edited, setMapping] = useState<ColumnMapping | null>(null)
   const mapping = edited ?? file.column_mapping ?? suggestion.data?.mapping ?? null
 
-  if (promptVersionId === null) return <p className="text-muted-foreground text-sm">{DATA_COPY.noPrompt}</p>
   if (!suggestion.data || !mapping) return <ErrorMessage error={suggestion.error} />
   const columns = file.profile?.columns ?? []
-  const inputs = mapping.inputs ?? {}
-  const setInput = (name: string, column: string | null) => {
-    const next = { ...inputs }
-    if (column) next[name] = column
-    else delete next[name]
-    setMapping({ ...mapping, inputs: next })
-  }
   const report = file.status === "validated" ? file.validation_report : null
   return (
     <div className="flex flex-col gap-4">
@@ -98,16 +89,6 @@ export function MappingPanel({ projectId, file, promptVersionId }: Props) {
         <p className="text-muted-foreground text-xs">{DATA_COPY.mappingHint}</p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {suggestion.data.required_inputs.map((name) => (
-          <ColumnSelect
-            key={name}
-            id={`${file.id}-input-${name}`}
-            label={DATA_COPY.input(name)}
-            columns={columns}
-            value={inputs[name]}
-            onChange={(column) => setInput(name, column)}
-          />
-        ))}
         {TARGETS.map((target) => (
           <ColumnSelect
             key={target}
@@ -125,9 +106,7 @@ export function MappingPanel({ projectId, file, promptVersionId }: Props) {
         <Button
           variant={report ? "outline" : "default"}
           disabled={submit.isPending}
-          onClick={() =>
-            void submit.mutateAsync({ fileId: file.id, promptVersionId, mapping }).catch(() => undefined)
-          }
+          onClick={() => void submit.mutateAsync({ fileId: file.id, mapping }).catch(() => undefined)}
         >
           {submit.isPending ? DATA_COPY.checking : DATA_COPY.check}
         </Button>

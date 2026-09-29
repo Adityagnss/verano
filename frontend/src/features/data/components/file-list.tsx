@@ -1,6 +1,7 @@
 /**
- * The project's files with their status. A rows file that has been read shows its sheet
- * choice (XLSX with several sheets) and its column mapping; documents show their sections.
+ * The project's files with their status. A golden set that has been read shows its sheet
+ * choice (XLSX with several sheets) and its column mapping; input files and documents are
+ * ready as soon as they are read.
  */
 "use client"
 
@@ -37,19 +38,11 @@ function Detail({ file }: { file: InputFileOut }) {
   return <>{parts.join(" · ")}</>
 }
 
-function FileCard({
-  projectId,
-  file,
-  promptVersionId,
-}: {
-  projectId: string
-  file: InputFileOut
-  promptVersionId: string | null
-}) {
+function FileCard({ projectId, file }: { projectId: string; file: InputFileOut }) {
   const remove = useDeleteFile(projectId)
   const sheet = useSelectSheet(projectId)
   const sheets = file.profile?.sheets ?? []
-  const rows = file.kind !== "reference_document"
+  const rows = file.kind === "golden_set"
   return (
     <Card size="sm">
       <CardHeader>
@@ -99,7 +92,7 @@ function FileCard({
             <Report report={file.validation_report} />
           ) : null}
           {rows && (file.status === "ready" || file.status === "validated") ? (
-            <MappingPanel projectId={projectId} file={file} promptVersionId={promptVersionId} />
+            <MappingPanel projectId={projectId} file={file} />
           ) : null}
         </CardContent>
       ) : null}
@@ -107,20 +100,12 @@ function FileCard({
   )
 }
 
-export function FileList({
-  projectId,
-  files,
-  promptVersionId,
-}: {
-  projectId: string
-  files: InputFileOut[]
-  promptVersionId: string | null
-}) {
+export function FileList({ projectId, files }: { projectId: string; files: InputFileOut[] }) {
   if (files.length === 0) return <EmptyState title={DATA_COPY.filesHeading} description={DATA_COPY.noFiles} />
   return (
     <div className="flex flex-col gap-3">
       {files.map((file) => (
-        <FileCard key={file.id} projectId={projectId} file={file} promptVersionId={promptVersionId} />
+        <FileCard key={file.id} projectId={projectId} file={file} />
       ))}
     </div>
   )
