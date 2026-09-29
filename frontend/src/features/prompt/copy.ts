@@ -6,7 +6,7 @@ export const PROMPT_COPY = {
   howItWorks: [
     "Write the instructions (system prompt), the message per case (user prompt), or both.",
     "Put anything that changes per case in {{ double braces }}, e.g. {{ ticket }}.",
-    "The check on the right shows what each case needs and if it fits each model.",
+    "The prompt check shows what each case needs and if it fits each model.",
     "Saving keeps every version, so you can always compare or go back.",
   ],
   editorHeading: "Your prompt",

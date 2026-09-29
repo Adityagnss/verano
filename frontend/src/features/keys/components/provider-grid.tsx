@@ -3,7 +3,6 @@ import { Plus } from "lucide-react"
 
 import { StatusBadge } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardAction, CardHeader, CardTitle } from "@/components/ui/card"
 import type { ProviderOut } from "@/lib/api/types"
 
 import { KEYS_COPY } from "../copy"
@@ -23,23 +22,23 @@ export function ProviderGrid({
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {providers.map((provider) => (
-        <Card key={provider.name} size="sm">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2.5">
-              <span className="bg-subtle text-text-secondary ring-border flex size-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold ring-1">
-                {initials(provider.display_name)}
-              </span>
-              {provider.display_name}
-              {provider.free ? <StatusBadge tone="success">{KEYS_COPY.free}</StatusBadge> : null}
-            </CardTitle>
-            <CardAction>
-              <Button variant="outline" size="sm" onClick={() => onAdd(provider)}>
-                <Plus />
-                {provider.requires_key ? KEYS_COPY.addKey : KEYS_COPY.connect}
-              </Button>
-            </CardAction>
-          </CardHeader>
-        </Card>
+        <div
+          key={provider.name}
+          data-slot="card"
+          className="bg-card ring-border hover:ring-lagoon/40 flex items-center gap-3 rounded-xl p-3 ring-1 transition-shadow hover:shadow-md"
+        >
+          <span className="from-lagoon-soft to-subtle text-lagoon-strong ring-lagoon/15 flex size-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-sm font-bold ring-1">
+            {initials(provider.display_name)}
+          </span>
+          <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+            <span className="w-full truncate text-sm font-semibold">{provider.display_name}</span>
+            {provider.free ? <StatusBadge tone="success">{KEYS_COPY.free}</StatusBadge> : null}
+          </div>
+          <Button variant="outline" size="sm" onClick={() => onAdd(provider)}>
+            <Plus />
+            {provider.requires_key ? KEYS_COPY.addKey : KEYS_COPY.connect}
+          </Button>
+        </div>
       ))}
     </div>
   )

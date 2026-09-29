@@ -5,7 +5,15 @@ import { cn } from "@/lib/utils"
 
 import { COMMON_COPY } from "./copy"
 
-export function Logo({ size = 28, className }: { size?: number; className?: string }) {
+export function Logo({
+  size = 28,
+  className,
+  tone = "dark",
+}: {
+  size?: number
+  className?: string
+  tone?: "dark" | "light"
+}) {
   const gradient = `verano-mark-${useId().replace(/:/g, "")}`
   return (
     <span className={cn("inline-flex items-center gap-2.5", className)}>
@@ -27,7 +35,12 @@ export function Logo({ size = 28, className }: { size?: number; className?: stri
         />
         <circle cx="23.2" cy="8.6" r="2.4" fill="#93c5fd" />
       </svg>
-      <span className="text-[1.15rem] font-semibold tracking-tight [font-stretch:87.5%]">
+      <span
+        className={cn(
+          "text-[1.15rem] font-semibold tracking-tight [font-stretch:87.5%]",
+          tone === "light" && "text-white",
+        )}
+      >
         {COMMON_COPY.appName}
       </span>
     </span>

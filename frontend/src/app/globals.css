@@ -43,6 +43,8 @@
   --color-info-soft: var(--lagoon-soft);
   --color-info-strong: var(--lagoon-strong);
   --color-lagoon: var(--lagoon);
+  --color-lagoon-soft: var(--lagoon-soft);
+  --color-lagoon-strong: var(--lagoon-strong);
   --color-marigold: var(--marigold);
   --color-marigold-soft: var(--marigold-soft);
   --color-marigold-strong: var(--marigold-strong);
@@ -94,6 +96,10 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(56rem 26rem at 88% -8%, rgb(37 99 235 / 0.08), transparent 70%),
+      radial-gradient(40rem 22rem at -6% 2%, rgb(59 130 246 / 0.06), transparent 70%);
+    background-attachment: fixed;
     font-feature-settings:
       "ss01",
       "tnum" 0;

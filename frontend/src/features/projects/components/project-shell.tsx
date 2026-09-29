@@ -43,6 +43,7 @@ function stepItems(projectId: string, pathname: string, done: Partial<Record<Ste
 function ToolLinks({ projectId, pathname }: { projectId: string; pathname: string }) {
   return (
     <div className="flex flex-col gap-0.5">
+      <p className="text-text-muted px-3 pb-1 text-[11px] font-semibold tracking-wider uppercase">Tools</p>
       <DashboardLink projectId={projectId} active={pathname.endsWith("/dashboard")} />
       <GuideLink projectId={projectId} active={pathname.endsWith("/guide")} />
     </div>

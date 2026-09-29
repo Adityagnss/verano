@@ -62,7 +62,7 @@ export const STEP_GUIDES: Record<StepKey, StepGuide> = {
         example: "1500",
       },
     ],
-    tip: "The panel on the right shows how each model will see your prompt and whether it fits their context window.",
+    tip: "The prompt check shows how each model will see your prompt and whether it fits their context window.",
   },
   data: {
     intro: "Your own files are the most realistic tests. Everything here is optional.",
