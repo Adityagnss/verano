@@ -9,7 +9,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BookOpen, LayoutDashboard, Menu, X } from "lucide-react"
+import { BookOpen, LayoutDashboard, Menu, Table2, X } from "lucide-react"
 import { type ReactNode, useState } from "react"
 
 import { COMMON_COPY } from "@/components/common/copy"
@@ -45,6 +45,7 @@ function ToolLinks({ projectId, pathname }: { projectId: string; pathname: strin
     <div className="flex flex-col gap-0.5">
       <p className="text-text-muted px-3 pb-1 text-[11px] font-semibold tracking-wider uppercase">Tools</p>
       <DashboardLink projectId={projectId} active={pathname.endsWith("/dashboard")} />
+      <LogbookLink projectId={projectId} active={pathname.endsWith("/logbook")} />
       <GuideLink projectId={projectId} active={pathname.endsWith("/guide")} />
     </div>
   )
@@ -61,6 +62,22 @@ function DashboardLink({ projectId, active }: { projectId: string; active: boole
       <span className="flex flex-col leading-tight">
         Dashboard
         <span className="text-text-muted text-xs font-normal">Models, cost, trends</span>
+      </span>
+    </Link>
+  )
+}
+
+function LogbookLink({ projectId, active }: { projectId: string; active: boolean }) {
+  return (
+    <Link
+      href={`/projects/${projectId}/logbook`}
+      aria-current={active ? "page" : undefined}
+      className={`hover:bg-subtle flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${active ? "bg-lagoon-soft font-semibold" : "font-medium"}`}
+    >
+      <Table2 className="text-lagoon-strong size-4" />
+      <span className="flex flex-col leading-tight">
+        Logbook
+        <span className="text-text-muted text-xs font-normal">Every answer and call</span>
       </span>
     </Link>
   )

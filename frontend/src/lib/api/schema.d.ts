@@ -797,6 +797,125 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/logbook/analysis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Analysis */
+        get: operations["analysis_api_v1_projects__project_id__logbook_analysis_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/logbook/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Answers */
+        get: operations["answers_api_v1_projects__project_id__logbook_answers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/logbook/answers.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Answers Csv */
+        get: operations["answers_csv_api_v1_projects__project_id__logbook_answers_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/logbook/answers/{experiment_id}/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Answer */
+        get: operations["answer_api_v1_projects__project_id__logbook_answers__experiment_id___run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/logbook/calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Calls */
+        get: operations["calls_api_v1_projects__project_id__logbook_calls_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/logbook/calls/{call_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Call */
+        get: operations["call_api_v1_projects__project_id__logbook_calls__call_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/logbook/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Options */
+        get: operations["options_api_v1_projects__project_id__logbook_options_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/models": {
         parameters: {
             query?: never;
@@ -1028,6 +1147,128 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AnalysisOut */
+        AnalysisOut: {
+            /** Failed Checks */
+            failed_checks: components["schemas"]["CheckCount"][];
+            /** Groups */
+            groups: components["schemas"]["GroupStats"][];
+            totals: components["schemas"]["Totals"];
+        };
+        /** AnswerDetail */
+        AnswerDetail: {
+            /** Finish Reason */
+            finish_reason: string | null;
+            /** Golden Answer */
+            golden_answer: string | null;
+            /** Inputs */
+            inputs: {
+                [key: string]: unknown;
+            };
+            /** Output */
+            output: string | null;
+            /** Params */
+            params: {
+                [key: string]: unknown;
+            };
+            /** Rendered System Prompt */
+            rendered_system_prompt: string | null;
+            /** Rendered User Prompt */
+            rendered_user_prompt: string | null;
+            row: components["schemas"]["AnswerRow"];
+            /** Rubric */
+            rubric: unknown[] | null;
+            /** Scores */
+            scores: components["schemas"]["ScoreDetail"][];
+            /** Siblings */
+            siblings: components["schemas"]["SiblingAnswer"][];
+        };
+        /** AnswerPage */
+        AnswerPage: {
+            /** Items */
+            items: components["schemas"]["AnswerRow"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Total */
+            total: number;
+        };
+        /** AnswerRow */
+        AnswerRow: {
+            /** Attempts */
+            attempts: number;
+            /** Case Number */
+            case_number: number;
+            /** Category */
+            category: string;
+            /** Cost */
+            cost: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error */
+            error: string | null;
+            /** Experiment */
+            experiment: string;
+            /**
+             * Experiment Id
+             * Format: uuid
+             */
+            experiment_id: string;
+            /** Failed Checks */
+            failed_checks: string[];
+            /** Golden Answer */
+            golden_answer: string | null;
+            /** Golden Match */
+            golden_match: number | null;
+            /** Input Preview */
+            input_preview: string;
+            /** Input Tokens */
+            input_tokens: number | null;
+            /** Latency Ms */
+            latency_ms: number | null;
+            /** Max Tokens */
+            max_tokens: number | null;
+            /** Model */
+            model: string;
+            /** Output Preview */
+            output_preview: string | null;
+            /** Output Tokens */
+            output_tokens: number | null;
+            /** Passed */
+            passed: boolean | null;
+            /** Prompt Version */
+            prompt_version: number;
+            /**
+             * Prompt Version Id
+             * Format: uuid
+             */
+            prompt_version_id: string;
+            /** Provider */
+            provider: string;
+            /** Quality */
+            quality: number | null;
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Run Number */
+            run_number: number;
+            /** Source */
+            source: string;
+            status: components["schemas"]["RunStatus"];
+            /** Temperature */
+            temperature: number | null;
+        };
+        /**
+         * AnswerSort
+         * @enum {string}
+         */
+        AnswerSort: "time" | "experiment" | "version" | "model" | "case" | "passed" | "quality" | "golden_match" | "cost" | "latency" | "tokens";
         /** AuthConfigOut */
         AuthConfigOut: {
             /** Password Min Length */
@@ -1047,11 +1288,85 @@ export interface components {
             category?: string | null;
             source?: components["schemas"]["ItemSource"] | null;
         };
+        /** CallDetail */
+        CallDetail: {
+            /** Finish Reason */
+            finish_reason: string | null;
+            /** Labels */
+            labels: {
+                [key: string]: unknown;
+            };
+            /** Output Text */
+            output_text: string | null;
+            /** Params */
+            params: {
+                [key: string]: unknown;
+            };
+            /** Request Messages */
+            request_messages: unknown[];
+            row: components["schemas"]["CallRow"];
+            /** Trace Id */
+            trace_id: string;
+        };
+        /** CallPage */
+        CallPage: {
+            /** Items */
+            items: components["schemas"]["CallRow"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Total */
+            total: number;
+        };
         /**
          * CallPurpose
          * @enum {string}
          */
         CallPurpose: "test_run" | "generation" | "judge" | "assistant";
+        /** CallRow */
+        CallRow: {
+            /** Attempts */
+            attempts: number;
+            /** Cost */
+            cost: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error */
+            error: string | null;
+            /** Experiment */
+            experiment: string | null;
+            /** Experiment Id */
+            experiment_id: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Input Tokens */
+            input_tokens: number | null;
+            /** Latency Ms */
+            latency_ms: number | null;
+            /** Model */
+            model: string;
+            /** Output Tokens */
+            output_tokens: number | null;
+            /** Provider */
+            provider: string;
+            purpose: components["schemas"]["CallPurpose"];
+            /** Request Preview */
+            request_preview: string;
+            /** Response Preview */
+            response_preview: string | null;
+            status: components["schemas"]["CallStatus"];
+            /** Step */
+            step: string | null;
+            /** Ttft Ms */
+            ttft_ms: number | null;
+        };
         /**
          * CallStatus
          * @enum {string}
@@ -1151,6 +1466,13 @@ export interface components {
             source: string;
             /** Split */
             split: string | null;
+        };
+        /** CheckCount */
+        CheckCount: {
+            /** Check */
+            check: string;
+            /** Failures */
+            failures: number;
         };
         /** CheckRequest */
         CheckRequest: {
@@ -1499,6 +1821,28 @@ export interface components {
             /** Total Cost */
             total_cost: string | null;
         };
+        /** ExperimentOption */
+        ExperimentOption: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Prompt Version */
+            prompt_version: number;
+            /**
+             * Prompt Version Id
+             * Format: uuid
+             */
+            prompt_version_id: string;
+        };
         /**
          * ExperimentOrigin
          * @enum {string}
@@ -1665,6 +2009,41 @@ export interface components {
              * @default 0
              */
             without_answer: number;
+        };
+        /** GroupStats */
+        GroupStats: {
+            /** Answers */
+            answers: number;
+            /** Avg Latency Ms */
+            avg_latency_ms: number | null;
+            /** Cost */
+            cost: string | null;
+            /** Failed Calls */
+            failed_calls: number;
+            /** Golden Match */
+            golden_match: number | null;
+            /** Input Tokens */
+            input_tokens: number;
+            /** Judged */
+            judged: number;
+            /** Model */
+            model: string;
+            /** Output Tokens */
+            output_tokens: number;
+            /** P50 Latency Ms */
+            p50_latency_ms: number | null;
+            /** P90 Latency Ms */
+            p90_latency_ms: number | null;
+            /** Pass Rate */
+            pass_rate: number | null;
+            /** Passed */
+            passed: number;
+            /** Prompt Version */
+            prompt_version: number;
+            /** Quality */
+            quality: number | null;
+            /** Unknown Price Answers */
+            unknown_price_answers: number;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1939,6 +2318,21 @@ export interface components {
             text: string;
             /** Trace Id */
             trace_id: string;
+        };
+        /** LogOptions */
+        LogOptions: {
+            /** Categories */
+            categories: string[];
+            /** Checks */
+            checks: string[];
+            /** Experiments */
+            experiments: components["schemas"]["ExperimentOption"][];
+            /** Models */
+            models: string[];
+            /** Prompt Versions */
+            prompt_versions: components["schemas"]["VersionOption"][];
+            /** Providers */
+            providers: string[];
         };
         /** LoginRequest */
         LoginRequest: {
@@ -2458,6 +2852,21 @@ export interface components {
          * @enum {string}
          */
         RunStatus: "pending" | "running" | "succeeded" | "failed" | "skipped";
+        /** ScoreDetail */
+        ScoreDetail: {
+            /** Evaluator */
+            evaluator: string;
+            /** Passed */
+            passed: boolean;
+            /** Reason */
+            reason: string;
+            /** Required */
+            required: boolean;
+            /** Value */
+            value: number;
+            /** Weight */
+            weight: number;
+        };
         /** ScoreOut */
         ScoreOut: {
             /** Evaluator Name */
@@ -2513,6 +2922,30 @@ export interface components {
             /** Sheet */
             sheet: string;
         };
+        /** SiblingAnswer */
+        SiblingAnswer: {
+            /** Cost */
+            cost: string | null;
+            /** Error */
+            error: string | null;
+            /** Latency Ms */
+            latency_ms: number | null;
+            /** Model */
+            model: string;
+            /** Output */
+            output: string | null;
+            /** Passed */
+            passed: boolean | null;
+            /** Quality */
+            quality: number | null;
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Run Number */
+            run_number: number;
+        };
         /** SignupRequest */
         SignupRequest: {
             /**
@@ -2525,6 +2958,11 @@ export interface components {
             /** Password */
             password: string;
         };
+        /**
+         * SortOrder
+         * @enum {string}
+         */
+        SortOrder: "asc" | "desc";
         /**
          * Split
          * @enum {string}
@@ -2725,6 +3163,27 @@ export interface components {
             /** Ttft Ms */
             ttft_ms: number | null;
         };
+        /** Totals */
+        Totals: {
+            /** Answers */
+            answers: number;
+            /** Cost */
+            cost: string | null;
+            /** Experiments */
+            experiments: number;
+            /** Failed Calls */
+            failed_calls: number;
+            /** Input Tokens */
+            input_tokens: number;
+            /** Models */
+            models: number;
+            /** Output Tokens */
+            output_tokens: number;
+            /** Passed */
+            passed: number;
+            /** Unknown Price Answers */
+            unknown_price_answers: number;
+        };
         /**
          * UploadPurpose
          * @enum {string}
@@ -2790,6 +3249,16 @@ export interface components {
             valid_rows: number;
             /** Warnings */
             warnings: string[];
+        };
+        /** VersionOption */
+        VersionOption: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version */
+            version: number;
         };
     };
     responses: never;
@@ -4642,6 +5111,287 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CostSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    analysis_api_v1_projects__project_id__logbook_analysis_get: {
+        parameters: {
+            query?: {
+                experiment_ids?: string[];
+                prompt_version_ids?: string[];
+                models?: string[];
+                providers?: string[];
+                statuses?: components["schemas"]["RunStatus"][];
+                sources?: components["schemas"]["ItemSource"][];
+                categories?: string[];
+                failed_checks?: string[];
+                passed?: boolean | null;
+                run_number?: number | null;
+                q?: string | null;
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalysisOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    answers_api_v1_projects__project_id__logbook_answers_get: {
+        parameters: {
+            query?: {
+                experiment_ids?: string[];
+                prompt_version_ids?: string[];
+                models?: string[];
+                providers?: string[];
+                statuses?: components["schemas"]["RunStatus"][];
+                sources?: components["schemas"]["ItemSource"][];
+                categories?: string[];
+                failed_checks?: string[];
+                passed?: boolean | null;
+                run_number?: number | null;
+                q?: string | null;
+                date_from?: string | null;
+                date_to?: string | null;
+                sort?: components["schemas"]["AnswerSort"];
+                order?: components["schemas"]["SortOrder"];
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnswerPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    answers_csv_api_v1_projects__project_id__logbook_answers_csv_get: {
+        parameters: {
+            query?: {
+                experiment_ids?: string[];
+                prompt_version_ids?: string[];
+                models?: string[];
+                providers?: string[];
+                statuses?: components["schemas"]["RunStatus"][];
+                sources?: components["schemas"]["ItemSource"][];
+                categories?: string[];
+                failed_checks?: string[];
+                passed?: boolean | null;
+                run_number?: number | null;
+                q?: string | null;
+                date_from?: string | null;
+                date_to?: string | null;
+                sort?: components["schemas"]["AnswerSort"];
+                order?: components["schemas"]["SortOrder"];
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    answer_api_v1_projects__project_id__logbook_answers__experiment_id___run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                experiment_id: string;
+                run_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnswerDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    calls_api_v1_projects__project_id__logbook_calls_get: {
+        parameters: {
+            query?: {
+                experiment_ids?: string[];
+                purposes?: components["schemas"]["CallPurpose"][];
+                statuses?: components["schemas"]["CallStatus"][];
+                models?: string[];
+                providers?: string[];
+                q?: string | null;
+                date_from?: string | null;
+                date_to?: string | null;
+                offset?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    call_api_v1_projects__project_id__logbook_calls__call_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                call_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CallDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    options_api_v1_projects__project_id__logbook_options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogOptions"];
                 };
             };
             /** @description Validation Error */

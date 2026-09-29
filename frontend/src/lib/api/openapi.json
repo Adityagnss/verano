@@ -1,6 +1,425 @@
 {
   "components": {
     "schemas": {
+      "AnalysisOut": {
+        "properties": {
+          "failed_checks": {
+            "items": {
+              "$ref": "#/components/schemas/CheckCount"
+            },
+            "title": "Failed Checks",
+            "type": "array"
+          },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/GroupStats"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/Totals"
+          }
+        },
+        "required": ["totals", "groups", "failed_checks"],
+        "title": "AnalysisOut",
+        "type": "object"
+      },
+      "AnswerDetail": {
+        "properties": {
+          "finish_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finish Reason"
+          },
+          "golden_answer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Golden Answer"
+          },
+          "inputs": {
+            "additionalProperties": true,
+            "title": "Inputs",
+            "type": "object"
+          },
+          "output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output"
+          },
+          "params": {
+            "additionalProperties": true,
+            "title": "Params",
+            "type": "object"
+          },
+          "rendered_system_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rendered System Prompt"
+          },
+          "rendered_user_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rendered User Prompt"
+          },
+          "row": {
+            "$ref": "#/components/schemas/AnswerRow"
+          },
+          "rubric": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric"
+          },
+          "scores": {
+            "items": {
+              "$ref": "#/components/schemas/ScoreDetail"
+            },
+            "title": "Scores",
+            "type": "array"
+          },
+          "siblings": {
+            "items": {
+              "$ref": "#/components/schemas/SiblingAnswer"
+            },
+            "title": "Siblings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "row",
+          "inputs",
+          "golden_answer",
+          "rubric",
+          "output",
+          "rendered_system_prompt",
+          "rendered_user_prompt",
+          "finish_reason",
+          "params",
+          "scores",
+          "siblings"
+        ],
+        "title": "AnswerDetail",
+        "type": "object"
+      },
+      "AnswerPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AnswerRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": ["items", "total", "offset", "limit"],
+        "title": "AnswerPage",
+        "type": "object"
+      },
+      "AnswerRow": {
+        "properties": {
+          "attempts": {
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "case_number": {
+            "title": "Case Number",
+            "type": "integer"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "experiment": {
+            "title": "Experiment",
+            "type": "string"
+          },
+          "experiment_id": {
+            "format": "uuid",
+            "title": "Experiment Id",
+            "type": "string"
+          },
+          "failed_checks": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Failed Checks",
+            "type": "array"
+          },
+          "golden_answer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Golden Answer"
+          },
+          "golden_match": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Golden Match"
+          },
+          "input_preview": {
+            "title": "Input Preview",
+            "type": "string"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          },
+          "max_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Tokens"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "output_preview": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Preview"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "prompt_version": {
+            "title": "Prompt Version",
+            "type": "integer"
+          },
+          "prompt_version_id": {
+            "format": "uuid",
+            "title": "Prompt Version Id",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "quality": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality"
+          },
+          "run_id": {
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_number": {
+            "title": "Run Number",
+            "type": "integer"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RunStatus"
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature"
+          }
+        },
+        "required": [
+          "run_id",
+          "experiment_id",
+          "experiment",
+          "created_at",
+          "prompt_version_id",
+          "prompt_version",
+          "model",
+          "provider",
+          "run_number",
+          "case_number",
+          "source",
+          "category",
+          "status",
+          "passed",
+          "quality",
+          "golden_match",
+          "failed_checks",
+          "input_preview",
+          "golden_answer",
+          "output_preview",
+          "error",
+          "input_tokens",
+          "output_tokens",
+          "cost",
+          "latency_ms",
+          "temperature",
+          "max_tokens",
+          "attempts"
+        ],
+        "title": "AnswerRow",
+        "type": "object"
+      },
+      "AnswerSort": {
+        "enum": [
+          "time",
+          "experiment",
+          "version",
+          "model",
+          "case",
+          "passed",
+          "quality",
+          "golden_match",
+          "cost",
+          "latency",
+          "tokens"
+        ],
+        "title": "AnswerSort",
+        "type": "string"
+      },
       "AuthConfigOut": {
         "properties": {
           "password_min_length": {
@@ -58,10 +477,265 @@
         "title": "BulkApprove",
         "type": "object"
       },
+      "CallDetail": {
+        "properties": {
+          "finish_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finish Reason"
+          },
+          "labels": {
+            "additionalProperties": true,
+            "title": "Labels",
+            "type": "object"
+          },
+          "output_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Text"
+          },
+          "params": {
+            "additionalProperties": true,
+            "title": "Params",
+            "type": "object"
+          },
+          "request_messages": {
+            "items": {},
+            "title": "Request Messages",
+            "type": "array"
+          },
+          "row": {
+            "$ref": "#/components/schemas/CallRow"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "row",
+          "params",
+          "labels",
+          "request_messages",
+          "output_text",
+          "finish_reason",
+          "trace_id"
+        ],
+        "title": "CallDetail",
+        "type": "object"
+      },
+      "CallPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CallRow"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": ["items", "total", "offset", "limit"],
+        "title": "CallPage",
+        "type": "object"
+      },
       "CallPurpose": {
         "enum": ["test_run", "generation", "judge", "assistant"],
         "title": "CallPurpose",
         "type": "string"
+      },
+      "CallRow": {
+        "properties": {
+          "attempts": {
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "experiment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Experiment"
+          },
+          "experiment_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Experiment Id"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "purpose": {
+            "$ref": "#/components/schemas/CallPurpose"
+          },
+          "request_preview": {
+            "title": "Request Preview",
+            "type": "string"
+          },
+          "response_preview": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Preview"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CallStatus"
+          },
+          "step": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Step"
+          },
+          "ttft_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ttft Ms"
+          }
+        },
+        "required": [
+          "id",
+          "created_at",
+          "purpose",
+          "status",
+          "provider",
+          "model",
+          "experiment_id",
+          "experiment",
+          "step",
+          "input_tokens",
+          "output_tokens",
+          "cost",
+          "latency_ms",
+          "ttft_ms",
+          "attempts",
+          "error",
+          "request_preview",
+          "response_preview"
+        ],
+        "title": "CallRow",
+        "type": "object"
       },
       "CallStatus": {
         "enum": ["succeeded", "failed"],
@@ -344,6 +1018,21 @@
           "outputs"
         ],
         "title": "CaseResultOut",
+        "type": "object"
+      },
+      "CheckCount": {
+        "properties": {
+          "check": {
+            "title": "Check",
+            "type": "string"
+          },
+          "failures": {
+            "title": "Failures",
+            "type": "integer"
+          }
+        },
+        "required": ["check", "failures"],
+        "title": "CheckCount",
         "type": "object"
       },
       "CheckRequest": {
@@ -1334,6 +2023,36 @@
         "title": "ExperimentEstimate",
         "type": "object"
       },
+      "ExperimentOption": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "prompt_version": {
+            "title": "Prompt Version",
+            "type": "integer"
+          },
+          "prompt_version_id": {
+            "format": "uuid",
+            "title": "Prompt Version Id",
+            "type": "string"
+          }
+        },
+        "required": ["id", "name", "created_at", "prompt_version_id", "prompt_version"],
+        "title": "ExperimentOption",
+        "type": "object"
+      },
       "ExperimentOrigin": {
         "enum": ["manual", "optimization"],
         "title": "ExperimentOrigin",
@@ -1711,6 +2430,144 @@
           }
         },
         "title": "GroupCount",
+        "type": "object"
+      },
+      "GroupStats": {
+        "properties": {
+          "answers": {
+            "title": "Answers",
+            "type": "integer"
+          },
+          "avg_latency_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Latency Ms"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          },
+          "failed_calls": {
+            "title": "Failed Calls",
+            "type": "integer"
+          },
+          "golden_match": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Golden Match"
+          },
+          "input_tokens": {
+            "title": "Input Tokens",
+            "type": "integer"
+          },
+          "judged": {
+            "title": "Judged",
+            "type": "integer"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "output_tokens": {
+            "title": "Output Tokens",
+            "type": "integer"
+          },
+          "p50_latency_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P50 Latency Ms"
+          },
+          "p90_latency_ms": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "P90 Latency Ms"
+          },
+          "pass_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Rate"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "integer"
+          },
+          "prompt_version": {
+            "title": "Prompt Version",
+            "type": "integer"
+          },
+          "quality": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality"
+          },
+          "unknown_price_answers": {
+            "title": "Unknown Price Answers",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "prompt_version",
+          "model",
+          "answers",
+          "passed",
+          "judged",
+          "pass_rate",
+          "quality",
+          "golden_match",
+          "failed_calls",
+          "cost",
+          "unknown_price_answers",
+          "avg_latency_ms",
+          "p50_latency_ms",
+          "p90_latency_ms",
+          "input_tokens",
+          "output_tokens"
+        ],
+        "title": "GroupStats",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -2579,6 +3436,55 @@
           "span_id"
         ],
         "title": "LLMResult",
+        "type": "object"
+      },
+      "LogOptions": {
+        "properties": {
+          "categories": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "checks": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "experiments": {
+            "items": {
+              "$ref": "#/components/schemas/ExperimentOption"
+            },
+            "title": "Experiments",
+            "type": "array"
+          },
+          "models": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Models",
+            "type": "array"
+          },
+          "prompt_versions": {
+            "items": {
+              "$ref": "#/components/schemas/VersionOption"
+            },
+            "title": "Prompt Versions",
+            "type": "array"
+          },
+          "providers": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Providers",
+            "type": "array"
+          }
+        },
+        "required": ["experiments", "prompt_versions", "models", "providers", "categories", "checks"],
+        "title": "LogOptions",
         "type": "object"
       },
       "LoginRequest": {
@@ -3835,6 +4741,37 @@
         "title": "RunStatus",
         "type": "string"
       },
+      "ScoreDetail": {
+        "properties": {
+          "evaluator": {
+            "title": "Evaluator",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          },
+          "weight": {
+            "title": "Weight",
+            "type": "number"
+          }
+        },
+        "required": ["evaluator", "value", "passed", "required", "weight", "reason"],
+        "title": "ScoreDetail",
+        "type": "object"
+      },
       "ScoreOut": {
         "properties": {
           "evaluator_name": {
@@ -3937,6 +4874,103 @@
         "title": "SheetRequest",
         "type": "object"
       },
+      "SiblingAnswer": {
+        "properties": {
+          "cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "quality": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality"
+          },
+          "run_id": {
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_number": {
+            "title": "Run Number",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "run_id",
+          "model",
+          "run_number",
+          "output",
+          "error",
+          "passed",
+          "quality",
+          "cost",
+          "latency_ms"
+        ],
+        "title": "SiblingAnswer",
+        "type": "object"
+      },
       "SignupRequest": {
         "properties": {
           "email": {
@@ -3958,6 +4992,11 @@
         "required": ["email", "password", "name"],
         "title": "SignupRequest",
         "type": "object"
+      },
+      "SortOrder": {
+        "enum": ["asc", "desc"],
+        "title": "SortOrder",
+        "type": "string"
       },
       "Split": {
         "enum": ["optimize", "holdout"],
@@ -4498,6 +5537,67 @@
         "title": "TestCaseRunOut",
         "type": "object"
       },
+      "Totals": {
+        "properties": {
+          "answers": {
+            "title": "Answers",
+            "type": "integer"
+          },
+          "cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          },
+          "experiments": {
+            "title": "Experiments",
+            "type": "integer"
+          },
+          "failed_calls": {
+            "title": "Failed Calls",
+            "type": "integer"
+          },
+          "input_tokens": {
+            "title": "Input Tokens",
+            "type": "integer"
+          },
+          "models": {
+            "title": "Models",
+            "type": "integer"
+          },
+          "output_tokens": {
+            "title": "Output Tokens",
+            "type": "integer"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "integer"
+          },
+          "unknown_price_answers": {
+            "title": "Unknown Price Answers",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "answers",
+          "experiments",
+          "models",
+          "passed",
+          "failed_calls",
+          "cost",
+          "unknown_price_answers",
+          "input_tokens",
+          "output_tokens"
+        ],
+        "title": "Totals",
+        "type": "object"
+      },
       "UploadPurpose": {
         "enum": ["input", "golden", "document"],
         "title": "UploadPurpose",
@@ -4669,6 +5769,22 @@
           "warnings"
         ],
         "title": "ValidationReport",
+        "type": "object"
+      },
+      "VersionOption": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": ["id", "version"],
+        "title": "VersionOption",
         "type": "object"
       }
     },
@@ -8016,6 +9132,1148 @@
         ],
         "summary": "Cost Summary",
         "tags": ["gateway"]
+      }
+    },
+    "/api/v1/projects/{project_id}/logbook/analysis": {
+      "get": {
+        "operationId": "analysis_api_v1_projects__project_id__logbook_analysis_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "experiment_ids",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Experiment Ids",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "prompt_version_ids",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Prompt Version Ids",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "models",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Models",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "providers",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Providers",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "statuses",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "$ref": "#/components/schemas/RunStatus"
+              },
+              "title": "Statuses",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sources",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "$ref": "#/components/schemas/ItemSource"
+              },
+              "title": "Sources",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "categories",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Categories",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "failed_checks",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Failed Checks",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "passed",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passed"
+            }
+          },
+          {
+            "in": "query",
+            "name": "run_number",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Run Number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Analysis",
+        "tags": ["logbook"]
+      }
+    },
+    "/api/v1/projects/{project_id}/logbook/answers": {
+      "get": {
+        "operationId": "answers_api_v1_projects__project_id__logbook_answers_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "experiment_ids",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Experiment Ids",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "prompt_version_ids",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Prompt Version Ids",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "models",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Models",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "providers",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Providers",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "statuses",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "$ref": "#/components/schemas/RunStatus"
+              },
+              "title": "Statuses",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sources",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "$ref": "#/components/schemas/ItemSource"
+              },
+              "title": "Sources",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "categories",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Categories",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "failed_checks",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Failed Checks",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "passed",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passed"
+            }
+          },
+          {
+            "in": "query",
+            "name": "run_number",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Run Number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/AnswerSort",
+              "default": "time"
+            }
+          },
+          {
+            "in": "query",
+            "name": "order",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/SortOrder",
+              "default": "desc"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnswerPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Answers",
+        "tags": ["logbook"]
+      }
+    },
+    "/api/v1/projects/{project_id}/logbook/answers.csv": {
+      "get": {
+        "operationId": "answers_csv_api_v1_projects__project_id__logbook_answers_csv_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "experiment_ids",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Experiment Ids",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "prompt_version_ids",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Prompt Version Ids",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "models",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Models",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "providers",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Providers",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "statuses",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "$ref": "#/components/schemas/RunStatus"
+              },
+              "title": "Statuses",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sources",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "$ref": "#/components/schemas/ItemSource"
+              },
+              "title": "Sources",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "categories",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Categories",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "failed_checks",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Failed Checks",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "passed",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Passed"
+            }
+          },
+          {
+            "in": "query",
+            "name": "run_number",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Run Number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/AnswerSort",
+              "default": "time"
+            }
+          },
+          {
+            "in": "query",
+            "name": "order",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/SortOrder",
+              "default": "desc"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Answers Csv",
+        "tags": ["logbook"]
+      }
+    },
+    "/api/v1/projects/{project_id}/logbook/answers/{experiment_id}/{run_id}": {
+      "get": {
+        "operationId": "answer_api_v1_projects__project_id__logbook_answers__experiment_id___run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnswerDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Answer",
+        "tags": ["logbook"]
+      }
+    },
+    "/api/v1/projects/{project_id}/logbook/calls": {
+      "get": {
+        "operationId": "calls_api_v1_projects__project_id__logbook_calls_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "experiment_ids",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": "Experiment Ids",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "purposes",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "$ref": "#/components/schemas/CallPurpose"
+              },
+              "title": "Purposes",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "statuses",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "$ref": "#/components/schemas/CallStatus"
+              },
+              "title": "Statuses",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "models",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Models",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "providers",
+            "required": false,
+            "schema": {
+              "default": [],
+              "items": {
+                "type": "string"
+              },
+              "title": "Providers",
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "date_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Calls",
+        "tags": ["logbook"]
+      }
+    },
+    "/api/v1/projects/{project_id}/logbook/calls/{call_id}": {
+      "get": {
+        "operationId": "call_api_v1_projects__project_id__logbook_calls__call_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "call_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Call Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Call",
+        "tags": ["logbook"]
+      }
+    },
+    "/api/v1/projects/{project_id}/logbook/options": {
+      "get": {
+        "operationId": "options_api_v1_projects__project_id__logbook_options_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogOptions"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Options",
+        "tags": ["logbook"]
       }
     },
     "/api/v1/projects/{project_id}/models": {

@@ -98,6 +98,17 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   await expect(page.getByText("Latest experiment: models side by side")).toBeVisible()
   await expect(page.getByText("Where the money went")).toBeVisible()
 
+  await page.getByRole("link", { name: /Logbook/ }).click()
+  await expect(page.getByRole("heading", { name: "Logbook", level: 2 })).toBeVisible()
+  await expect(page.getByRole("cell", { name: "echo" }).first()).toBeVisible()
+  await page.getByRole("row", { name: "Open this answer" }).first().click()
+  await expect(page.getByText("Golden answer and model answer")).toBeVisible()
+  await page.keyboard.press("Escape")
+  await page.getByRole("tab", { name: /Analysis/ }).click()
+  await expect(page.getByText("Pass rate by model and prompt version")).toBeVisible()
+  await page.getByRole("tab", { name: /Model calls/ }).click()
+  await expect(page.getByRole("cell", { name: "Running your test cases" }).first()).toBeVisible()
+
   await page.getByRole("link", { name: /Prompt guide/ }).click()
   await expect(page.getByRole("heading", { name: "The one habit: measure first" })).toBeVisible()
 })

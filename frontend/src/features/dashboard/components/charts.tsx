@@ -176,7 +176,8 @@ export function TrendChart({ trends, models }: { trends: Trend[]; models: string
             style={{ left: `${Math.min(70, (x(hover) / W) * 100)}%` }}
           >
             <p className="mb-1 font-semibold">
-              {labels[hover]?.label} · {new Date(labels[hover]?.date ?? "").toLocaleDateString()}
+              {labels[hover]?.label}
+              {labels[hover]?.date ? ` · ${new Date(labels[hover]?.date ?? "").toLocaleDateString()}` : ""}
             </p>
             {trends.map((trend) => (
               <p key={trend.model} className="flex justify-between gap-3">
@@ -214,7 +215,8 @@ export function TrendChart({ trends, models }: { trends: Trend[]; models: string
               {labels.map((point, index) => (
                 <tr key={index} className="border-border border-t">
                   <td className="py-1 pr-4">
-                    {point.label} · {new Date(point.date).toLocaleDateString()}
+                    {point.label}
+                    {point.date ? ` · ${new Date(point.date).toLocaleDateString()}` : ""}
                   </td>
                   {trends.map((t) => (
                     <td key={t.model} className="py-1 pr-4 tabular-nums">
