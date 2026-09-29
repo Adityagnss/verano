@@ -1,12 +1,13 @@
-# Upload formats: which card accepts them (rows = golden set / input files, document =
-# reference documents), their extensions, a label for messages, and the leading bytes the
-# file must start with (hex), checked before any parser touches it.
+# Upload formats: which cards accept them (input = an input file sent to the models as one
+# attachment, golden = expected outputs, document = reference documents), their extensions,
+# a label for messages, and the leading bytes the file must start with (hex), checked before
+# any parser touches it.
 formats:
-  csv: {purpose: rows, label: CSV, extensions: [.csv, .tsv]}
-  xlsx: {purpose: rows, label: Excel, extensions: [.xlsx], signature: "504b0304"}
-  json: {purpose: rows, label: JSON, extensions: [.json]}
-  jsonl: {purpose: rows, label: JSON Lines, extensions: [.jsonl, .ndjson]}
-  pdf: {purpose: document, label: PDF, extensions: [.pdf], signature: "255044462d"}
-  docx: {purpose: document, label: Word, extensions: [.docx], signature: "504b0304"}
-  txt: {purpose: document, label: text, extensions: [.txt]}
-  md: {purpose: document, label: Markdown, extensions: [.md, .markdown]}
+  csv: {purposes: [input, golden], label: CSV, extensions: [.csv, .tsv]}
+  xlsx: {purposes: [input, golden], label: Excel, extensions: [.xlsx], signature: "504b0304"}
+  json: {purposes: [input, golden], label: JSON, extensions: [.json]}
+  jsonl: {purposes: [input, golden], label: JSON Lines, extensions: [.jsonl, .ndjson]}
+  pdf: {purposes: [document], label: PDF, extensions: [.pdf], signature: "255044462d"}
+  docx: {purposes: [document], label: Word, extensions: [.docx], signature: "504b0304"}
+  txt: {purposes: [input, document], label: text, extensions: [.txt]}
+  md: {purposes: [input, document], label: Markdown, extensions: [.md, .markdown]}

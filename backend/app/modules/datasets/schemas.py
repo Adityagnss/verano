@@ -27,7 +27,8 @@ class InputFileKind(StrEnum):
 
 
 class UploadPurpose(StrEnum):
-    ROWS = "rows"
+    INPUT = "input"
+    GOLDEN = "golden"
     DOCUMENT = "document"
 
 

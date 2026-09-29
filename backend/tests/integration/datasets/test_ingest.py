@@ -108,17 +108,21 @@ async def test_a_golden_set_gives_identical_cases_from_csv_xlsx_json_and_jsonl_w
     assert results["csv"][2][0] == {"ticket": "Café crème: a naïve question about €"}
 
 
-async def test_rows_without_answers_are_raw_inputs_whose_cases_are_drafts_to_review(
+async def test_an_input_file_is_one_test_case_holding_its_table_summary(
     client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue, container: Container
 ) -> None:
-    version = await create_prompt(client, session)
-    raw = [{"ticket": "Refund please"}, {"ticket": "Parcel lost"}]
-    done = await ingest(client, session, jobs, "inputs.csv", rows_file(raw, "csv"), version)
-    assert (done["kind"], done["imported_rows"]) == ("raw_inputs", 2)
-    items = await items_of(container, done["id"])
-    assert {(item.source, item.review_status, item.category) for item in items} == {
-        ("input_file", "draft", "happy_path")
-    }
+    raw = [{"ticket": "Refund please"}, {"ticket": "Parcel lost"}, {"ticket": "Refund please"}]
+    response = await upload(client, session, "inputs.csv", rows_file(raw, "csv"), purpose="input")
+    assert response.status_code == 201, response.text
+    await jobs.drain()
+    done = await get_file(client, session, response.json()["id"])
+    assert (done["kind"], done["status"], done["imported_rows"], done["row_count"]) == ("raw_inputs", "imported", 1, 3)
+    (item,) = await items_of(container, done["id"])
+    assert (item.source, item.review_status, item.expected_output) == ("input_file", "trusted", None)
+    text = item.inputs["attachment"]
+    assert "ROWS: 3" in text
+    assert '"column": "ticket"' in text
+    assert '"distinct_count": 2' in text
 
 
 @pytest.mark.parametrize(

@@ -92,6 +92,9 @@ class Settings(BaseSettings):
     document_max_pages: int = 500
     document_section_max_chars: int = 3_000
     profile_sample_rows: int = 20
+    attachment_max_chars: int = 200_000
+    attachment_max_distinct: int = 100_000
+    attachment_example_values: int = 10
     report_max_listed_rows: int = 100
     import_batch_size: int = 1_000
     progress_every_rows: int = 2_000

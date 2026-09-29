@@ -79,14 +79,13 @@ async def test_generate_review_and_approve(
 ) -> None:
     prompt = await create_prompt(client, session)
     await ingest(client, session, jobs, prompt["id"], GOLDEN)
-    await ingest(client, session, jobs, prompt["id"], [{"ticket": "I want to cancel my subscription"}])
     await upload(client, session, "policy.txt", DOCUMENT, purpose="document")
     await jobs.drain()
     spec_id = await confirmed_spec(client, session, prompt["id"])
 
     request = {"task_spec_id": spec_id, "target_size": 20}
     estimate = (await client.post(api(session, "/generations/estimate"), json=request, headers=session.headers)).json()
-    assert (estimate["cases_to_generate"], estimate["answers_to_draft"], estimate["price_known"]) == (16, 17, True)
+    assert (estimate["cases_to_generate"], estimate["answers_to_draft"], estimate["price_known"]) == (17, 17, True)
     started = await client.post(api(session, "/generations"), json=request, headers=session.headers)
     assert started.status_code == 202, started.text
     version_id = started.json()["id"]
@@ -106,8 +105,6 @@ async def test_generate_review_and_approve(
     ]
     drafts = await items(client, session, version_id, review_status="draft")
     assert all(i["source"] in {"input_file", "generated"} for i in drafts)
-    raw = [i for i in drafts if i["source"] == "input_file"]
-    assert raw[0]["expected_output"] in {"billing", "shipping", "technical"}
     assert all(i["context"] for i in drafts if i["category"] == "edge_case")
     assert {i["expected_output"] for i in drafts if i["inputs"]["ticket"].startswith(("Do you", "Can I suggest"))} == {
         "other"
@@ -123,7 +120,7 @@ async def test_generate_review_and_approve(
     assert "need review" in blocked.json()["error"]["message"]
 
     edited = await client.patch(
-        api(session, f"/dataset-versions/{version_id}/items/{raw[0]['id']}"),
+        api(session, f"/dataset-versions/{version_id}/items/{drafts[0]['id']}"),
         json={"expected_output": "billing"},
         headers=session.headers,
     )

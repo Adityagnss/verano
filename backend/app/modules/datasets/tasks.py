@@ -23,6 +23,13 @@ async def profile_file(container: Container, file_id: str) -> None:
         await processor.run("profile", uuid.UUID(file_id), processor.profile)
 
 
+@job("datasets.attach_file", time_limit_setting="file_parse_timeout_s", on_failure=_failed)
+async def attach_file(container: Container, file_id: str) -> None:
+    async with container.database.sessions() as session:
+        processor = FileProcessor.from_container(session, container)
+        await processor.run("import", uuid.UUID(file_id), processor.attach)
+
+
 @job("datasets.validate_file", time_limit_setting="file_parse_timeout_s", on_failure=_failed)
 async def validate_file(container: Container, file_id: str) -> None:
     async with container.database.sessions() as session:

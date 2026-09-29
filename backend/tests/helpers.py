@@ -63,7 +63,7 @@ async def create_prompt(client: httpx.AsyncClient, session: Session, **templates
 
 
 async def upload(
-    client: httpx.AsyncClient, session: Session, name: str, content: bytes, purpose: str = "rows"
+    client: httpx.AsyncClient, session: Session, name: str, content: bytes, purpose: str = "golden"
 ) -> httpx.Response:
     return await client.post(
         f"/api/v1/projects/{session.project_id}/input-files",

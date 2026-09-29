@@ -23,6 +23,7 @@ import random
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass, field
+from datetime import date, datetime
 from typing import Any
 
 from pydantic import BaseModel
@@ -129,7 +130,7 @@ def is_blank(value: Any) -> bool:
 
 
 def as_text(value: Any) -> str:
-    return value if isinstance(value, str) else json.dumps(value, ensure_ascii=False, sort_keys=True)
+    return value if isinstance(value, str) else json.dumps(value, ensure_ascii=False, sort_keys=True, default=str)
 
 
 def as_list(value: Any, splitter: re.Pattern[str]) -> list[str]:
@@ -281,3 +282,78 @@ def assign_splits(items: list[SplitCandidate], holdout_ratio: float, seed: int) 
         for key, members in strata.items()
         for index, item in enumerate(members)
     }
+
+
+class TableSummary:
+    """What a model needs to see of a table file, built in one streaming pass: for every
+    column its type and statistics over the whole file, then the first rows as samples."""
+
+    def __init__(self, filename: str, columns: list[str], sample_rows: int, max_distinct: int, examples: int) -> None:
+        self._filename = filename
+        self._columns = dict.fromkeys(columns)
+        self._distinct: dict[str, set[str]] = {column: set() for column in columns}
+        self._types: dict[str, set[str]] = {column: set() for column in columns}
+        self._capped: set[str] = set()
+        self._samples: list[dict[str, Any]] = []
+        self._sample_rows = sample_rows
+        self._max_distinct = max_distinct
+        self._examples = examples
+        self.count = 0
+
+    def add(self, values: dict[str, Any]) -> None:
+        self.count += 1
+        if len(self._samples) < self._sample_rows:
+            self._samples.append(values)
+        for column, value in values.items():
+            if column not in self._distinct:
+                self._columns[column] = None
+                self._distinct[column], self._types[column] = set(), set()
+            if is_blank(value):
+                continue
+            self._types[column].add(_type_name(value))
+            seen = self._distinct[column]
+            if len(seen) < self._max_distinct:
+                seen.add(as_text(value))
+            else:
+                self._capped.add(column)
+
+    def render(self) -> str:
+        lines = [f"FILE: {self._filename}", f"ROWS: {self.count}", "", "===== COLUMN TYPES ====="]
+        for column in self._columns:
+            seen = self._distinct[column]
+            info: dict[str, Any] = {
+                "column": column,
+                "type": _column_type(self._types[column]),
+                "distinct_count": len(seen),
+                "all_null": not seen,
+            }
+            if column in self._capped:
+                info["distinct_count_note"] = f"at least {self._max_distinct}"
+            if 0 < len(seen) <= self._examples:
+                info["example_values"] = sorted(seen)
+            lines.append(json.dumps(info, ensure_ascii=False))
+        rows = [[row.get(column) for column in self._columns] for row in self._samples]
+        lines += ["", "===== SAMPLE ROWS =====", "Values are positionally aligned to these columns:"]
+        lines.append(json.dumps(list(self._columns), ensure_ascii=False))
+        lines += [json.dumps(row, ensure_ascii=False, default=str) for row in rows]
+        return "\n".join(lines)
+
+
+def _type_name(value: Any) -> str:
+    if isinstance(value, bool):
+        return "BOOLEAN"
+    if isinstance(value, int):
+        return "BIGINT"
+    if isinstance(value, float):
+        return "DOUBLE"
+    if isinstance(value, (datetime, date)):
+        return "DATE"
+    return "VARCHAR"
+
+
+def _column_type(types: set[str]) -> str:
+    if not types:
+        return "EMPTY"
+    if types == {"BIGINT", "DOUBLE"}:
+        return "DOUBLE"
+    return next(iter(types)) if len(types) == 1 else "VARCHAR"

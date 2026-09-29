@@ -20,19 +20,27 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
 from app.core.container import Container
-from app.core.errors import AppError, NotFound
+from app.core.errors import AppError, NotFound, ValidationFailed
 from app.core.files import Deadline, zip_limits
 from app.core.ids import uuid7
 from app.core.progress import ProgressEvent, ProgressHub, ProgressStatus
 from app.core.registry import load_plugins
 from app.core.storage import Storage
-from app.modules.datasets.domain import ItemDraft, ReportBuilder, duplicate_key, evaluate_row
+from app.modules.datasets.domain import ItemDraft, ReportBuilder, TableSummary, duplicate_key, evaluate_row
 from app.modules.datasets.ingest import channel
 from app.modules.datasets.models import InputFile
-from app.modules.datasets.plugins.importers.base import ROW_READERS, ProfileBuilder, ReadLimits, ReadOptions, RowStream
+from app.modules.datasets.plugins.importers.base import (
+    ROW_READERS,
+    TOO_MANY_ROWS,
+    ProfileBuilder,
+    ReadLimits,
+    ReadOptions,
+    RowStream,
+)
 from app.modules.datasets.repository import DatasetRepository
 from app.modules.datasets.schemas import (
     ColumnMapping,
+    FileFormat,
     FileProfile,
     InputFileKind,
     InputFileStatus,
@@ -42,6 +50,7 @@ from app.modules.datasets.schemas import (
     ValidationReport,
 )
 from app.modules.datasets.service import DatasetService
+from app.modules.prompts.schemas import ATTACHMENT_INPUT
 from app.modules.prompts.service import PromptService
 from app.modules.registry.service import RegistryService
 
@@ -50,7 +59,7 @@ load_plugins("app.modules.datasets.plugins.importers")
 FILE_NOT_FOUND = "This file no longer exists."
 NO_MAPPING = "This file has no confirmed column mapping yet."
 SOURCE_FOR_KIND = {InputFileKind.GOLDEN_SET: ItemSource.GOLDEN, InputFileKind.RAW_INPUTS: ItemSource.INPUT_FILE}
-REVIEW_FOR_KIND = {InputFileKind.GOLDEN_SET: ReviewStatus.TRUSTED, InputFileKind.RAW_INPUTS: ReviewStatus.DRAFT}
+REVIEW_FOR_KIND = {InputFileKind.GOLDEN_SET: ReviewStatus.TRUSTED, InputFileKind.RAW_INPUTS: ReviewStatus.TRUSTED}
 
 
 class Ticker:
@@ -94,6 +103,55 @@ class FileProcessor:
             await work(file_id)
         except AppError as exc:
             await self.fail(file_id, stage, exc.message)
+
+    async def attach(self, file_id: uuid.UUID) -> None:
+        """An input file is one test case: its text (a table summary for table files) is the
+        item's `attachment`, replacing any earlier import of this file."""
+        row = await self._stage(file_id, InputFileStatus.IMPORTING, "import")
+        rows, text = await self._attachment_text(row)
+        version = await self._datasets.ensure_draft(row.project_id)
+        await self._repo.delete_file_items(version.id, row.id)
+        item = ItemDraft(
+            inputs={ATTACHMENT_INPUT: text},
+            expected_output=None,
+            rubric=None,
+            category=self._settings.dataset_default_category,
+            tags=[],
+            extra={"filename": row.filename, "rows": rows},
+            source_row=1,
+        )
+        position = await self._repo.next_position(version.id)
+        await self._repo.insert_items([self._item_values(row, version.id, item, position)])
+        values = {
+            "status": InputFileStatus.IMPORTED,
+            "imported_rows": 1,
+            "dataset_version_id": version.id,
+            "row_count": rows,
+        }
+        await self._finish(row, values, self._done("import", 1, 1))
+
+    async def _attachment_text(self, row: InputFile) -> tuple[int | None, str]:
+        settings = self._settings
+        if row.format in (FileFormat.TXT, FileFormat.MD):
+            async with self._storage.local_path(row.storage_key) as path:
+                text = path.read_text(encoding="utf-8", errors="replace")
+            return None, text[: settings.attachment_max_chars]
+        ticker = self._ticker(row, "import")
+        async with self._rows(row) as stream:
+            summary = TableSummary(
+                row.filename,
+                stream.columns,
+                settings.profile_sample_rows,
+                settings.attachment_max_distinct,
+                settings.attachment_example_values,
+            )
+            for count, source in enumerate(stream.rows, start=1):
+                await ticker.tick(count)
+                if count > settings.upload_max_rows:
+                    raise ValidationFailed(TOO_MANY_ROWS.format(limit=settings.upload_max_rows))
+                if source.values is not None:
+                    summary.add(source.values)
+        return summary.count, summary.render()
 
     async def profile(self, file_id: uuid.UUID) -> None:
         row = await self._stage(file_id, InputFileStatus.PROFILING, "profile")

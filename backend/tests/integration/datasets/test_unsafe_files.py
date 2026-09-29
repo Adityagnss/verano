@@ -16,8 +16,8 @@ from tests.helpers import Session, get_file, upload
 pytestmark = [pytest.mark.integration, pytest.mark.datasets]
 
 UNSAFE: list[tuple[str, str, Callable[[], bytes]]] = [
-    ("entity-bomb.xlsx", "rows", xlsx_with_xml_bomb),
-    ("zip-bomb.xlsx", "rows", xlsx_zip_bomb),
+    ("entity-bomb.xlsx", "golden", xlsx_with_xml_bomb),
+    ("zip-bomb.xlsx", "golden", xlsx_zip_bomb),
     ("zip-bomb.docx", "document", docx_zip_bomb),
     ("too-many-pages.pdf", "document", lambda: pdf_file(["page"] * 501)),
 ]

@@ -61,15 +61,20 @@ TERMINAL = {
     InputFileStatus.FAILED: "failed",
 }
 MAPPABLE = {InputFileStatus.READY, InputFileStatus.VALIDATED, InputFileStatus.IMPORTED, InputFileStatus.FAILED}
-JOB_FOR_PURPOSE = {UploadPurpose.ROWS: "datasets.profile_file", UploadPurpose.DOCUMENT: "documents.extract"}
+JOB_FOR_PURPOSE = {
+    UploadPurpose.INPUT: "datasets.attach_file",
+    UploadPurpose.GOLDEN: "datasets.profile_file",
+    UploadPurpose.DOCUMENT: "documents.extract",
+}
 KIND_FOR_PURPOSE = {
-    UploadPurpose.ROWS: InputFileKind.RAW_INPUTS,
+    UploadPurpose.INPUT: InputFileKind.RAW_INPUTS,
+    UploadPurpose.GOLDEN: InputFileKind.GOLDEN_SET,
     UploadPurpose.DOCUMENT: InputFileKind.REFERENCE_DOCUMENT,
 }
 
 
 class FormatSpec(BaseModel):
-    purpose: UploadPurpose
+    purposes: list[UploadPurpose]
     label: str
     extensions: list[str]
     signature: str | None = None
@@ -83,7 +88,7 @@ class FormatCatalog(BaseModel):
         return next(((fmt, spec) for fmt, spec in self.formats.items() if suffix in spec.extensions), None)
 
     def labels(self, purpose: UploadPurpose | None = None) -> str:
-        return ", ".join(spec.label for spec in self.formats.values() if purpose in (None, spec.purpose))
+        return ", ".join(spec.label for spec in self.formats.values() if purpose is None or purpose in spec.purposes)
 
 
 def channel(file_id: uuid.UUID) -> str:
@@ -132,7 +137,7 @@ class FileIngestService:
         if detected is None:
             raise ValidationFailed(UNKNOWN_TYPE.format(name=filename, labels=self.formats.labels()))
         file_format, spec = detected
-        if spec.purpose is not purpose:
+        if purpose not in spec.purposes:
             raise ValidationFailed(WRONG_CARD.format(labels=self.formats.labels(purpose)))
         file_id = uuid7()
         prefix = f"projects/{project.id}/input-files/{file_id}"
