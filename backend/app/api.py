@@ -15,6 +15,7 @@ from app.modules.engine.router import router as engine_router
 from app.modules.evaluation.router import router as results_router
 from app.modules.gateway.router import router as gateway_router
 from app.modules.generator.router import router as generator_router
+from app.modules.logbook.router import router as logbook_router
 from app.modules.projects.router import router as projects_router
 from app.modules.prompts.router import router as prompts_router
 from app.modules.registry.router import router as registry_router
@@ -34,5 +35,6 @@ for module_router in (
     results_router,
     improve_router,
     notes_router,
+    logbook_router,
 ):
     api_router.include_router(module_router)
