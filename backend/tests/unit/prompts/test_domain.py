@@ -84,3 +84,10 @@ def test_context_fit_counts_the_reply_budget_and_treats_unknown_windows_as_unkno
     messages = [Message(role="user", content="x" * 400)]
     fits = context_fits(messages, [profile(200), profile(50), profile(None)], max_tokens=50, chars_per_token=4)
     assert [(fit.estimated_tokens, fit.fits) for fit in fits] == [(151, True), (151, False), (151, None)]
+
+
+def test_an_attached_file_becomes_the_user_message_fills_its_variable_or_is_appended() -> None:
+    file = {"attachment": "TABLE"}
+    assert render("sys", None, file) == [Message(role="system", content="sys"), Message(role="user", content="TABLE")]
+    assert render("sys", "Rule for {{ attachment }}", file)[-1].content == "Rule for TABLE"
+    assert render("sys", "Draft the rule.", file)[-1].content == "Draft the rule.\n\nTABLE"

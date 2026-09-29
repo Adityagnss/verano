@@ -7,6 +7,9 @@ because it decides how a test case becomes messages: with a user template the ca
 values fill its `{{variables}}`; with only a system template the case's
 `USER_MESSAGE_INPUT` value is sent as the user message (the "User message input" mapping
 target in the data step).
+An input file reaches the prompt as `ATTACHMENT_INPUT`: it fills `{{attachment}}` when the
+template uses it, is the user message when there is only a system template, and is
+appended to the user message otherwise (DEVELOPMENT.md 2.2).
 """
 
 import uuid
@@ -19,6 +22,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.modules.gateway.schemas import Message
 
 USER_MESSAGE_INPUT = "user_message"
+ATTACHMENT_INPUT = "attachment"
 
 
 class PromptSource(StrEnum):

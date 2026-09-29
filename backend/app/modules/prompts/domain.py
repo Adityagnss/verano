@@ -21,7 +21,7 @@ from app.core.errors import ValidationFailed
 from app.core.templates import TemplateSyntaxError, render_string, template_variables
 from app.core.tokens import estimate_tokens
 from app.modules.gateway.schemas import Message
-from app.modules.prompts.schemas import USER_MESSAGE_INPUT, ContextFit, PromptShape
+from app.modules.prompts.schemas import ATTACHMENT_INPUT, USER_MESSAGE_INPUT, ContextFit, PromptShape
 from app.modules.registry.schemas import ModelProfileOut
 
 SHAPES: dict[tuple[bool, bool], PromptShape] = {
@@ -73,12 +73,17 @@ def _render(template: str, inputs: dict[str, Any]) -> str:
 
 def render(system_template: str | None, user_template: str | None, inputs: dict[str, Any]) -> list[Message]:
     info = analyze(system_template, user_template)
+    attachment = inputs.get(ATTACHMENT_INPUT)
+    if attachment is not None and info.shape is PromptShape.SYSTEM_ONLY:
+        inputs = {USER_MESSAGE_INPUT: attachment, **inputs}
     missing = missing_inputs(info.required_inputs, list(inputs))
     if missing:
         raise ValidationFailed(f"This case is missing: {', '.join(missing)}.", {"missing_inputs": missing})
     values = {name: "" if value is None else value for name, value in inputs.items()}
     messages = [Message(role="system", content=_render(system_template, values))] if system_template else []
     user = _render(user_template, values) if user_template else str(values[USER_MESSAGE_INPUT])
+    if attachment is not None and user_template and ATTACHMENT_INPUT not in info.variables:
+        user = f"{user}\n\n{attachment}"
     return [*messages, Message(role="user", content=user)]
 
 
