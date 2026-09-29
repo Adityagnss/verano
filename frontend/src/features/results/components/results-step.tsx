@@ -82,6 +82,7 @@ export function ResultsStep({ projectId, experimentId }: { projectId: string; ex
   return (
     <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-6">
       <StepHeader
+        projectId={projectId}
         step="results"
         title={RESULTS_COPY.title}
         description={RESULTS_COPY.subtitle}

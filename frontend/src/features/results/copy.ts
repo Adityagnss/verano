@@ -16,7 +16,7 @@ export const RESULTS_COPY = {
   broken: (model: string, failed: number, total: number) =>
     `${model}: ${failed} of ${total} calls failed, so its scores are not meaningful. Open a failed case below to see the error.`,
   tableHeading: "All models side by side",
-  tableHint: "The best value in each column is marked in yellow.",
+  tableHint: "The best value in each column is highlighted.",
   loadingCases: "Loading test cases…",
   none: "No finished experiment yet. Start one in step 5.",
   experiment: "Experiment",

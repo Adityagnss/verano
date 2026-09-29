@@ -63,6 +63,7 @@ export function KeysStep({ projectId }: { projectId: string }) {
   return (
     <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-6">
       <StepHeader
+        projectId={projectId}
         step="keys"
         title={KEYS_COPY.title}
         description={KEYS_COPY.subtitle}

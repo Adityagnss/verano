@@ -90,6 +90,7 @@ export function PromptStep({ projectId }: { projectId: string }) {
   return (
     <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-6">
       <StepHeader
+        projectId={projectId}
         step="prompt"
         title={PROMPT_COPY.title}
         description={PROMPT_COPY.subtitle}

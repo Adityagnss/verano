@@ -28,7 +28,10 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   await page.getByRole("button", { name: "Use 2 selected models" }).click()
   await expect(page.getByText("Selection saved.")).toBeVisible()
 
-  await page.getByRole("link", { name: "Prompt" }).click()
+  await page
+    .getByRole("navigation", { name: "Steps" })
+    .getByRole("link", { name: /^2 Prompt/ })
+    .click()
   await page.getByLabel("Prompt name").fill("Triage")
   await page.getByLabel("System prompt").fill("Classify the support ticket. Reply with one word.")
   await page.getByRole("button", { name: "Save prompt" }).click()

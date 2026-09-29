@@ -1,11 +1,14 @@
 /**
  * The top of every step screen: which step this is, what it is for in one sentence, and
- * how it works as one quiet numbered line (the points are a real sequence), so a first-time
- * user never has to guess what the screen is for. `aside` holds a control such as a picker.
+ * how it works as one quiet numbered line (the points are a real sequence), then the
+ * "what to fill in, and why" guide, so a first-time user never has to guess what the screen
+ * is for. `aside` holds a control such as a picker.
  */
 import type { ReactNode } from "react"
 
 import { STEPS, type StepKey } from "@/lib/steps"
+
+import { UsageGuide } from "./usage-guide"
 
 export function StepHeader({
   step,
@@ -13,12 +16,14 @@ export function StepHeader({
   description,
   howItWorks,
   aside,
+  projectId,
 }: {
   step: StepKey
   title: string
   description: string
   howItWorks?: string[]
   aside?: ReactNode
+  projectId?: string
 }) {
   const index = STEPS.findIndex((s) => s.key === step)
   return (
@@ -43,6 +48,7 @@ export function StepHeader({
           ))}
         </ol>
       ) : null}
+      <UsageGuide step={step} projectId={projectId} />
     </header>
   )
 }

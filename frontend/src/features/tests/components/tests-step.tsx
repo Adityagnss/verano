@@ -192,6 +192,7 @@ export function TestsStep({ projectId }: { projectId: string }) {
   return (
     <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-6">
       <StepHeader
+        projectId={projectId}
         step="tests"
         title={TESTS_COPY.title}
         description={TESTS_COPY.subtitle}

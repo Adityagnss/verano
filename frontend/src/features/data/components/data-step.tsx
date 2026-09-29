@@ -25,6 +25,7 @@ export function DataStep({ projectId }: { projectId: string }) {
   return (
     <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-6">
       <StepHeader
+        projectId={projectId}
         step="data"
         title={DATA_COPY.title}
         description={DATA_COPY.subtitle}

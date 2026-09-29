@@ -9,7 +9,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu, X } from "lucide-react"
+import { BookOpen, Menu, X } from "lucide-react"
 import { type ReactNode, useState } from "react"
 
 import { COMMON_COPY } from "@/components/common/copy"
@@ -40,6 +40,22 @@ function stepItems(projectId: string, pathname: string, done: Partial<Record<Ste
   })
 }
 
+function GuideLink({ projectId, active }: { projectId: string; active: boolean }) {
+  return (
+    <Link
+      href={`/projects/${projectId}/guide`}
+      aria-current={active ? "page" : undefined}
+      className={`hover:bg-subtle mx-0 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${active ? "bg-lagoon-soft font-semibold" : "font-medium"}`}
+    >
+      <BookOpen className="text-lagoon-strong size-4" />
+      <span className="flex flex-col leading-tight">
+        Prompt guide
+        <span className="text-text-muted text-xs font-normal">What helps, with evidence</span>
+      </span>
+    </Link>
+  )
+}
+
 function CostBadge({ projectId }: { projectId: string }) {
   const summary = useCostSummary(projectId).data
   const unknown = (summary?.calls_with_unknown_price ?? 0) > 0
@@ -68,6 +84,9 @@ export function ProjectShell({ projectId, children }: { projectId: string; child
           <Logo />
         </Link>
         <Stepper steps={steps} />
+        <div className="border-border mt-auto border-t pt-3">
+          <GuideLink projectId={projectId} active={pathname.endsWith("/guide")} />
+        </div>
       </aside>
       {open ? (
         <div className="fixed inset-0 z-30 lg:hidden" role="dialog" aria-modal="true" aria-label="Steps">
@@ -90,6 +109,9 @@ export function ProjectShell({ projectId, children }: { projectId: string; child
               </Button>
             </div>
             <Stepper steps={steps} />
+            <div className="border-border border-t pt-3">
+              <GuideLink projectId={projectId} active={pathname.endsWith("/guide")} />
+            </div>
           </div>
         </div>
       ) : null}
