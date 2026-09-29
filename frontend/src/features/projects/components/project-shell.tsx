@@ -48,7 +48,7 @@ function CostBadge({ projectId }: { projectId: string }) {
       className="text-text-secondary inline-flex items-baseline gap-1.5 text-sm"
       title={unknown ? COMMON_COPY.unknownPriceNote : undefined}
     >
-      {COMMON_COPY.costSpent}
+      <span className="hidden sm:inline">{COMMON_COPY.costSpent}</span>
       <span className="text-foreground font-semibold tabular-nums">{formatCost(summary?.cost)}</span>
       {unknown ? <span className="text-warning-strong">+?</span> : null}
     </span>
@@ -95,7 +95,7 @@ export function ProjectShell({ projectId, children }: { projectId: string; child
       ) : null}
       <div className="flex min-w-0 flex-col">
         <header className="border-border bg-card/80 sticky top-0 z-10 flex items-center justify-between gap-3 border-b px-4 py-3 backdrop-blur sm:px-6 lg:px-8">
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
             <Button
               variant="ghost"
               size="icon-sm"

@@ -16,10 +16,16 @@ export function AccountMenu() {
   const signOut = useSignOutAndLeave(() => router.replace("/login"))
   return (
     <div className="flex items-center gap-3 text-sm">
-      <span className="text-muted-foreground">{user?.email}</span>
-      <Button variant="ghost" size="sm" onClick={() => signOut.mutate()} disabled={signOut.isPending}>
+      <span className="text-muted-foreground hidden max-w-[16rem] truncate lg:inline">{user?.email}</span>
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-label={COMMON_COPY.signOut}
+        onClick={() => signOut.mutate()}
+        disabled={signOut.isPending}
+      >
         <LogOut />
-        {COMMON_COPY.signOut}
+        <span className="hidden sm:inline">{COMMON_COPY.signOut}</span>
       </Button>
     </div>
   )
