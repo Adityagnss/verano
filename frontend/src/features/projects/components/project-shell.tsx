@@ -1,6 +1,6 @@
 /**
- * The frame around every project step (DEVELOPMENT.md C3): logo and stepper on the left,
- * a breadcrumb with the project name and the project's running LLM cost at the top, the
+ * The frame around every project step (DEVELOPMENT.md C3): logo and stepper on the left
+ * (a slide-over menu below the lg breakpoint), a breadcrumb with the project name and the project's running LLM cost at the top, the
  * step's content below.
  * When some calls used models with an unknown price, the cost says so instead of looking
  * complete.
@@ -9,9 +9,11 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import type { ReactNode } from "react"
+import { Menu, X } from "lucide-react"
+import { type ReactNode, useState } from "react"
 
 import { COMMON_COPY } from "@/components/common/copy"
+import { Button } from "@/components/ui/button"
 import { Logo } from "@/components/common/logo"
 import { type StepItem, type StepState, Stepper } from "@/components/common/stepper"
 import { formatCost } from "@/lib/format"
@@ -57,29 +59,66 @@ export function ProjectShell({ projectId, children }: { projectId: string; child
   const pathname = usePathname()
   const project = useProject(projectId).data
   const done = useStepCompletion(projectId).data ?? {}
+  const [open, setOpen] = useState(false)
+  const steps = stepItems(projectId, pathname, done)
   return (
-    <div className="grid min-h-screen grid-cols-[17.5rem_1fr]">
-      <aside className="border-border bg-card sticky top-0 flex h-screen flex-col gap-7 border-r px-3 py-5">
+    <div className="min-h-screen lg:grid lg:grid-cols-[17.5rem_1fr]">
+      <aside className="border-border bg-card sticky top-0 hidden h-screen flex-col gap-7 border-r px-3 py-5 lg:flex">
         <Link href="/projects" className="px-3">
           <Logo />
         </Link>
-        <Stepper steps={stepItems(projectId, pathname, done)} />
+        <Stepper steps={steps} />
       </aside>
+      {open ? (
+        <div className="fixed inset-0 z-30 lg:hidden" role="dialog" aria-modal="true" aria-label="Steps">
+          <button
+            type="button"
+            aria-label="Close menu"
+            className="absolute inset-0 bg-[#14203a]/40"
+            onClick={() => setOpen(false)}
+          />
+          <div
+            className="bg-card absolute inset-y-0 left-0 flex w-[19rem] max-w-[85vw] flex-col gap-6 overflow-y-auto px-3 py-5 shadow-xl"
+            onClick={(event) => {
+              if ((event.target as HTMLElement).closest("a")) setOpen(false)
+            }}
+          >
+            <div className="flex items-center justify-between px-3">
+              <Logo />
+              <Button variant="ghost" size="icon-sm" aria-label="Close menu" onClick={() => setOpen(false)}>
+                <X />
+              </Button>
+            </div>
+            <Stepper steps={steps} />
+          </div>
+        </div>
+      ) : null}
       <div className="flex min-w-0 flex-col">
-        <header className="border-border bg-card/80 sticky top-0 z-10 flex items-center justify-between border-b px-8 py-3 backdrop-blur">
-          <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-sm">
-            <Link href="/projects" className="text-text-muted hover:text-foreground">
-              {COMMON_COPY.projects}
-            </Link>
-            <span className="text-text-muted">/</span>
-            <h1 className="truncate font-medium">{project?.name ?? COMMON_COPY.loading}</h1>
-          </nav>
-          <div className="flex items-center gap-4">
+        <header className="border-border bg-card/80 sticky top-0 z-10 flex items-center justify-between gap-3 border-b px-4 py-3 backdrop-blur sm:px-6 lg:px-8">
+          <div className="flex min-w-0 items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="lg:hidden"
+              aria-label="Open menu"
+              onClick={() => setOpen(true)}
+            >
+              <Menu />
+            </Button>
+            <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-sm">
+              <Link href="/projects" className="text-text-muted hover:text-foreground hidden sm:inline">
+                {COMMON_COPY.projects}
+              </Link>
+              <span className="text-text-muted hidden sm:inline">/</span>
+              <h1 className="truncate font-medium">{project?.name ?? COMMON_COPY.loading}</h1>
+            </nav>
+          </div>
+          <div className="flex shrink-0 items-center gap-3 sm:gap-4">
             <CostBadge projectId={projectId} />
             <AccountMenu />
           </div>
         </header>
-        <main className="flex-1 px-10 py-8">{children}</main>
+        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">{children}</main>
       </div>
     </div>
   )

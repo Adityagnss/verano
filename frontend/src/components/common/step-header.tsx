@@ -24,11 +24,11 @@ export function StepHeader({
   return (
     <header className="border-border flex flex-col gap-5 border-b pb-6">
       <div className="flex flex-wrap items-end justify-between gap-6">
-        <div className="max-w-[46rem]">
+        <div className="max-w-[52rem] min-w-0">
           <p className="text-text-secondary text-sm">
             Step {index + 1} of {STEPS.length}
           </p>
-          <h2 className="mt-1 text-[1.95rem] leading-tight font-semibold">{title}</h2>
+          <h2 className="mt-1 text-2xl leading-tight font-semibold sm:text-[1.95rem]">{title}</h2>
           <p className="text-text-secondary mt-2 text-[0.95rem] leading-relaxed">{description}</p>
         </div>
         {aside}

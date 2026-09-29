@@ -29,7 +29,7 @@ export function StageTracker({ stage }: { stage: string }) {
                 done
                   ? "bg-success-soft text-success-strong ring-success/30"
                   : active
-                    ? "bg-marigold text-foreground ring-marigold"
+                    ? "bg-marigold ring-marigold text-white"
                     : "bg-card text-text-muted ring-border-strong",
               )}
             >

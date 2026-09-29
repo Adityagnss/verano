@@ -29,7 +29,7 @@ export function Section({
   return (
     <section
       className={cn(
-        "bg-card border-border flex flex-col gap-5 rounded-xl border px-6 py-5",
+        "bg-card border-border flex flex-col gap-5 rounded-xl border px-4 py-4 shadow-[0_1px_2px_rgb(20_32_58/0.04)] sm:px-6 sm:py-5",
         muted && "opacity-55",
         className,
       )}

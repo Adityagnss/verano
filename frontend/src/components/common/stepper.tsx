@@ -2,7 +2,7 @@
  * The left-side stepper, drawn as the loop it is (DEVELOPMENT.md C1, A1): the seven steps
  * are stations on one track, and a return line runs from Improve back to Prompt, because an
  * accepted improvement becomes the prompt's next version and the loop starts again.
- * Done stations show a check, the current one is the single marigold mark on the page, the
+ * Done stations show a check, the current one is the single strong-blue mark on the page, the
  * next open one is named, and steps not built yet aren't links.
  */
 import { Check } from "lucide-react"
@@ -28,7 +28,7 @@ const LOOP_TO = 6
 
 const MARKER: Record<StepState, string> = {
   done: "bg-success-soft text-success-strong ring-success/40",
-  current: "bg-marigold text-foreground ring-marigold-soft ring-4",
+  current: "bg-marigold text-white ring-marigold-soft ring-4",
   next: "bg-card text-lagoon ring-lagoon",
   upcoming: "bg-card text-text-muted ring-border-strong",
   unavailable: "bg-subtle text-text-muted ring-border",

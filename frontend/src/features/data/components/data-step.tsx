@@ -23,7 +23,7 @@ export function DataStep({ projectId }: { projectId: string }) {
   const hasData = (files.data ?? []).some((f) => f.status === "imported" || f.status === "extracted")
   const next = () => router.push(`/projects/${projectId}/tests`)
   return (
-    <div className="flex max-w-6xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-6">
       <StepHeader
         step="data"
         title={DATA_COPY.title}

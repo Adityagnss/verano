@@ -92,7 +92,7 @@ export function RunStep({ projectId }: { projectId: string }) {
     setRows({ ...rows, [id]: { ...(rows[id] ?? DEFAULT_ROW), [field]: value } })
   const supports = (m: ModelProfileOut, name: string) => name in (m.parameters ?? {})
   return (
-    <div className="flex max-w-6xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-6">
       <StepHeader
         step="run"
         title={RUN_COPY.title}

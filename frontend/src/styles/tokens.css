@@ -1,31 +1,32 @@
 /*
- * Design tokens: the "field instrument" theme (DEVELOPMENT.md Part F row 42). A cool mist
- * page with white panels and ink text; lagoon teal for information, links, focus and chart
- * marks; one marigold accent reserved for "where you are" and "the winner"; pass / fail /
+ * Design tokens: the "field instrument" theme (DEVELOPMENT.md Part F row 42). A cool page
+ * with white panels and ink text; one blue family: `lagoon` (information, links, focus,
+ * chart marks, primary buttons) and `marigold` (the stronger blue reserved for "where you
+ * are" and "the winner"; the names are kept from the earlier palette); pass / fail /
  * attention colors only for status, always with a word or an icon. Each tag color has a
  * soft background and a strong text step. Every color in the UI comes from these variables.
  */
 :root {
-  --bg-base: #f2f4f3;
+  --bg-base: #f3f6fb;
   --bg-surface: #ffffff;
-  --bg-subtle: #f6f8f7;
-  --bg-elevated: #e9edeb;
-  --border-color: #dce1df;
-  --border-strong: #c5ccc9;
+  --bg-subtle: #f6f8fc;
+  --bg-elevated: #e8edf6;
+  --border-color: #dde4f0;
+  --border-strong: #c3cddf;
 
-  --ink: #1a2230;
-  --ink-hover: #2b3546;
-  --text-primary: #1a2230;
-  --text-secondary: #5b6472;
-  --text-muted: #7c8591;
+  --ink: #14203a;
+  --ink-hover: #22335a;
+  --text-primary: #14203a;
+  --text-secondary: #55627a;
+  --text-muted: #7a869c;
 
-  --lagoon: #00897b;
-  --lagoon-soft: #e2f3f0;
-  --lagoon-strong: #00695f;
+  --lagoon: #2563eb;
+  --lagoon-soft: #e6eefe;
+  --lagoon-strong: #1d4ed8;
 
-  --marigold: #f0a202;
-  --marigold-soft: #fff3d1;
-  --marigold-strong: #7a5200;
+  --marigold: #1d4ed8;
+  --marigold-soft: #dbe7ff;
+  --marigold-strong: #1e3a8a;
 
   --status-success: #22804a;
   --status-success-soft: #e6f4ec;
@@ -41,9 +42,9 @@
   --tag-gold-soft: #fbf1d6;
   --tag-gold-strong: #7a5a00;
 
-  --chart-series-1: #00897b;
-  --chart-track: #e9edeb;
+  --chart-series-1: #2563eb;
+  --chart-track: #e8edf6;
 
-  --shadow-float: 0 8px 24px rgb(26 34 48 / 0.08), 0 1px 2px rgb(26 34 48 / 0.06);
+  --shadow-float: 0 8px 24px rgb(20 32 58 / 0.08), 0 1px 2px rgb(20 32 58 / 0.06);
   --radius-base: 10px;
 }

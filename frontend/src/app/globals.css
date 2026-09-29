@@ -72,7 +72,7 @@
   --card-foreground: var(--text-primary);
   --popover: var(--bg-surface);
   --popover-foreground: var(--text-primary);
-  --primary: var(--ink);
+  --primary: var(--lagoon);
   --primary-foreground: #ffffff;
   --secondary: var(--bg-subtle);
   --secondary-foreground: var(--text-primary);
@@ -83,7 +83,7 @@
   --destructive: var(--status-danger);
   --border: var(--border-color);
   --input: var(--border-strong);
-  --ring: var(--lagoon);
+  --ring: var(--lagoon-strong);
   --radius: var(--radius-base);
   color-scheme: light;
 }

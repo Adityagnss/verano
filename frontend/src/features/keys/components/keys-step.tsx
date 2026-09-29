@@ -61,7 +61,7 @@ export function KeysStep({ projectId }: { projectId: string }) {
 
   const unknownPrice = (models.data ?? []).some((m) => selected.has(m.id) && !m.price_known)
   return (
-    <div className="flex max-w-6xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-6">
       <StepHeader
         step="keys"
         title={KEYS_COPY.title}

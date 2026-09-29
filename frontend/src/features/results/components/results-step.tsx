@@ -80,7 +80,7 @@ export function ResultsStep({ projectId, experimentId }: { projectId: string; ex
     },
   ]
   return (
-    <div className="flex max-w-7xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-6">
       <StepHeader
         step="results"
         title={RESULTS_COPY.title}
