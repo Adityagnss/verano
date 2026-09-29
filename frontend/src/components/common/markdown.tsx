@@ -88,63 +88,82 @@ function blocks(markdown: string): Block[] {
   return out
 }
 
-export function Markdown({ source }: { source: string }) {
+export function Markdown({
+  source,
+  diagrams = {},
+}: {
+  source: string
+  diagrams?: Record<string, ReactNode>
+}) {
   return (
     <div className="flex flex-col gap-3 text-[0.9375rem] leading-relaxed">
       {blocks(source).map((block, index) => {
-        switch (block.kind) {
-          case "h1":
-            return (
-              <h3 key={index} className="text-xl font-semibold">
-                {inline(block.text)}
-              </h3>
-            )
-          case "h2":
-            return (
-              <h3
-                key={index}
-                id={slug(block.text)}
-                className="border-border mt-4 scroll-mt-24 border-t pt-5 text-lg font-semibold"
-              >
-                {inline(block.text)}
-              </h3>
-            )
-          case "h3":
-            return (
-              <h4 key={index} className="mt-2 font-semibold">
-                {inline(block.text)}
-              </h4>
-            )
-          case "quote":
-            return (
-              <blockquote key={index} className="border-lagoon text-text-secondary border-l-2 pl-3">
-                {inline(block.text)}
-              </blockquote>
-            )
-          case "ul":
-            return (
-              <ul key={index} className="marker:text-lagoon flex list-disc flex-col gap-1.5 pl-5">
-                {block.items.map((item, i) => (
-                  <li key={i}>{inline(item)}</li>
-                ))}
-              </ul>
-            )
-          case "ol":
-            return (
-              <ol key={index} className="marker:text-lagoon flex list-decimal flex-col gap-1.5 pl-5">
-                {block.items.map((item, i) => (
-                  <li key={i}>{inline(item)}</li>
-                ))}
-              </ol>
-            )
-          default:
-            return (
-              <p key={index} className="text-text-secondary">
-                {inline(block.text)}
-              </p>
-            )
-        }
+        const heading = block.kind === "h2" || block.kind === "h3" ? diagrams[slug(block.text)] : undefined
+        const node = renderBlock(block, index)
+        return heading ? (
+          <div key={index} className="flex flex-col gap-3">
+            {node}
+            {heading}
+          </div>
+        ) : (
+          node
+        )
       })}
     </div>
   )
+}
+
+function renderBlock(block: Block, index: number): ReactNode {
+  switch (block.kind) {
+    case "h1":
+      return (
+        <h3 key={index} className="text-xl font-semibold">
+          {inline(block.text)}
+        </h3>
+      )
+    case "h2":
+      return (
+        <h3
+          key={index}
+          id={slug(block.text)}
+          className="border-border mt-4 scroll-mt-24 border-t pt-5 text-lg font-semibold"
+        >
+          {inline(block.text)}
+        </h3>
+      )
+    case "h3":
+      return (
+        <h4 key={index} id={slug(block.text)} className="mt-2 scroll-mt-24 font-semibold">
+          {inline(block.text)}
+        </h4>
+      )
+    case "quote":
+      return (
+        <blockquote key={index} className="border-lagoon text-text-secondary border-l-2 pl-3">
+          {inline(block.text)}
+        </blockquote>
+      )
+    case "ul":
+      return (
+        <ul key={index} className="marker:text-lagoon flex list-disc flex-col gap-1.5 pl-5">
+          {block.items.map((item, i) => (
+            <li key={i}>{inline(item)}</li>
+          ))}
+        </ul>
+      )
+    case "ol":
+      return (
+        <ol key={index} className="marker:text-lagoon flex list-decimal flex-col gap-1.5 pl-5">
+          {block.items.map((item, i) => (
+            <li key={i}>{inline(item)}</li>
+          ))}
+        </ol>
+      )
+    default:
+      return (
+        <p key={index} className="text-text-secondary">
+          {inline(block.text)}
+        </p>
+      )
+  }
 }

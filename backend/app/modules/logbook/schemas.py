@@ -165,6 +165,7 @@ class GroupStats(BaseModel):
     model: str
     answers: int
     passed: int
+    judged: int
     pass_rate: float | None
     quality: float | None
     golden_match: float | None

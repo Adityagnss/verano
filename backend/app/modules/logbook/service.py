@@ -240,6 +240,7 @@ class LogbookService:
                 model=model,
                 answers=count,
                 passed=passed,
+                judged=judged_count,
                 pass_rate=passed / judged_count if judged_count else None,
                 quality=quality,
                 golden_match=golden,

@@ -37,6 +37,48 @@ What is known about which prompt changes help, taken from a measured tutorial ("
 - Offered rewards or threats ("I'll tip $200"): no reliable effect, and a hint of harm on hard cases.
 - Asking the model to check its own answer with no new information: it does not help and can make answers worse.
 
+## How the main techniques work
+
+### Chain of thought
+
+The model writes its working before the answer, so each step can build on the previous one. It pays on multi-step problems and on plain models; it costs extra output tokens, and reasoning models already do it internally.
+
+### Few-shot examples
+
+Two to four solved examples come before the real question, ideally as earlier conversation turns. They fix the format and show the pattern. Pick examples that look like your failures.
+
+### Reasoning first in JSON
+
+A JSON answer is written left to right, so the field order is the order of thinking. Reasoning before the answer lets the answer use the working; answer first forces a guess.
+
+### Majority vote
+
+Ask the same question several times and keep the most common answer. Useful when single answers are often wrong; wasteful when the model is already right almost every time.
+
+### Prompt chaining
+
+Split a big task into small prompts, for example extract, then decide, then format the answer. Each step is short, can be tested on its own, and a failure points at one step. It costs more calls and adds delay.
+
+### Context first, question last
+
+Put the reference text and rules first and the question or instruction at the end, with clear delimiters around the text. The model reads left to right and can only use what it has already read.
+
+### Prompt caching
+
+Providers reuse the already-read start of a prompt. Keep instructions, examples and reference text at the start, unchanged between calls, and put the part that changes last. Reading a cached prefix was about 100 times faster and about a tenth of the price.
+
+### AI judge
+
+A second model scores the first model's answer against a written rubric. Ask for a pass or fail with the reasoning first, use exact checks wherever they can decide, and audit the judge against answers you labelled yourself.
+
+### Untrusted text and injection
+
+Text you did not write (a document, an email, a spreadsheet cell) can contain instructions, and the model may follow them. Marking the text as data helps but is not a guarantee. Add such a case to the tests, and limit what the model is allowed to do.
+
+### Automatic prompt search
+
+Instead of guessing improvements by hand, generate several candidate prompts, score each on the same test cases, and keep the one that wins on cases it was not written from. This is what the Improve step does.
+
 ## Scoring answers
 
 - Use exact, rule-based checks first. They are free and never drift. Add an AI judge only for what rules cannot decide.

@@ -14,6 +14,7 @@ import { Section } from "@/components/common/section"
 import { Skeleton } from "@/components/ui/skeleton"
 
 import { usePromptNotes } from "../hooks"
+import { DIAGRAMS } from "./diagrams"
 
 export function GuidePage({ projectId }: { projectId: string }) {
   const notes = usePromptNotes()
@@ -63,7 +64,7 @@ export function GuidePage({ projectId }: { projectId: string }) {
         <Section title="Prompting notes">
           <ErrorMessage error={notes.error} />
           {notes.isPending ? <Skeleton className="h-64 w-full" /> : null}
-          {notes.data ? <Markdown source={notes.data.replace(/^# .*\n/, "")} /> : null}
+          {notes.data ? <Markdown source={notes.data.replace(/^# .*\n/, "")} diagrams={DIAGRAMS} /> : null}
         </Section>
       </div>
     </div>
