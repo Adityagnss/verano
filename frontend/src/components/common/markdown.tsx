@@ -1,10 +1,13 @@
 /**
  * A small, safe renderer for the notes written in Markdown (headings, paragraphs, bullet and
- * numbered lists, quotes, **bold**, *italic*, `code` and [links](https://…)). Nothing is
+ * numbered lists, quotes, fenced code blocks with a Copy button, simple tables, **bold**,
+ * *italic*, `code` and [links](https://…)). Nothing is
  * inserted as HTML, so a note can never run script. Level-2 headings get an `id` so a
  * table of contents can link to them.
  */
 import type { ReactNode } from "react"
+
+import { CopyButton } from "./copy-button"
 
 export type NoteHeading = { id: string; title: string }
 
@@ -53,7 +56,20 @@ function inline(text: string): ReactNode[] {
 }
 
 type Block =
-  { kind: "h1" | "h2" | "h3" | "p" | "quote"; text: string } | { kind: "ul" | "ol"; items: string[] }
+  | { kind: "h1" | "h2" | "h3" | "p" | "quote"; text: string }
+  | { kind: "ul" | "ol"; items: string[] }
+  | { kind: "code"; text: string }
+  | { kind: "table"; head: string[]; rows: string[][] }
+
+function cells(line: string): string[] {
+  return line
+    .trim()
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((cell) => cell.trim())
+}
+const TABLE_RULE = /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)*\|?\s*$/
 
 function blocks(markdown: string): Block[] {
   const out: Block[] = []
@@ -62,8 +78,32 @@ function blocks(markdown: string): Block[] {
     if (paragraph.length) out.push({ kind: "p", text: paragraph.join(" ") })
     paragraph = []
   }
-  for (const raw of markdown.split("\n")) {
-    const line = raw.trimEnd()
+  let code: string[] | null = null
+  const lines = markdown.split("\n")
+  for (let at = 0; at < lines.length; at++) {
+    const line = lines[at].trimEnd()
+    if (code) {
+      if (line.startsWith("```")) {
+        out.push({ kind: "code", text: code.join("\n") })
+        code = null
+      } else code.push(lines[at])
+      continue
+    }
+    if (line.startsWith("```")) {
+      flush()
+      code = []
+      continue
+    }
+    if (line.trimStart().startsWith("|") && TABLE_RULE.test(lines[at + 1] ?? "")) {
+      flush()
+      const head = cells(line)
+      const rows: string[][] = []
+      at += 2
+      while (at < lines.length && lines[at].trimStart().startsWith("|")) rows.push(cells(lines[at++]))
+      at--
+      out.push({ kind: "table", head, rows })
+      continue
+    }
     const bullet = /^\s*[-*]\s+(.*)$/.exec(line)
     const numbered = /^\s*\d+\.\s+(.*)$/.exec(line)
     const heading = /^(#{1,3}) (.*)$/.exec(line)
@@ -136,6 +176,45 @@ function renderBlock(block: Block, index: number): ReactNode {
         <h4 key={index} id={slug(block.text)} className="mt-2 scroll-mt-24 font-semibold">
           {inline(block.text)}
         </h4>
+      )
+    case "code":
+      return (
+        <div key={index} className="border-border bg-subtle overflow-hidden rounded-lg border">
+          <div className="border-border flex items-center justify-between border-b px-3 py-1.5">
+            <span className="text-text-muted text-xs font-medium">Copy-ready text</span>
+            <CopyButton text={block.text} size="xs" />
+          </div>
+          <pre className="overflow-x-auto p-3 text-[0.8125rem] leading-relaxed whitespace-pre-wrap">
+            <code>{block.text}</code>
+          </pre>
+        </div>
+      )
+    case "table":
+      return (
+        <div key={index} className="border-border overflow-x-auto rounded-lg border">
+          <table className="w-full min-w-[36rem] border-collapse text-left text-sm">
+            <thead className="bg-subtle">
+              <tr>
+                {block.head.map((cell, i) => (
+                  <th key={i} className="border-border border-b px-3 py-2 font-semibold">
+                    {inline(cell)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {block.rows.map((row, r) => (
+                <tr key={r} className="border-border border-b last:border-b-0">
+                  {row.map((cell, i) => (
+                    <td key={i} className="text-text-secondary px-3 py-2 align-top">
+                      {inline(cell)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )
     case "quote":
       return (

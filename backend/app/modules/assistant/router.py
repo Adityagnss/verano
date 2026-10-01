@@ -18,7 +18,7 @@ from app.modules.projects.dependencies import ProjectScope
 
 router = APIRouter(prefix="/projects/{project_id}/improvements", tags=["improve"])
 notes_router = APIRouter(prefix="/prompt-notes", tags=["improve"])
-NOTES = Path(__file__).parent / "prompts" / "technique_notes.md"
+GUIDE = Path(__file__).parent / "prompts" / "prompt_guide.md"
 
 
 class PromptNotes(BaseModel):
@@ -27,8 +27,8 @@ class PromptNotes(BaseModel):
 
 @notes_router.get("")
 async def prompt_notes(principal: CurrentPrincipal) -> PromptNotes:
-    """The measured prompt-technique notes Improve reads, shown to users as the Prompt guide."""
-    return PromptNotes(markdown=NOTES.read_text(encoding="utf-8"))
+    """The Prompt guide page: the full prompting reference (a superset of the notes Improve reads)."""
+    return PromptNotes(markdown=GUIDE.read_text(encoding="utf-8"))
 
 
 @router.post("", status_code=status.HTTP_202_ACCEPTED)

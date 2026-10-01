@@ -15,6 +15,43 @@ const FILL: Record<Tone, [string, string]> = {
   violet: ["#f1eefb", "#5a45b0"],
 }
 
+const LABELS: Record<string, string> = {
+  "what-a-prompt-is-made-of": "Four layers of a prompt feed the model, which writes the answer",
+  "the-one-habit-measure-first":
+    "The measuring loop: write a variant, run it repeatedly, grade, compare the gap with the spread",
+  "chain-of-thought": "Chain of thought: the question, then written steps, then a marked final answer",
+  "few-shot-examples": "Few-shot: solved examples come before the real question",
+  "reasoning-first-in-json": "JSON written left to right: reasoning first lets the answer use the working",
+  "majority-vote": "Majority vote: ask three times, keep the most common answer",
+  "prompt-chaining": "Prompt chaining: small prompts in a row, each checked on its own",
+  "context-first-question-last": "Context first, question last: the model reads left to right",
+  "prompt-caching": "Prompt caching: an unchanged start is reused, only the end is new",
+  "ai-judge": "AI judge: a second model grades the answer against a rubric, and the judge itself is audited",
+  "untrusted-text-and-injection": "Injection: instructions hidden in untrusted text can reach the model",
+  "automatic-prompt-search":
+    "Automatic prompt search: candidates are scored on the same cases and the winner is checked on held-back cases",
+  "how-verano-uses-this-guide":
+    "The Verano loop: keys, prompt, test cases, run, results, improve, then repeat with the new version",
+  "which-technique-should-i-try-first":
+    "Which technique first: wrong form, multi-step mistakes, drifting format, varying answers, missing facts, each with its fix",
+  "delimiters-and-labelled-sections":
+    "Delimiters: rules, document and question each sit in their own named tags before reaching the model",
+  "step-back-prompting": "Step-back: state the general principle first, then apply it to the case and answer",
+  "tree-of-thoughts":
+    "Tree of thoughts: several ideas are tried, weak ones dropped, and the best path is kept",
+  "grounding-in-reference-text":
+    "Grounding: find the relevant passages, put them before the question, and answer with a source or say not found",
+  "tool-use-and-react":
+    "ReAct: the model thinks, calls a tool, reads the result, and repeats until it can answer",
+  "meta-prompting":
+    "Meta-prompting: the task, good examples and failures go to a prompt-writing model that returns candidates to be scored",
+  "critique-and-revise-with-new-information":
+    "Critique and revise: a draft is checked against new information such as a test or rule, then revised",
+}
+
+/** Plain-text description of a diagram, keyed by the slug of its heading (used when the page is copied). */
+export const DIAGRAM_LABELS = LABELS
+
 function Frame({ label, height = 150, children }: { label: string; height?: number; children: ReactNode }) {
   return (
     <figure className="bg-subtle ring-border my-1 rounded-xl p-3 ring-1">
@@ -142,7 +179,7 @@ function Diagram({ label, height, children }: { label: string; height?: number; 
 
 function Layers() {
   return (
-    <Diagram label="Four layers of a prompt feed the model, which writes the answer" height={170}>
+    <Diagram label={LABELS["what-a-prompt-is-made-of"]} height={170}>
       {[
         ["Instruction", "blue"],
         ["Examples", "green"],
@@ -179,10 +216,7 @@ function Layers() {
 
 function Loop() {
   return (
-    <Diagram
-      label="The measuring loop: write a variant, run it repeatedly, grade, compare the gap with the spread"
-      height={150}
-    >
+    <Diagram label={LABELS["the-one-habit-measure-first"]} height={150}>
       <Box x={10} y={50} w={100} h={48} title="Write a" sub="prompt variant" />
       <Box x={140} y={50} w={110} h={48} title="Run every case" sub="several times" tone="green" />
       <Box x={280} y={50} w={100} h={48} title="Grade" sub="each answer" tone="gold" />
@@ -206,10 +240,7 @@ function Loop() {
 
 function Cot() {
   return (
-    <Diagram
-      label="Chain of thought: the question, then written steps, then a marked final answer"
-      height={120}
-    >
+    <Diagram label={LABELS["chain-of-thought"]} height={120}>
       <Box x={10} y={36} w={110} h={48} title="Question" tone="gold" />
       <Box x={160} y={12} w={120} h={30} title="Step 1" tone="blue" />
       <Box x={160} y={50} w={120} h={30} title="Step 2" tone="blue" />
@@ -230,7 +261,7 @@ function Cot() {
 
 function FewShot() {
   return (
-    <Diagram label="Few-shot: solved examples come before the real question" height={110}>
+    <Diagram label={LABELS["few-shot-examples"]} height={110}>
       <Box x={10} y={14} w={120} h={38} title="Example 1" sub="question → answer" tone="green" />
       <Box x={10} y={60} w={120} h={38} title="Example 2" sub="question → answer" tone="green" />
       <Box x={190} y={36} w={130} h={44} title="Real question" tone="gold" />
@@ -246,7 +277,7 @@ function FewShot() {
 
 function JsonOrder() {
   return (
-    <Diagram label="JSON written left to right: reasoning first lets the answer use the working" height={120}>
+    <Diagram label={LABELS["reasoning-first-in-json"]} height={120}>
       <Note x={10} y={20} anchor="start" color="#c23b22">
         Answer first: the model must guess
       </Note>
@@ -271,7 +302,7 @@ function JsonOrder() {
 
 function Vote() {
   return (
-    <Diagram label="Majority vote: ask three times, keep the most common answer" height={120}>
+    <Diagram label={LABELS["majority-vote"]} height={120}>
       <Box x={10} y={38} w={110} h={44} title="Question" tone="gold" />
       <Box x={170} y={8} w={100} h={30} title="Try 1: A" tone="blue" />
       <Box x={170} y={46} w={100} h={30} title="Try 2: B" tone="blue" />
@@ -291,7 +322,7 @@ function Vote() {
 
 function Chain() {
   return (
-    <Diagram label="Prompt chaining: small prompts in a row, each checked on its own" height={110}>
+    <Diagram label={LABELS["prompt-chaining"]} height={110}>
       <Box x={10} y={30} w={130} h={50} title="1. Extract" sub="pull out the facts" tone="blue" />
       <Box x={190} y={30} w={130} h={50} title="2. Decide" sub="apply the rule" tone="blue" />
       <Box x={370} y={30} w={130} h={50} title="3. Format" sub="write the answer" tone="blue" />
@@ -313,7 +344,7 @@ function Chain() {
 
 function ContextFirst() {
   return (
-    <Diagram label="Context first, question last: the model reads left to right" height={110}>
+    <Diagram label={LABELS["context-first-question-last"]} height={110}>
       <Box x={10} y={30} w={180} h={50} title="Reference text" sub="delimited, unchanged" tone="grey" />
       <Box x={210} y={30} w={140} h={50} title="Rules" sub="and output format" tone="blue" />
       <Box x={370} y={30} w={140} h={50} title="Question" sub="last" tone="gold" />
@@ -327,7 +358,7 @@ function ContextFirst() {
 
 function Cache() {
   return (
-    <Diagram label="Prompt caching: an unchanged start is reused, only the end is new" height={120}>
+    <Diagram label={LABELS["prompt-caching"]} height={120}>
       <Box x={10} y={26} w={140} h={40} title="Instructions" tone="green" />
       <Box x={156} y={26} w={140} h={40} title="Examples" tone="green" />
       <Box x={302} y={26} w={150} h={40} title="Reference text" tone="green" />
@@ -347,10 +378,7 @@ function Cache() {
 
 function Judge() {
   return (
-    <Diagram
-      label="AI judge: a second model grades the answer against a rubric, and the judge itself is audited"
-      height={130}
-    >
+    <Diagram label={LABELS["ai-judge"]} height={130}>
       <Box x={10} y={14} w={110} h={38} title="Answer" tone="blue" />
       <Box x={10} y={64} w={110} h={38} title="Rubric" tone="gold" />
       <Box x={180} y={34} w={120} h={48} title="Judge model" sub="reasoning first" tone="violet" />
@@ -366,7 +394,7 @@ function Judge() {
 
 function Injection() {
   return (
-    <Diagram label="Injection: instructions hidden in untrusted text can reach the model" height={130}>
+    <Diagram label={LABELS["untrusted-text-and-injection"]} height={130}>
       <Box x={10} y={12} w={150} h={38} title="Your instructions" tone="blue" />
       <Box x={10} y={62} w={150} h={54} title="Untrusted text" sub={'"ignore the rules…"'} tone="red" />
       <Box x={230} y={36} w={110} h={54} title="Model" tone="blue" />
@@ -392,10 +420,7 @@ function Injection() {
 
 function Search() {
   return (
-    <Diagram
-      label="Automatic prompt search: candidates are scored on the same cases and the winner is checked on held-back cases"
-      height={120}
-    >
+    <Diagram label={LABELS["automatic-prompt-search"]} height={120}>
       <Box x={10} y={38} w={110} h={44} title="Your prompt" tone="blue" />
       <Box x={170} y={8} w={110} h={30} title="Candidate A" tone="violet" />
       <Box x={170} y={46} w={110} h={30} title="Candidate B" tone="violet" />
@@ -413,7 +438,215 @@ function Search() {
   )
 }
 
+function Elbow({ d, dashed = false }: { d: string; dashed?: boolean }) {
+  return (
+    <path
+      d={d}
+      fill="none"
+      stroke="#55627a"
+      strokeWidth={1.6}
+      strokeDasharray={dashed ? "5 4" : undefined}
+      markerEnd="url(#verano-arrow)"
+    />
+  )
+}
+
+function VeranoLoop() {
+  const steps: [string, string, Tone][] = [
+    ["Keys", "add providers", "grey"],
+    ["Prompt", "write and check", "blue"],
+    ["Test cases", "approve 70/30", "gold"],
+    ["Run", "models x repeats", "green"],
+    ["Results", "quality, cost", "violet"],
+    ["Improve", "3 candidates", "blue"],
+  ]
+  return (
+    <Diagram label={LABELS["how-verano-uses-this-guide"]} height={150}>
+      {steps.map(([title, sub, tone], i) => (
+        <Box key={title} x={1 + i * 110} y={30} w={88} h={48} title={title} sub={sub} tone={tone} />
+      ))}
+      {[0, 1, 2, 3, 4].map((i) => (
+        <Line key={i} x1={89 + i * 110} y1={54} x2={109 + i * 110} y2={54} />
+      ))}
+      <Elbow d="M595 80 V118 H155 V82" dashed />
+      <Note x={375} y={136}>
+        accept the winner as a new version, then measure again
+      </Note>
+    </Diagram>
+  )
+}
+
+function WhichFirst() {
+  const cols: [string, string, string, string][] = [
+    ["Wrong form?", "", "Exact format", "and allowed values"],
+    ["Multi-step", "mistakes?", "Reason first", "or step by step"],
+    ["Format drifts?", "", "Few-shot", "2 close examples"],
+    ["Answers vary?", "", "Vote or low", "temperature"],
+    ["Needs facts?", "", "Ground it", "in your documents"],
+  ]
+  return (
+    <Diagram label={LABELS["which-technique-should-i-try-first"]} height={200}>
+      {cols.map(([q, qs, fix, fs], i) => (
+        <g key={q}>
+          <Box x={i * 132} y={14} w={112} h={48} title={q} sub={qs || undefined} tone="gold" />
+          <Line x1={i * 132 + 56} y1={62} x2={i * 132 + 56} y2={104} />
+          <Note x={i * 132 + 62} y={88} anchor="start">
+            yes
+          </Note>
+          <Box x={i * 132} y={106} w={112} h={48} title={fix} sub={fs} tone="green" />
+          {i < 4 ? <Line x1={i * 132 + 112} y1={38} x2={i * 132 + 130} y2={38} dashed /> : null}
+        </g>
+      ))}
+      <Note x={320} y={182}>
+        then measure: keep the change only if the gain is bigger than the spread
+      </Note>
+    </Diagram>
+  )
+}
+
+function Delimiters() {
+  return (
+    <Diagram label={LABELS["delimiters-and-labelled-sections"]} height={120}>
+      <Box x={10} y={26} w={130} h={50} title={"<rules>"} sub="what to do" tone="blue" />
+      <Box x={160} y={26} w={140} h={50} title={"<document>"} sub="data, not orders" tone="grey" />
+      <Box x={320} y={26} w={130} h={50} title={"<question>"} sub="asked last" tone="gold" />
+      <Line x1={450} y1={51} x2={498} y2={51} />
+      <Box x={500} y={26} w={130} h={50} title="Model" sub="reads each part by name" tone="blue" />
+      <Note x={320} y={104}>
+        the same tags every time, and the instruction names them
+      </Note>
+    </Diagram>
+  )
+}
+
+function StepBack() {
+  return (
+    <Diagram label={LABELS["step-back-prompting"]} height={120}>
+      <Box x={10} y={20} w={110} h={48} title="Question" tone="gold" />
+      <Box x={170} y={20} w={150} h={48} title="Step back" sub="state the general rule" tone="violet" />
+      <Box x={370} y={20} w={110} h={48} title="Apply it" sub="to this case" tone="blue" />
+      <Box x={530} y={20} w={100} h={48} title="Answer" tone="green" />
+      <Line x1={120} y1={44} x2={168} y2={44} />
+      <Line x1={320} y1={44} x2={368} y2={44} />
+      <Line x1={480} y1={44} x2={528} y2={44} />
+      <Note x={320} y={104} color="#c23b22">
+        without the step, a model may jump to a specific, wrong answer
+      </Note>
+    </Diagram>
+  )
+}
+
+function TreeOfThoughts() {
+  return (
+    <Diagram label={LABELS["tree-of-thoughts"]} height={150}>
+      <Box x={10} y={58} w={100} h={40} title="Question" tone="gold" />
+      <Box x={170} y={8} w={110} h={32} title="Idea A" tone="blue" />
+      <Box x={170} y={60} w={110} h={32} title="Idea B: weak" tone="grey" />
+      <Box x={170} y={112} w={110} h={32} title="Idea C" tone="blue" />
+      <Box x={340} y={8} w={110} h={32} title="A, extended" tone="blue" />
+      <Box x={340} y={112} w={110} h={32} title="C, extended" tone="blue" />
+      <Box x={500} y={58} w={130} h={40} title="Best path" tone="green" />
+      <Line x1={110} y1={72} x2={168} y2={26} />
+      <Line x1={110} y1={78} x2={168} y2={76} dashed />
+      <Line x1={110} y1={84} x2={168} y2={124} />
+      <Line x1={280} y1={24} x2={338} y2={24} />
+      <Line x1={280} y1={128} x2={338} y2={128} />
+      <Line x1={450} y1={28} x2={498} y2={68} />
+      <Line x1={450} y1={124} x2={498} y2={88} />
+      <Note x={315} y={80} color="#8b95a7">
+        dropped
+      </Note>
+    </Diagram>
+  )
+}
+
+function Grounding() {
+  return (
+    <Diagram label={LABELS["grounding-in-reference-text"]} height={130}>
+      <Box x={10} y={22} w={100} h={50} title="Documents" tone="grey" />
+      <Box x={140} y={22} w={120} h={50} title="Find passages" sub="the relevant few" tone="violet" />
+      <Box x={290} y={22} w={130} h={50} title="Prompt" sub="passages + question" tone="blue" />
+      <Box x={450} y={22} w={70} h={50} title="Model" tone="blue" />
+      <Box x={550} y={22} w={82} h={50} title="Answer" sub="+ source" tone="green" />
+      <Line x1={110} y1={47} x2={138} y2={47} />
+      <Line x1={260} y1={47} x2={288} y2={47} />
+      <Line x1={420} y1={47} x2={448} y2={47} />
+      <Line x1={520} y1={47} x2={548} y2={47} />
+      <Note x={320} y={104} color="#22804a">
+        not in the documents: reply “not found” instead of guessing
+      </Note>
+    </Diagram>
+  )
+}
+
+function ToolLoop() {
+  return (
+    <Diagram label={LABELS["tool-use-and-react"]} height={150}>
+      <Box x={10} y={26} w={110} h={48} title="Think" sub="what do I need?" tone="blue" />
+      <Box x={170} y={26} w={120} h={48} title="Call a tool" sub="search, maths, data" tone="violet" />
+      <Box x={340} y={26} w={110} h={48} title="Read result" tone="gold" />
+      <Box x={520} y={26} w={110} h={48} title="Answer" tone="green" />
+      <Line x1={120} y1={50} x2={168} y2={50} />
+      <Line x1={290} y1={50} x2={338} y2={50} />
+      <Line x1={450} y1={50} x2={518} y2={50} />
+      <Note x={484} y={42}>
+        enough
+      </Note>
+      <Elbow d="M395 76 V112 H65 V78" dashed />
+      <Note x={230} y={134}>
+        not enough: think again (cap the number of loops)
+      </Note>
+    </Diagram>
+  )
+}
+
+function MetaPrompt() {
+  return (
+    <Diagram label={LABELS["meta-prompting"]} height={130}>
+      <Box x={10} y={8} w={140} h={30} title="The task" tone="gold" />
+      <Box x={10} y={50} w={140} h={30} title="Good examples" tone="green" />
+      <Box x={10} y={92} w={140} h={30} title="Failures" tone="red" />
+      <Box x={210} y={38} w={140} h={50} title="Prompt writer" sub="a model" tone="violet" />
+      <Box x={400} y={38} w={100} h={50} title="Candidates" sub="one change each" tone="blue" />
+      <Box x={540} y={38} w={90} h={50} title="Score" sub="held-back check" tone="green" />
+      <Line x1={150} y1={23} x2={208} y2={54} />
+      <Line x1={150} y1={65} x2={208} y2={63} />
+      <Line x1={150} y1={107} x2={208} y2={74} />
+      <Line x1={350} y1={63} x2={398} y2={63} />
+      <Line x1={500} y1={63} x2={538} y2={63} />
+    </Diagram>
+  )
+}
+
+function Refine() {
+  return (
+    <Diagram label={LABELS["critique-and-revise-with-new-information"]} height={140}>
+      <Box x={10} y={22} w={110} h={48} title="Draft answer" tone="blue" />
+      <Box x={170} y={22} w={150} h={48} title="Check" sub="against new information" tone="gold" />
+      <Box x={370} y={22} w={110} h={48} title="Revise" tone="violet" />
+      <Box x={530} y={22} w={100} h={48} title="Better answer" tone="green" />
+      <Box x={170} y={100} w={150} h={30} title="test, rule or source" tone="grey" />
+      <Line x1={120} y1={46} x2={168} y2={46} />
+      <Line x1={320} y1={46} x2={368} y2={46} />
+      <Line x1={480} y1={46} x2={528} y2={46} />
+      <Line x1={245} y1={100} x2={245} y2={72} dashed />
+      <Note x={350} y={120} anchor="start" color="#c23b22">
+        checking with nothing new: no gain, can get worse
+      </Note>
+    </Diagram>
+  )
+}
+
 export const DIAGRAMS: Record<string, ReactNode> = {
+  "how-verano-uses-this-guide": <VeranoLoop />,
+  "which-technique-should-i-try-first": <WhichFirst />,
+  "delimiters-and-labelled-sections": <Delimiters />,
+  "step-back-prompting": <StepBack />,
+  "tree-of-thoughts": <TreeOfThoughts />,
+  "grounding-in-reference-text": <Grounding />,
+  "tool-use-and-react": <ToolLoop />,
+  "meta-prompting": <MetaPrompt />,
+  "critique-and-revise-with-new-information": <Refine />,
   "what-a-prompt-is-made-of": <Layers />,
   "the-one-habit-measure-first": <Loop />,
   "chain-of-thought": <Cot />,

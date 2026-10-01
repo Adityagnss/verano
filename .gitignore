@@ -15,3 +15,5 @@ playwright-report/
 test-results/
 .cache/
 backend/data/
+Daywise_logging/
+goldenset.JSON

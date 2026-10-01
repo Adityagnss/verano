@@ -1,4 +1,4 @@
-"""The prompting notes Improve reads are also served to signed-in users as the Prompt guide."""
+"""The Prompt guide is served to signed-in users only."""
 
 import httpx
 import pytest
@@ -13,4 +13,4 @@ async def test_prompt_notes_are_served_to_signed_in_users_only(client: httpx.Asy
     assert anonymous.status_code == 401
     response = await client.get("/api/v1/prompt-notes", headers=session.headers)
     assert response.status_code == 200
-    assert response.json()["markdown"].startswith("# Prompting notes")
+    assert response.json()["markdown"].startswith("# Prompting guide")

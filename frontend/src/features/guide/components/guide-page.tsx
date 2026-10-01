@@ -1,20 +1,23 @@
 /**
- * The Prompt guide: the prompting notes as a readable page, with a table of contents. The
- * notes are one Markdown file on the server (backend/app/modules/assistant/prompts/
- * technique_notes.md) that the Improve step reads too, so people and Improve always see the
- * same advice.
+ * The Prompt guide: a full prompting reference as a readable page, with a table of contents,
+ * pictures, copy-ready templates and a button that copies the whole page. It is one Markdown
+ * file on the server (backend/app/modules/assistant/prompts/prompt_guide.md). The shorter,
+ * measured technique_notes.md is what the Improve step reads; a test keeps every section of
+ * it present in this guide.
  */
 "use client"
 
 import Link from "next/link"
 
+import { CopyButton } from "@/components/common/copy-button"
 import { ErrorMessage } from "@/components/common/error-message"
 import { Markdown, headingsOf } from "@/components/common/markdown"
 import { Section } from "@/components/common/section"
 import { Skeleton } from "@/components/ui/skeleton"
 
+import { pageAsMarkdown } from "../copy-text"
 import { usePromptNotes } from "../hooks"
-import { DIAGRAMS } from "./diagrams"
+import { DIAGRAMS, DIAGRAM_LABELS } from "./diagrams"
 
 export function GuidePage({ projectId }: { projectId: string }) {
   const notes = usePromptNotes()
@@ -24,12 +27,12 @@ export function GuidePage({ projectId }: { projectId: string }) {
       <header className="from-lagoon-soft to-card ring-lagoon/15 flex flex-col gap-3 rounded-2xl bg-gradient-to-br px-6 py-7 ring-1 sm:px-8">
         <p className="text-lagoon-strong text-sm font-medium">Prompt guide</p>
         <h2 className="max-w-[40rem] text-2xl leading-tight font-semibold sm:text-[2rem]">
-          Notes on prompting: what helps, what does not, and how to prove it
+          Prompting guide: techniques, diagrams, templates and how to prove what works
         </h2>
         <p className="text-text-secondary max-w-[46rem] text-[0.95rem] leading-relaxed">
-          Short notes taken from a measured prompt-engineering tutorial and the studies it cites. Use them to
-          decide what to try, then let a run tell you whether it helped. The Improve step reads these same
-          notes when it writes better prompts for you.
+          A cheat sheet of techniques with what each costs and how well it is backed, a picture for each idea,
+          copy-ready prompt templates and a checklist. Every claim is marked as measured, common practice or
+          worth a test. Use it to decide what to try, then let a run tell you whether it helped.
         </p>
         <div className="flex flex-wrap gap-3 pt-1 text-sm">
           <Link
@@ -44,6 +47,16 @@ export function GuidePage({ projectId }: { projectId: string }) {
           >
             Improve my prompt
           </Link>
+          {notes.data ? (
+            <CopyButton
+              text={() => pageAsMarkdown(notes.data, DIAGRAM_LABELS)}
+              label="Copy whole page"
+              doneLabel="Copied to clipboard"
+              size="default"
+              variant="outline"
+              notify="Guide copied as Markdown"
+            />
+          ) : null}
         </div>
       </header>
       <div className="grid gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
@@ -61,7 +74,10 @@ export function GuidePage({ projectId }: { projectId: string }) {
             ))}
           </ul>
         </nav>
-        <Section title="Prompting notes">
+        <Section
+          title="Prompting guide"
+          description="Copy the whole page above, or use the Copy button on any template."
+        >
           <ErrorMessage error={notes.error} />
           {notes.isPending ? <Skeleton className="h-64 w-full" /> : null}
           {notes.data ? <Markdown source={notes.data.replace(/^# .*\n/, "")} diagrams={DIAGRAMS} /> : null}

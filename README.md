@@ -34,6 +34,31 @@ make up
 This creates `.env` with fresh secrets, builds the images, starts the stack and waits until
 it is healthy. Open **http://localhost:8080** and create an account.
 
+### Set up on another machine
+
+1. Install Docker (Desktop or Engine), [uv](https://docs.astral.sh/uv/) and `make`. Node is
+   only needed for development outside Docker (`make install`).
+2. Clone and start:
+
+   ```bash
+   git clone <your-repo-url> Verano
+   cd Verano
+   make up
+   ```
+
+3. Open **http://localhost:8080** and create an account.
+
+What does not come with the clone:
+
+- **`.env`** is git-ignored because it holds secrets. `make up` generates a new one. To reuse
+  the same keys, copy the file over a secure channel, never by email or chat.
+- **Your data** (accounts, projects, runs) lives in Docker volumes, so a new machine starts
+  empty. To move it, take a `pg_dump` on the old machine and restore it on the new one.
+- **Git-ignored local files** such as `goldenset.JSON`, `Daywise_logging/` and
+  `backend/data/` must be copied by hand if you need them.
+- **Local models:** install Ollama and run `make models`, or use `make up-local` to run
+  Ollama in a container.
+
 ## The loop, step by step
 
 1. **Keys** — add a key per provider (OpenAI, Anthropic, Gemini, Groq, xAI, Mistral,
