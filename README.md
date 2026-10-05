@@ -6,13 +6,15 @@ your prompt fails, and gives you a better prompt that is proven on data it has n
 
 Open source · Self-hostable · Apache 2.0
 
-> **Status (2026-10-05):** the **whole loop is built** (keys → prompt → your data → test
+> **Status (2026-10-07):** the **whole loop is built** (keys → prompt → your data → test
 > cases → run → results → improve) and was tested end to end in the browser on the mock
 > provider. Since then the **pre-V1 plan** added three things: generation safety (stop button,
 > budget cap, cost confirmation), **reproducibility** (settings, a configuration fingerprint,
 > re-runs, stability, the model version a provider reports) and the **`verano` command-line
-> tool** that sets a project up from existing code. Next: judge model choice and significance
-> labels, then the checks that need a real model or a person. See the
+> tool** that sets a project up from existing code. Then the **credibility items**: the judge
+> is chosen on purpose and shown, answers it could not score never count as passed, and "clear
+> difference" is claimed only by one statistical rule. Next: the checks that need a real model or a
+> person. See the
 > [plan](docs/DEVELOPMENT.md) (Part H), the [backlog](docs/BACKLOG.md) and the
 > [pending checks](docs/PENDING_CHECKS.md); progress per step is in the
 > [checkpoints](docs/checkpoints/).
@@ -23,7 +25,11 @@ Open source · Self-hostable · Apache 2.0
   generates the test cases, expected outputs and evaluators, and you approve them.
 - **Proven improvement.** A new prompt is built from one part of the data and confirmed on
   a held-back part it has never seen. If nothing beats your prompt, it says so.
-  (Significance labels are the next step; today it shows the plain difference.)
+  "Better" needs a clear difference on at least 30 held-back cases; otherwise it says *not
+  proven* and shows the numbers.
+- **A judge you choose, and can read.** The model that scores answers is picked on purpose (not
+  the one that wrote the cases), its criteria are editable, every request it received can be read,
+  and an answer it could not score is shown as unscored, never as a pass.
 - **Consistency is a metric.** Each model runs each case several times, so you see how
   predictable it is, not just how good it was once.
 - **Reproducible, and honest about it.** Every run records its exact configuration as a
@@ -185,9 +191,10 @@ worked through in order:
    id) — **done**
 3. The `verano` CLI (`login`, `init`, `validate`, `push`, `run`, `status`, the CI gate) —
    **done**, not yet published to PyPI
-4. Credibility items: judge model choice, "clear difference" labels, visible judge
-   failures — **next** (planned in [Part H, H4](docs/DEVELOPMENT.md))
-5. The [pending checks](docs/PENDING_CHECKS.md) with real models (planned in H5)
+4. Credibility items: judge model choice, editable and readable judge criteria, "clear
+   difference" labels, visible judge failures — **done** ([ADR 0016](docs/adr/0016-judge-unscored-cases-and-significance.md))
+5. The [pending checks](docs/PENDING_CHECKS.md) with real models — **next** (planned in
+   [H5](docs/DEVELOPMENT.md))
 
 After V1: connecting an application that runs outside Verano (RAG, agents, tools), email
 verification at sign-up, hosted CI. See the [plan](docs/DEVELOPMENT.md).

@@ -231,6 +231,7 @@ Temperature controls how much the model varies between runs. Low values (near 0)
 - A judge should give a binary pass or fail against a written rubric, not a score out of five, and should write its reasoning before the verdict.
 - A judge is a model. Audit it against answers you labelled yourself: a stable judge can be stably wrong (one judge rejected 17 percent of good answers while being perfectly repeatable). For pairwise comparisons, run both orders, since order changes winners.
 - Track consistency as well as quality. A prompt that is right on average but different every run is hard to rely on.
+- Read the labels, not just the averages. "No clear difference" means the gap is within what chance would produce on your test cases, and "not proven" means an improvement is not yet shown: add test cases (at least 30 held back) rather than trusting a small gain.
 
 ## Safety
 

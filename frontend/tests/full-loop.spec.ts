@@ -56,6 +56,7 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   await expect(page.getByText("3 answers matched").first()).toBeVisible()
   await page.getByRole("button", { name: "Next: test cases" }).click()
 
+  await page.getByLabel("Model that writes the test cases").selectOption("scripted")
   await page.getByRole("button", { name: "Describe the task" }).click()
   await expect(page.getByLabel("Goal")).toHaveValue("Classify support tickets into categories")
   await page.getByRole("button", { name: "Confirm task" }).click()
@@ -88,7 +89,7 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   await page.getByRole("button", { name: "Find what's failing and suggest fixes" }).click()
   await expect(page.getByText("Echoes the ticket")).toBeVisible({ timeout: 90_000 })
   await expect(page.getByText("strict output rule").first()).toBeVisible({ timeout: 90_000 })
-  await expect(page.getByText(/No candidate beat the current prompt|beat the current prompt/)).toBeVisible({
+  await expect(page.getByText(/Not proven: only \d+ held-back cases were judged/)).toBeVisible({
     timeout: 120_000,
   })
 

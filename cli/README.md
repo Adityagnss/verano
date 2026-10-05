@@ -45,7 +45,7 @@ A complete, runnable example is in [`examples/support-triage`](../examples/suppo
 | `verano init [folder]` | Scans the code and writes `verano.yaml`. `--print` shows it instead; `--yes` takes everything that can be tested; `--force` replaces an existing file. |
 | `verano validate` | Checks `verano.yaml` with line numbers and "did you mean" hints. Sends nothing. |
 | `verano push [name]` | Makes Verano match the file: project, keys, models, prompt, test cases. Safe to repeat. `--dry-run`, `--no-data`, `--replace-draft`. |
-| `verano run [name]` | Runs each prompt on its test cases. `--yes` skips the question, `--max-cost 2` refuses a dearer run, `--json` prints one JSON document, `--ci` is for pipelines. |
+| `verano run [name]` | Runs each prompt on its test cases. `--yes` skips the question, `--max-cost 2` refuses a dearer run, `--json` prints one JSON document (each model carries `vs_best`, its comparison with the best model), `--ci` is for pipelines. |
 | `verano status [name]` | The latest finished run of each prompt. |
 
 Use `-f other.yaml` on `validate`, `push`, `run` and `status` to use a different file.

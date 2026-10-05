@@ -10,7 +10,7 @@ import httpx
 import pytest
 
 from app.core.jobs import InlineJobQueue
-from tests.helpers import Session, approved_project, approved_project_with_cases, base
+from tests.helpers import Session, approved_project, approved_project_with_cases, base, judged_project
 
 pytestmark = [pytest.mark.integration]
 
@@ -86,3 +86,22 @@ async def test_a_rerun_is_compared_with_its_original_by_the_same_engine(
     assert quality["cases"] == 40
     assert quality["label"] == "no clear difference"
     assert quality["difference"] == pytest.approx(0.0)
+
+
+async def test_runs_scored_with_different_judges_are_not_compared_on_quality(
+    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue
+) -> None:
+    models = await judged_project(client, session, jobs, set_judge="scripted")
+    first = await run(client, session, jobs, models, ["good"])
+    again = await client.post(f"{base(session)}/experiments/{first['id']}/rerun", headers=session.headers)
+    await jobs.drain()
+    path = f"{base(session)}/experiments/{again.json()['id']}"
+    ask = {"against": first["id"]}
+    same_judge = (await client.get(f"{path}/replication", params=ask, headers=session.headers)).json()
+    assert same_judge["models"][0]["quality"] is not None
+
+    other = {"judge": {"credential_id": models["_credential"], "model": "echo"}}
+    assert (await client.post(f"{path}/rescore", json=other, headers=session.headers)).status_code == 202
+    await jobs.drain()
+    other_judge = (await client.get(f"{path}/replication", params=ask, headers=session.headers)).json()
+    assert other_judge["models"][0]["quality"] is None

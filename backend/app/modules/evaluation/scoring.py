@@ -84,18 +84,41 @@ class ScoringService:
         experiment_id: uuid.UUID,
         trigger: EvaluationTrigger = EvaluationTrigger.INITIAL,
         evaluator_set_version_id: uuid.UUID | None = None,
+        evaluation_run_id: uuid.UUID | None = None,
     ) -> uuid.UUID | None:
+        """One scoring pass. A pass that was queued with its run already created (a rescore) is claimed first, so
+        a job delivered twice scores once; a pass that fails is marked failed instead of staying "running"."""
         experiment = await self._engine.experiment(experiment_id)
         if experiment is None:
             return None
-        version_id = evaluator_set_version_id or experiment.evaluator_set_version_id
-        run = EvaluationRun(
-            experiment_id=experiment.id,
-            evaluator_set_version_id=version_id,
-            status=EvaluationRunStatus.RUNNING,
-            trigger=trigger,
-        )
-        await self._scores.add_run(run)
+        if evaluation_run_id is not None:
+            run = await self._scores.claim_run(evaluation_run_id)
+            if run is None:
+                return None
+            await self._session.commit()
+            version_id = run.evaluator_set_version_id
+        else:
+            version_id = evaluator_set_version_id or experiment.evaluator_set_version_id
+            run = EvaluationRun(
+                experiment_id=experiment.id,
+                evaluator_set_version_id=version_id,
+                status=EvaluationRunStatus.RUNNING,
+                trigger=trigger,
+            )
+            await self._scores.add_run(run)
+        try:
+            await self._score_pass(experiment, run, version_id)
+        except Exception:
+            await self._session.rollback()
+            await self._scores.finish_run(run.id, EvaluationRunStatus.FAILED, utcnow())
+            await self._session.commit()
+            raise
+        await self._scores.finish_run(run.id, EvaluationRunStatus.COMPLETED, utcnow())
+        await self._complete(experiment, trigger)
+        await self._session.commit()
+        return run.id
+
+    async def _score_pass(self, experiment: Experiment, run: EvaluationRun, version_id: uuid.UUID) -> None:
         configs = await self._evaluators.configs(version_id)
         rows = await self._engine.runs(experiment.id)
         items = {
@@ -113,10 +136,6 @@ class ScoringService:
             )
         )
         await self._scores.insert_scores([score for batch in batches for score in batch])
-        await self._scores.finish_run(run.id, EvaluationRunStatus.COMPLETED, utcnow())
-        await self._complete(experiment, trigger)
-        await self._session.commit()
-        return run.id
 
     async def _complete(self, experiment: Experiment, trigger: EvaluationTrigger) -> None:
         if trigger is not EvaluationTrigger.INITIAL:

@@ -24,6 +24,7 @@ export const RESULTS_COPY = {
   none: "No finished experiment yet. Start one in step 5.",
   experiment: "Experiment",
   scoring: "Scoring…",
+  scoringAgain: "Scoring again… the numbers below are from the earlier pass until it finishes.",
   notScored: "This experiment is still being scored.",
   columns: {
     model: "Model",

@@ -39,6 +39,7 @@ from app.modules.evaluation.schemas import (
     ComparisonOut,
     EvaluationRunOut,
     EvaluationRunStatus,
+    EvaluationTrigger,
     EvaluatorSetVersionOut,
     JudgeCallOut,
     JudgeChoice,
@@ -252,9 +253,20 @@ class ResultsService:
             if body.evaluators is not None and body.judge is None and changed.id == version:
                 raise Conflict(NOTHING_CHANGED)
             version = changed.id
+        queued = EvaluationRun(
+            experiment_id=experiment.id,
+            evaluator_set_version_id=version,
+            status=EvaluationRunStatus.PENDING,
+            trigger=EvaluationTrigger.RESCORE,
+        )
+        await self._scores.add_run(queued)
         await self._session.commit()
         self._jobs.enqueue(
-            SCORE_JOB, experiment_id=str(experiment.id), trigger="rescore", evaluator_set_version_id=str(version)
+            SCORE_JOB,
+            experiment_id=str(experiment.id),
+            trigger="rescore",
+            evaluator_set_version_id=str(version),
+            evaluation_run_id=str(queued.id),
         )
         return await self.results(project.id, experiment_id, None)
 

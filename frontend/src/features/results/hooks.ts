@@ -10,6 +10,16 @@ function experimentPath(projectId: string, experimentId: string) {
   return { path: { project_id: projectId, experiment_id: experimentId } }
 }
 
+const SCORING = new Set(["pending", "running"])
+
+/** True while the results are not there yet (first scoring) or a new scoring pass is queued or running. */
+export function scoringInProgress(results: {
+  evaluation_run: unknown
+  evaluation_runs: { status: string }[]
+}) {
+  return !results.evaluation_run || results.evaluation_runs.some((r) => SCORING.has(r.status))
+}
+
 export function useResults(projectId: string, experimentId: string | null) {
   return useQuery({
     queryKey: ["projects", projectId, "results", experimentId],
@@ -20,7 +30,7 @@ export function useResults(projectId: string, experimentId: string | null) {
         }),
       ),
     enabled: experimentId !== null,
-    refetchInterval: (query) => (query.state.data && !query.state.data.evaluation_run ? 1500 : false),
+    refetchInterval: (query) => (query.state.data && scoringInProgress(query.state.data) ? 1500 : false),
   })
 }
 
@@ -29,9 +39,10 @@ export function useCases(
   experimentId: string | null,
   failedOnly: boolean,
   enabled: boolean,
+  evaluationRunId: string | null = null,
 ) {
   return useQuery({
-    queryKey: ["projects", projectId, "result-cases", experimentId, failedOnly],
+    queryKey: ["projects", projectId, "result-cases", experimentId, failedOnly, evaluationRunId],
     queryFn: () =>
       call(() =>
         api.GET("/api/v1/projects/{project_id}/experiments/{experiment_id}/cases", {

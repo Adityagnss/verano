@@ -26,7 +26,7 @@ import type { ModelMetricsOut } from "@/lib/api/types"
 import { formatCost } from "@/lib/format"
 
 import { RESULTS_COPY } from "../copy"
-import { downloadCsv, useCases, useResults } from "../hooks"
+import { downloadCsv, scoringInProgress, useCases, useResults } from "../hooks"
 import { bestOn, brokenModels, isBest } from "../insights"
 import { CaseView } from "./case-view"
 import { ConfigPanel } from "./config-panel"
@@ -44,7 +44,7 @@ export function ResultsStep({ projectId, experimentId }: { projectId: string; ex
   const results = useResults(projectId, chosen)
   const scored = Boolean(results.data?.evaluation_run)
   const [failedOnly, setFailedOnly] = useState(false)
-  const cases = useCases(projectId, chosen, failedOnly, scored)
+  const cases = useCases(projectId, chosen, failedOnly, scored, results.data?.evaluation_run?.id ?? null)
   const [exportError, setExportError] = useState<unknown>(null)
 
   if (experiments.data && finished.length === 0)
@@ -113,6 +113,12 @@ export function ResultsStep({ projectId, experimentId }: { projectId: string; ex
         <div className="bg-info-soft text-info-strong flex items-center gap-2 rounded-xl p-4 text-sm">
           <Loader2 className="size-4 animate-spin" />
           {RESULTS_COPY.notScored}
+        </div>
+      ) : null}
+      {results.data && scored && scoringInProgress(results.data) ? (
+        <div className="bg-info-soft text-info-strong flex items-center gap-2 rounded-xl p-4 text-sm">
+          <Loader2 className="size-4 animate-spin" />
+          {RESULTS_COPY.scoringAgain}
         </div>
       ) : null}
       {metrics.length ? (

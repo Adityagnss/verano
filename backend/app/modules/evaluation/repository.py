@@ -80,6 +80,16 @@ class ScoreRepository:
         query = select(EvaluationRun).where(EvaluationRun.experiment_id == experiment_id)
         return list((await self._session.scalars(query.order_by(EvaluationRun.id.desc()))).all())
 
+    async def claim_run(self, run_id: uuid.UUID) -> EvaluationRun | None:
+        """Moves a pending pass to running; None when it was already claimed (a redelivered job)."""
+        query = (
+            update(EvaluationRun)
+            .where(EvaluationRun.id == run_id, EvaluationRun.status == EvaluationRunStatus.PENDING)
+            .values(status=EvaluationRunStatus.RUNNING)
+            .returning(EvaluationRun)
+        )
+        return await self._session.scalar(query)
+
     async def finish_run(self, run_id: uuid.UUID, status: EvaluationRunStatus, completed_at: datetime) -> None:
         await self._session.execute(
             update(EvaluationRun).where(EvaluationRun.id == run_id).values(status=status, completed_at=completed_at)
