@@ -31,6 +31,7 @@ dependencies = [
     "fastembed>=0.7",
     "deepeval>=3",
     "jsonschema>=4",
+    "numpy>=2.0",
 ]
 
 [dependency-groups]
