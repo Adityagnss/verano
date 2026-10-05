@@ -9,8 +9,17 @@ from typing import Annotated
 from fastapi import APIRouter, Query, status
 from fastapi.responses import Response
 
+from app.core.security import CurrentPrincipal
 from app.modules.evaluation.dependencies import ResultsServiceDep
-from app.modules.evaluation.schemas import CaseResultOut, ReplicationOut, RescoreRequest, ResultsOut
+from app.modules.evaluation.schemas import (
+    CaseResultOut,
+    EvaluatorSetVersionOut,
+    JudgeSuggestion,
+    ReplicationOut,
+    RescoreEstimate,
+    RescoreRequest,
+    ResultsOut,
+)
 from app.modules.projects.dependencies import ProjectScope
 
 router = APIRouter(prefix="/projects/{project_id}/experiments/{experiment_id}", tags=["results"])
@@ -56,6 +65,32 @@ async def export_csv(
 
 @router.post("/rescore", status_code=status.HTTP_202_ACCEPTED)
 async def rescore(
-    experiment_id: uuid.UUID, body: RescoreRequest, project: ProjectScope, service: ResultsServiceDep
+    experiment_id: uuid.UUID,
+    body: RescoreRequest,
+    project: ProjectScope,
+    principal: CurrentPrincipal,
+    service: ResultsServiceDep,
 ) -> ResultsOut:
-    return await service.rescore(project.id, experiment_id, body)
+    return await service.rescore(project, principal, experiment_id, body)
+
+
+@router.post("/rescore/estimate")
+async def rescore_estimate(
+    experiment_id: uuid.UUID, body: RescoreRequest, project: ProjectScope, service: ResultsServiceDep
+) -> RescoreEstimate:
+    return await service.rescore_estimate(project, experiment_id, body)
+
+
+project_router = APIRouter(prefix="/projects/{project_id}", tags=["evaluators"])
+
+
+@project_router.get("/evaluator-set-versions/{version_id}")
+async def get_evaluator_version(
+    version_id: uuid.UUID, project: ProjectScope, service: ResultsServiceDep
+) -> EvaluatorSetVersionOut:
+    return await service.evaluator_version(project.id, version_id)
+
+
+@project_router.get("/judge/suggestion")
+async def suggest_judge_model(project: ProjectScope, service: ResultsServiceDep) -> JudgeSuggestion:
+    return await service.judge_suggestion(project)

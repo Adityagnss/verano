@@ -40,9 +40,17 @@ class EvaluatorConfigOut(EvaluatorConfigIn):
     position: int
 
 
+class JudgeChoice(BaseModel):
+    """The model that scores the judged checks, chosen on purpose and kept on the evaluator-set version."""
+
+    credential_id: uuid.UUID
+    model: str = Field(min_length=1, max_length=300)
+
+
 class EvaluatorSetUpdate(BaseModel):
     evaluators: list[EvaluatorConfigIn] = Field(min_length=1)
     change_reason: str | None = Field(default=None, max_length=2000)
+    judge: JudgeChoice | None = None
 
 
 class EvaluatorSetVersionOut(BaseModel):
@@ -50,12 +58,16 @@ class EvaluatorSetVersionOut(BaseModel):
     evaluator_set_id: uuid.UUID
     version: int
     change_reason: str | None
+    judge: JudgeChoice | None
     evaluators: list[EvaluatorConfigOut]
     created_at: datetime
 
 
 class RescoreRequest(BaseModel):
+    """Score again with the same checks, a given version of them, or the same checks judged by another model."""
+
     evaluator_set_version_id: uuid.UUID | None = None
+    judge: JudgeChoice | None = None
 
 
 class EvaluationRunOut(BaseModel):
@@ -86,6 +98,19 @@ class ModelMetricsOut(BaseModel):
     stability: float | None
     stable_cases: int
     compared_cases: int
+
+
+class RescoreEstimate(BaseModel):
+    judge_calls: int
+    judge_cost: Decimal | None
+    price_known: bool
+    judge_model: str | None
+
+
+class JudgeSuggestion(BaseModel):
+    suggested: JudgeChoice | None
+    reason: str
+    candidates: list[JudgeChoice]
 
 
 class ReplicationModel(BaseModel):

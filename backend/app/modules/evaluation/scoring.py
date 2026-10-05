@@ -89,7 +89,7 @@ class ScoringService:
             for i in await self._datasets.items(experiment.dataset_version_id, ids=[r.dataset_item_id for r in rows])
         }
         spec = await self._spec(experiment)
-        target = await self._judge_target(experiment)
+        target = await self._judge_target(experiment, version_id)
         await self._session.commit()
         limit = asyncio.Semaphore(self._settings.judge_concurrency)
         batches = await asyncio.gather(
@@ -122,8 +122,9 @@ class ScoringService:
             raise AppError("This dataset version has no Task Spec, so its cases can't be scored.")
         return TaskSpec.model_validate(record.spec)
 
-    async def _judge_target(self, experiment: Experiment) -> CallTarget | None:
-        judge_config = experiment.config.get("judge")
+    async def _judge_target(self, experiment: Experiment, version_id: uuid.UUID) -> CallTarget | None:
+        """The judge of the evaluator-set version being scored with; the experiment's own record for older versions."""
+        judge_config = await self._evaluators.judge_of(version_id) or experiment.config.get("judge")
         if not judge_config:
             return None
         try:

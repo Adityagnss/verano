@@ -34,6 +34,20 @@ class EvaluatorRepository:
         )
         return await self._session.scalar(query)
 
+    async def versions(self, set_id: uuid.UUID) -> list[EvaluatorSetVersion]:
+        query = (
+            select(EvaluatorSetVersion)
+            .where(EvaluatorSetVersion.evaluator_set_id == set_id)
+            .order_by(EvaluatorSetVersion.version.desc())
+        )
+        return list((await self._session.scalars(query)).all())
+
+    async def judge_of(self, version_id: uuid.UUID) -> dict[str, Any] | None:
+        judge: dict[str, Any] | None = await self._session.scalar(
+            select(EvaluatorSetVersion.judge).where(EvaluatorSetVersion.id == version_id)
+        )
+        return judge
+
     async def next_version_number(self, set_id: uuid.UUID) -> int:
         current = await self._session.scalar(
             select(func.max(EvaluatorSetVersion.version)).where(EvaluatorSetVersion.evaluator_set_id == set_id)

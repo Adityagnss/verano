@@ -117,6 +117,18 @@ def test_max_cost_stops_a_run_that_would_cost_more_and_a_cap_is_passed_on(
     assert platform.started[0]["budget_cap"] == "0.02"
 
 
+def test_the_judge_named_in_the_file_is_sent_with_the_run(platform: FakePlatform, run: Run, tmp_path: Path) -> None:
+    path = pushed(platform, run, tmp_path)
+    run("run", "--yes")
+    assert "judge" not in platform.started[0]
+    path.write_text(path.read_text().replace("    models:", "    judge: claude-haiku\n    models:"))
+    run("push", "--no-data")
+    run("run", "--yes")
+    sent = platform.started[-1]["judge"]
+    assert sent["model"]
+    assert sent["credential_id"]
+
+
 def test_asking_and_declining_stops_before_anything_is_sent(
     platform: FakePlatform, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, run: Run
 ) -> None:

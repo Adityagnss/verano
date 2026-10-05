@@ -13,6 +13,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.modules.engine.sampling import MAX_RUNS, normalize_params
+from app.modules.evaluation.schemas import JudgeChoice
 
 
 class ExperimentStatus(StrEnum):
@@ -62,6 +63,8 @@ class ExperimentCreate(BaseModel):
     split_scope: SplitScope = SplitScope.ALL
     models: list[ModelRun] = Field(min_length=1)
     budget_cap: Decimal | None = Field(default=None, gt=0)
+    judge: JudgeChoice | None = None
+    evaluator_set_version_id: uuid.UUID | None = None
 
 
 class ModelEstimate(BaseModel):
@@ -83,6 +86,8 @@ class ExperimentEstimate(BaseModel):
     judge_cost: Decimal | None
     total_cost: Decimal | None
     price_known: bool
+    judge_model: str | None = None
+    judge_source: str | None = None
     models: list[ModelEstimate]
 
 

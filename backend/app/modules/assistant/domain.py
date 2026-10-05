@@ -18,6 +18,14 @@ REFUSAL = re.compile(r"\b(i can(?:no|')t|i'm sorry|i am sorry|as an ai|i won't|u
 FORMAT_EVALUATORS = {"json_valid", "json_schema", "allowed_values", "constraints"}
 LABEL_EVALUATORS = {"exact_match", "field_match"}
 BETTER = "The best candidate beat the current prompt on the holdout cases by {delta:+.0%} quality."
+DIFFERENT_JUDGE = (
+    "The candidate and the current prompt were scored with different checks or a different judge, "
+    "so their scores can't be compared. Score both the same way and try again."
+)
+UNJUDGED = (
+    "Some of the cases could not be judged, so there is no fair comparison to prove an improvement with. "
+    "Use Score again on the experiments, then improve again."
+)
 NOT_BETTER = (
     "No candidate beat the current prompt on the holdout cases (best difference {delta:+.0%}), "
     "so keep the current version."

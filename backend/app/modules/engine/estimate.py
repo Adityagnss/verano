@@ -83,3 +83,18 @@ def estimate_experiment(
         price_known=total is not None,
         models=models,
     )
+
+
+def estimate_judging(
+    judge: ModelProfileOut | None, answers: list[tuple[int, int]], judge_metrics: int
+) -> tuple[int, Decimal | None]:
+    """Judge calls and cost to score answers that already exist: one call per answer per judged check, each
+    reading the stored input and output tokens of the answer plus the judge's own instructions."""
+    calls = len(answers) * judge_metrics
+    if calls == 0:
+        return 0, Decimal(0)
+    if judge is None:
+        return calls, None
+    tokens_in = sum((i + o + JUDGE_OVERHEAD_TOKENS) * judge_metrics for i, o in answers)
+    tokens_out = JUDGE_REPLY_TOKENS * calls
+    return calls, compute_cost(tokens_in, tokens_out, judge.input_price_per_mtok, judge.output_price_per_mtok)

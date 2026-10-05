@@ -52,6 +52,7 @@ export const RUN_COPY = {
   calls: (calls: number, cases: number) => `${calls} calls (${cases} test cases)`,
   generation: "Model calls",
   judge: (calls: number) => `Scoring (${calls} judge calls)`,
+  judgeModel: (name: string) => `Judge: ${name}`,
   total: "Estimated total",
   unknown: "Price unknown",
   start: "Start experiment",

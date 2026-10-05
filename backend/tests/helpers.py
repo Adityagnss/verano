@@ -147,3 +147,87 @@ async def approved_project(client: httpx.AsyncClient, session: Session, jobs: An
     assert approved.status_code == 200, approved.text
     models = await client.get(f"{base}/models", params={"limit": 200}, headers=session.headers)
     return {model["model_name"]: model["id"] for model in models.json()["items"]}
+
+
+JUDGED = {
+    "evaluator_name": "g_eval_correctness",
+    "evaluator_version": "1",
+    "config": {"kind": "deepeval", "metric": "g_eval", "criteria": "The answer is a correct label."},
+    "threshold": 0.5,
+    "weight": 1.0,
+    "required": False,
+}
+
+
+def base(session: Session) -> str:
+    return f"/api/v1/projects/{session.project_id}"
+
+
+async def judged_project(
+    client: httpx.AsyncClient,
+    session: Session,
+    jobs: Any,
+    spec_judge: str | None = None,
+    set_judge: str | None = None,
+) -> dict[str, str]:
+    """An approved project whose checks include one that needs a judge. `spec_judge` is the old way (the Task
+    Spec's generator), `set_judge` puts the judge on the evaluator-set version. Returns model ids by name, plus
+    `_credential` (the mock credential id) and `_dataset_version` / `_evaluator_set_version`."""
+    credential = await add_credential(client, session, "mock")
+    version = await create_prompt(client, session, system_template="Classify the support ticket. Reply with one word.")
+    await add_input_files(
+        client, session, jobs, ["My card was charged twice", "Where is my parcel?", "The app crashes on start"]
+    )
+    await add_golden(client, session, jobs, "golden.csv", GOLDEN_TICKETS.encode(), {"expected_output": "expected"})
+    spec = {
+        "task_type": "classification",
+        "goal": "Classify tickets",
+        "output_format": "single_label",
+        "allowed_outputs": ["billing", "shipping", "technical"],
+    }
+    body: dict[str, Any] = {"spec": spec}
+    if spec_judge:
+        body["judge"] = {"credential_id": credential["id"], "model": spec_judge}
+    provided = await client.put(
+        f"{base(session)}/prompt-versions/{version['id']}/task-spec", json=body, headers=session.headers
+    )
+    assert provided.status_code == 200, provided.text
+    started = await client.post(
+        f"{base(session)}/generations",
+        json={"task_spec_id": provided.json()["id"], "golden_only": True},
+        headers=session.headers,
+    )
+    await jobs.drain()
+    version_id = started.json()["id"]
+    current = (
+        await client.get(f"{base(session)}/dataset-versions/{version_id}/evaluators", headers=session.headers)
+    ).json()
+    evaluators = [{k: e[k] for k in JUDGED} for e in current["evaluators"]]
+    update: dict[str, Any] = {"evaluators": [*evaluators, JUDGED]}
+    if set_judge:
+        update["judge"] = {"credential_id": credential["id"], "model": set_judge}
+    edited = await client.put(
+        f"{base(session)}/dataset-versions/{version_id}/evaluators", json=update, headers=session.headers
+    )
+    assert edited.status_code == 200, edited.text
+    approved = await client.post(f"{base(session)}/dataset-versions/{version_id}/approve", headers=session.headers)
+    assert approved.status_code == 200, approved.text
+    models = await client.get(f"{base(session)}/models", params={"limit": 200}, headers=session.headers)
+    found = {m["model_name"]: m["id"] for m in models.json()["items"]}
+    return {
+        **found,
+        "_credential": credential["id"],
+        "_dataset_version": version_id,
+        "_evaluator_set_version": edited.json()["id"],
+    }
+
+
+async def run_good(
+    client: httpx.AsyncClient, session: Session, jobs: Any, models: dict[str, str], **extra: Any
+) -> dict[str, Any]:
+    body = {"models": [{"model_profile_id": models["good"], "runs": 2}], **extra}
+    response = await client.post(f"{base(session)}/experiments", json=body, headers=session.headers)
+    assert response.status_code == 201, response.text
+    await jobs.drain()
+    experiment: dict[str, Any] = response.json()
+    return experiment

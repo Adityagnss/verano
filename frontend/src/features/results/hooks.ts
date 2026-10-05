@@ -4,6 +4,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { api, call } from "@/lib/api/client"
+import type { JudgeChoice } from "@/lib/api/types"
 
 function experimentPath(projectId: string, experimentId: string) {
   return { path: { project_id: projectId, experiment_id: experimentId } }
@@ -89,13 +90,46 @@ export function useRerun(projectId: string) {
 export function useScoreAgain(projectId: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (experimentId: string) =>
+    mutationFn: ({ experimentId, judge }: { experimentId: string; judge?: JudgeChoice | null }) =>
       call(() =>
         api.POST("/api/v1/projects/{project_id}/experiments/{experiment_id}/rescore", {
           params: experimentPath(projectId, experimentId),
-          body: {},
+          body: judge ? { judge } : {},
         }),
       ),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["projects", projectId] }),
+  })
+}
+
+/** The model Verano suggests as judge (the strongest priced one that is not being tested) and every possible choice. */
+export function useJudgeSuggestion(projectId: string) {
+  return useQuery({
+    queryKey: ["projects", projectId, "judge-suggestion"],
+    queryFn: () =>
+      call(() =>
+        api.GET("/api/v1/projects/{project_id}/judge/suggestion", {
+          params: { path: { project_id: projectId } },
+        }),
+      ),
+  })
+}
+
+/** What scoring an experiment again with a judge would cost, before anything is asked. */
+export function useRescoreEstimate(
+  projectId: string,
+  experimentId: string | null,
+  judge: JudgeChoice | null,
+) {
+  return useQuery({
+    queryKey: ["projects", projectId, "rescore-estimate", experimentId, judge],
+    queryFn: () =>
+      call(() =>
+        api.POST("/api/v1/projects/{project_id}/experiments/{experiment_id}/rescore/estimate", {
+          params: experimentPath(projectId, experimentId ?? ""),
+          body: judge ? { judge } : {},
+        }),
+      ),
+    enabled: experimentId !== null,
+    retry: false,
   })
 }

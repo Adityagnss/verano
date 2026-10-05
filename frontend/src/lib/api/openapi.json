@@ -2038,6 +2038,16 @@
             "minItems": 1,
             "title": "Evaluators",
             "type": "array"
+          },
+          "judge": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JudgeChoice"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": ["evaluators"],
@@ -2079,12 +2089,30 @@
             "title": "Id",
             "type": "string"
           },
+          "judge": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JudgeChoice"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "version": {
             "title": "Version",
             "type": "integer"
           }
         },
-        "required": ["id", "evaluator_set_id", "version", "change_reason", "evaluators", "created_at"],
+        "required": [
+          "id",
+          "evaluator_set_id",
+          "version",
+          "change_reason",
+          "judge",
+          "evaluators",
+          "created_at"
+        ],
         "title": "EvaluatorSetVersionOut",
         "type": "object"
       },
@@ -2117,6 +2145,28 @@
               }
             ],
             "title": "Dataset Version Id"
+          },
+          "evaluator_set_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evaluator Set Version Id"
+          },
+          "judge": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JudgeChoice"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "models": {
             "items": {
@@ -2188,6 +2238,28 @@
               }
             ],
             "title": "Judge Cost"
+          },
+          "judge_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Judge Model"
+          },
+          "judge_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Judge Source"
           },
           "models": {
             "items": {
@@ -3486,6 +3558,53 @@
           }
         },
         "title": "ItemUpdate",
+        "type": "object"
+      },
+      "JudgeChoice": {
+        "description": "The model that scores the judged checks, chosen on purpose and kept on the evaluator-set version.",
+        "properties": {
+          "credential_id": {
+            "format": "uuid",
+            "title": "Credential Id",
+            "type": "string"
+          },
+          "model": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Model",
+            "type": "string"
+          }
+        },
+        "required": ["credential_id", "model"],
+        "title": "JudgeChoice",
+        "type": "object"
+      },
+      "JudgeSuggestion": {
+        "properties": {
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/JudgeChoice"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "suggested": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JudgeChoice"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["suggested", "reason", "candidates"],
+        "title": "JudgeSuggestion",
         "type": "object"
       },
       "LLMCallOut": {
@@ -5256,7 +5375,46 @@
         "title": "ReplicationOut",
         "type": "object"
       },
+      "RescoreEstimate": {
+        "properties": {
+          "judge_calls": {
+            "title": "Judge Calls",
+            "type": "integer"
+          },
+          "judge_cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Judge Cost"
+          },
+          "judge_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Judge Model"
+          },
+          "price_known": {
+            "title": "Price Known",
+            "type": "boolean"
+          }
+        },
+        "required": ["judge_calls", "judge_cost", "price_known", "judge_model"],
+        "title": "RescoreEstimate",
+        "type": "object"
+      },
       "RescoreRequest": {
+        "description": "Score again with the same checks, a given version of them, or the same checks judged by another model.",
         "properties": {
           "evaluator_set_version_id": {
             "anyOf": [
@@ -5269,6 +5427,16 @@
               }
             ],
             "title": "Evaluator Set Version Id"
+          },
+          "judge": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JudgeChoice"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "title": "RescoreRequest",
@@ -8147,6 +8315,62 @@
         "tags": ["generator"]
       }
     },
+    "/api/v1/projects/{project_id}/evaluator-set-versions/{version_id}": {
+      "get": {
+        "operationId": "get_evaluator_version_api_v1_projects__project_id__evaluator_set_versions__version_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluatorSetVersionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Evaluator Version",
+        "tags": ["evaluators"]
+      }
+    },
     "/api/v1/projects/{project_id}/experiments": {
       "get": {
         "operationId": "list_experiments_api_v1_projects__project_id__experiments_get",
@@ -8791,6 +9015,72 @@
           }
         ],
         "summary": "Rescore",
+        "tags": ["results"]
+      }
+    },
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/rescore/estimate": {
+      "post": {
+        "operationId": "rescore_estimate_api_v1_projects__project_id__experiments__experiment_id__rescore_estimate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RescoreRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RescoreEstimate"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Rescore Estimate",
         "tags": ["results"]
       }
     },
@@ -9954,6 +10244,52 @@
         ],
         "summary": "Select Sheet",
         "tags": ["datasets"]
+      }
+    },
+    "/api/v1/projects/{project_id}/judge/suggestion": {
+      "get": {
+        "operationId": "suggest_judge_model_api_v1_projects__project_id__judge_suggestion_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JudgeSuggestion"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Suggest Judge Model",
+        "tags": ["evaluators"]
       }
     },
     "/api/v1/projects/{project_id}/llm-calls": {

@@ -37,6 +37,7 @@ class EvaluatorSetVersion(IdMixin, CreatedAtMixin, Base):
     evaluator_set_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("evaluator_sets.id", ondelete="CASCADE"))
     version: Mapped[int]
     change_reason: Mapped[str | None] = mapped_column(Text)
+    judge: Mapped[dict[str, Any] | None]
     created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
 
 

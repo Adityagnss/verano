@@ -45,6 +45,13 @@ export const RESULTS_COPY = {
   scoreAgain: "Score again",
   scoreAgainCost: (calls: number | null, cost: string | null) =>
     `This asks the judge to score every answer again${calls ? ` (about ${calls} judge calls${cost ? `, about $${Number(cost).toFixed(4)}` : ""})` : ""}. The earlier scoring is kept.`,
+  judgeLabel: "Judge model",
+  judgeHint:
+    "The model that scores the judged checks. It is kept with the checks, so scores from different judges are never compared directly.",
+  judgeSuggested: "suggested",
+  judgeSelf:
+    "This model is also one of the models being tested. A model tends to favour its own answers, so pick another if you can.",
+  judgeNone: "Choose a judge",
   scoreAgainConfirm: "Score again now",
   scoreAgainCancel: "Cancel",
   notJudged: "Not judged",

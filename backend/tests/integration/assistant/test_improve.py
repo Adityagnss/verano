@@ -46,6 +46,11 @@ async def test_improve_uses_only_optimize_failures_and_reports_honestly(
     assert all(c["optimize_experiment_id"] and c["diff"].startswith("--- current") for c in result["candidates"])
     confirmed = [c for c in result["candidates"] if c["holdout_experiment_id"]]
     assert len(confirmed) == 1
+    for candidate in result["candidates"]:
+        scored = (
+            await client.get(f"{base}/experiments/{candidate['optimize_experiment_id']}", headers=session.headers)
+        ).json()
+        assert scored["evaluator_set_version_id"] == experiment["evaluator_set_version_id"]
     assert confirmed[0]["outcome"] == "not_better"
     assert "No candidate beat the current prompt" in result["message"]
 

@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button"
 import type { ExperimentOut, ModelMetricsOut } from "@/lib/api/types"
 
 import { RESULTS_COPY } from "../copy"
-import { useScoreAgain } from "../hooks"
+import { useRescoreEstimate, useScoreAgain } from "../hooks"
+import { JudgePicker, useChosenJudge } from "./judge-picker"
 
 export function UnjudgedBanner({
   projectId,
@@ -26,10 +27,13 @@ export function UnjudgedBanner({
 }) {
   const again = useScoreAgain(projectId)
   const [asking, setAsking] = useState(false)
+  const [picked, setPicked] = useState("")
+  const judge = useChosenJudge(projectId, picked)
+  const quote = useRescoreEstimate(projectId, asking && experiment ? experiment.id : null, judge)
   const unscored = models.reduce((sum, m) => sum + m.unscored_cases, 0)
   if (unscored === 0) return null
   const total = models.reduce((sum, m) => sum + m.cases, 0)
-  const estimate = (experiment?.estimate ?? {}) as { judge_calls?: number; judge_cost?: string | null }
+  const estimate = quote.data
   return (
     <div className="bg-warning-soft text-warning-strong ring-warning/25 flex flex-col gap-2 rounded-xl p-4 text-sm ring-1">
       <p className="flex items-start gap-2">
@@ -39,12 +43,15 @@ export function UnjudgedBanner({
       {experiment ? (
         asking ? (
           <div className="flex flex-col gap-2">
-            <p>{RESULTS_COPY.scoreAgainCost(estimate.judge_calls ?? null, estimate.judge_cost ?? null)}</p>
+            <JudgePicker projectId={projectId} id="rescore-judge" picked={picked} onPick={setPicked} />
+            <p>{RESULTS_COPY.scoreAgainCost(estimate?.judge_calls ?? null, estimate?.judge_cost ?? null)}</p>
             <div className="flex gap-2">
               <Button
                 size="sm"
                 disabled={again.isPending}
-                onClick={() => again.mutate(experiment.id, { onSuccess: () => setAsking(false) })}
+                onClick={() =>
+                  again.mutate({ experimentId: experiment.id, judge }, { onSuccess: () => setAsking(false) })
+                }
               >
                 {again.isPending ? RESULTS_COPY.scoring : RESULTS_COPY.scoreAgainConfirm}
               </Button>

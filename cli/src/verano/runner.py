@@ -132,6 +132,9 @@ class Runner:
             "models": models,
             "budget_cap": str(entry.budget) if entry.budget else None,
         }
+        if entry.judge:
+            judge = resolve_model(entry.judge, profiles)
+            body["judge"] = {"credential_id": judge["credential_id"], "model": judge["model_name"]}
         estimate = self.api.post(f"/projects/{pid}/experiments/estimate", body)
         self._show_estimate(estimate, entry.budget)
         self._confirm(estimate)

@@ -52,6 +52,7 @@ load_plugins("app.modules.registry.plugins")
 CREDENTIAL_NOT_FOUND = "This key doesn't exist in this project."
 MODEL_NOT_FOUND = "The model '{model}' isn't available for this key. Refresh the model list and try again."
 KEY_REQUIRED = "{provider} needs an API key."
+ALL_MODELS = 5000
 UNKNOWN_PROVIDER = "Unknown provider '{provider}'."
 
 MetadataLookup = Callable[[str], ModelMetadata | None]
@@ -169,6 +170,11 @@ class RegistryService:
 
     async def profiles(self, project_id: uuid.UUID, ids: list[uuid.UUID] | None = None) -> list[ModelProfileOut]:
         return [profile_out(row) for row in await self._repo.profiles_in(project_id, ids)]
+
+    async def all_profiles(self, project_id: uuid.UUID) -> list[ModelProfileOut]:
+        """Every discovered model of the project, selected or not (`profiles` without ids is the selected ones)."""
+        rows = await self._repo.profiles(project_id, PageParams(limit=ALL_MODELS, cursor=None), False, None)
+        return [profile_out(row) for row in rows]
 
     def tunable_parameters(self) -> set[str]:
         return {*self.catalog.tunable_parameters, self.catalog.json_mode_parameter}

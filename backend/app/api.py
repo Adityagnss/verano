@@ -12,6 +12,7 @@ from app.modules.datasets.review_router import router as review_router
 from app.modules.datasets.router import router as datasets_router
 from app.modules.documents.router import router as documents_router
 from app.modules.engine.router import router as engine_router
+from app.modules.evaluation.router import project_router as evaluators_router
 from app.modules.evaluation.router import router as results_router
 from app.modules.gateway.router import router as gateway_router
 from app.modules.generator.router import router as generator_router
@@ -33,6 +34,7 @@ for module_router in (
     review_router,
     engine_router,
     results_router,
+    evaluators_router,
     improve_router,
     notes_router,
     logbook_router,

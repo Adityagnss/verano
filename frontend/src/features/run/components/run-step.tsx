@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useModels } from "@/features/keys/hooks"
+import { JudgePicker, useChosenJudge } from "@/features/results/components/judge-picker"
 import { useCurrentVersion } from "@/features/tests/hooks"
 import type { ModelProfileOut } from "@/lib/api/types"
 import { formatCost } from "@/lib/format"
@@ -109,9 +110,12 @@ export function RunStep({ projectId }: { projectId: string }) {
   const [rows, setRows] = useState<Record<string, Row>>({})
   const [budget, setBudget] = useState("")
   const [open, setOpen] = useState<Record<string, boolean>>({})
+  const [pickedJudge, setPickedJudge] = useState("")
+  const judge = useChosenJudge(projectId, pickedJudge)
   const selected = useMemo(() => (models.data ?? []).filter((m) => m.is_selected), [models.data])
   const approved = version.data?.status === "approved"
-  const body = useDebounced(approved ? toBody(selected, rows, budget) : null, 300)
+  const plan = approved ? toBody(selected, rows, budget) : null
+  const body = useDebounced(plan && judge ? { ...plan, judge } : plan, 300)
   const estimate = useExperimentEstimate(projectId, body)
   const latest = experiments.data?.find((e) => e.origin === "manual")
 
@@ -248,17 +252,20 @@ export function RunStep({ projectId }: { projectId: string }) {
       </Section>
       <Section number={2} title={RUN_COPY.previewHeading} description={RUN_COPY.previewHint}>
         <div className="grid gap-6 md:grid-cols-2">
-          <div className="flex max-w-xs flex-col gap-1.5">
-            <Label htmlFor="budget">{RUN_COPY.budget}</Label>
-            <Input
-              id="budget"
-              type="number"
-              min={0}
-              step="0.01"
-              value={budget}
-              onChange={(e) => setBudget(e.target.value)}
-            />
-            <p className="text-text-muted text-xs">{RUN_COPY.budgetHint}</p>
+          <div className="flex flex-col gap-4">
+            <JudgePicker projectId={projectId} id="judge" picked={pickedJudge} onPick={setPickedJudge} />
+            <div className="flex max-w-xs flex-col gap-1.5">
+              <Label htmlFor="budget">{RUN_COPY.budget}</Label>
+              <Input
+                id="budget"
+                type="number"
+                min={0}
+                step="0.01"
+                value={budget}
+                onChange={(e) => setBudget(e.target.value)}
+              />
+              <p className="text-text-muted text-xs">{RUN_COPY.budgetHint}</p>
+            </div>
           </div>
           <div className="bg-subtle ring-border rounded-lg p-4 ring-1">
             <div className="flex flex-col gap-1.5 text-sm">
@@ -269,6 +276,11 @@ export function RunStep({ projectId }: { projectId: string }) {
                   <p className="flex justify-between">
                     {RUN_COPY.generation} <Money value={estimate.data.generation_cost} />
                   </p>
+                  {estimate.data.judge_model ? (
+                    <p className="text-text-muted text-xs">
+                      {RUN_COPY.judgeModel(estimate.data.judge_model)}
+                    </p>
+                  ) : null}
                   <p className="flex justify-between">
                     {RUN_COPY.judge(estimate.data.judge_calls)} <Money value={estimate.data.judge_cost} />
                   </p>

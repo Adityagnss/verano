@@ -23,7 +23,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.container import Container
 from app.core.errors import AppError
 from app.core.templates import render_system_prompt
-from app.modules.assistant.domain import best, verdict
+from app.modules.assistant.domain import DIFFERENT_JUDGE, UNJUDGED, best, verdict
 from app.modules.assistant.models import OptimizationSession, PromptCandidate
 from app.modules.assistant.proposals import failures_of, store_candidates, store_clusters
 from app.modules.assistant.quality import quality
@@ -124,7 +124,7 @@ class ImprovementPipeline:
             experiment = await self._experiments.start(
                 baseline.project_id,
                 None,
-                self._rerun(baseline, SplitScope.OPTIMIZE, candidate.strategy),
+                await self._rerun(baseline, SplitScope.OPTIMIZE, candidate.strategy),
                 ExperimentOrigin.OPTIMIZATION,
                 candidate.prompt_version_id,
             )
@@ -191,7 +191,7 @@ class ImprovementPipeline:
         experiment = await self._experiments.start(
             baseline.project_id,
             None,
-            self._rerun(baseline, SplitScope.HOLDOUT, f"{chosen.strategy} (holdout)"),
+            await self._rerun(baseline, SplitScope.HOLDOUT, f"{chosen.strategy} (holdout)"),
             ExperimentOrigin.OPTIMIZATION,
             chosen.prompt_version_id,
         )
@@ -205,15 +205,21 @@ class ImprovementPipeline:
         baseline = await self._engine.experiment(row.baseline_experiment_id) if row.baseline_experiment_id else None
         assert holdout is not None
         assert baseline is not None
-        new = await quality(self._results, self._datasets, holdout, Split.HOLDOUT) or 0.0
-        old = await quality(self._results, self._datasets, baseline, Split.HOLDOUT) or 0.0
-        better, message = verdict(new, old)
+        new = await quality(self._results, self._datasets, holdout, Split.HOLDOUT)
+        old = await quality(self._results, self._datasets, baseline, Split.HOLDOUT)
+        if await self._results.scored_with(holdout) != await self._results.scored_with(baseline):
+            better, message = False, DIFFERENT_JUDGE
+        elif new is None or old is None:
+            better, message = False, UNJUDGED
+        else:
+            better, message = verdict(new, old)
         outcome = CandidateOutcome.BETTER if better else CandidateOutcome.NOT_BETTER
         await self._repo.update_candidate(candidate.id, {"outcome": outcome})
         await self._finish(row.id, SessionStage.DONE, message)
 
-    @staticmethod
-    def _rerun(baseline: Experiment, scope: SplitScope, name: str) -> ExperimentCreate:
+    async def _rerun(self, baseline: Experiment, scope: SplitScope, name: str) -> ExperimentCreate:
+        """The baseline's models and settings, scored with the same checks and judge as the numbers being
+        compared against: the version of the baseline's latest scoring pass."""
         models = [
             ModelRun(model_profile_id=uuid.UUID(m["model_profile_id"]), runs=m["runs"], params=m["params"])
             for m in baseline.config["models"]
@@ -223,6 +229,7 @@ class ImprovementPipeline:
             dataset_version_id=baseline.dataset_version_id,
             split_scope=scope,
             models=models,
+            evaluator_set_version_id=await self._results.scored_with(baseline),
         )
 
     async def _spec(self, baseline: Experiment) -> dict[str, Any]:

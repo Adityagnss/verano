@@ -403,6 +403,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/evaluator-set-versions/{version_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Evaluator Version */
+        get: operations["get_evaluator_version_api_v1_projects__project_id__evaluator_set_versions__version_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/experiments": {
         parameters: {
             query?: never;
@@ -551,6 +568,23 @@ export interface paths {
         put?: never;
         /** Rescore */
         post: operations["rescore_api_v1_projects__project_id__experiments__experiment_id__rescore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/rescore/estimate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rescore Estimate */
+        post: operations["rescore_estimate_api_v1_projects__project_id__experiments__experiment_id__rescore_estimate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -841,6 +875,23 @@ export interface paths {
         get?: never;
         /** Select Sheet */
         put: operations["select_sheet_api_v1_projects__project_id__input_files__file_id__sheet_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/judge/suggestion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Suggest Judge Model */
+        get: operations["suggest_judge_model_api_v1_projects__project_id__judge_suggestion_get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -1945,6 +1996,7 @@ export interface components {
             change_reason?: string | null;
             /** Evaluators */
             evaluators: components["schemas"]["EvaluatorConfigIn"][];
+            judge?: components["schemas"]["JudgeChoice"] | null;
         };
         /** EvaluatorSetVersionOut */
         EvaluatorSetVersionOut: {
@@ -1967,6 +2019,7 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            judge: components["schemas"]["JudgeChoice"] | null;
             /** Version */
             version: number;
         };
@@ -1976,6 +2029,9 @@ export interface components {
             budget_cap?: number | string | null;
             /** Dataset Version Id */
             dataset_version_id?: string | null;
+            /** Evaluator Set Version Id */
+            evaluator_set_version_id?: string | null;
+            judge?: components["schemas"]["JudgeChoice"] | null;
             /** Models */
             models: components["schemas"]["ModelRun"][];
             /** Name */
@@ -1997,6 +2053,10 @@ export interface components {
             judge_calls: number;
             /** Judge Cost */
             judge_cost: string | null;
+            /** Judge Model */
+            judge_model?: string | null;
+            /** Judge Source */
+            judge_source?: string | null;
             /** Models */
             models: components["schemas"]["ModelEstimate"][];
             /** Output Tokens */
@@ -2456,6 +2516,27 @@ export interface components {
             rubric?: string[] | null;
             /** Tags */
             tags?: string[] | null;
+        };
+        /**
+         * JudgeChoice
+         * @description The model that scores the judged checks, chosen on purpose and kept on the evaluator-set version.
+         */
+        JudgeChoice: {
+            /**
+             * Credential Id
+             * Format: uuid
+             */
+            credential_id: string;
+            /** Model */
+            model: string;
+        };
+        /** JudgeSuggestion */
+        JudgeSuggestion: {
+            /** Candidates */
+            candidates: components["schemas"]["JudgeChoice"][];
+            /** Reason */
+            reason: string;
+            suggested: components["schemas"]["JudgeChoice"] | null;
         };
         /** LLMCallOut */
         LLMCallOut: {
@@ -3163,10 +3244,25 @@ export interface components {
             /** Skipped */
             skipped: number;
         };
-        /** RescoreRequest */
+        /** RescoreEstimate */
+        RescoreEstimate: {
+            /** Judge Calls */
+            judge_calls: number;
+            /** Judge Cost */
+            judge_cost: string | null;
+            /** Judge Model */
+            judge_model: string | null;
+            /** Price Known */
+            price_known: boolean;
+        };
+        /**
+         * RescoreRequest
+         * @description Score again with the same checks, a given version of them, or the same checks judged by another model.
+         */
         RescoreRequest: {
             /** Evaluator Set Version Id */
             evaluator_set_version_id?: string | null;
+            judge?: components["schemas"]["JudgeChoice"] | null;
         };
         /** ResultsOut */
         ResultsOut: {
@@ -4628,6 +4724,38 @@ export interface operations {
             };
         };
     };
+    get_evaluator_version_api_v1_projects__project_id__evaluator_set_versions__version_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvaluatorSetVersionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_experiments_api_v1_projects__project_id__experiments_get: {
         parameters: {
             query?: {
@@ -4954,6 +5082,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ResultsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rescore_estimate_api_v1_projects__project_id__experiments__experiment_id__rescore_estimate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                experiment_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RescoreRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RescoreEstimate"];
                 };
             };
             /** @description Validation Error */
@@ -5589,6 +5753,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InputFileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    suggest_judge_model_api_v1_projects__project_id__judge_suggestion_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JudgeSuggestion"];
                 };
             };
             /** @description Validation Error */

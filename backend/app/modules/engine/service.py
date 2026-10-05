@@ -47,6 +47,7 @@ from app.modules.engine.schemas import (
     SplitScope,
     TestCaseRunOut,
 )
+from app.modules.evaluation.schemas import JudgeChoice
 from app.modules.evaluation.service import EvaluatorSetService
 from app.modules.gateway.domain import filter_params
 from app.modules.generator.repository import TaskSpecRepository
@@ -119,6 +120,10 @@ class ExperimentService:
     ) -> ExperimentOut:
         plan = await self._plan_inputs(project_id, body, prompt_version_id)
         estimate = self._estimate(plan, body)
+        evaluator_set_version_id = plan.evaluator_set_version_id
+        if body.judge is not None and body.judge != plan.stored_judge:
+            judged = await self._evaluators.with_judge(project_id, evaluator_set_version_id, body.judge, principal)
+            evaluator_set_version_id = judged.id
         experiment = Experiment(
             project_id=project_id,
             name=body.name or experiment_name(plan.profiles),
@@ -126,7 +131,7 @@ class ExperimentService:
             origin=origin,
             prompt_version_id=plan.prompt.id,
             dataset_version_id=plan.version.id,
-            evaluator_set_version_id=plan.version.evaluator_set_version_id,
+            evaluator_set_version_id=evaluator_set_version_id,
             split_scope=body.split_scope,
             config=self._config(body, plan.profiles, plan.judge),
             snapshot=self._snapshot(plan.profiles),
@@ -153,6 +158,7 @@ class ExperimentService:
         body = ExperimentCreate(
             name=f"{RERUN_PREFIX}{row.name}"[:200],
             dataset_version_id=row.dataset_version_id,
+            evaluator_set_version_id=row.evaluator_set_version_id,
             split_scope=row.split_scope,
             models=[
                 ModelRun(model_profile_id=entry["model_profile_id"], runs=entry["runs"], params=entry["params"])
@@ -230,14 +236,22 @@ class ExperimentService:
             filter_params(model.params, found[model.model_profile_id].parameters)
         prompt = await self._prompts.get_version(project_id, prompt_version_id or await self._latest_prompt(project_id))
         spec = await self._specs.get(project_id, version.task_spec_id) if version.task_spec_id else None
-        judge, judge_profile = None, None
-        if spec and spec.generator_credential_id and spec.generator_model:
-            judge = {"credential_id": str(spec.generator_credential_id), "model": spec.generator_model}
-            target = await self._registry.call_target(project_id, spec.generator_credential_id, spec.generator_model)
-            judge_profile = target.profile
-        if version.evaluator_set_version_id is None:
+        base_version_id = body.evaluator_set_version_id or version.evaluator_set_version_id
+        if base_version_id is None:
             raise ValidationFailed(NO_APPROVED)
-        evaluators = await self._evaluators.get_version(project_id, version.evaluator_set_version_id)
+        evaluators = await self._evaluators.get_version(project_id, base_version_id)
+        choice, source = body.judge, "run"
+        if choice is None and evaluators.judge is not None:
+            choice, source = evaluators.judge, "evaluator_set"
+        if choice is None and spec and spec.generator_credential_id and spec.generator_model:
+            choice, source = (
+                JudgeChoice(credential_id=spec.generator_credential_id, model=spec.generator_model),
+                "generator",
+            )
+        judge, judge_profile = None, None
+        if choice is not None:
+            judge = {"credential_id": str(choice.credential_id), "model": choice.model, "source": source}
+            judge_profile = (await self._registry.call_target(project_id, choice.credential_id, choice.model)).profile
         judge_metrics = sum(1 for e in evaluators.evaluators if e.config.get("kind") == "deepeval")
         if judge_metrics and judge_profile is None:
             raise ValidationFailed(NO_JUDGE_CHOSEN)
@@ -249,11 +263,20 @@ class ExperimentService:
             judge=judge,
             judge_profile=judge_profile,
             judge_metrics=judge_metrics,
+            evaluator_set_version_id=base_version_id,
+            stored_judge=evaluators.judge,
         )
 
     def _estimate(self, plan: "_PlanInputs", body: ExperimentCreate) -> ExperimentEstimate:
-        return estimate_experiment(
+        estimate = estimate_experiment(
             self._settings, plan.prompt, plan.items, plan.profiles, body, plan.judge_profile, plan.judge_metrics
+        )
+        judge = plan.judge if plan.judge_metrics else None
+        return estimate.model_copy(
+            update={
+                "judge_model": judge["model"] if judge else None,
+                "judge_source": judge["source"] if judge else None,
+            }
         )
 
     async def _latest_prompt(self, project_id: uuid.UUID) -> uuid.UUID:
@@ -372,3 +395,5 @@ class _PlanInputs:
     judge: dict[str, Any] | None
     judge_profile: ModelProfileOut | None
     judge_metrics: int
+    evaluator_set_version_id: uuid.UUID
+    stored_judge: JudgeChoice | None

@@ -52,3 +52,28 @@ class Evaluator(Protocol):
 
 def score(value: float, threshold: float, reason: str, **metadata: Any) -> Score:
     return Score(value=value, passed=value >= threshold, reason=reason, metadata=metadata)
+
+
+NO_OTHER = "Every model you can reach is also being tested, so the judge will be one of them."
+STRONGEST = "{model} is the highest-priced model that is not being tested, a rough sign of the most capable one."
+
+
+@dataclass(frozen=True)
+class JudgeCandidate:
+    credential_id: Any
+    model: str
+    under_test: bool
+    output_price: float | None
+
+
+def suggest_judge(profiles: list[JudgeCandidate]) -> tuple[JudgeCandidate | None, str]:
+    """The priced model that is not under test with the highest output price (price is a rough proxy for
+    capability); a model under test only when nothing else exists. The user decides."""
+    free = [p for p in profiles if not p.under_test and p.output_price is not None]
+    if free:
+        best = max(free, key=lambda p: p.output_price or 0)
+        return best, STRONGEST.format(model=best.model)
+    priced = [p for p in profiles if p.output_price is not None]
+    if priced:
+        return max(priced, key=lambda p: p.output_price or 0), NO_OTHER
+    return None, NO_OTHER
