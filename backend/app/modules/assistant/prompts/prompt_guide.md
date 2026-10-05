@@ -41,6 +41,13 @@ Verano turns each idea into a loop you can run: write the prompt, build test cas
 | Tool use and ReAct | Answer needs live data or exact calculation | Extra calls | Common practice |
 | Step-back prompting | The model jumps to a wrong specific answer | One extra call or paragraph | Try and measure |
 | Critique with new information | You have a checker, a test or a rule to apply | One extra call | Try and measure |
+| Zero-shot | A clear instruction is enough for a capable model | None | Baseline: always measure it first |
+| Self-consistency | Same as majority vote, with reasoning paths that differ | Several times the tokens | Published: gains on maths and logic |
+| Generated knowledge | The model knows facts but does not use them | One extra call | Published; try and measure |
+| Program-aided (PAL) | Exact arithmetic or date logic | A code step | Published: beats plain chain of thought on maths |
+| Retrieval-augmented (RAG) | Answers must come from a large document set | Search plus longer prompt | Common practice |
+| Reflexion | Repeated attempts with a clear pass/fail signal | Several calls | Published; try and measure |
+| Active-Prompt | Choosing which few-shot examples to write | Labelling time | Published; try and measure |
 | Prompt caching | Same long start on every call | Saves money and time | Measured: about 100 times faster reads |
 | Expert persona, politeness, rewards | Never for accuracy | Tokens | Measured: no reliable effect |
 
@@ -85,6 +92,10 @@ A list of "do not" rules tells the model what to stay away from but not what to 
 
 A JSON answer is written left to right, so the field order is the order of thinking. Reasoning before the answer lets the answer use the working; answer first forces a guess. This is measured: answer-first order cost about 39 points on multi-step problems.
 
+### Zero-shot
+
+Only an instruction, no examples. Modern models follow clear instructions well, so this is the baseline every other technique is compared against. If zero-shot already passes, stop: examples and reasoning add cost. If the format drifts, move to few-shot examples.
+
 ### Few-shot examples
 
 Two to four solved examples come before the real question, ideally as earlier conversation turns rather than one block labelled "Examples". They fix the format and show the pattern. In the tutorial, two examples moved accuracy from 91.7 to 97.2, then more examples stopped helping while each one added roughly 300 input tokens to every call.
@@ -125,6 +136,26 @@ Instead of one line of reasoning, the model explores several branches, judges wh
 
 Ask the same question several times and keep the most common answer. Measured: +8.3 points for three times the tokens on a small model that makes errors; near its ceiling a model gains almost nothing. Worth it only where individual answers are often wrong, and only when answers can be compared exactly (a label, a number).
 
+### Self-consistency
+
+A refinement of majority vote: sample several chain-of-thought answers at a higher temperature so the reasoning paths differ, then keep the most common final answer. It only works when final answers can be compared exactly. Published results show gains on arithmetic and logic; cost is several times the tokens. In Verano, set "runs" above 1 on a model and compare agreement.
+
+### Generated knowledge
+
+First ask the model to write down facts it knows about the question, then answer using those facts. Useful when the model has the knowledge but skips it. The facts can be wrong, so check them where it matters. Try and measure.
+
+### Program-aided reasoning (PAL)
+
+The model writes a small program for the calculation and your code runs it, instead of working the numbers in text. Use it for exact arithmetic, dates and counting. The program must run in a sandbox, never on untrusted output directly.
+
+### Reflexion
+
+After a failed attempt, the model writes a short note on what went wrong and tries again with that note in the prompt. It needs a clear pass/fail signal, such as a test or one of Verano's checks. Capped retries only, since each loop costs calls.
+
+### Active-Prompt
+
+Choose the few-shot examples where the model is least consistent (answers differ across runs), have a person write good answers for those, and use them as the examples. Verano's failure groups point at exactly these cases.
+
 ## Techniques that add information
 
 ### Grounding in reference text
@@ -134,6 +165,10 @@ Give the model the documents to answer from, and tell it to use only them. This 
 - Say: "Answer only from the documents. If the answer is not there, reply `not found`."
 - Ask for the supporting quote or document name next to the answer, so you can verify it.
 - Put the passages before the question, delimited and numbered.
+
+### Retrieval-augmented generation (RAG)
+
+Search a document collection first, then put the best passages into the prompt and answer only from them. It is grounding in reference text at scale. Quality depends mostly on retrieval: if the right passage is not found, no prompt fixes it. Evaluate retrieval separately from the answer.
 
 ### Tool use and ReAct
 
@@ -160,6 +195,10 @@ Ask a model to write or rewrite a prompt for you, given the task, a few good exa
 ### Automatic prompt search
 
 Instead of guessing improvements by hand, generate several candidate prompts, score each on the same test cases, and keep the one that wins on cases it was not written from. The held-back check is what stops you from keeping a prompt that merely memorised the cases it was tuned on.
+
+### Directional stimulus and other advanced ideas
+
+Some published techniques are mostly research: a small helper model writes hints that steer a larger one (directional stimulus), step-by-step prompts that combine images and text (multimodal chain of thought), automatic reasoning with tool use (ART), and reasoning over graphs. Verano does not run these as one-click options. Read about them below, and test any idea the same way as the others: as a new prompt version on the same test cases.
 
 ## Techniques that check the work
 
@@ -301,6 +340,13 @@ Wrong: {{ wrong_cases }}
 - Was it run more than once, and is the gain bigger than the spread?
 - Was the winner checked on cases it was not written from?
 - Is the added cost (tokens, calls, delay) worth the gain?
+
+## Further reading
+
+- Prompt Engineering Guide, techniques: https://www.promptingguide.ai/techniques
+- Source repository: https://github.com/dair-ai/Prompt-Engineering-Guide
+
+Published results come from papers on specific models and tasks. Treat them as ideas to test on your own cases, not as promises.
 
 ## Glossary
 
