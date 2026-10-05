@@ -96,6 +96,20 @@ class ModelProgress(BaseModel):
     cost: Decimal = Decimal(0)
 
 
+class ReturnedModelOut(BaseModel):
+    """A model id the provider reported, and how many calls it answered (`id` is null when none was reported)."""
+
+    id: str | None
+    calls: int
+
+
+class ModelVersions(BaseModel):
+    model_profile_id: uuid.UUID
+    display_name: str
+    returned: list[ReturnedModelOut]
+    changed: bool
+
+
 class ModelSetting(BaseModel):
     """One model as the run was configured; `params` are the settings that reach the model."""
 
@@ -139,6 +153,7 @@ class ExperimentOut(BaseModel):
     stop_reason: str | None
     progress: list[ModelProgress]
     configuration: RunConfiguration
+    model_versions: list[ModelVersions]
     created_at: datetime
     started_at: datetime | None
     completed_at: datetime | None
@@ -155,6 +170,7 @@ class TestCaseRunOut(BaseModel):
     model_profile_id: uuid.UUID
     provider: str
     model: str
+    response_model: str | None
     param_set_key: str
     params: dict[str, Any]
     run_number: int

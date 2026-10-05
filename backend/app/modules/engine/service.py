@@ -31,6 +31,7 @@ from app.modules.engine.domain import chunks, ensure_transition, plan_matrix
 from app.modules.engine.estimate import estimate_experiment
 from app.modules.engine.fingerprint import run_configuration
 from app.modules.engine.models import Experiment, ExperimentEvent
+from app.modules.engine.provenance import changed_within, summarize
 from app.modules.engine.repository import EngineRepository
 from app.modules.engine.schemas import (
     ExperimentCreate,
@@ -40,6 +41,8 @@ from app.modules.engine.schemas import (
     ExperimentStatus,
     ModelProgress,
     ModelRun,
+    ModelVersions,
+    ReturnedModelOut,
     RunStatus,
     SplitScope,
     TestCaseRunOut,
@@ -321,6 +324,21 @@ class ExperimentService:
             raise NotFound(EXPERIMENT_NOT_FOUND)
         return row
 
+    async def _model_versions(self, row: Experiment) -> list[ModelVersions]:
+        found = summarize(await self._repo.returned_models(row.id))
+        return [
+            ModelVersions(
+                model_profile_id=entry["model_profile_id"],
+                display_name=entry.get("display_name", ""),
+                returned=[
+                    ReturnedModelOut(id=r.id, calls=r.calls)
+                    for r in found.get(uuid.UUID(str(entry["model_profile_id"])), [])
+                ],
+                changed=changed_within(found.get(uuid.UUID(str(entry["model_profile_id"])), [])),
+            )
+            for entry in row.config["models"]
+        ]
+
     async def _out(self, row: Experiment, numbers: dict[uuid.UUID, int] | None = None) -> ExperimentOut:
         numbers = numbers or await self._repo.prompt_numbers([row.prompt_version_id])
         progress: dict[uuid.UUID, ModelProgress] = {}
@@ -335,6 +353,7 @@ class ExperimentService:
             stop_reason=await self._repo.last_reason(row.id),
             progress=list(progress.values()),
             configuration=run_configuration(row, numbers.get(row.prompt_version_id)),
+            model_versions=await self._model_versions(row),
         )
 
 

@@ -133,6 +133,7 @@ class AnswerDetail(BaseModel):
     rendered_system_prompt: str | None
     rendered_user_prompt: str | None
     finish_reason: str | None
+    response_model: str | None
     params: dict[str, Any]
     scores: list[ScoreDetail]
     siblings: list[SiblingAnswer]

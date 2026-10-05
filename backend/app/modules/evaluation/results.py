@@ -21,6 +21,7 @@ from app.core.jobs import JobQueue
 from app.modules.datasets.service import DatasetService
 from app.modules.engine.fingerprint import config_hash
 from app.modules.engine.models import Experiment, TestCaseRun
+from app.modules.engine.provenance import changed_between, known, summarize
 from app.modules.engine.repository import EngineRepository
 from app.modules.engine.schemas import RunStatus
 from app.modules.evaluation.domain import Score as ScoreValue
@@ -202,6 +203,8 @@ class ResultsService:
             raise Conflict(NOT_REPLICABLE)
         found = replication(await self._answers(current), await self._answers(earlier))
         names = {m["model_profile_id"]: m["display_name"] for m in current.config["models"]}
+        now = summarize(await self._engine.returned_models(current.id))
+        before = summarize(await self._engine.returned_models(earlier.id))
         models = [
             ReplicationModel(
                 model_profile_id=model_id,
@@ -209,6 +212,9 @@ class ResultsService:
                 same=r.same,
                 compared=r.compared,
                 skipped=r.skipped,
+                earlier_versions=sorted(known(before.get(model_id, []))),
+                versions=sorted(known(now.get(model_id, []))),
+                model_changed=changed_between(before.get(model_id, []), now.get(model_id, [])),
             )
             for model_id, r in found.items()
         ]
@@ -219,6 +225,7 @@ class ResultsService:
             same=sum(m.same for m in models),
             compared=sum(m.compared for m in models),
             skipped=sum(m.skipped for m in models),
+            model_changed=any(m.model_changed for m in models),
             models=models,
         )
 

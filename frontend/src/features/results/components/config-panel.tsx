@@ -111,6 +111,13 @@ export function ConfigPanel({
               {RESULTS_COPY.replicationSkipped(replication.data.skipped)}
             </p>
           ) : null}
+          {replication.data.models
+            .filter((m) => m.model_changed)
+            .map((m) => (
+              <p key={m.model_profile_id} className="text-warning-strong text-xs">
+                {RESULTS_COPY.versionChangedBetween(m.model, m.earlier_versions, m.versions)}
+              </p>
+            ))}
           <p className="text-text-muted text-xs">{RESULTS_COPY.replicationNote}</p>
         </div>
       ) : null}
@@ -153,6 +160,29 @@ export function ConfigPanel({
           </Item>
         </Layer>
         <Layer {...CONFIG_LAYERS.provider}>
+          <Item label="Model version the provider reported">
+            <ul className="flex flex-col gap-1.5">
+              {experiment.model_versions.map((v) => (
+                <li key={v.model_profile_id}>
+                  <span className="font-medium">{v.display_name}</span>
+                  {v.returned.length === 0 ? (
+                    <span className="text-text-muted block text-xs">No answers yet.</span>
+                  ) : (
+                    v.returned.map((r) => (
+                      <span key={r.id ?? "none"} className="text-text-muted block text-xs">
+                        {r.id ?? "not reported"} · {r.calls} call{r.calls === 1 ? "" : "s"}
+                      </span>
+                    ))
+                  )}
+                  {v.changed ? (
+                    <span className="text-warning-strong block text-xs">
+                      {RESULTS_COPY.versionChangedWithin}
+                    </span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </Item>
           <Item label="Not guaranteed">{CONFIG_LAYERS.wording}</Item>
         </Layer>
       </div>

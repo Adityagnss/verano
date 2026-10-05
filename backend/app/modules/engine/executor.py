@@ -140,6 +140,7 @@ class ChunkExecutor:
                 "raw_output": result.text,
                 "parsed_output": parse_output(result.text),
                 "finish_reason": result.finish_reason,
+                "response_model": result.response_model,
                 "params": result.params,
                 "attempts": result.attempts,
                 "input_tokens": result.input_tokens,

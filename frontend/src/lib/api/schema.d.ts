@@ -1226,6 +1226,8 @@ export interface components {
             rendered_system_prompt: string | null;
             /** Rendered User Prompt */
             rendered_user_prompt: string | null;
+            /** Response Model */
+            response_model: string | null;
             row: components["schemas"]["AnswerRow"];
             /** Rubric */
             rubric: unknown[] | null;
@@ -1953,6 +1955,8 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /** Model Versions */
+            model_versions: components["schemas"]["ModelVersions"][];
             /** Name */
             name: string;
             origin: components["schemas"]["ExperimentOrigin"];
@@ -2371,6 +2375,8 @@ export interface components {
             /** Provider */
             provider: string;
             purpose: components["schemas"]["CallPurpose"];
+            /** Response Model */
+            response_model: string | null;
             status: components["schemas"]["CallStatus"];
         };
         /** LLMResult */
@@ -2400,6 +2406,8 @@ export interface components {
             };
             /** Provider */
             provider: string;
+            /** Response Model */
+            response_model?: string | null;
             /** Span Id */
             span_id: string;
             /** Text */
@@ -2645,6 +2653,20 @@ export interface components {
             provider: string;
             /** Runs */
             runs: number;
+        };
+        /** ModelVersions */
+        ModelVersions: {
+            /** Changed */
+            changed: boolean;
+            /** Display Name */
+            display_name: string;
+            /**
+             * Model Profile Id
+             * Format: uuid
+             */
+            model_profile_id: string;
+            /** Returned */
+            returned: components["schemas"]["ReturnedModelOut"][];
         };
         /**
          * OptimizationStatus
@@ -2947,8 +2969,12 @@ export interface components {
         ReplicationModel: {
             /** Compared */
             compared: number;
+            /** Earlier Versions */
+            earlier_versions: string[];
             /** Model */
             model: string;
+            /** Model Changed */
+            model_changed: boolean;
             /**
              * Model Profile Id
              * Format: uuid
@@ -2958,6 +2984,8 @@ export interface components {
             same: number;
             /** Skipped */
             skipped: number;
+            /** Versions */
+            versions: string[];
         };
         /**
          * ReplicationOut
@@ -2978,6 +3006,8 @@ export interface components {
              * Format: uuid
              */
             experiment_id: string;
+            /** Model Changed */
+            model_changed: boolean;
             /** Models */
             models: components["schemas"]["ReplicationModel"][];
             /** Same */
@@ -3002,6 +3032,16 @@ export interface components {
             experiment_id: string;
             /** Models */
             models: components["schemas"]["ModelMetricsOut"][];
+        };
+        /**
+         * ReturnedModelOut
+         * @description A model id the provider reported, and how many calls it answered (`id` is null when none was reported).
+         */
+        ReturnedModelOut: {
+            /** Calls */
+            calls: number;
+            /** Id */
+            id: string | null;
         };
         /**
          * ReviewStatus
@@ -3346,6 +3386,8 @@ export interface components {
             rendered_system_prompt: string | null;
             /** Rendered User Prompt */
             rendered_user_prompt: string | null;
+            /** Response Model */
+            response_model: string | null;
             /** Run Number */
             run_number: number;
             /** Span Id */

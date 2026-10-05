@@ -90,10 +90,12 @@ class LiteLLMClient:
         choice = response.choices[0]
         usage = getattr(response, "usage", None)
         hidden = getattr(response, "_hidden_params", {}) or {}
+        reported = getattr(response, "model", None)
         return ProviderResponse(
             text=choice.message.content or "",
             finish_reason=choice.finish_reason,
             input_tokens=int(getattr(usage, "prompt_tokens", 0) or 0),
             output_tokens=int(getattr(usage, "completion_tokens", 0) or 0),
+            model=(str(reported).strip() or None) if reported else None,
             headers={str(k).lower(): str(v) for k, v in (hidden.get("additional_headers") or {}).items()},
         )

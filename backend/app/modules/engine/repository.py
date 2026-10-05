@@ -108,6 +108,14 @@ class EngineRepository:
             .values(status=target, **(values or {}))
         )
 
+    async def returned_models(self, experiment_id: uuid.UUID) -> list[tuple[uuid.UUID, str | None, int]]:
+        query = (
+            select(TestCaseRun.model_profile_id, TestCaseRun.response_model, func.count())
+            .where(TestCaseRun.experiment_id == experiment_id, TestCaseRun.status == RunStatus.SUCCEEDED)
+            .group_by(TestCaseRun.model_profile_id, TestCaseRun.response_model)
+        )
+        return [(row[0], row[1], row[2]) for row in (await self._session.execute(query)).all()]
+
     async def prompt_numbers(self, version_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, int]:
         rows = await self._session.execute(
             select(PromptVersion.id, PromptVersion.version).where(PromptVersion.id.in_(set(version_ids)))

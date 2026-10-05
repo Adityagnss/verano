@@ -241,6 +241,7 @@ class GatewayService:
         )
         outcome = {
             "status": CallStatus.SUCCEEDED,
+            "response_model": response.model,
             "output_text": response.text,
             "finish_reason": response.finish_reason,
             "input_tokens": response.input_tokens,
@@ -259,6 +260,7 @@ class GatewayService:
             latency_ms=latency_ms,
             attempts=call.attempts,
             model=profile.litellm_model,
+            response_model=response.model,
             provider=target.provider,
             params=call.filtered.sent,
             trace_id=call.trace_id,

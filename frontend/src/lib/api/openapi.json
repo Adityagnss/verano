@@ -92,6 +92,17 @@
             ],
             "title": "Rendered User Prompt"
           },
+          "response_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Model"
+          },
           "row": {
             "$ref": "#/components/schemas/AnswerRow"
           },
@@ -131,6 +142,7 @@
           "rendered_system_prompt",
           "rendered_user_prompt",
           "finish_reason",
+          "response_model",
           "params",
           "scores",
           "siblings"
@@ -2157,6 +2169,13 @@
             "title": "Id",
             "type": "string"
           },
+          "model_versions": {
+            "items": {
+              "$ref": "#/components/schemas/ModelVersions"
+            },
+            "title": "Model Versions",
+            "type": "array"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -2232,6 +2251,7 @@
           "stop_reason",
           "progress",
           "configuration",
+          "model_versions",
           "created_at",
           "started_at",
           "completed_at"
@@ -3394,6 +3414,17 @@
           "purpose": {
             "$ref": "#/components/schemas/CallPurpose"
           },
+          "response_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Model"
+          },
           "status": {
             "$ref": "#/components/schemas/CallStatus"
           }
@@ -3404,6 +3435,7 @@
           "status",
           "provider",
           "model",
+          "response_model",
           "params",
           "input_tokens",
           "output_tokens",
@@ -3475,6 +3507,17 @@
           "provider": {
             "title": "Provider",
             "type": "string"
+          },
+          "response_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Model"
           },
           "span_id": {
             "title": "Span Id",
@@ -4039,6 +4082,33 @@
           "ignored_params"
         ],
         "title": "ModelSetting",
+        "type": "object"
+      },
+      "ModelVersions": {
+        "properties": {
+          "changed": {
+            "title": "Changed",
+            "type": "boolean"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "model_profile_id": {
+            "format": "uuid",
+            "title": "Model Profile Id",
+            "type": "string"
+          },
+          "returned": {
+            "items": {
+              "$ref": "#/components/schemas/ReturnedModelOut"
+            },
+            "title": "Returned",
+            "type": "array"
+          }
+        },
+        "required": ["model_profile_id", "display_name", "returned", "changed"],
+        "title": "ModelVersions",
         "type": "object"
       },
       "OptimizationStatus": {
@@ -4823,9 +4893,20 @@
             "title": "Compared",
             "type": "integer"
           },
+          "earlier_versions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Earlier Versions",
+            "type": "array"
+          },
           "model": {
             "title": "Model",
             "type": "string"
+          },
+          "model_changed": {
+            "title": "Model Changed",
+            "type": "boolean"
           },
           "model_profile_id": {
             "format": "uuid",
@@ -4839,9 +4920,25 @@
           "skipped": {
             "title": "Skipped",
             "type": "integer"
+          },
+          "versions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Versions",
+            "type": "array"
           }
         },
-        "required": ["model_profile_id", "model", "same", "compared", "skipped"],
+        "required": [
+          "model_profile_id",
+          "model",
+          "same",
+          "compared",
+          "skipped",
+          "earlier_versions",
+          "versions",
+          "model_changed"
+        ],
         "title": "ReplicationModel",
         "type": "object"
       },
@@ -4866,6 +4963,10 @@
             "title": "Experiment Id",
             "type": "string"
           },
+          "model_changed": {
+            "title": "Model Changed",
+            "type": "boolean"
+          },
           "models": {
             "items": {
               "$ref": "#/components/schemas/ReplicationModel"
@@ -4882,7 +4983,16 @@
             "type": "integer"
           }
         },
-        "required": ["experiment_id", "against_id", "against_name", "same", "compared", "skipped", "models"],
+        "required": [
+          "experiment_id",
+          "against_id",
+          "against_name",
+          "same",
+          "compared",
+          "skipped",
+          "model_changed",
+          "models"
+        ],
         "title": "ReplicationOut",
         "type": "object"
       },
@@ -4938,6 +5048,29 @@
         },
         "required": ["experiment_id", "evaluation_run", "evaluation_runs", "models"],
         "title": "ResultsOut",
+        "type": "object"
+      },
+      "ReturnedModelOut": {
+        "description": "A model id the provider reported, and how many calls it answered (`id` is null when none was reported).",
+        "properties": {
+          "calls": {
+            "title": "Calls",
+            "type": "integer"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          }
+        },
+        "required": ["id", "calls"],
+        "title": "ReturnedModelOut",
         "type": "object"
       },
       "ReviewStatus": {
@@ -5742,6 +5875,17 @@
             ],
             "title": "Rendered User Prompt"
           },
+          "response_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Model"
+          },
           "run_number": {
             "title": "Run Number",
             "type": "integer"
@@ -5803,6 +5947,7 @@
           "model_profile_id",
           "provider",
           "model",
+          "response_model",
           "param_set_key",
           "params",
           "run_number",

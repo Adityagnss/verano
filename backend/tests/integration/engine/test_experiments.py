@@ -14,6 +14,7 @@ from sqlalchemy import select
 from app.core.container import Container
 from app.core.jobs import InlineJobQueue
 from app.modules.engine.models import TestCaseRun
+from app.modules.gateway.models import LLMCall
 from tests.helpers import Session, approved_project
 
 pytestmark = [pytest.mark.integration]
@@ -212,3 +213,57 @@ async def test_replication_is_only_for_finished_experiments_set_up_the_same_way(
     assert itself.status_code == 409
     unknown = await client.get(path, params={"against": str(uuid.uuid4())}, headers=session.headers)
     assert unknown.status_code == 404
+
+
+async def test_the_returned_model_id_is_recorded_and_a_change_is_flagged(
+    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue, container: Container
+) -> None:
+    models = await approved_project(client, session, jobs)
+    body = {
+        "models": [
+            {"model_profile_id": models["drifting"], "runs": 2},
+            {"model_profile_id": models["echo"], "runs": 2},
+        ]
+    }
+    original = await start(client, session, body)
+    await jobs.drain()
+    done = (await client.get(url(session, f"/{original['id']}"), headers=session.headers)).json()
+    versions = {v["display_name"]: v for v in done["model_versions"]}
+    assert sorted((r["id"], r["calls"]) for r in versions["drifting"]["returned"]) == [
+        ("mock/snapshot-a", 3),
+        ("mock/snapshot-b", 3),
+    ]
+    assert versions["drifting"]["changed"] is True
+    assert versions["echo"]["returned"] == [{"id": "mock/echo", "calls": 6}]
+    assert versions["echo"]["changed"] is False
+    async with container.database.sessions() as db:
+        rows = list((await db.scalars(select(TestCaseRun).where(TestCaseRun.experiment_id == original["id"]))).all())
+        calls = list((await db.scalars(select(LLMCall).where(LLMCall.experiment_id == original["id"]))).all())
+    assert {r.response_model for r in rows} == {"mock/snapshot-a", "mock/snapshot-b", "mock/echo"}
+    assert {c.response_model for c in calls if c.status.value == "succeeded"} == {
+        "mock/snapshot-a",
+        "mock/snapshot-b",
+        "mock/echo",
+    }
+
+
+async def test_a_rerun_says_when_the_provider_changed_the_model_behind_a_name(
+    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue
+) -> None:
+    models = await approved_project(client, session, jobs)
+    original = await start(client, session, {"models": [{"model_profile_id": models["drifting"]}]})
+    await jobs.drain()
+    again = (await client.post(url(session, f"/{original['id']}/rerun"), headers=session.headers)).json()
+    await jobs.drain()
+    check = (
+        await client.get(
+            url(session, f"/{again['id']}/replication"), params={"against": original["id"]}, headers=session.headers
+        )
+    ).json()
+    assert check["model_changed"] is True
+    (model,) = check["models"]
+    assert (model["earlier_versions"], model["versions"], model["model_changed"]) == (
+        ["mock/snapshot-a"],
+        ["mock/snapshot-b"],
+        True,
+    )

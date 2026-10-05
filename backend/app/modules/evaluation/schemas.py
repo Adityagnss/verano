@@ -92,6 +92,9 @@ class ReplicationModel(BaseModel):
     same: int
     compared: int
     skipped: int
+    earlier_versions: list[str]
+    versions: list[str]
+    model_changed: bool
 
 
 class ReplicationOut(BaseModel):
@@ -103,6 +106,7 @@ class ReplicationOut(BaseModel):
     same: int
     compared: int
     skipped: int
+    model_changed: bool
     models: list[ReplicationModel]
 
 

@@ -35,6 +35,7 @@ class LLMCall(IdMixin, CreatedAtMixin, Base):
     status: Mapped[CallStatus] = mapped_column(str_enum(CallStatus, "call_status"))
     provider: Mapped[str] = mapped_column(String(64))
     model: Mapped[str] = mapped_column(String(400))
+    response_model: Mapped[str | None] = mapped_column(String(400))
     params: Mapped[dict[str, Any]]
     request_messages: Mapped[list[Any]]
     output_text: Mapped[str | None] = mapped_column(Text)

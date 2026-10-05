@@ -182,6 +182,7 @@ class LogbookService:
             rendered_system_prompt=run.rendered_system_prompt,
             rendered_user_prompt=run.rendered_user_prompt,
             finish_reason=run.finish_reason,
+            response_model=run.response_model,
             params=run.params,
             scores=[
                 ScoreDetail(

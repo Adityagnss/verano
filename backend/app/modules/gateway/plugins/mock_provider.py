@@ -191,8 +191,9 @@ class MockLLM(CustomLLM):
         text = BEHAVIORS[spec.behavior](self, request)
         prompt_tokens = len(request.prompt_text) // CHARS_PER_TOKEN + 1
         completion_tokens = len(text) // CHARS_PER_TOKEN + 1
+        reported = spec.response_models[(occurrence - 1) % len(spec.response_models)] if spec.response_models else model
         response = ModelResponse(
-            model=f"{PROVIDER}/{model}",
+            model=f"{PROVIDER}/{reported}",
             choices=[{"index": 0, "message": {"role": "assistant", "content": text}, "finish_reason": "stop"}],
             usage={
                 "prompt_tokens": prompt_tokens,

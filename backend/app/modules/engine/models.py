@@ -74,6 +74,7 @@ class TestCaseRun(CreatedAtMixin, Base):
     credential_id: Mapped[uuid.UUID | None]
     provider: Mapped[str] = mapped_column(String(64))
     model: Mapped[str] = mapped_column(String(400))
+    response_model: Mapped[str | None] = mapped_column(String(400))
     param_set_key: Mapped[str] = mapped_column(String(64))
     params: Mapped[dict[str, Any]]
     run_number: Mapped[int]

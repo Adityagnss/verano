@@ -54,6 +54,7 @@ class LLMResult(BaseModel):
     latency_ms: int
     attempts: int
     model: str
+    response_model: str | None = None
     provider: str
     params: dict[str, Any]
     trace_id: str
@@ -65,6 +66,7 @@ class ProviderResponse(BaseModel):
     finish_reason: str | None
     input_tokens: int
     output_tokens: int
+    model: str | None = None
     headers: dict[str, str] = {}
 
 
@@ -85,6 +87,7 @@ class LLMCallOut(BaseModel):
     status: CallStatus
     provider: str
     model: str
+    response_model: str | None
     params: dict[str, Any]
     input_tokens: int | None
     output_tokens: int | None
@@ -124,6 +127,7 @@ class MockModelSpec(BaseModel):
     inner: str | None = None
     retry_after_s: float = 1.0
     supported_parameters: list[str] = ["temperature", "top_p", "max_tokens", "seed", "stop", "response_format"]
+    response_models: list[str] = []
     response_headers: dict[str, str] = {}
 
 

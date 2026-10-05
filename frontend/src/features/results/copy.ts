@@ -47,6 +47,10 @@ export const RESULTS_COPY = {
     `Same answer in ${same} of ${compared} calls as "${name}".`,
   replicationSkipped: (count: number) =>
     `${count} calls had nothing to compare with (failed, or not in the other run).`,
+  versionChangedWithin:
+    "The provider answered this model under more than one version in this experiment, so differences between runs may come from the provider.",
+  versionChangedBetween: (model: string, before: string[], after: string[]) =>
+    `${model}: the provider's model changed since that run (${before.join(", ")} → ${after.join(", ")}). Different answers may come from that change, not from your settings.`,
   replicationNote:
     "A fixed seed makes matching answers more likely, but providers can change models, hardware or routing, so this is a check and not a guarantee.",
   chartTitle: "Passed test cases",
