@@ -5,6 +5,8 @@ from pathlib import Path
 from verano.scan import walk
 from verano.scan.findings import ScanResult
 from verano.scan.python_scan import read_python, scan_source
+from verano.scan.ts_scan import SUFFIXES as JS_SUFFIXES
+from verano.scan.ts_scan import scan_source as scan_js
 
 DATA_DIRS = {"data", "fixtures", "examples", "samples", "datasets", "testdata"}
 DATA_SUFFIXES = {".csv", ".tsv", ".jsonl", ".ndjson"}
@@ -23,23 +25,39 @@ def find_data_files(root: Path) -> list[str]:
     return found
 
 
+def _read_bytes(path: Path) -> bytes | None:
+    try:
+        return path.read_bytes()
+    except OSError:
+        return None
+
+
 def scan(root: Path, include_tests: bool = False) -> ScanResult:
     result = ScanResult()
-    for path in walk.source_files(root, {".py"}, include_tests):
+    for path in walk.source_files(root, {".py", *JS_SUFFIXES}, include_tests):
         relative = path.relative_to(root).as_posix()
         if walk.too_big(path):
             result.files_skipped.append(f"{relative}: larger than 1 MB")
             continue
-        source = read_python(path)
-        if source is None:
-            result.files_skipped.append(f"{relative}: not UTF-8 text")
-            continue
         try:
-            findings, other = scan_source(source, relative)
+            if path.suffix.lower() == ".py":
+                source = read_python(path)
+                if source is None:
+                    result.files_skipped.append(f"{relative}: not UTF-8 text")
+                    continue
+                findings, other = scan_source(source, relative)
+            else:
+                data = _read_bytes(path)
+                if data is None:
+                    result.files_skipped.append(f"{relative}: could not be read")
+                    continue
+                findings, other = scan_js(data, relative, path.suffix.lower())
         except (SyntaxError, ValueError, RecursionError):
-            result.files_skipped.append(f"{relative}: Python could not parse it")
+            result.files_skipped.append(f"{relative}: could not be parsed")
             continue
         result.files_scanned += 1
+        language = "Python" if path.suffix.lower() == ".py" else "TypeScript/JavaScript"
+        result.by_language[language] = result.by_language.get(language, 0) + 1
         result.findings += findings
         result.other += other
     result.data_files = find_data_files(root)

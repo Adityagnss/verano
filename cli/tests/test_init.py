@@ -101,7 +101,7 @@ def test_init_writes_a_loadable_file_ticks_what_can_run_and_keeps_the_rest_as_co
     result = run("init", "--yes")
     assert result.code == 0, result.err
     for line in (
-        "Scanned 1 Python file.",
+        "Scanned 1 file (1 Python).",
         "Found 3 prompts; could not read 1.",
         "[x]  1  classify-ticket",
         "app/support.py:7",

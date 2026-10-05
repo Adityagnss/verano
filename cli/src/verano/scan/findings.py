@@ -131,6 +131,7 @@ def to_entry(finding: Finding, taken: set[str]) -> Entry:
 class ScanResult:
     findings: list[Finding] = field(default_factory=list)
     files_scanned: int = 0
+    by_language: dict[str, int] = field(default_factory=dict)
     files_skipped: list[str] = field(default_factory=list)
     other: list[str] = field(default_factory=list)  # things found that Verano can't test yet: tools, retrieval, ...
     data_files: list[str] = field(default_factory=list)

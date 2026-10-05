@@ -19,7 +19,12 @@ from verano.scan.findings import Entry, ScanResult, to_entry
 from verano.scan.render import render
 from verano.scan.run import scan
 
-LEVEL = "Python: read with the syntax tree, high accuracy. Nothing leaves your machine."
+LEVEL = "Read with syntax trees (high accuracy). Nothing leaves your machine."
+
+
+def summary(result: ScanResult) -> str:
+    counts = ", ".join(f"{n} {language}" for language, n in sorted(result.by_language.items()))
+    return f"{result.files_scanned} file{'s' if result.files_scanned != 1 else ''}" + (f" ({counts})" if counts else "")
 
 
 def describe(entry: Entry) -> str:
@@ -33,7 +38,7 @@ def describe(entry: Entry) -> str:
 
 
 def show(result: ScanResult, entries: list[Entry], ticked: set[int]) -> None:
-    ui.info(f"Scanned {result.files_scanned} Python file{'s' if result.files_scanned != 1 else ''}. {LEVEL}")
+    ui.info(f"Scanned {summary(result)}. {LEVEL}")
     unreadable = [e for e in entries if not e.finding.usable]
     found = len(entries)
     ui.info(f"Found {found} prompt{'s' if found != 1 else ''}; could not read {len(unreadable)}.")
@@ -79,7 +84,7 @@ def run(path: Path, output: Path | None, yes: bool, force: bool, print_only: boo
     taken: set[str] = set()
     entries = [to_entry(f, taken) for f in result.findings if f.has_prompt or f.problems]
     if not entries:
-        ui.info(f"Scanned {result.files_scanned} Python files. {LEVEL}")
+        ui.info(f"Scanned {summary(result)}. {LEVEL}")
         ui.info("No LLM calls with a prompt were found.")
         ui.info("Verano reads Python, TypeScript and JavaScript so far. You can also write verano.yaml by hand.")
         return

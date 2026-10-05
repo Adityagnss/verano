@@ -13,80 +13,31 @@ with a `messages` list, and LangChain prompt templates (with their `Chat*` model
 
 import ast
 import inspect
-import re
-import string
 import textwrap
-from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from verano.scan.findings import KNOWN_PARAMS, Finding
+from verano.scan.common import (
+    LANGCHAIN_MODELS,
+    MAX_DEPTH,
+    PARAM_ALIASES,
+    Text,
+    apply_messages,
+    assemble,
+    escape,
+    format_template,
+    identifier_from,
+    infer_provider,
+    store_param,
+    variable,
+)
+from verano.scan.findings import Finding
 
-PROVIDER_PREFIXES = {
-    "openai": "openai", "anthropic": "anthropic", "gemini": "gemini", "groq": "groq", "xai": "xai",
-    "mistral": "mistral", "together_ai": "together", "together": "together", "openrouter": "openrouter",
-    "ollama": "ollama", "ollama_chat": "ollama",
-}  # fmt: skip
-MODEL_STARTS = {
-    "gpt-": "openai", "chatgpt": "openai", "o1": "openai", "o3": "openai", "o4": "openai", "claude": "anthropic",
-    "gemini": "gemini", "grok": "xai", "mistral": "mistral", "mixtral": "mistral", "codestral": "mistral",
-}  # fmt: skip
 IMPORT_PROVIDERS = {"groq": "groq", "anthropic": "anthropic", "openai": "openai", "mistralai": "mistral"}
-LANGCHAIN_MODELS = {
-    "ChatOpenAI": "openai", "ChatAnthropic": "anthropic", "ChatGoogleGenerativeAI": "gemini", "ChatGroq": "groq",
-    "ChatMistralAI": "mistral", "ChatOllama": "ollama", "ChatXAI": "xai", "ChatTogether": "together",
-}  # fmt: skip
-PARAM_ALIASES = {
-    "temperature": "temperature", "top_p": "top_p", "top_k": "top_k", "seed": "seed", "max_tokens": "max_tokens",
-    "max_completion_tokens": "max_tokens", "max_output_tokens": "max_tokens", "stop": "stop",
-    "stop_sequences": "stop",
-}  # fmt: skip
-SPECIAL = re.compile(r"\{[{%#]")
-MAX_DEPTH = 6
-SHOWN = 50
 
 
-def escape(text: str) -> str:
-    """Text that Verano's template would read as a placeholder or tag is written as a literal."""
-    return SPECIAL.sub(lambda m: "{{ '" + m.group(0) + "' }}", text)
-
-
-def infer_provider(model: str | None) -> tuple[str | None, str | None]:
-    """The provider and the model name without a `provider/` prefix, as far as the name says."""
-    if not model:
-        return None, None
-    if "/" in model:
-        prefix, rest = model.split("/", 1)
-        if prefix.lower() in PROVIDER_PREFIXES:
-            return PROVIDER_PREFIXES[prefix.lower()], rest
-    lowered = model.lower()
-    for start, provider in MODEL_STARTS.items():
-        if lowered.startswith(start):
-            return provider, model
-    return None, model
-
-
-@dataclass
-class Text:
-    text: str = ""
-    variables: list[str] = field(default_factory=list)
-    problems: list[str] = field(default_factory=list)
-
-    def add(self, other: "Text") -> None:
-        self.text += other.text
-        for name in other.variables:
-            if name not in self.variables:
-                self.variables.append(name)
-        self.problems += [p for p in other.problems if p not in self.problems]
-
-
-def _variable(name: str) -> Text:
-    return Text("{{ " + name + " }}", [name])
-
-
-def _expression_name(node: ast.AST) -> str:
-    source = ast.unparse(node)
-    return re.sub(r"[^A-Za-z0-9_]+", "_", source).strip("_")[:40] or "value"
+def _expression(node: ast.AST) -> str:
+    return identifier_from(ast.unparse(node))
 
 
 class Context:
@@ -137,8 +88,8 @@ def convert(node: ast.AST, ctx: Context, depth: int = 0) -> Text:
     if isinstance(node, ast.Call):
         return _call(node, ctx, depth)
     if isinstance(node, ast.Attribute | ast.Subscript):
-        name = _expression_name(node)
-        return Text(_variable(name).text, [name], [f"uses the expression `{ast.unparse(node)[:50]}`"])
+        name = _expression(node)
+        return Text(variable(name).text, [name], [f"uses the expression `{ast.unparse(node)[:50]}`"])
     return Text(problems=[f"is built with `{ast.unparse(node)[:50]}`"])
 
 
@@ -152,8 +103,8 @@ def _fstring(node: ast.JoinedStr, ctx: Context, depth: int) -> Text:
             if isinstance(value, ast.Name):
                 out.add(_name(value, ctx, depth))
             else:
-                name = _expression_name(value)
-                out.add(Text(_variable(name).text, [name], [f"uses the expression `{{{ast.unparse(value)[:50]}}}`"]))
+                name = _expression(value)
+                out.add(Text(variable(name).text, [name], [f"uses the expression `{{{ast.unparse(value)[:50]}}}`"]))
     return out
 
 
@@ -163,7 +114,7 @@ def _name(node: ast.Name, ctx: Context, depth: int) -> Text:
         resolved = convert(value, ctx, depth + 1)
         if not resolved.problems or resolved.text:
             return resolved
-    return _variable(node.id)
+    return variable(node.id)
 
 
 UNWRAP = {"dedent", "cleandoc", "strip", "lstrip", "rstrip", "format_map"}
@@ -214,30 +165,6 @@ def _raw_wrapped(node: ast.Call, ctx: Context, depth: int) -> str | None:
     return None
 
 
-def format_template(raw: str) -> Text:
-    """A `{name}` style template (str.format, LangChain) as a Verano template."""
-    out = Text()
-    try:
-        parsed = list(string.Formatter().parse(raw))
-    except ValueError:
-        return Text(escape(raw), problems=["has braces that don't form a valid template"])
-    unnamed = 0
-    for literal, field_name, _spec, _conv in parsed:
-        out.text += escape(literal)
-        if field_name is None:
-            continue
-        if field_name == "" or field_name.isdigit():
-            name = f"arg{unnamed}" if field_name == "" else f"arg{field_name}"
-            unnamed += 1
-        else:
-            base = re.split(r"[.\[]", field_name, maxsplit=1)[0]
-            name = base if base.isidentifier() else _expression_name(ast.Constant(field_name))
-            if base != field_name:
-                out.problems.append(f"uses the expression `{{{field_name}}}`")
-        out.add(Text("{{ " + name + " }}", [name]))
-    return out
-
-
 # -- calls -----------------------------------------------------------------------------------------
 
 
@@ -273,16 +200,8 @@ def _literal(node: ast.AST, ctx: Context, depth: int = 0) -> Any:
 
 def read_params(keywords: dict[str, ast.expr], ctx: Context, finding: Finding) -> None:
     for key, node in keywords.items():
-        target = PARAM_ALIASES.get(key)
-        if target is None:
-            continue
-        value = _literal(node, ctx)
-        if value is None or (target == "stop" and not isinstance(value, str | list)):
-            finding.notes.append(f"{key} is not a fixed value (`{ast.unparse(node)[:40]}`); left out.")
-        elif target == "stop":
-            finding.params[target] = [value] if isinstance(value, str) else value
-        elif target in KNOWN_PARAMS and not isinstance(value, str):
-            finding.params[target] = value
+        if key in PARAM_ALIASES:
+            store_param(finding, key, _literal(node, ctx), ast.unparse(node))
 
 
 def _role_messages(node: ast.AST, ctx: Context, finding: Finding) -> list[tuple[str, Text]] | None:
@@ -308,31 +227,6 @@ def _role_messages(node: ast.AST, ctx: Context, finding: Finding) -> list[tuple[
             return None
         messages.append((role, convert(pairs["content"], ctx)))
     return messages
-
-
-def _use_messages(messages: list[tuple[str, Text]], finding: Finding) -> None:
-    system = Text()
-    for role, text in messages:
-        if role in {"system", "developer"}:
-            if system.text:
-                system.text += "\n\n"
-            system.add(text)
-    users = [i for i, (role, _) in enumerate(messages) if role == "user"]
-    user = messages[users[-1]][1] if users else Text()
-    earlier = len(messages) - (1 if users else 0) - sum(1 for r, _ in messages if r in {"system", "developer"})
-    if earlier > 0:
-        finding.notes.append(f"{earlier} earlier example messages (few-shot) are not included.")
-    _set(finding, system, user)
-
-
-def _set(finding: Finding, system: Text, user: Text) -> None:
-    finding.system = system.text.strip() or None
-    finding.user = user.text.strip() or None
-    for text in (system, user):
-        for name in text.variables:
-            if name not in finding.variables:
-                finding.variables.append(name)
-        finding.problems += [f"the prompt {p}" for p in text.problems if f"the prompt {p}" not in finding.problems]
 
 
 def _content_text(node: ast.AST, ctx: Context) -> Text:
@@ -488,7 +382,7 @@ class Scanner:
             messages = _role_messages(keywords["messages"], ctx, finding)
             if messages is None:
                 return
-            _use_messages(messages, finding)
+            apply_messages(messages, finding)
             if system.text:
                 finding.system = (system.text.strip() + ("\n\n" + finding.system if finding.system else "")) or None
                 for name in system.variables:
@@ -504,7 +398,7 @@ class Scanner:
         if not found:
             finding.problems.append("no prompt text found in this call")
             return
-        _set(finding, system, user)
+        assemble(finding, system, user)
 
     def _langchain_prompt(
         self, node: ast.Call, parts: list[str], constructors: list[tuple[ast.Call, str]]
@@ -535,7 +429,7 @@ class Scanner:
                         user = text
         else:
             finding.problems.append("the template is not written as a list of (role, text)")
-        _set(finding, system, user)
+        assemble(finding, system, user)
         if len(constructors) == 1:
             call, provider = constructors[0]
             keywords = {k.arg: k.value for k in call.keywords if k.arg}

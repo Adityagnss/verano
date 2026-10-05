@@ -5,8 +5,9 @@ from textwrap import dedent
 
 import pytest
 
+from verano.scan.common import escape, format_template, infer_provider
 from verano.scan.findings import ScanResult, to_entry
-from verano.scan.python_scan import escape, format_template, infer_provider, scan_source
+from verano.scan.python_scan import scan_source
 from verano.scan.run import scan
 
 
