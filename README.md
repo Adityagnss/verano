@@ -186,8 +186,8 @@ worked through in order:
 3. The `verano` CLI (`login`, `init`, `validate`, `push`, `run`, `status`, the CI gate) —
    **done**, not yet published to PyPI
 4. Credibility items: judge model choice, "clear difference" labels, visible judge
-   failures — **next**
-5. The [pending checks](docs/PENDING_CHECKS.md) with real models
+   failures — **next** (planned in [Part H, H4](docs/DEVELOPMENT.md))
+5. The [pending checks](docs/PENDING_CHECKS.md) with real models (planned in H5)
 
 After V1: connecting an application that runs outside Verano (RAG, agents, tools), email
 verification at sign-up, hosted CI. See the [plan](docs/DEVELOPMENT.md).
