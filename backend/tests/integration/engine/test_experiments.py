@@ -90,3 +90,43 @@ async def test_cancel_skips_pending_calls(client: httpx.AsyncClient, session: Se
     progress = done["progress"][0]
     assert progress["skipped"] > 0
     assert progress["succeeded"] + progress["skipped"] == 15
+
+
+async def test_settings_are_checked_when_the_experiment_is_created(
+    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue
+) -> None:
+    models = await approved_project(client, session, jobs)
+    good = models["good"]
+    for params in ({"temprature": 0.2}, {"seed": "7"}, {"temperature": True}, {"stop": "END"}, {"top_p": 1.5}):
+        body = {"models": [{"model_profile_id": good, "params": params}]}
+        for path in ("", "/estimate"):
+            response = await client.post(url(session, path), json=body, headers=session.headers)
+            assert response.status_code == 422, (params, response.text)
+    beyond = {"models": [{"model_profile_id": good, "params": {"max_tokens": 10**9}}]}
+    refused = await client.post(url(session), json=beyond, headers=session.headers)
+    assert refused.status_code == 422
+    assert refused.json()["error"]["code"] == "invalid_parameter"
+
+
+async def test_repeated_runs_use_the_next_seed_and_ignored_settings_are_recorded(
+    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue, container: Container
+) -> None:
+    models = await approved_project(client, session, jobs)
+    params = {"temperature": 0, "seed": 42, "stop": ["END", "\n\n"]}
+    body = {
+        "models": [
+            {"model_profile_id": models["good"], "runs": 3, "params": params},
+            {"model_profile_id": models["scripted"], "runs": 1, "params": params},
+        ]
+    }
+    experiment = await start(client, session, body)
+    await jobs.drain()
+    chosen = {m["display_name"]: m for m in experiment["config"]["models"]}
+    assert chosen["good"]["params"] == {"temperature": 0.0, "seed": 42, "stop": ["\n\n", "END"]}
+    assert chosen["good"]["ignored_params"] == []
+    assert chosen["scripted"]["ignored_params"] == ["seed", "stop"]
+    async with container.database.sessions() as db:
+        rows = list((await db.scalars(select(TestCaseRun).where(TestCaseRun.experiment_id == experiment["id"]))).all())
+    seeds = {run: {r.params["seed"] for r in rows if r.model == "good" and r.run_number == run} for run in (1, 2, 3)}
+    assert seeds == {1: {42}, 2: {43}, 3: {44}}
+    assert len({r.param_set_key for r in rows if r.model == "good"}) == 1

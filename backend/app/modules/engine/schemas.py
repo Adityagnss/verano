@@ -10,7 +10,9 @@ from decimal import Decimal
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from app.modules.engine.sampling import MAX_RUNS, normalize_params
 
 
 class ExperimentStatus(StrEnum):
@@ -45,8 +47,13 @@ class ExperimentOrigin(StrEnum):
 
 class ModelRun(BaseModel):
     model_profile_id: uuid.UUID
-    runs: int = Field(default=1, ge=1, le=5)
+    runs: int = Field(default=1, ge=1, le=MAX_RUNS)
     params: dict[str, Any] = {}
+
+    @field_validator("params")
+    @classmethod
+    def _sampling(cls, params: dict[str, Any]) -> dict[str, Any]:
+        return normalize_params(params)
 
 
 class ExperimentCreate(BaseModel):

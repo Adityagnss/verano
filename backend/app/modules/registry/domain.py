@@ -8,7 +8,6 @@ never invented: when no source knows it, the profile says "unknown" (NULL), and 
 providers marked `free` in the catalog get an explicit $0. No I/O and no provider names.
 """
 
-from collections.abc import Iterable
 from decimal import Decimal
 from typing import TypeVar
 
@@ -107,9 +106,15 @@ def merge_range(*ranges: ParameterRange | None) -> ParameterRange:
     )
 
 
-def _supported_names(raw: RawModel, metadata: ModelMetadata | None, tunables: Iterable[str]) -> set[str]:
+def _supported_names(
+    raw: RawModel, metadata: ModelMetadata | None, catalog: ProviderCatalog, spec: ProviderSpec
+) -> set[str]:
+    """What a model accepts: its listing, else every ordinary parameter. Opt-in ones need a say-so."""
     listed = first_known(raw.supported_parameters, metadata.supported_parameters if metadata else None)
-    return set(tunables) if listed is None else set(listed)
+    opt_in = set(catalog.opt_in_parameters)
+    ordinary = (set(catalog.tunable_parameters) - opt_in) | {catalog.json_mode_parameter}
+    names = ordinary if listed is None else set(listed)
+    return names | (opt_in & set(spec.extra_parameters))
 
 
 def build_parameters(
@@ -120,7 +125,7 @@ def build_parameters(
     override: ModelOverride,
     max_output_tokens: int | None,
 ) -> dict[str, ParameterRange]:
-    supported = _supported_names(raw, metadata, catalog.tunable_parameters)
+    supported = _supported_names(raw, metadata, catalog, spec)
     unsupported = set(spec.unsupported_parameters) | set(override.unsupported_parameters)
     parameters = {
         name: merge_range(
@@ -174,7 +179,7 @@ def build_profile(
         ),
         max_output_tokens=max_output,
         parameters=parameters,
-        supports_json_mode=catalog.json_mode_parameter in _supported_names(raw, metadata, [catalog.json_mode_parameter])
+        supports_json_mode=catalog.json_mode_parameter in _supported_names(raw, metadata, catalog, spec)
         and catalog.json_mode_parameter not in override.unsupported_parameters,
         supports_system_prompt=bool(system_prompt),
         input_price_per_mtok=input_price,

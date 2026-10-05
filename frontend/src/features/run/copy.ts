@@ -16,7 +16,33 @@ export const RUN_COPY = {
   notApproved: "Approve your test cases first (step 4).",
   noModels: "Pick the models to compare in step 1.",
   columns: { model: "Model", runs: "Runs", temperature: "Temperature", maxTokens: "Max reply tokens" },
+  modelsHint2:
+    "Temperature 0 and a fixed seed are filled in where a model accepts them, so a run can be repeated. Clear a box to use the provider's own default.",
   include: "Include",
+  advanced: "Advanced",
+  advancedSet: (count: number) => (count === 0 ? "Advanced" : `Advanced (${count} set)`),
+  advancedHint:
+    "Only settings this model accepts are shown. Leave a box empty to use the provider's default.",
+  fields: {
+    seed: {
+      label: "Seed",
+      hint: "Makes repeats more likely to match, but providers don't guarantee it. With several runs, run 2 uses seed + 1, run 3 seed + 2, and so on, so repeating the experiment reproduces every run.",
+    },
+    top_p: {
+      label: "Top P",
+      hint: "Only the most likely words that add up to this share are considered (0 to 1).",
+    },
+    top_k: { label: "Top K", hint: "Only this many of the most likely words are considered." },
+    frequency_penalty: {
+      label: "Frequency penalty",
+      hint: "Discourages repeating the same words (-2 to 2).",
+    },
+    presence_penalty: { label: "Presence penalty", hint: "Encourages new topics (-2 to 2)." },
+    stop: {
+      label: "Stop sequences",
+      hint: "One per line, up to 4. The reply ends where one appears. Write \\n for a new line. Careful: they can cut a JSON answer short.",
+    },
+  },
   unsupported: "Not supported by this model",
   budget: "Budget cap (USD, optional)",
   budgetHint: "The run stops when it has spent this much. Finished results are kept.",

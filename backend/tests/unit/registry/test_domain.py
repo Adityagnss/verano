@@ -23,7 +23,13 @@ from app.modules.registry.schemas import (
 pytestmark = [pytest.mark.unit, pytest.mark.registry]
 
 CATALOG = ProviderCatalog(
-    tunable_parameters={"temperature": ParameterRange(min=0, max=2), "max_tokens": ParameterRange(min=1), "seed": {}},
+    tunable_parameters={
+        "temperature": ParameterRange(min=0, max=2),
+        "max_tokens": ParameterRange(min=1),
+        "seed": {},
+        "top_k": ParameterRange(min=1),
+    },
+    opt_in_parameters=["top_k"],
     json_mode_parameter="response_format",
     rate_limit_headers=RateLimitHeaders(),
     providers={},
@@ -108,3 +114,18 @@ def test_listing_fields_and_chat_rules_are_read_from_the_declared_paths() -> Non
     raw = raw_model_from_listing(item, listing)
     assert (raw.context_window, raw.input_price_per_mtok, raw.output_price_per_mtok) == (8192, Decimal(1), Decimal(2))
     assert raw.capabilities == {Capability.OTHER}
+
+
+def test_top_k_is_offered_only_when_the_provider_or_the_models_listing_names_it() -> None:
+    nothing_listed = RawModel(id="m")
+    assert "top_k" not in build_profile(CATALOG, spec(), nothing_listed, None, None).parameters
+    assert "seed" in build_profile(CATALOG, spec(), nothing_listed, None, None).parameters
+    assert "top_k" in build_profile(CATALOG, spec(extra_parameters=["top_k"]), nothing_listed, None, None).parameters
+    listed = RawModel(id="m", supported_parameters=["temperature", "top_k"])
+    assert set(build_profile(CATALOG, spec(), listed, None, None).parameters) == {"temperature", "top_k"}
+    unlisted = build_profile(CATALOG, spec(extra_parameters=["top_k"]), RawModel(id="m"), METADATA, None)
+    assert set(unlisted.parameters) == {"temperature", "max_tokens", "top_k"}
+    refused = build_profile(
+        CATALOG, spec(extra_parameters=["top_k"]), nothing_listed, None, ModelOverride(unsupported_parameters=["top_k"])
+    )
+    assert "top_k" not in refused.parameters

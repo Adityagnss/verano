@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from app.core.errors import InvalidTransition
+from app.modules.engine.sampling import run_params
 from app.modules.engine.schemas import ExperimentStatus as Status
 
 TRANSITIONS: dict[Status, frozenset[Status]] = {
@@ -79,7 +80,14 @@ def plan_matrix(
         for item_id in item_ids:
             for run in range(1, runs + 1):
                 calls.append(
-                    PlannedCall(run_id(experiment_id, item_id, model_id, key, run), item_id, model_id, key, params, run)
+                    PlannedCall(
+                        run_id(experiment_id, item_id, model_id, key, run),
+                        item_id,
+                        model_id,
+                        key,
+                        run_params(params, run),
+                        run,
+                    )
                 )
     return calls
 

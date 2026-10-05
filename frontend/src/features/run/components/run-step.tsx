@@ -6,7 +6,7 @@
 "use client"
 
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { Fragment, useMemo, useState } from "react"
 
 import { EmptyState } from "@/components/common/empty-state"
 import { ErrorMessage } from "@/components/common/error-message"
@@ -17,45 +17,86 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useModels } from "@/features/keys/hooks"
 import { useCurrentVersion } from "@/features/tests/hooks"
-import type { ExperimentCreate, ModelProfileOut } from "@/lib/api/types"
+import type { ModelProfileOut } from "@/lib/api/types"
 import { formatCost } from "@/lib/format"
 import { useDebounced } from "@/lib/use-debounced"
 
 import { RUN_COPY } from "../copy"
 import { useCancelExperiment, useExperimentEstimate, useExperiments, useStartExperiment } from "../hooks"
+import {
+  ADVANCED,
+  advancedCount,
+  defaultRow,
+  problems,
+  supports,
+  toBody,
+  warning,
+  MAX_RUNS,
+  type Row,
+} from "../settings"
 import { ProgressCard } from "./progress-card"
-
-type Row = { include: boolean; runs: string; temperature: string; max_tokens: string }
-const DEFAULT_ROW: Row = { include: true, runs: "1", temperature: "", max_tokens: "" }
-
-function toBody(
-  models: ModelProfileOut[],
-  rows: Record<string, Row>,
-  budget: string,
-): ExperimentCreate | null {
-  const chosen = models.filter((m) => (rows[m.id] ?? DEFAULT_ROW).include)
-  if (chosen.length === 0) return null
-  return {
-    models: chosen.map((m) => {
-      const row = rows[m.id] ?? DEFAULT_ROW
-      const params: Record<string, number> = {}
-      if (row.temperature.trim()) params.temperature = Number(row.temperature)
-      if (row.max_tokens.trim()) params.max_tokens = Number(row.max_tokens)
-      return { model_profile_id: m.id, runs: Math.min(5, Math.max(1, Number(row.runs) || 1)), params }
-    }),
-    budget_cap: budget.trim() ? budget.trim() : null,
-    split_scope: "all",
-  }
-}
 
 function Money({ value }: { value: string | null | undefined }) {
   return value === null || value === undefined ? (
     <span className="text-warning-strong">{RUN_COPY.unknown}</span>
   ) : (
     <span>{formatCost(value)}</span>
+  )
+}
+
+function AdvancedFields({
+  model,
+  row,
+  wrong,
+  onChange,
+}: {
+  model: ModelProfileOut
+  row: Row
+  wrong: Partial<Record<string, string>>
+  onChange: (field: Exclude<keyof Row, "include">, value: string) => void
+}) {
+  const shown = ADVANCED.filter((name) => supports(model, name))
+  if (shown.length === 0) return <p className="text-text-muted text-xs">{RUN_COPY.unsupported}</p>
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-text-muted text-xs">{RUN_COPY.advancedHint}</p>
+      <div className="grid gap-4 md:grid-cols-3">
+        {shown.map((name) => {
+          const id = `${model.id}-${name}`
+          const { label, hint } = RUN_COPY.fields[name]
+          return (
+            <div key={name} className="flex flex-col gap-1.5">
+              <Label htmlFor={id}>{label}</Label>
+              {name === "stop" ? (
+                <Textarea
+                  id={id}
+                  rows={2}
+                  value={row.stop}
+                  aria-invalid={wrong.stop ? true : undefined}
+                  onChange={(e) => onChange("stop", e.target.value)}
+                />
+              ) : (
+                <Input
+                  id={id}
+                  type="number"
+                  step={name === "top_p" || name.endsWith("penalty") ? "0.1" : "1"}
+                  min={model.parameters?.[name]?.min ?? undefined}
+                  max={model.parameters?.[name]?.max ?? undefined}
+                  value={row[name]}
+                  aria-invalid={wrong[name] ? true : undefined}
+                  onChange={(e) => onChange(name, e.target.value)}
+                />
+              )}
+              <p className="text-text-muted text-xs">{hint}</p>
+            </div>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 
@@ -67,6 +108,7 @@ export function RunStep({ projectId }: { projectId: string }) {
   const cancel = useCancelExperiment(projectId)
   const [rows, setRows] = useState<Record<string, Row>>({})
   const [budget, setBudget] = useState("")
+  const [open, setOpen] = useState<Record<string, boolean>>({})
   const selected = useMemo(() => (models.data ?? []).filter((m) => m.is_selected), [models.data])
   const approved = version.data?.status === "approved"
   const body = useDebounced(approved ? toBody(selected, rows, budget) : null, 300)
@@ -88,9 +130,8 @@ export function RunStep({ projectId }: { projectId: string }) {
   if (models.data && selected.length === 0)
     return <EmptyState title={RUN_COPY.title} description={RUN_COPY.noModels} />
 
-  const set = (id: string, field: keyof Row, value: string | boolean) =>
-    setRows({ ...rows, [id]: { ...(rows[id] ?? DEFAULT_ROW), [field]: value } })
-  const supports = (m: ModelProfileOut, name: string) => name in (m.parameters ?? {})
+  const set = (m: ModelProfileOut, field: keyof Row, value: string | boolean) =>
+    setRows({ ...rows, [m.id]: { ...(rows[m.id] ?? defaultRow(m)), [field]: value } })
   return (
     <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-6">
       <StepHeader
@@ -101,7 +142,11 @@ export function RunStep({ projectId }: { projectId: string }) {
         howItWorks={RUN_COPY.howItWorks}
       />
       <ErrorMessage error={models.error ?? version.error ?? experiments.error} />
-      <Section number={1} title={RUN_COPY.modelsHeading} description={RUN_COPY.modelsHint}>
+      <Section
+        number={1}
+        title={RUN_COPY.modelsHeading}
+        description={`${RUN_COPY.modelsHint} ${RUN_COPY.modelsHint2}`}
+      >
         <div className="border-border overflow-hidden rounded-lg border">
           <Table>
             <TableHeader>
@@ -111,46 +156,90 @@ export function RunStep({ projectId }: { projectId: string }) {
                 <TableHead className="w-24">{RUN_COPY.columns.runs}</TableHead>
                 <TableHead className="w-32">{RUN_COPY.columns.temperature}</TableHead>
                 <TableHead className="w-36">{RUN_COPY.columns.maxTokens}</TableHead>
+                <TableHead className="w-44">{RUN_COPY.advanced}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {selected.map((m) => {
-                const row = rows[m.id] ?? DEFAULT_ROW
+                const row = rows[m.id] ?? defaultRow(m)
+                const wrong = problems(m, row)
+                const heads = warning(m, row)
+                const count = advancedCount(m, row)
                 return (
-                  <TableRow key={m.id}>
-                    <TableCell>
-                      <Checkbox
-                        checked={row.include}
-                        onCheckedChange={(checked) => set(m.id, "include", checked)}
-                        aria-label={m.display_name}
-                      />
-                    </TableCell>
-                    <TableCell>{m.display_name}</TableCell>
-                    <TableCell>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={5}
-                        value={row.runs}
-                        aria-label={`${RUN_COPY.columns.runs} ${m.display_name}`}
-                        onChange={(e) => set(m.id, "runs", e.target.value)}
-                      />
-                    </TableCell>
-                    {(["temperature", "max_tokens"] as const).map((name) => (
-                      <TableCell key={name}>
-                        <Input
-                          type="number"
-                          step={name === "temperature" ? "0.1" : "1"}
-                          min={name === "temperature" ? 0 : 1}
-                          max={name === "temperature" ? (m.parameters?.temperature?.max ?? 2) : undefined}
-                          disabled={!supports(m, name)}
-                          title={supports(m, name) ? undefined : RUN_COPY.unsupported}
-                          value={row[name]}
-                          onChange={(e) => set(m.id, name, e.target.value)}
+                  <Fragment key={m.id}>
+                    <TableRow>
+                      <TableCell>
+                        <Checkbox
+                          checked={row.include}
+                          onCheckedChange={(checked) => set(m, "include", checked)}
+                          aria-label={m.display_name}
                         />
                       </TableCell>
-                    ))}
-                  </TableRow>
+                      <TableCell>{m.display_name}</TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={MAX_RUNS}
+                          value={row.runs}
+                          aria-label={`${RUN_COPY.columns.runs} ${m.display_name}`}
+                          aria-invalid={wrong.runs ? true : undefined}
+                          title={wrong.runs}
+                          onChange={(e) => set(m, "runs", e.target.value)}
+                        />
+                      </TableCell>
+                      {(["temperature", "max_tokens"] as const).map((name) => (
+                        <TableCell key={name}>
+                          <Input
+                            type="number"
+                            step={name === "temperature" ? "0.1" : "1"}
+                            min={m.parameters?.[name]?.min ?? undefined}
+                            max={m.parameters?.[name]?.max ?? undefined}
+                            disabled={!supports(m, name)}
+                            title={supports(m, name) ? wrong[name] : RUN_COPY.unsupported}
+                            aria-label={`${RUN_COPY.columns[name === "temperature" ? "temperature" : "maxTokens"]} ${m.display_name}`}
+                            aria-invalid={wrong[name] ? true : undefined}
+                            value={row[name]}
+                            onChange={(e) => set(m, name, e.target.value)}
+                          />
+                        </TableCell>
+                      ))}
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          aria-expanded={open[m.id] ?? false}
+                          onClick={() => setOpen({ ...open, [m.id]: !open[m.id] })}
+                        >
+                          {RUN_COPY.advancedSet(count)} {open[m.id] ? "▴" : "▾"}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                    {open[m.id] ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="bg-subtle">
+                          <AdvancedFields
+                            model={m}
+                            row={row}
+                            wrong={wrong}
+                            onChange={(f, v) => set(m, f, v)}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ) : null}
+                    {Object.keys(wrong).length > 0 || heads ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="py-1 text-xs">
+                          {Object.entries(wrong).map(([field, message]) => (
+                            <p key={field} className="text-danger-strong">
+                              {m.display_name}: {field.replaceAll("_", " ")} — {message}
+                            </p>
+                          ))}
+                          {heads ? <p className="text-warning-strong">{heads}</p> : null}
+                        </TableCell>
+                      </TableRow>
+                    ) : null}
+                  </Fragment>
                 )
               })}
             </TableBody>

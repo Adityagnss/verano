@@ -54,6 +54,7 @@ class ProviderSpec(BaseModel):
     auth_error_markers: list[str] = []
     parameter_ranges: dict[str, ParameterRange] = {}
     unsupported_parameters: list[str] = []
+    extra_parameters: list[str] = []
     rate_limits: RateLimits
 
 
@@ -67,6 +68,7 @@ class RateLimitHeaders(BaseModel):
 
 class ProviderCatalog(BaseModel):
     tunable_parameters: dict[str, ParameterRange]
+    opt_in_parameters: list[str] = []
     json_mode_parameter: str
     rate_limit_headers: RateLimitHeaders
     providers: dict[str, ProviderSpec]

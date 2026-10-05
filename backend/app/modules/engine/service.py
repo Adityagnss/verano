@@ -43,6 +43,7 @@ from app.modules.engine.schemas import (
     TestCaseRunOut,
 )
 from app.modules.evaluation.service import EvaluatorSetService
+from app.modules.gateway.domain import filter_params
 from app.modules.generator.repository import TaskSpecRepository
 from app.modules.projects.schemas import ProjectOut
 from app.modules.prompts.schemas import PromptVersionOut
@@ -194,6 +195,8 @@ class ExperimentService:
         found = {profile.id: profile for profile in await self._registry.profiles(project_id, wanted)}
         if len(found) != len(set(wanted)):
             raise ValidationFailed(UNKNOWN_MODELS)
+        for model in body.models:
+            filter_params(model.params, found[model.model_profile_id].parameters)
         prompt = await self._prompts.get_version(project_id, prompt_version_id or await self._latest_prompt(project_id))
         spec = await self._specs.get(project_id, version.task_spec_id) if version.task_spec_id else None
         judge, judge_profile = None, None
@@ -271,6 +274,7 @@ class ExperimentService:
                     "display_name": by_id[model.model_profile_id].display_name,
                     "runs": model.runs,
                     "params": model.params,
+                    "ignored_params": sorted(set(model.params) - set(by_id[model.model_profile_id].parameters)),
                 }
                 for model in body.models
             ],
