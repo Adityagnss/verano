@@ -1,0 +1,101 @@
+ticket,expected
+The checkout page keeps loading forever Please help.,technical
+"To whom it may concern, my order was sent to my old address This is the second time.",shipping
+"Hi team, please refund my order, I returned the item last week",billing
+"To whom it may concern, i get an error 500 when I try to add an item to my basket Thanks.",technical
+"To whom it may concern, the product images are not loading for me This is the second time.",technical
+"Hi team, i received the wrong item in my package This is the second time.",shipping
+My card was declined but the money left my account,billing
+"Good morning, the checkout page keeps loading forever Thanks.",technical
+"Hello, the search box returns no results for anything",technical
+"Hi team, can you send me a receipt for order 43291? Please help.",billing
+"To whom it may concern, the discount code was not applied to my total It is urgent.",billing
+"Good morning, the app asks me to log in again every few minutes",technical
+How long does delivery to Canada usually take? This is the second time.,shipping
+"Hello, part of my order is missing, only one of the two boxes came Thanks.",shipping
+My parcel has not arrived and the tracking has not moved for a week This is the second time.,shipping
+"Good morning, the tracking link you sent does not work This is the second time.",shipping
+"Hi team, i cannot log in, it says my password is wrong but I just reset it Thanks.",technical
+"Hello, the website is very slow on my phone Thanks.",technical
+"To whom it may concern, how long does delivery to Canada usually take?",shipping
+My order was sent to my old address,shipping
+"Good morning, my invoice shows the wrong company name It is urgent.",billing
+"Good morning, my card was declined but the money left my account It is urgent.",billing
+"Hi team, i received the wrong item in my package This is the second time.",shipping
+"Part of my order is missing, only one of the two boxes came It is urgent.",shipping
+"Hello, i was charged twice for my last order",billing
+How do I update my payment method?,billing
+"Hi team, can you hold my parcel until I am back from holiday? Thanks.",shipping
+"Hi team, please refund my order, I returned the item last week",billing
+"To whom it may concern, can I change the delivery address for order 42294?",shipping
+The discount code was not applied to my total Thanks.,billing
+The website is very slow on my phone,technical
+"Hello, i need to change the billing address on my invoice It is urgent.",billing
+"Hello, where is my order? It was supposed to arrive on Monday",shipping
+The app asks me to log in again every few minutes Thanks.,technical
+Where is my order? It was supposed to arrive on Monday Thanks.,shipping
+I received the wrong item in my package,shipping
+"Hello, i was charged twice for my last order",billing
+I was charged twice for my last order It is urgent.,billing
+"To whom it may concern, the product images are not loading for me",technical
+"To whom it may concern, i cannot upload a photo with my review",technical
+"Please refund my order, I returned the item last week This is the second time.",billing
+"Good morning, two-factor codes are not arriving by text message Thanks.",technical
+I cannot upload a photo with my review This is the second time.,technical
+"Good morning, my card was declined but the money left my account It is urgent.",billing
+The tracking link you sent does not work Please help.,shipping
+"Hi team, my wishlist disappeared after the update",technical
+"Hello, the search box returns no results for anything This is the second time.",technical
+"Hi team, the price at checkout was higher than the price on the product page Thanks.",billing
+"Good morning, order 10061 is marked delivered but nothing is here Please help.",shipping
+I get an error 500 when I try to add an item to my basket This is the second time.,technical
+"Good morning, the courier left my parcel outside in the rain Thanks.",shipping
+"Hello, part of my order is missing, only one of the two boxes came This is the second time.",shipping
+My wishlist disappeared after the update It is urgent.,technical
+"Good morning, two-factor codes are not arriving by text message It is urgent.",technical
+"To whom it may concern, i never received my refund even though you confirmed it Please help.",billing
+"Good morning, the checkout page keeps loading forever Please help.",technical
+"Hello, i was charged after I cancelled my subscription",billing
+"Hi team, the package arrived damaged, the box was crushed Thanks.",shipping
+"Hi team, i did not get the password reset email Thanks.",technical
+"Good morning, the courier left my parcel outside in the rain",shipping
+"Hello, i need to change the billing address on my invoice This is the second time.",billing
+"To whom it may concern, i see a payment I do not recognise on my statement This is the second time.",billing
+"Hi team, i cannot log in, it says my password is wrong but I just reset it Thanks.",technical
+"To whom it may concern, i get an error 500 when I try to add an item to my basket It is urgent.",technical
+"Hello, where is my order? It was supposed to arrive on Monday Thanks.",shipping
+"Hi team, my wishlist disappeared after the update It is urgent.",technical
+I did not get the password reset email Thanks.,technical
+Two-factor codes are not arriving by text message,technical
+The courier left my parcel outside in the rain This is the second time.,shipping
+"Hello, my parcel has not arrived and the tracking has not moved for a week Please help.",shipping
+"To whom it may concern, can I change the delivery address for order 87691? Please help.",shipping
+"Hello, the website is very slow on my phone Please help.",technical
+I was charged after I cancelled my subscription This is the second time.,billing
+"Hello, the app crashes every time I open it Thanks.",technical
+The search box returns no results for anything Please help.,technical
+The app crashes every time I open it This is the second time.,technical
+Can you hold my parcel until I am back from holiday? Thanks.,shipping
+"Hello, the app crashes every time I open it It is urgent.",technical
+"Hi team, can you send me a receipt for order 14673? Thanks.",billing
+"Hi team, the package arrived damaged, the box was crushed This is the second time.",shipping
+I never received my refund even though you confirmed it This is the second time.,billing
+"Hello, i was charged after I cancelled my subscription",billing
+The product images are not loading for me,technical
+"I cannot log in, it says my password is wrong but I just reset it",technical
+"Good morning, order 25465 is marked delivered but nothing is here Thanks.",shipping
+Can I change the delivery address for order 12213?,shipping
+"Good morning, how do I update my payment method? Thanks.",billing
+Can you send me a receipt for order 92559? It is urgent.,billing
+I see a payment I do not recognise on my statement Please help.,billing
+"To whom it may concern, i see a payment I do not recognise on my statement",billing
+"Hello, my parcel has not arrived and the tracking has not moved for a week This is the second time.",shipping
+"To whom it may concern, how long does delivery to Canada usually take? It is urgent.",shipping
+"The package arrived damaged, the box was crushed Please help.",shipping
+I need to change the billing address on my invoice,billing
+My invoice shows the wrong company name It is urgent.,billing
+"Hi team, i did not get the password reset email Thanks.",technical
+"Good morning, my invoice shows the wrong company name",billing
+"To whom it may concern, the discount code was not applied to my total This is the second time.",billing
+Order 60661 is marked delivered but nothing is here,shipping
+The price at checkout was higher than the price on the product page,billing

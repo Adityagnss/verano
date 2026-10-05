@@ -1,0 +1,46 @@
+# The same project on a free local model (Ollama). Needs `ollama pull qwen2.5:3b` and
+# `make up-local` (see the main README). Use it with -f:
+#   verano push -f verano.ollama.yaml && verano run -f verano.ollama.yaml --yes
+
+version: 1
+project: "support-triage"
+keys:
+  ollama: none
+prompts:
+  # `ticket` is now `attachment`: each test case's input is sent there.
+  - name: classify-ticket
+    source: {file: "app/triage.py", line: 17}
+    system: |-
+      You are a support triage assistant for an online shop.
+      Read the customer's ticket and reply with exactly one word: billing, shipping or technical.
+
+      billing   - charges, refunds, invoices, payment problems
+      shipping  - delivery, tracking, lost or damaged parcels
+      technical - the website or app not working, login problems, bugs
+    user: "Ticket: {{ attachment }}"
+    params: {temperature: 0, max_tokens: 5}
+    task:
+      type: classification
+      goal: Route each support ticket to the team that should handle it
+      allowed_outputs: [billing, shipping, technical]
+    data:
+      cases: {file: data/tickets.csv, input: ticket, expected: expected}   # one test case per row
+    models: ["qwen2.5:3b"]
+    runs: 2                          # run each model twice to see how steady its answers are
+    gate: {min_quality: 0.85, max_drop: 0.05}   # what `verano run --ci` demands
+
+  # Not included: draft-reply (app/triage.py:31): it has 2 inputs (tone, ticket); real test cases supply one, so it can't be run on them yet
+  # - name: draft-reply
+  #   source: {file: "app/triage.py", line: 31}
+  #   system: "You write short, kind first replies to customer support tickets."
+  #   user: |-
+  #     Write a {{ tone }} reply to this ticket:
+  #     {{ ticket }}
+  #   params: {temperature: 0.7}
+  #   task:
+  #     type: generation  # TODO: classification, extraction, summarization, question_answering, generation, transformation, conversation
+  #     goal: "TODO: say what this prompt should do"
+  #     # allowed_outputs: [a, b]   # required for classification
+  #   # data:   # TODO: your own examples; each row becomes a test case
+  #   #   cases: {file: data/examples.csv, input: text, expected: expected}
+  #   models: ["gpt-4o"]

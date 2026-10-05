@@ -20,6 +20,7 @@ from verano.errors import CliError
 
 app = typer.Typer(
     help="Set up and run prompt evaluations from your own codebase.",
+    epilog="Start here: verano login, verano init, verano validate, verano push, verano run.",
     no_args_is_help=True,
     add_completion=False,
     rich_markup_mode=None,

@@ -59,6 +59,21 @@ What does not come with the clone:
 - **Local models:** install Ollama and run `make models`, or use `make up-local` to run
   Ollama in a container.
 
+## Use it from your codebase
+
+The `verano` command-line tool connects an existing application: it scans your code for prompts,
+sets a project up in Verano, runs it on your examples, and can fail a pull request when quality
+drops.
+
+```bash
+uv tool install ./cli      # or: pipx install ./cli
+verano login && verano init && verano push && verano run
+```
+
+See [`cli/README.md`](cli/README.md) for every command and the `verano.yaml` format, and
+[`examples/support-triage`](examples/support-triage/) for a runnable example. The web app does
+everything the command line does; use whichever you prefer.
+
 ## The loop, step by step
 
 1. **Keys** — add a key per provider (OpenAI, Anthropic, Gemini, Groq, xAI, Mistral,
