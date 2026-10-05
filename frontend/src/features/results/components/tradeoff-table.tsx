@@ -65,6 +65,11 @@ export function TradeoffTable({ models }: { models: ModelMetricsOut[] }) {
               <TableCell className="font-medium">{m.model}</TableCell>
               <Cell models={models} model={m} column="quality">
                 {percent(m.quality)}
+                {m.unscored_cases > 0 ? (
+                  <span className="text-warning-strong block text-xs font-normal">
+                    {RESULTS_COPY.judgedCount(m.judged_cases, m.cases)}
+                  </span>
+                ) : null}
               </Cell>
               <Cell models={models} model={m} column="pass_rate">
                 {percent(m.pass_rate)}
@@ -114,7 +119,8 @@ export function PassRateChart({ models }: { models: ModelMetricsOut[] }) {
     <figure className="flex flex-col gap-3" aria-label={RESULTS_COPY.chartTitle}>
       <figcaption className="text-sm font-semibold">{RESULTS_COPY.chartTitle}</figcaption>
       {models.map((m) => {
-        const passed = Math.round(m.pass_rate * m.cases)
+        const rate = m.pass_rate
+        const passed = rate === null ? 0 : Math.round(rate * m.judged_cases)
         return (
           <div
             key={m.model_profile_id}
@@ -124,15 +130,17 @@ export function PassRateChart({ models }: { models: ModelMetricsOut[] }) {
             <div className="bg-chart-track h-4 rounded-sm">
               <div
                 className="bg-chart-1 h-full rounded-r-[4px]"
-                style={{ width: `${Math.max(Math.round(m.pass_rate * 100), 0)}%` }}
+                style={{ width: `${Math.max(Math.round((rate ?? 0) * 100), 0)}%` }}
               />
             </div>
-            <span className="text-right font-medium tabular-nums">{percent(m.pass_rate)}</span>
+            <span className="text-right font-medium tabular-nums">{percent(rate)}</span>
             <span
               role="tooltip"
               className="bg-foreground text-background pointer-events-none absolute -top-8 left-32 z-10 hidden rounded-md px-2 py-1 text-xs whitespace-nowrap group-hover:block"
             >
-              {m.model}: {passed} of {m.cases} passed
+              {rate === null
+                ? `${m.model}: nothing could be judged`
+                : `${m.model}: ${passed} of ${m.judged_cases} judged passed`}
             </span>
           </div>
         )

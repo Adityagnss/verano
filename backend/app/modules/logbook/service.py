@@ -19,6 +19,7 @@ from app.modules.engine.fingerprint import config_hash
 from app.modules.engine.models import Experiment
 from app.modules.engine.schemas import RunStatus
 from app.modules.evaluation.models import Score
+from app.modules.evaluation.schemas import ScoreStatus
 from app.modules.gateway.models import LLMCall
 from app.modules.logbook.repository import (
     LogbookRepository,
@@ -189,6 +190,7 @@ class LogbookService:
                     evaluator=s.evaluator_name,
                     value=s.value,
                     passed=s.passed,
+                    status=ScoreStatus(s.status),
                     required=s.required,
                     weight=s.weight,
                     reason=s.reason,

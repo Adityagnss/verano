@@ -3,7 +3,7 @@
  * that opens to show every model's output side by side with each evaluator's reason.
  * Uses <details>, so it works with the keyboard and screen readers without extra code.
  */
-import { ChevronRight, CircleCheck, CircleX } from "lucide-react"
+import { ChevronRight, CircleAlert, CircleCheck, CircleX } from "lucide-react"
 
 import { StatusBadge } from "@/components/common/status-badge"
 import type { CaseResultOut } from "@/lib/api/types"
@@ -17,7 +17,8 @@ function inputText(item: CaseResultOut): string {
 }
 
 export function CaseView({ item }: { item: CaseResultOut }) {
-  const failed = item.outputs.filter((o) => !o.passed).length
+  const failed = item.outputs.filter((o) => o.judged && !o.passed).length
+  const notJudged = item.outputs.filter((o) => !o.judged).length
   return (
     <details className="group bg-card border-border open:ring-border-strong rounded-lg border open:ring-1">
       <summary className="hover:bg-subtle/60 flex cursor-pointer list-none items-center gap-3 rounded-lg px-4 py-3 [&::-webkit-details-marker]:hidden">
@@ -27,8 +28,8 @@ export function CaseView({ item }: { item: CaseResultOut }) {
           {item.outputs.map((o) => (
             <StatusBadge
               key={o.test_case_run_id}
-              tone={o.passed ? "success" : "danger"}
-              icon={o.passed ? <CircleCheck /> : <CircleX />}
+              tone={!o.judged ? "warning" : o.passed ? "success" : "danger"}
+              icon={!o.judged ? <CircleAlert /> : o.passed ? <CircleCheck /> : <CircleX />}
             >
               {o.model}
               {o.run_number > 1 ? ` #${o.run_number}` : ""}
@@ -47,11 +48,16 @@ export function CaseView({ item }: { item: CaseResultOut }) {
           {item.split ? (
             <StatusBadge tone="neutral">{item.split === "holdout" ? "held back" : "improve"}</StatusBadge>
           ) : null}
+          {notJudged ? (
+            <StatusBadge tone="warning" icon={<CircleAlert />} className="ml-auto">
+              {notJudged} {RESULTS_COPY.notJudged.toLowerCase()}
+            </StatusBadge>
+          ) : null}
           {failed ? (
-            <StatusBadge tone="danger" icon={<CircleX />} className="ml-auto">
+            <StatusBadge tone="danger" icon={<CircleX />} className={notJudged ? "" : "ml-auto"}>
               {failed} failed
             </StatusBadge>
-          ) : (
+          ) : notJudged ? null : (
             <StatusBadge tone="success" icon={<CircleCheck />} className="ml-auto">
               all passed
             </StatusBadge>
@@ -87,30 +93,41 @@ export function CaseView({ item }: { item: CaseResultOut }) {
               key={o.test_case_run_id}
               className={cn(
                 "rounded-lg border p-3",
-                o.passed ? "border-success/40 bg-success-soft/40" : "border-danger/40 bg-danger-soft/40",
+                !o.judged
+                  ? "border-warning/40 bg-warning-soft/40"
+                  : o.passed
+                    ? "border-success/40 bg-success-soft/40"
+                    : "border-danger/40 bg-danger-soft/40",
               )}
             >
               <div className="mb-2 flex items-center gap-2 text-xs">
                 <span className="font-medium">{o.model}</span>
                 <span className="text-muted-foreground">{RESULTS_COPY.run(o.run_number)}</span>
                 <StatusBadge
-                  tone={o.passed ? "success" : "danger"}
-                  icon={o.passed ? <CircleCheck /> : <CircleX />}
+                  tone={!o.judged ? "warning" : o.passed ? "success" : "danger"}
+                  icon={!o.judged ? <CircleAlert /> : o.passed ? <CircleCheck /> : <CircleX />}
                   className="ml-auto"
                 >
-                  {o.passed ? RESULTS_COPY.pass : RESULTS_COPY.fail}
+                  {!o.judged ? RESULTS_COPY.notJudged : o.passed ? RESULTS_COPY.pass : RESULTS_COPY.fail}
                 </StatusBadge>
               </div>
               <pre className="font-mono text-xs whitespace-pre-wrap">{o.output ?? o.error}</pre>
               <ul className="text-text-secondary mt-2 flex flex-col gap-0.5 text-xs">
-                {o.scores.map((s) => (
-                  <li key={s.evaluator_name}>
-                    <span className={s.passed ? "text-success" : "text-destructive"}>
-                      {s.passed ? "✓" : "✗"}
-                    </span>{" "}
-                    {s.evaluator_name.replaceAll("_", " ")}: {s.reason}
-                  </li>
-                ))}
+                {o.scores.map((s) =>
+                  s.status === "unscored" ? (
+                    <li key={s.evaluator_name} className="text-warning-strong">
+                      <span>!</span> {s.evaluator_name.replaceAll("_", " ")}: {RESULTS_COPY.notJudgedWhy}{" "}
+                      {s.reason}
+                    </li>
+                  ) : (
+                    <li key={s.evaluator_name}>
+                      <span className={s.passed ? "text-success" : "text-destructive"}>
+                        {s.passed ? "✓" : "✗"}
+                      </span>{" "}
+                      {s.evaluator_name.replaceAll("_", " ")}: {s.reason}
+                    </li>
+                  ),
+                )}
               </ul>
             </div>
           ))}

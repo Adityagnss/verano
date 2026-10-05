@@ -30,6 +30,7 @@ import { downloadCsv, useCases, useResults } from "../hooks"
 import { bestOn, brokenModels, isBest } from "../insights"
 import { CaseView } from "./case-view"
 import { ConfigPanel } from "./config-panel"
+import { UnjudgedBanner } from "./unjudged-banner"
 import { PassRateChart, percent, TradeoffTable } from "./tradeoff-table"
 
 const FINISHED = new Set(["completed", "cancelled", "evaluating"])
@@ -130,6 +131,7 @@ export function ResultsStep({ projectId, experimentId }: { projectId: string; ex
               />
             ))}
           </div>
+          <UnjudgedBanner projectId={projectId} experiment={current} models={metrics} />
           {brokenModels(metrics).map((m) => (
             <div
               key={m.model_profile_id}

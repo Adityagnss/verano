@@ -29,12 +29,12 @@ from app.modules.engine.models import Experiment, TestCaseRun
 from app.modules.engine.repository import EngineRepository
 from app.modules.engine.schemas import ExperimentOrigin, ExperimentStatus, RunStatus
 from app.modules.engine.service import ExperimentService
-from app.modules.evaluation.domain import EvalCase, Score
+from app.modules.evaluation.domain import EvalCase, Score, Unscored
 from app.modules.evaluation.models import EvaluationRun, EvaluatorConfig
-from app.modules.evaluation.plugins.deepeval_adapter import judge
+from app.modules.evaluation.plugins.deepeval_adapter import criteria_for, judge
 from app.modules.evaluation.plugins.rules import RULES
 from app.modules.evaluation.repository import EvaluatorRepository, ScoreRepository
-from app.modules.evaluation.schemas import EvaluationRunStatus, EvaluationTrigger
+from app.modules.evaluation.schemas import EvaluationRunStatus, EvaluationTrigger, ScoreStatus
 from app.modules.gateway.dependencies import build_gateway
 from app.modules.gateway.schemas import CallContext
 from app.modules.gateway.service import GatewayService
@@ -47,6 +47,8 @@ log = logging.getLogger(__name__)
 ADVANCE_JOB = "assistant.advance"
 CALL_ERROR = "call_error"
 DEEPEVAL = "deepeval"
+NO_JUDGE = "No judge model is available, so this answer could not be judged."
+JUDGE_FAILED = "The judge could not score this answer: {why}"
 
 
 class ScoringService:
@@ -174,21 +176,27 @@ class ScoringService:
         scored = []
         for config in configs:
             result = await self._evaluate(config, case, target, context, limit)
-            if result is not None:
-                scored.append(
-                    base
-                    | {
-                        "id": uuid7(),
-                        "evaluator_name": config.evaluator_name,
-                        "evaluator_version": config.evaluator_version,
-                        "value": result.value,
-                        "passed": result.passed,
-                        "required": config.required,
-                        "weight": config.weight,
-                        "reason": result.reason[:4000],
-                        "llm_call_id": None,
-                    }
-                )
+            if result is None:
+                continue
+            if isinstance(result, Unscored):
+                value, passed, status = 0.0, False, ScoreStatus.UNSCORED
+            else:
+                value, passed, status = result.value, result.passed, ScoreStatus.SCORED
+            scored.append(
+                base
+                | {
+                    "id": uuid7(),
+                    "evaluator_name": config.evaluator_name,
+                    "evaluator_version": config.evaluator_version,
+                    "value": value,
+                    "passed": passed,
+                    "status": status,
+                    "required": config.required,
+                    "weight": config.weight,
+                    "reason": result.reason[:4000],
+                    "llm_call_id": None,
+                }
+            )
         return scored
 
     async def _evaluate(
@@ -198,12 +206,15 @@ class ScoringService:
         target: CallTarget | None,
         context: CallContext,
         limit: asyncio.Semaphore,
-    ) -> Score | None:
+    ) -> Score | Unscored | None:
+        """A score; None when the evaluator does not apply to this case; Unscored when it applies but failed."""
         if config.config.get("kind") != DEEPEVAL:
             rule = RULES.get(config.evaluator_name)
             return rule(case, config.config, config.threshold) if rule else None
-        if target is None:
+        if criteria_for(config.config, case) is None:
             return None
+        if target is None:
+            return Unscored(NO_JUDGE)
         async with limit:
             try:
                 return await judge(
@@ -211,4 +222,7 @@ class ScoringService:
                 )
             except AppError as exc:
                 log.warning("judge %s failed: %s", config.evaluator_name, exc.message)
-                return None
+                return Unscored(JUDGE_FAILED.format(why=exc.message))
+            except Exception as exc:
+                log.warning("judge %s failed unexpectedly", config.evaluator_name, exc_info=True)
+                return Unscored(JUDGE_FAILED.format(why=f"{type(exc).__name__}: {str(exc)[:200]}"))

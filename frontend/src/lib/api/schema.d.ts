@@ -1599,6 +1599,8 @@ export interface components {
             cost: string | null;
             /** Error */
             error: string | null;
+            /** Judged */
+            judged: boolean;
             /** Latency Ms */
             latency_ms: number | null;
             /** Model */
@@ -2616,6 +2618,8 @@ export interface components {
             cost_per_call: string | null;
             /** Failed Calls */
             failed_calls: number;
+            /** Judged Cases */
+            judged_cases: number;
             /** Latency Ms */
             latency_ms: number | null;
             /** Model */
@@ -2626,13 +2630,15 @@ export interface components {
              */
             model_profile_id: string;
             /** Pass Rate */
-            pass_rate: number;
+            pass_rate: number | null;
             /** Quality */
-            quality: number;
+            quality: number | null;
             /** Stability */
             stability: number | null;
             /** Stable Cases */
             stable_cases: number;
+            /** Unscored Cases */
+            unscored_cases: number;
         };
         /** ModelProfileOut */
         ModelProfileOut: {
@@ -3239,6 +3245,8 @@ export interface components {
             reason: string;
             /** Required */
             required: boolean;
+            /** @default scored */
+            status: components["schemas"]["ScoreStatus"];
             /** Value */
             value: number;
             /** Weight */
@@ -3252,9 +3260,16 @@ export interface components {
             passed: boolean;
             /** Reason */
             reason: string;
+            /** @default scored */
+            status: components["schemas"]["ScoreStatus"];
             /** Value */
             value: number;
         };
+        /**
+         * ScoreStatus
+         * @enum {string}
+         */
+        ScoreStatus: "scored" | "unscored";
         /** SectionOut */
         SectionOut: {
             /** Char Count */

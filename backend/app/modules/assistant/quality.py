@@ -1,7 +1,8 @@
 """
 Mean quality of an experiment's latest scoring pass, over all its cases or only those in
 one split (optimize / holdout), so candidates and the current prompt are compared on
-exactly the same cases.
+exactly the same cases. If any case in scope could not be judged the result is None: a
+number computed on part of the cases is not something to prove an improvement with.
 """
 
 from statistics import mean
@@ -20,4 +21,6 @@ async def quality(
         items = await datasets.items(experiment.dataset_version_id, ids=[o.dataset_item_id for o in outcomes])
         keep = {item.id for item in items if item.split is split}
         outcomes = [o for o in outcomes if o.dataset_item_id in keep]
-    return mean(o.quality for o in outcomes) if outcomes else None
+    if not outcomes or any(not o.judged for o in outcomes):
+        return None
+    return mean(o.quality for o in outcomes)

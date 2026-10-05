@@ -16,8 +16,8 @@ const PURPOSE_LABELS: Record<string, string> = {
   assistant: "Improving the prompt",
 }
 
-export function pct(value: number): string {
-  return `${Math.round(value * 100)}%`
+export function pct(value: number | null): string {
+  return value === null ? "—" : `${Math.round(value * 100)}%`
 }
 
 export function versionLabels(versions: { id: string; version: number }[]): Map<string, string> {
@@ -79,9 +79,16 @@ export function insights(finished: Finished[], cost: CostSummary | undefined): s
   const latest = finished.at(-1)
   if (latest) {
     const models = latest.results.models
-    const best = [...models].sort((a, b) => b.pass_rate - a.pass_rate)[0]
+    const unjudged = models.reduce((sum, m) => sum + m.unscored_cases, 0)
+    if (unjudged > 0)
+      out.push(
+        `${unjudged} answers in the latest experiment could not be judged, so they are left out of the numbers. Open Results to see why and score them again.`,
+      )
+    const judged = models.filter((m): m is typeof m & { pass_rate: number } => m.pass_rate !== null)
+    if (judged.length === 0) return out
+    const best = [...judged].sort((a, b) => b.pass_rate - a.pass_rate)[0]
     out.push(`${best.model} passed the most test cases in the latest experiment: ${pct(best.pass_rate)}.`)
-    const priced = models.filter((m) => m.cost_per_call !== null && Number(m.cost_per_call) > 0)
+    const priced = judged.filter((m) => m.cost_per_call !== null && Number(m.cost_per_call) > 0)
     const close = priced
       .filter((m) => m.pass_rate >= best.pass_rate - 0.05)
       .sort((a, b) => Number(a.cost_per_call) - Number(b.cost_per_call))[0]
@@ -106,7 +113,8 @@ export function insights(finished: Finished[], cost: CostSummary | undefined): s
       out.push(`${m.model} is not consistent (${pct(m.consistency ?? 0)} same result across runs).`)
   }
   if (finished.length >= 2) {
-    const bestOf = (f: Finished) => Math.max(...f.results.models.map((m) => m.pass_rate))
+    const bestOf = (f: Finished) =>
+      Math.max(...f.results.models.map((m) => m.pass_rate).filter((r): r is number => r !== null))
     const first = finished[0]
     const last = finished[finished.length - 1]
     const change = Math.round((bestOf(last) - bestOf(first)) * 100)

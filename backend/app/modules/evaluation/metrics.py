@@ -3,9 +3,12 @@ Pure result metrics (DEVELOPMENT.md 4.2, base level: plain averages).
 
 A case (one call) passes when every evaluator that applies to it passed; its quality is
 the weighted mean of those evaluators' scores. A call that failed counts as a failed case
-with quality 0. Per model: quality (mean case quality), pass rate, consistency (share of
-test cases whose runs all got the same pass/fail result; only with 2+ runs), mean latency,
-total cost and cost per call.
+with quality 0. A case is only *judged* when every evaluator that applies to it produced a
+score: if any could not (the judge failed or is missing) the case is unscored, never a pass
+and never a zero, and it is left out of quality, pass rate and consistency and counted
+instead. Per model: quality (mean case quality over judged cases), pass rate, consistency
+(share of test cases whose runs all got the same pass/fail result; only with 2+ runs), mean
+latency, total cost and cost per call.
 """
 
 import uuid
@@ -21,6 +24,7 @@ from app.modules.evaluation.domain import Score
 class WeightedScore:
     score: Score
     weight: float
+    scored: bool = True
 
 
 @dataclass(frozen=True)
@@ -34,6 +38,7 @@ class CaseOutcome:
     quality: float
     latency_ms: int | None
     cost: Decimal | None
+    judged: bool = True
 
 
 @dataclass(frozen=True)
@@ -41,8 +46,10 @@ class ModelMetrics:
     model_profile_id: uuid.UUID
     model: str
     cases: int
-    quality: float
-    pass_rate: float
+    judged_cases: int
+    unscored_cases: int
+    quality: float | None
+    pass_rate: float | None
     consistency: float | None
     latency_ms: float | None
     cost: Decimal | None
@@ -50,12 +57,15 @@ class ModelMetrics:
     failed_calls: int
 
 
-def case_result(scores: list[WeightedScore]) -> tuple[bool, float]:
+def case_result(scores: list[WeightedScore]) -> tuple[bool, float, bool]:
+    """(passed, quality, judged). A case with an unscored evaluator is not judged: it has no result."""
+    if any(not s.scored for s in scores):
+        return False, 0.0, False
     if not scores:
-        return True, 1.0
+        return True, 1.0, True
     total = sum(s.weight for s in scores) or 1.0
     quality = sum(s.score.value * s.weight for s in scores) / total
-    return all(s.score.passed for s in scores), quality
+    return all(s.score.passed for s in scores), quality, True
 
 
 def model_metrics(outcomes: list[CaseOutcome]) -> list[ModelMetrics]:
@@ -66,8 +76,9 @@ def model_metrics(outcomes: list[CaseOutcome]) -> list[ModelMetrics]:
 
 
 def _one(rows: list[CaseOutcome]) -> ModelMetrics:
+    judged = [r for r in rows if r.judged]
     by_item: dict[uuid.UUID, list[bool]] = defaultdict(list)
-    for row in rows:
+    for row in judged:
         by_item[row.dataset_item_id].append(row.passed)
     repeated = [results for results in by_item.values() if len(results) > 1]
     consistency = sum(len(set(r)) == 1 for r in repeated) / len(repeated) if repeated else None
@@ -78,8 +89,10 @@ def _one(rows: list[CaseOutcome]) -> ModelMetrics:
         model_profile_id=rows[0].model_profile_id,
         model=rows[0].model,
         cases=len(rows),
-        quality=mean(r.quality for r in rows),
-        pass_rate=sum(r.passed for r in rows) / len(rows),
+        judged_cases=len(judged),
+        unscored_cases=len(rows) - len(judged),
+        quality=mean(r.quality for r in judged) if judged else None,
+        pass_rate=sum(r.passed for r in judged) / len(judged) if judged else None,
         consistency=consistency,
         latency_ms=mean(latencies) if latencies else None,
         cost=cost,

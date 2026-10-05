@@ -40,6 +40,16 @@ export const RESULTS_COPY = {
   stability: (stable: number, compared: number) => `${stable} of ${compared} cases identical`,
   agreement: (model: string, same: number, runs: number) =>
     `${model}: same answer in ${same} of ${runs} runs`,
+  unjudged: (count: number, total: number) =>
+    `${count} of ${total} answers could not be judged. They are left out of quality and pass rate (never counted as passed), and each shows the judge's reason in its case below.`,
+  scoreAgain: "Score again",
+  scoreAgainCost: (calls: number | null, cost: string | null) =>
+    `This asks the judge to score every answer again${calls ? ` (about ${calls} judge calls${cost ? `, about $${Number(cost).toFixed(4)}` : ""})` : ""}. The earlier scoring is kept.`,
+  scoreAgainConfirm: "Score again now",
+  scoreAgainCancel: "Cancel",
+  notJudged: "Not judged",
+  notJudgedWhy: "This check could not be scored, so the answer is left out of the numbers:",
+  judgedCount: (judged: number, total: number) => `${judged} of ${total} judged`,
   rerun: "Re-run with same settings",
   rerunning: "Starting…",
   rerunHint: "Starts a new experiment with the same prompt, test cases, models and settings.",

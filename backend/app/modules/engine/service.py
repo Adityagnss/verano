@@ -64,6 +64,10 @@ NO_CASES = "There are no test cases in this part of the dataset."
 UNKNOWN_MODELS = "Some chosen models aren't in this project any more. Refresh the Keys step."
 NO_PROMPT = "Save a prompt (step 2) before starting an experiment."
 NOT_FINISHED = "Wait until this experiment has finished before running it again."
+NO_JUDGE_CHOSEN = (
+    "Some of the checks that score the answers are judged by a model, but no judge model is chosen. "
+    "Choose a judge model (Test cases step, or `judge:` in verano.yaml) before running."
+)
 RERUN_PREFIX = "Re-run: "
 FINISHED = {ExperimentStatus.COMPLETED, ExperimentStatus.CANCELLED, ExperimentStatus.FAILED}
 CANCELLED = "Cancelled by the user."
@@ -235,6 +239,8 @@ class ExperimentService:
             raise ValidationFailed(NO_APPROVED)
         evaluators = await self._evaluators.get_version(project_id, version.evaluator_set_version_id)
         judge_metrics = sum(1 for e in evaluators.evaluators if e.config.get("kind") == "deepeval")
+        if judge_metrics and judge_profile is None:
+            raise ValidationFailed(NO_JUDGE_CHOSEN)
         return _PlanInputs(
             version=version,
             items=[(item.id, item.inputs) for item in items],

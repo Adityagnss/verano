@@ -1069,6 +1069,10 @@
             ],
             "title": "Error"
           },
+          "judged": {
+            "title": "Judged",
+            "type": "boolean"
+          },
           "latency_ms": {
             "anyOf": [
               {
@@ -1134,6 +1138,7 @@
           "error",
           "passed",
           "quality",
+          "judged",
           "latency_ms",
           "cost",
           "scores"
@@ -3930,6 +3935,10 @@
             "title": "Failed Calls",
             "type": "integer"
           },
+          "judged_cases": {
+            "title": "Judged Cases",
+            "type": "integer"
+          },
           "latency_ms": {
             "anyOf": [
               {
@@ -3951,12 +3960,26 @@
             "type": "string"
           },
           "pass_rate": {
-            "title": "Pass Rate",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Rate"
           },
           "quality": {
-            "title": "Quality",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality"
           },
           "stability": {
             "anyOf": [
@@ -3972,12 +3995,18 @@
           "stable_cases": {
             "title": "Stable Cases",
             "type": "integer"
+          },
+          "unscored_cases": {
+            "title": "Unscored Cases",
+            "type": "integer"
           }
         },
         "required": [
           "model_profile_id",
           "model",
           "cases",
+          "judged_cases",
+          "unscored_cases",
           "quality",
           "pass_rate",
           "consistency",
@@ -5415,6 +5444,10 @@
             "title": "Required",
             "type": "boolean"
           },
+          "status": {
+            "$ref": "#/components/schemas/ScoreStatus",
+            "default": "scored"
+          },
           "value": {
             "title": "Value",
             "type": "number"
@@ -5442,6 +5475,10 @@
             "title": "Reason",
             "type": "string"
           },
+          "status": {
+            "$ref": "#/components/schemas/ScoreStatus",
+            "default": "scored"
+          },
           "value": {
             "title": "Value",
             "type": "number"
@@ -5450,6 +5487,11 @@
         "required": ["evaluator_name", "value", "passed", "reason"],
         "title": "ScoreOut",
         "type": "object"
+      },
+      "ScoreStatus": {
+        "enum": ["scored", "unscored"],
+        "title": "ScoreStatus",
+        "type": "string"
       },
       "SectionOut": {
         "properties": {

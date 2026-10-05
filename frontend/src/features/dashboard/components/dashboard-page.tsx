@@ -27,7 +27,8 @@ export function DashboardPage({ projectId }: { projectId: string }) {
   const models = [...new Set(finished.flatMap((f) => f.results.models.map((m) => m.model)))]
   const parts = spend(data.cost)
   const notes = insights(finished, data.cost)
-  const best = latest ? Math.max(...latest.results.models.map((m) => m.pass_rate)) : null
+  const rates = (latest?.results.models ?? []).map((m) => m.pass_rate).filter((r): r is number => r !== null)
+  const best = rates.length ? Math.max(...rates) : null
   const rows = (pick: (m: NonNullable<typeof latest>["results"]["models"][number]) => number | null) =>
     (latest?.results.models ?? []).map((m) => ({
       model: m.model,

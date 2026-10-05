@@ -56,3 +56,20 @@ def test_a_run_that_did_not_finish_never_passes() -> None:
 def test_a_gate_must_check_something_with_scores_between_zero_and_one(bad: dict[str, Any]) -> None:
     with pytest.raises(ValueError, match="validation error"):
         Gate(**bad)
+
+
+def test_answers_the_judge_could_not_score_fail_the_gate_even_when_the_rest_looks_good() -> None:
+    gate = Gate(min_quality=0.5)
+    flattered = {**model("a", 0.9), "unscored_cases": 4, "cases": 10, "judged_cases": 6}
+    verdict = evaluate(gate, [flattered], True, None, None)
+    assert verdict.failures == ["a: 4 answers could not be judged, so its scores can't be trusted."]
+
+
+def test_a_model_with_nothing_judged_has_no_score_to_compare_and_fails() -> None:
+    gate = Gate(min_quality=0.5, max_drop=0.1)
+    nothing = {"model": "a", "quality": None, "pass_rate": None, "cases": 5, "judged_cases": 0, "unscored_cases": 5}
+    assert evaluate(gate, [nothing], True, None, {"a": 0.8}).failures == [
+        "a: 5 answers could not be judged, so its scores can't be trusted."
+    ]
+    silent = {**nothing, "unscored_cases": 0}
+    assert evaluate(gate, [silent], True, None, None).failures == ["a: nothing could be scored."]

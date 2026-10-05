@@ -288,3 +288,22 @@ def test_status_shows_the_latest_finished_run_or_says_there_is_none(
     assert "gpt-4o-mini   90%" in shown.out
     assert "/results?experiment=" in shown.out
     assert Decimal("0") == Decimal(0)
+
+
+def test_a_run_with_answers_that_could_not_be_judged_fails_the_gate_and_shows_how_many(
+    platform: FakePlatform, run: Run, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    pushed(platform, run, tmp_path, "    gate: {min_quality: 0.1}\n")
+    original = platform.results
+
+    def partly_unjudged(record: dict[str, Any]) -> dict[str, Any]:
+        out = original(record)
+        for m in out["models"]:
+            m.update({"judged_cases": 1, "unscored_cases": 2})
+        return out
+
+    monkeypatch.setattr(platform, "results", partly_unjudged)
+    result = run("run", "--ci")
+    assert result.code == 2
+    assert "(1/3 judged)" in result.err
+    assert "2 answers could not be judged, so its scores can't be trusted." in result.err

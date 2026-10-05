@@ -2,7 +2,9 @@
 The quality gate of `verano run --ci`: did this run meet what the prompt's `gate:` demands?
 
 Checked per model, so one weak model can't hide behind a strong one. A run that stopped early
-(budget, error, cancelled) fails the gate: its numbers say nothing about quality. `max_drop`
+(budget, error, cancelled) fails the gate: its numbers say nothing about quality. So does a run
+with answers the judge could not score: those are left out of the numbers, so what is left may
+flatter the model. `max_drop`
 compares with the most recent earlier run of the same models and settings on the same test
 cases (the prompt may differ: that is the point); with nothing to compare against it is noted,
 not failed, so the first run can set the baseline.
@@ -42,6 +44,13 @@ def evaluate(
         failures.append(f"The run stopped early{why}, so its scores can't be trusted.")
     for model in models:
         name = model["model"]
+        unscored = int(model.get("unscored_cases") or 0)
+        if unscored:
+            failures.append(f"{name}: {unscored} answers could not be judged, so its scores can't be trusted.")
+        if model["quality"] is None or model["pass_rate"] is None:
+            if not unscored:
+                failures.append(f"{name}: nothing could be scored.")
+            continue
         quality, passed = float(model["quality"]), float(model["pass_rate"])
         if gate.min_quality is not None and quality < gate.min_quality:
             failures.append(f"{name}: quality {percent(quality)} is below the minimum {percent(gate.min_quality)}.")

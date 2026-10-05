@@ -40,6 +40,7 @@ from app.modules.evaluation.schemas import (
     RescoreRequest,
     ResultsOut,
     ScoreOut,
+    ScoreStatus,
 )
 from app.modules.evaluation.stability import Answer, ModelStability, case_agreements, model_stability, replication
 
@@ -103,10 +104,17 @@ class ResultsService:
                     error=row.error_message,
                     passed=outcome.passed,
                     quality=outcome.quality,
+                    judged=outcome.judged,
                     latency_ms=row.latency_ms,
                     cost=row.cost,
                     scores=[
-                        ScoreOut(evaluator_name=s.evaluator_name, value=s.value, passed=s.passed, reason=s.reason)
+                        ScoreOut(
+                            evaluator_name=s.evaluator_name,
+                            value=s.value,
+                            passed=s.passed,
+                            reason=s.reason,
+                            status=ScoreStatus(s.status),
+                        )
                         for s in scores
                     ],
                 )
@@ -151,6 +159,7 @@ class ResultsService:
             "error",
             "passed",
             "quality",
+            "judged",
             "latency_ms",
             "cost",
         ]
@@ -170,8 +179,9 @@ class ResultsService:
                         o.run_number,
                         o.output,
                         o.error,
-                        o.passed,
-                        round(o.quality, 4),
+                        o.passed if o.judged else "",
+                        round(o.quality, 4) if o.judged else "",
+                        "yes" if o.judged else "no",
                         o.latency_ms,
                         o.cost,
                         *[by_name.get(name, "") for name in names],
@@ -252,9 +262,14 @@ class ResultsService:
                 continue
             scores = by_call[row.id]
             weighted = [
-                WeightedScore(ScoreValue(value=s.value, passed=s.passed, reason=s.reason), s.weight) for s in scores
+                WeightedScore(
+                    ScoreValue(value=s.value, passed=s.passed, reason=s.reason),
+                    s.weight,
+                    scored=s.status != ScoreStatus.UNSCORED,
+                )
+                for s in scores
             ]
-            passed, quality = case_result(weighted)
+            passed, quality, judged = case_result(weighted)
             failed = row.status is RunStatus.FAILED
             outcome = CaseOutcome(
                 model_profile_id=row.model_profile_id,
@@ -266,6 +281,7 @@ class ResultsService:
                 quality=0.0 if failed else quality,
                 latency_ms=row.latency_ms,
                 cost=row.cost,
+                judged=judged,
             )
             results.append((outcome, row, scores))
         return results

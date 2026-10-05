@@ -89,6 +89,7 @@ class Score(CreatedAtMixin, Base):
     evaluator_version: Mapped[str] = mapped_column(String(32))
     value: Mapped[float]
     passed: Mapped[bool]
+    status: Mapped[str] = mapped_column(String(16), default="scored", server_default="scored")
     required: Mapped[bool]
     weight: Mapped[float]
     reason: Mapped[str] = mapped_column(Text)

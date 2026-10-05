@@ -415,6 +415,7 @@ class FakePlatform(FakeVerano):
             models.append(
                 {
                     "model": name, "quality": quality, "pass_rate": quality, "consistency": 1.0,
+                    "cases": 3, "judged_cases": 3, "unscored_cases": 0,
                     "stability": 1.0 if entry["runs"] > 1 else None, "latency_ms": 420.0,
                     "cost_per_call": "0.0014", "failed_calls": 0,
                 }

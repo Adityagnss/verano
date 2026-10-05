@@ -74,8 +74,10 @@ class ModelMetricsOut(BaseModel):
     model_profile_id: uuid.UUID
     model: str
     cases: int
-    quality: float
-    pass_rate: float
+    judged_cases: int
+    unscored_cases: int
+    quality: float | None
+    pass_rate: float | None
     consistency: float | None
     latency_ms: float | None
     cost: Decimal | None
@@ -117,11 +119,17 @@ class ResultsOut(BaseModel):
     models: list[ModelMetricsOut]
 
 
+class ScoreStatus(StrEnum):
+    SCORED = "scored"
+    UNSCORED = "unscored"
+
+
 class ScoreOut(BaseModel):
     evaluator_name: str
     value: float
     passed: bool
     reason: str
+    status: ScoreStatus = ScoreStatus.SCORED
 
 
 class CaseOutput(BaseModel):
@@ -133,6 +141,7 @@ class CaseOutput(BaseModel):
     error: str | None
     passed: bool
     quality: float
+    judged: bool
     latency_ms: int | None
     cost: Decimal | None
     scores: list[ScoreOut]

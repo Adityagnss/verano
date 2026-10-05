@@ -52,7 +52,10 @@ def answers(project_id: uuid.UUID) -> Subquery:
             Score.test_case_run_id.label("run_id"),
             func.bool_and(Score.passed).label("passed"),
             (func.sum(Score.value * Score.weight) / func.nullif(func.sum(Score.weight), 0)).label("quality"),
-            func.array_agg(Score.evaluator_name).filter(Score.passed.is_(False)).label("failed"),
+            func.bool_or(Score.status == "unscored").label("unscored"),
+            func.array_agg(Score.evaluator_name)
+            .filter(Score.passed.is_(False), Score.status == "scored")
+            .label("failed"),
             func.max(Score.value).filter(Score.evaluator_name == GOLDEN_MATCH_CHECK).label("golden_match"),
         )
         .join(latest, and_(Score.experiment_id == latest.c.experiment_id, Score.evaluation_run_id == latest.c.run_id))
@@ -77,8 +80,18 @@ def answers(project_id: uuid.UUID) -> Subquery:
             DatasetItem.source.label("source"),
             DatasetItem.category.label("category"),
             TestCaseRun.status.label("status"),
-            case((scored.c.passed.is_not(None), scored.c.passed), (ok, true()), else_=None).label("passed"),
-            case((scored.c.quality.is_not(None), scored.c.quality), (ok, 1.0), else_=None).label("quality"),
+            case(
+                (scored.c.unscored.is_(True), None),
+                (scored.c.passed.is_not(None), scored.c.passed),
+                (ok, true()),
+                else_=None,
+            ).label("passed"),
+            case(
+                (scored.c.unscored.is_(True), None),
+                (scored.c.quality.is_not(None), scored.c.quality),
+                (ok, 1.0),
+                else_=None,
+            ).label("quality"),
             scored.c.golden_match.label("golden_match"),
             scored.c.failed.label("failed"),
             func.left(inputs_text, PREVIEW).label("input_preview"),

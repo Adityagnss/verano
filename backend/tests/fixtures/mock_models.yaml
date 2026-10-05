@@ -11,6 +11,13 @@ models:
     input_price_per_mtok: 1.00
     output_price_per_mtok: 3.00
     supported_parameters: [temperature, max_tokens, response_format]
+  judge_down:
+    behavior: flaky
+    inner: echo
+    failure_rate: 1.0
+    failure_mix: {bad_request: 1.0}
+    input_price_per_mtok: 0.50
+    output_price_per_mtok: 1.50
   drifting:
     behavior: echo
     response_models: [snapshot-a, snapshot-b]

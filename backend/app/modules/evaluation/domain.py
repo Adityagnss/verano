@@ -35,6 +35,14 @@ class Score:
             raise ValueError(f"score value must be within 0.0-1.0, got {self.value}")
 
 
+@dataclass(frozen=True)
+class Unscored:
+    """An evaluator that applies to a case but could not produce a score (the judge failed or is missing).
+    Never a pass and never a zero: the case is left out of the numbers and shown as unscored."""
+
+    reason: str
+
+
 class Evaluator(Protocol):
     name: ClassVar[str]
     version: ClassVar[str]

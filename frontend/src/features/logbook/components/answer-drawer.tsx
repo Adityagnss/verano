@@ -200,12 +200,18 @@ export function AnswerDrawer({
                       >
                         <div className="flex flex-wrap items-center gap-2 text-sm">
                           <span className="font-medium capitalize">{s.evaluator.replaceAll("_", " ")}</span>
-                          <StatusBadge tone={s.passed ? "success" : "danger"}>
-                            {s.passed ? "Passed" : "Failed"}
-                          </StatusBadge>
-                          <span className="text-text-secondary tabular-nums">
-                            score {Math.round(s.value * 100)}%
-                          </span>
+                          {s.status === "unscored" ? (
+                            <StatusBadge tone="warning">Not judged</StatusBadge>
+                          ) : (
+                            <>
+                              <StatusBadge tone={s.passed ? "success" : "danger"}>
+                                {s.passed ? "Passed" : "Failed"}
+                              </StatusBadge>
+                              <span className="text-text-secondary tabular-nums">
+                                score {Math.round(s.value * 100)}%
+                              </span>
+                            </>
+                          )}
                           {s.required ? <StatusBadge tone="brand">Must pass</StatusBadge> : null}
                         </div>
                         <p className="text-text-secondary text-xs">{s.reason}</p>

@@ -28,7 +28,7 @@ def results_table(models: list[dict[str, Any]]) -> list[str]:
     rows = [
         [
             m["model"],
-            percent(m["quality"]),
+            percent(m["quality"]) + (f" ({m['judged_cases']}/{m['cases']} judged)" if m.get("unscored_cases") else ""),
             percent(m["pass_rate"]),
             percent(m.get("stability")) if m.get("stability") is not None else "needs 2+ runs",
             millis(m.get("latency_ms")),

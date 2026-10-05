@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 
 from app.modules.datasets.schemas import ItemSource
 from app.modules.engine.schemas import RunStatus
+from app.modules.evaluation.schemas import ScoreStatus
 from app.modules.gateway.schemas import CallPurpose, CallStatus
 
 
@@ -107,6 +108,7 @@ class ScoreDetail(BaseModel):
     evaluator: str
     value: float
     passed: bool
+    status: ScoreStatus = ScoreStatus.SCORED
     required: bool
     weight: float
     reason: str

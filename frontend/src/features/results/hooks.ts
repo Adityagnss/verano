@@ -84,3 +84,18 @@ export function useRerun(projectId: string) {
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["projects", projectId] }),
   })
 }
+
+/** Score every answer of an experiment again with its evaluator set (a new evaluation run; the old one is kept). */
+export function useScoreAgain(projectId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (experimentId: string) =>
+      call(() =>
+        api.POST("/api/v1/projects/{project_id}/experiments/{experiment_id}/rescore", {
+          params: experimentPath(projectId, experimentId),
+          body: {},
+        }),
+      ),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["projects", projectId] }),
+  })
+}
