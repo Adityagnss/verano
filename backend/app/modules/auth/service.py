@@ -32,12 +32,23 @@ from app.core.errors import (
     ValidationFailed,
 )
 from app.core.ids import uuid7
-from app.core.security import AccessTokens, Passwords, Principal, digest_token, new_refresh_token, utcnow
+from app.core.security import (
+    API_TOKEN_PREFIX,
+    AccessTokens,
+    Passwords,
+    Principal,
+    digest_token,
+    new_refresh_token,
+    utcnow,
+)
 from app.core.throttle import FixedWindowLimiter
 from app.modules.auth.domain import RefreshOutcome, RefreshTokenState, judge_refresh, normalize_email, password_problem
 from app.modules.auth.models import User
 from app.modules.auth.repository import AuthRepository
 from app.modules.auth.schemas import (
+    ApiTokenCreate,
+    ApiTokenCreated,
+    ApiTokenOut,
     AuthConfigOut,
     LoginRequest,
     MeOut,
@@ -51,6 +62,11 @@ INVALID_LOGIN = "That email and password don't match an account. Check them and 
 INVALID_REFRESH = "Your session has ended. Please sign in again."
 SIGNUP_CLOSED = "Sign-up is turned off on this server. Ask its administrator for an account."
 THROTTLED = "Too many attempts. Wait {seconds} seconds and try again."
+TOKEN_FROM_SESSION = "Create API tokens while signed in, not with another API token."
+TOKEN_LIMIT = "You already have {limit} active API tokens. Revoke one you no longer use first."
+TOKEN_NOT_FOUND = "This API token doesn't exist."
+MAX_ACTIVE_API_TOKENS = 20
+TOKEN_PREFIX_CHARS = 8
 
 
 @dataclass(frozen=True)
@@ -156,6 +172,31 @@ class AuthService:
         if not personal:
             raise NotFound("No personal workspace was found for this account.")
         return personal[0]
+
+    async def create_api_token(self, principal: Principal, body: ApiTokenCreate) -> ApiTokenCreated:
+        """A personal token for the CLI or CI. Only a signed-in session can make one, so a leaked
+        token can't be used to mint more."""
+        if principal.via_api_token:
+            raise PermissionDenied(TOKEN_FROM_SESSION)
+        now = self._clock()
+        if await self._repo.active_api_token_count(principal.user_id, now) >= MAX_ACTIVE_API_TOKENS:
+            raise Conflict(TOKEN_LIMIT.format(limit=MAX_ACTIVE_API_TOKENS))
+        raw = API_TOKEN_PREFIX + new_refresh_token()
+        expires_at = now + timedelta(days=body.expires_in_days) if body.expires_in_days else None
+        token = await self._repo.add_api_token(
+            principal.user_id, body.name, raw[:TOKEN_PREFIX_CHARS], digest_token(raw), expires_at
+        )
+        return ApiTokenCreated(**ApiTokenOut.model_validate(token).model_dump(), token=raw)
+
+    async def list_api_tokens(self, principal: Principal) -> list[ApiTokenOut]:
+        return [ApiTokenOut.model_validate(t) for t in await self._repo.api_tokens(principal.user_id)]
+
+    async def revoke_api_token(self, principal: Principal, token_id: uuid.UUID) -> None:
+        token = await self._repo.api_token(principal.user_id, token_id)
+        if token is None:
+            raise NotFound(TOKEN_NOT_FOUND)
+        if token.revoked_at is None:
+            token.revoked_at = self._clock()
 
     async def _check_throttle(self, action: str, client_ip: str, email: str | None) -> None:
         settings = self._settings

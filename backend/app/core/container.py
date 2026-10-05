@@ -21,7 +21,7 @@ from app.core.config import Settings
 from app.core.database import Database
 from app.core.jobs import JobQueue
 from app.core.progress import ProgressHub
-from app.core.security import AccessTokens, Passwords, SecretBox
+from app.core.security import AccessTokens, ApiTokenVerifier, Passwords, SecretBox
 from app.core.storage import Storage, build_storage
 from app.core.valkey import create_valkey
 
@@ -38,6 +38,7 @@ class Container:
     storage: Storage
     progress: ProgressHub
     jobs: JobQueue
+    api_tokens: ApiTokenVerifier | None = None
 
     @classmethod
     def build(cls, settings: Settings, jobs: JobQueue) -> "Container":

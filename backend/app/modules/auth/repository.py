@@ -10,10 +10,10 @@ off, a transaction-scoped advisory lock serializes the "is this the first user?"
 import uuid
 from datetime import datetime
 
-from sqlalchemy import exists, func, select, update
+from sqlalchemy import exists, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.auth.models import Membership, Organization, RefreshToken, User
+from app.modules.auth.models import ApiToken, Membership, Organization, RefreshToken, User
 from app.modules.auth.schemas import MembershipRole
 
 SIGNUP_LOCK_KEY = 0x7665_7261_6E6F
@@ -76,3 +76,26 @@ class AuthRepository:
             .where(RefreshToken.family_id == family_id, RefreshToken.revoked_at.is_(None))
             .values(revoked_at=now)
         )
+
+    async def add_api_token(
+        self, user_id: uuid.UUID, name: str, prefix: str, token_hash: str, expires_at: datetime | None
+    ) -> ApiToken:
+        token = ApiToken(user_id=user_id, name=name, prefix=prefix, token_hash=token_hash, expires_at=expires_at)
+        self._session.add(token)
+        await self._session.flush()
+        return token
+
+    async def api_tokens(self, user_id: uuid.UUID) -> list[ApiToken]:
+        query = select(ApiToken).where(ApiToken.user_id == user_id).order_by(ApiToken.id.desc())
+        return list((await self._session.scalars(query)).all())
+
+    async def active_api_token_count(self, user_id: uuid.UUID, now: datetime) -> int:
+        query = select(func.count()).where(
+            ApiToken.user_id == user_id,
+            ApiToken.revoked_at.is_(None),
+            or_(ApiToken.expires_at.is_(None), ApiToken.expires_at > now),
+        )
+        return int(await self._session.scalar(query) or 0)
+
+    async def api_token(self, user_id: uuid.UUID, token_id: uuid.UUID) -> ApiToken | None:
+        return await self._session.scalar(select(ApiToken).where(ApiToken.id == token_id, ApiToken.user_id == user_id))

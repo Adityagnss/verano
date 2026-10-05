@@ -22,6 +22,7 @@ from app.core.container import Container
 from app.core.errors import install_error_handlers
 from app.core.jobs import JobQueue, load_all_jobs
 from app.core.logging import configure_logging
+from app.modules.auth.api_tokens import ApiTokenAuthenticator
 from app.modules.gateway.service import configure_llm_runtime
 from app.workers.queue import CeleryJobQueue
 
@@ -35,6 +36,7 @@ def create_app(settings: Settings | None = None, jobs: JobQueue | None = None) -
         configure_logging(settings)
         configure_llm_runtime(settings)
         app.state.container = Container.build(settings, jobs=jobs or CeleryJobQueue())
+        app.state.container.api_tokens = ApiTokenAuthenticator(app.state.container.database)
         yield
         await app.state.container.close()
 

@@ -52,3 +52,19 @@ class RefreshToken(IdMixin, CreatedAtMixin, Base):
     used_at: Mapped[datetime | None]
     revoked_at: Mapped[datetime | None]
     last_seen_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class ApiToken(IdMixin, CreatedAtMixin, Base):
+    """A personal API token for the CLI and CI. Only the SHA-256 digest is stored; the token
+    itself is shown once, when it is created. `prefix` is the first characters, to tell tokens apart."""
+
+    __tablename__ = "api_tokens"
+    __table_args__ = (Index(None, "user_id"),)
+
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    name: Mapped[str] = mapped_column(String(100))
+    prefix: Mapped[str] = mapped_column(String(16))
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    expires_at: Mapped[datetime | None]
+    last_used_at: Mapped[datetime | None]
+    revoked_at: Mapped[datetime | None]

@@ -15,7 +15,7 @@ import secrets
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Annotated
+from typing import Annotated, Protocol
 
 import jwt
 from argon2 import PasswordHasher
@@ -34,9 +34,20 @@ class SecretDecryptionFailed(AppError):
     code = "secret_decryption_failed"
 
 
+API_TOKEN_PREFIX = "vrn_"
+
+
 @dataclass(frozen=True)
 class Principal:
     user_id: uuid.UUID
+    via_api_token: bool = False
+
+
+class ApiTokenVerifier(Protocol):
+    """Turns a personal API token into its owner. Implemented by the auth module and set on
+    the container at startup, so this file never imports a module."""
+
+    async def verify(self, raw_token: str) -> Principal: ...
 
 
 class Passwords:
@@ -106,13 +117,19 @@ def utcnow() -> datetime:
     return datetime.now(UTC)
 
 
-def get_principal(
+async def get_principal(
     request: Request,
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
 ) -> Principal:
     if credentials is None:
         raise AuthenticationFailed("Please sign in to continue.")
-    tokens: AccessTokens = request.app.state.container.access_tokens
+    container = request.app.state.container
+    if credentials.credentials.startswith(API_TOKEN_PREFIX):
+        if container.api_tokens is None:
+            raise AuthenticationFailed("API tokens are not available.")
+        principal: Principal = await container.api_tokens.verify(credentials.credentials)
+        return principal
+    tokens: AccessTokens = container.access_tokens
     return tokens.verify(credentials.credentials)
 
 
