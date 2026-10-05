@@ -6,13 +6,16 @@ import sys
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import httpx
 import pytest
 
 from verano import client
 from verano.cli import main
+
+if TYPE_CHECKING:
+    from tests.platform import FakePlatform
 
 SESSION = "session-jwt"
 
@@ -123,3 +126,18 @@ def run(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> 
         return Result(code, captured.out, captured.err)
 
     return invoke
+
+
+@pytest.fixture
+def platform(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> "FakePlatform":
+    from tests.platform import FakePlatform
+
+    fake = FakePlatform()
+    fake.tokens["t"] = {"id": "t", "token": "vrn_ci"}
+    monkeypatch.setattr(client, "TRANSPORT", httpx.MockTransport(fake))
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
+    monkeypatch.setenv("VERANO_API_TOKEN", "vrn_ci")
+    monkeypatch.setenv("VERANO_URL", "http://verano.test")
+    monkeypatch.delenv("VERANO_DEBUG", raising=False)
+    monkeypatch.chdir(tmp_path)
+    return fake

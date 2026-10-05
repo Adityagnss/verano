@@ -15,6 +15,8 @@ from verano.config import API_PREFIX, Credentials
 from verano.errors import CliError
 
 TIMEOUT_S = 30.0
+PAGE_SIZE = 200
+MAX_PAGES = 50
 TRANSPORT: httpx.BaseTransport | None = None  # tests plug a fake server in here
 
 
@@ -37,6 +39,18 @@ class ApiClient:
 
     def get(self, path: str, **params: Any) -> Any:
         return self.request("GET", path, params={k: v for k, v in params.items() if v is not None})
+
+    def pages(self, path: str, **params: Any) -> list[Any]:
+        """Every item of a paged list."""
+        items: list[Any] = []
+        cursor: str | None = None
+        for _ in range(MAX_PAGES):
+            page = self.get(path, limit=PAGE_SIZE, cursor=cursor, **params)
+            items += page["items"]
+            cursor = page.get("next_cursor")
+            if not cursor:
+                return items
+        raise CliError(f"{path} has more than {MAX_PAGES * PAGE_SIZE} entries; narrow it down.")
 
     def post(self, path: str, body: Any = None) -> Any:
         return self.request("POST", path, json=body)

@@ -14,7 +14,7 @@ from typing import Annotated
 import click
 import typer
 
-from verano import __version__, auth, ui, validate
+from verano import __version__, auth, push, ui, validate
 from verano.config import DEFAULT_URL, ENV_URL
 from verano.errors import CliError
 
@@ -74,6 +74,16 @@ FileOption = Annotated[
 def validate_command(file: FileOption = None) -> None:
     """Check verano.yaml and show what `push` would set up. Nothing is sent anywhere."""
     validate.validate(file)
+
+
+@app.command("push")
+def push_command(
+    name: Annotated[str | None, typer.Argument(help="Push only this prompt (default: all).")] = None,
+    file: FileOption = None,
+    dry_run: Annotated[bool, typer.Option("--dry-run", help="Show what would change; change nothing.")] = False,
+) -> None:
+    """Create or update the projects, keys, models and prompts described in verano.yaml."""
+    push.command(file, name, dry_run)
 
 
 @app.command()

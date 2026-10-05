@@ -15,7 +15,7 @@ from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_valida
 
 SUPPORTED_VERSION = 1
 NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$")
-ENV_REFERENCE = re.compile(r"^env:([A-Za-z_][A-Za-z0-9_]*)$")
+ENV_REFERENCE = re.compile(r"^(?:env:([A-Za-z_][A-Za-z0-9_]*)|none)$")
 VARIABLE = re.compile(r"\{\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*\}\}")
 MAX_STOP_SEQUENCES = 4
 MAX_RUNS = 5
@@ -202,7 +202,7 @@ class VeranoFile(Strict):
             if not ENV_REFERENCE.match(reference):
                 raise ValueError(
                     f"{provider}: never write a key in this file. Name the environment variable instead, "
-                    f"for example `{provider}: env:{provider.upper()}_API_KEY`"
+                    f"for example `{provider}: env:{provider.upper()}_API_KEY` (or `none` for a provider without a key)"
                 )
         return value
 
