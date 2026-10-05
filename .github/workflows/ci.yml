@@ -44,7 +44,9 @@ jobs:
         with:
           version: "0.12.19"
           enable-cache: true
-          cache-dependency-glob: backend/uv.lock
+          cache-dependency-glob: |
+            backend/uv.lock
+            cli/uv.lock
       - uses: actions/setup-node@v4
         with:
           node-version: "22.23.3"

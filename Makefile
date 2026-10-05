@@ -23,7 +23,7 @@ OPENAPI := frontend/src/lib/api/openapi.json
 .PHONY: help env install builder base-images ci-offline up up-local down logs migrate migration test test-all lint fmt models bench api-client e2e ci hooks clean clean-all
 
 help: ## Show this list
-	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
+	@grep -E '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
 
 env: ## Create .env from .env.example with generated secrets (never overwrites)
 	@python3 scripts/init_env.py
