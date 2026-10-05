@@ -14,7 +14,7 @@ from typing import Annotated
 import click
 import typer
 
-from verano import __version__, auth, push, ui, validate
+from verano import __version__, auth, push, runner, ui, validate
 from verano.config import DEFAULT_URL, ENV_URL
 from verano.errors import CliError
 
@@ -92,6 +92,36 @@ def push_command(
     push.command(file, name, dry_run, not no_data, replace_draft)
 
 
+@app.command("run")
+def run_command(
+    name: Annotated[str | None, typer.Argument(help="Run only this prompt (default: all).")] = None,
+    file: FileOption = None,
+    ci: Annotated[
+        bool, typer.Option("--ci", help="For pipelines: never ask, and exit 2 if the quality gate fails.")
+    ] = False,
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Start without asking after showing the cost.")] = False,
+    max_cost: Annotated[
+        float | None,
+        typer.Option("--max-cost", min=0, help="Refuse to start if the estimate is above this many dollars."),
+    ] = None,
+    timeout: Annotated[int, typer.Option("--timeout", min=10, help="Seconds to wait for each run.")] = int(
+        runner.TIMEOUT_S
+    ),
+    json_output: Annotated[bool, typer.Option("--json", help="Print the results as JSON on standard output.")] = False,
+) -> None:
+    """Run each prompt on its test cases, print the results and a link."""
+    runner.command(file, name, ci, yes, max_cost, timeout, json_output)
+
+
+@app.command("status")
+def status_command(
+    name: Annotated[str | None, typer.Argument(help="Show only this prompt (default: all).")] = None,
+    file: FileOption = None,
+) -> None:
+    """Show the latest results of each prompt."""
+    runner.status_command(file, name)
+
+
 @app.command()
 def logout() -> None:
     """Revoke the saved token and delete it from this machine."""
@@ -134,7 +164,10 @@ def main() -> None:
         app(standalone_mode=False)
     except CliError as error:
         ui.fail(error)
-        sys.exit(1)
+        sys.exit(error.exit_code)
+    except KeyboardInterrupt:
+        ui.info("Cancelled.")
+        sys.exit(130)
     except click.exceptions.Exit as stop:
         sys.exit(stop.exit_code)
     except click.exceptions.Abort:

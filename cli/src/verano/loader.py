@@ -164,7 +164,7 @@ KNOWN_KEYS = {
     "user_file", "params", "task", "data", "models", "judge", "runs", "budget", "type", "goal", "output",
     "allowed_outputs", "output_schema", "constraints", "risks", "golden", "columns", "inputs", "expected_output",
     "rubric", "category", "tags", "input_file", "ignored", "temperature", "top_p", "top_k", "max_tokens", "seed",
-    "presence_penalty", "frequency_penalty", "stop",
+    "presence_penalty", "frequency_penalty", "stop", "gate", "min_quality", "min_pass_rate", "max_drop",
 }  # fmt: skip
 
 

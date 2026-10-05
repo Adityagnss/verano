@@ -37,6 +37,14 @@ class FakePlatform(FakeVerano):
     specs: dict[str, dict[str, Any]] = field(default_factory=dict)
     evaluator_kinds: list[str] = field(default_factory=lambda: ["exact_match"])
     stuck: bool = False
+    experiments: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
+    started: list[dict[str, Any]] = field(default_factory=list)
+    quality: dict[str, float] = field(default_factory=dict)
+    price: str | None = "0.0420"
+    stop_reason: str | None = None
+    stall: bool = False
+    score_polls: int = 1
+    scoring_failed: bool = False
 
     def next_id(self, prefix: str) -> str:
         self.counter += 1
@@ -88,6 +96,9 @@ class FakePlatform(FakeVerano):
             return httpx.Response(204)
         if rest == "/prompts":
             return self.prompt_route(pid, method, body, request)
+        experiment = self.experiment_route(pid, rest, method, body, request)
+        if experiment is not None:
+            return experiment
         data = self.data_route(pid, rest, method, body, request)
         if data is not None:
             return data
@@ -121,6 +132,9 @@ class FakePlatform(FakeVerano):
                     "provider": body["provider"],
                     "model_name": name,
                     "display_name": name,
+                    "parameters": {"temperature": {}, "seed": {}}
+                    if body["provider"] == "openai"
+                    else {"temperature": {}},
                     "is_selected": False,
                 }
             )
@@ -157,7 +171,8 @@ class FakePlatform(FakeVerano):
         latest = self.latest(pid)
         if latest is None or latest["status"] == "approved":
             latest = {
-                "id": self.next_id("dv"), "status": "draft", "task_spec_id": None, "item_count": 0,
+                "id": self.next_id("dv"), "version": len(self.versions.get(pid, [])) + 1, "status": "draft",
+                "task_spec_id": None, "item_count": 0,
                 "by_split": {}, "generation": None, "warnings": [],
             }  # fmt: skip
             self.versions.setdefault(pid, []).append(latest)
@@ -297,3 +312,115 @@ class FakePlatform(FakeVerano):
         record = {"id": self.next_id("ts"), "status": "confirmed", "warnings": [], **content, "_key": key}
         self.specs[record["id"]] = record
         return httpx.Response(200, json=record)
+
+    # -- experiments -----------------------------------------------------------------------
+
+    def model_of(self, pid: str, profile_id: str) -> dict[str, Any]:
+        return next(p for p in self.profiles[pid] if p["id"] == profile_id)
+
+    def experiment_route(
+        self, pid: str, rest: str, method: str, body: dict[str, Any], request: httpx.Request
+    ) -> httpx.Response | None:
+        if not rest.startswith("/experiments"):
+            return None
+        parts = rest.strip("/").split("/")
+        if rest == "/experiments/estimate":
+            latest = self.latest(pid)
+            cases = latest["item_count"] if latest else 0
+            calls = cases * sum(m["runs"] for m in body["models"])
+            cost = self.price
+            return httpx.Response(
+                200,
+                json={
+                    "cases": cases,
+                    "calls": calls,
+                    "total_cost": cost,
+                    "generation_cost": cost,
+                    "judge_cost": "0" if cost else None,
+                    "price_known": cost is not None,
+                },
+            )
+        if rest == "/experiments" and method == "POST":
+            return self.start_experiment(pid, body)
+        if rest == "/experiments" and method == "GET":
+            return self.page(list(reversed(self.experiments.get(pid, []))), request)
+        record = next((e for e in self.experiments.get(pid, []) if e["id"] == parts[1]), None)
+        if record is None:
+            return error(404, "This experiment doesn't exist in this project.")
+        if len(parts) == 2:
+            self.advance_experiment(record)
+            return httpx.Response(200, json=record)
+        if parts[2] == "cancel":
+            record["status"] = "cancelled"
+            record["stop_reason"] = "Cancelled by the user."
+            return httpx.Response(200, json=record)
+        if parts[2] == "results":
+            return httpx.Response(200, json=self.results(record))
+        return None
+
+    def start_experiment(self, pid: str, body: dict[str, Any]) -> httpx.Response:
+        self.started.append(body)
+        models = [self.model_of(pid, m["model_profile_id"]) for m in body["models"]]
+        latest = self.latest(pid)
+        assert latest is not None
+        cases = latest["item_count"]
+        total = cases * sum(m["runs"] for m in body["models"])
+        record = {
+            "id": self.next_id("e"), "name": body["name"], "status": "running", "origin": "manual",
+            "dataset_version_id": body["dataset_version_id"], "total_calls": total, "stop_reason": None,
+            "created_at": f"2026-10-05T12:{len(self.experiments.get(pid, [])):02d}:00Z", "completed_at": None,
+            "progress": [
+                {
+                    "model": m["model_name"], "total": cases * r["runs"],
+                    "succeeded": 0, "failed": 0, "skipped": 0, "cost": "0",
+                }
+                for m, r in zip(models, body["models"], strict=True)
+            ],
+            "configuration": {
+                "hash": hashlib.sha256(json.dumps(body["models"], sort_keys=True).encode()).hexdigest(),
+                "models": [
+                    {"provider": m["provider"], "model": m["model_name"], "runs": r["runs"], "params": r["params"]}
+                    for m, r in zip(models, body["models"], strict=True)
+                ],
+            },
+            "polls": 0, "scored": 0, "quality": dict(self.quality),
+        }  # fmt: skip
+        self.experiments.setdefault(pid, []).append(record)
+        return httpx.Response(201, json=record)
+
+    def advance_experiment(self, record: dict[str, Any]) -> None:
+        if record["status"] != "running" or self.stall:
+            return
+        record["polls"] += 1
+        for entry in record["progress"]:
+            entry["succeeded"] = min(entry["total"], entry["total"] * record["polls"] // 2)
+            entry["cost"] = "0.01"
+        if record["polls"] >= 2:
+            record["status"] = "cancelled" if self.stop_reason else "completed"
+            record["stop_reason"] = self.stop_reason
+            record["completed_at"] = "2026-10-05T12:30:00Z"
+
+    def results(self, record: dict[str, Any]) -> dict[str, Any]:
+        if record["status"] not in {"completed", "cancelled", "failed"}:
+            return {"evaluation_run": None, "evaluation_runs": [], "models": []}
+        record["scored"] += 1
+        if self.scoring_failed:
+            return {"evaluation_run": None, "evaluation_runs": [{"status": "failed"}], "models": []}
+        if record["scored"] <= self.score_polls - 1:
+            return {"evaluation_run": None, "evaluation_runs": [{"status": "running"}], "models": []}
+        models = []
+        for entry in record["configuration"]["models"]:
+            name = entry["model"]
+            quality = record["quality"].get(name, 0.9)
+            models.append(
+                {
+                    "model": name, "quality": quality, "pass_rate": quality, "consistency": 1.0,
+                    "stability": 1.0 if entry["runs"] > 1 else None, "latency_ms": 420.0,
+                    "cost_per_call": "0.0014", "failed_calls": 0,
+                }
+            )  # fmt: skip
+        return {
+            "evaluation_run": {"status": "completed"},
+            "evaluation_runs": [{"status": "completed"}],
+            "models": models,
+        }

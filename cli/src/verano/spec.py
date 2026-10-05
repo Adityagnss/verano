@@ -158,6 +158,20 @@ class Data(Strict):
         return self
 
 
+class Gate(Strict):
+    """What `verano run --ci` demands. Scores are fractions from 0 to 1 (0.8 = 80%)."""
+
+    min_quality: Annotated[Real, Field(ge=0, le=1)] | None = None
+    min_pass_rate: Annotated[Real, Field(ge=0, le=1)] | None = None
+    max_drop: Annotated[Real, Field(ge=0, le=1)] | None = None
+
+    @model_validator(mode="after")
+    def _something_to_check(self) -> "Gate":
+        if self.min_quality is None and self.min_pass_rate is None and self.max_drop is None:
+            raise ValueError("set at least one of min_quality, min_pass_rate or max_drop")
+        return self
+
+
 class PromptEntry(Strict):
     name: str
     source: Source | None = None
@@ -172,6 +186,7 @@ class PromptEntry(Strict):
     judge: str | None = None
     runs: int = Field(default=1, ge=1, le=MAX_RUNS)
     budget: Decimal | None = Field(default=None, gt=0)
+    gate: Gate | None = None
 
     @field_validator("name")
     @classmethod

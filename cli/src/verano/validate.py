@@ -21,6 +21,18 @@ def describe(prompt: ResolvedPrompt, root: Path) -> list[str]:
         + (f" (judge: {entry.judge})" if entry.judge else "")
         + f" · {entry.runs} run{'s' if entry.runs != 1 else ''}",
     ]
+    gate = entry.gate
+    if gate is not None:
+        checks = [
+            f"{label} {value * 100:.0f}%"
+            for label, value in (
+                ("min quality", gate.min_quality),
+                ("min pass rate", gate.min_pass_rate),
+                ("max drop", gate.max_drop),
+            )
+            if value is not None
+        ]
+        lines.append(f"    gate:    {', '.join(checks)} (enforced by `verano run --ci`)")
     data = []
     if prompt.cases is not None:
         skipped = len(prompt.cases.skipped)

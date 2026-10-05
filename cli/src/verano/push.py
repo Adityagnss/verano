@@ -173,13 +173,15 @@ class Pusher:
                 self._say(outcome, f"{provider}: key already set")
                 continue
             if self.dry:
-                self._say(outcome, "", would=f"add the {provider} key from {reference}")
+                source = "(no key needed)" if reference == "none" else f"key from {reference}"
+                self._say(outcome, "", would=f"add {provider}: {source}")
                 continue
             match = ENV_REFERENCE.match(reference)
             secret = self.env.get(match.group(1), "").strip() if match and match.group(1) else None
             created = self.api.post(f"/projects/{project_id}/credentials", {"provider": provider, "api_key": secret})
             tail = f" (ends …{created['key_last4']})" if created.get("key_last4") else ""
-            self._say(outcome, f"{provider}: key added{tail}, {created['model_count']} models found")
+            what = "key added" if secret else "added (no key needed)"
+            self._say(outcome, f"{provider}: {what}{tail}, {created['model_count']} models found")
 
     def _models(self, project_id: str | None, prompt: ResolvedPrompt, outcome: Outcome) -> dict[str, Any] | None:
         """Selects the listed models. Returns the judge's profile, if the entry names a judge."""

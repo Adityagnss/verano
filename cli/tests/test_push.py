@@ -112,7 +112,7 @@ def test_a_dry_run_reports_what_would_happen_and_writes_nothing(
     assert fresh.code == 0
     for line in (
         "would: create the project",
-        "would: add the openai key from env:OPENAI_API_KEY",
+        "would: add openai: key from env:OPENAI_API_KEY",
         "would: create the prompt (version 1)",
     ):
         assert line in fresh.err
@@ -162,7 +162,7 @@ def test_a_key_is_optional_for_providers_that_need_none(
     path.write_text(path.read_text().replace("  openai: env:OPENAI_API_KEY", "  ollama: none"))
     result = run("push")
     assert result.code == 0
-    assert "ollama: key added, 1 models found" in result.err
+    assert "ollama: added (no key needed), 1 models found" in result.err
     assert platform.secrets == []
 
 
