@@ -123,15 +123,38 @@ class Columns(Strict):
     ignored: list[str] = []
 
 
+class Cases(Strict):
+    """One test case per row of a table: the easy way to bring your own examples.
+
+    The CLI turns each row into an input file plus a golden row, which is how Verano stores real
+    test cases. The `input` column is what the model is sent; `expected` (or `rubric`) is the answer."""
+
+    file: str
+    input: str
+    expected: str | None = None
+    rubric: str | None = None
+    category: str | None = None
+    tags: str | None = None
+
+    @model_validator(mode="after")
+    def _an_answer(self) -> "Cases":
+        if self.expected is None and self.rubric is None:
+            raise ValueError("name the column with the correct answer (`expected`) or with grading criteria (`rubric`)")
+        return self
+
+
 class Data(Strict):
+    cases: Cases | None = None
     golden: str | None = None
     columns: Columns | None = None
     inputs: list[str] = []
 
     @model_validator(mode="after")
-    def _columns_need_golden(self) -> "Data":
+    def _one_way_to_give_data(self) -> "Data":
         if self.columns is not None and self.golden is None:
             raise ValueError("`columns` describes the golden file, so it needs `golden`")
+        if self.cases is not None and (self.golden or self.inputs or self.columns):
+            raise ValueError("use `cases` (one test case per row) or `inputs` with `golden`, not both")
         return self
 
 

@@ -3066,6 +3066,10 @@
             ],
             "title": "Section Count"
           },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
           "size_bytes": {
             "title": "Size Bytes",
             "type": "integer"
@@ -3092,6 +3096,7 @@
           "format",
           "filename",
           "size_bytes",
+          "sha256",
           "row_count",
           "profile",
           "column_mapping",

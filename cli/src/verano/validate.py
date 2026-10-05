@@ -22,6 +22,12 @@ def describe(prompt: ResolvedPrompt, root: Path) -> list[str]:
         + f" · {entry.runs} run{'s' if entry.runs != 1 else ''}",
     ]
     data = []
+    if prompt.cases is not None:
+        skipped = len(prompt.cases.skipped)
+        source = prompt.entry.data.cases.file if prompt.entry.data.cases else ""
+        data.append(
+            f"{len(prompt.cases.cases)} test cases from {source}" + (f" ({skipped} rows skipped)" if skipped else "")
+        )
     if prompt.golden:
         data.append(f"golden {prompt.golden.relative_to(root.resolve())}")
     if prompt.inputs:

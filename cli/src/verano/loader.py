@@ -16,6 +16,7 @@ from typing import Any
 import yaml
 from pydantic import ValidationError
 
+from verano import cases as case_tables
 from verano.errors import CliError
 from verano.spec import PromptEntry, VeranoFile, variables_of
 
@@ -56,6 +57,7 @@ class ResolvedPrompt:
     golden: Path | None
     inputs: list[Path]
     line: int | None = None
+    cases: case_tables.Built | None = None
 
     @property
     def variables(self) -> list[str]:
@@ -266,6 +268,7 @@ def _resolve(spec: VeranoFile, root: Path, node: yaml.Node | None, problems: lis
                 texts[part] = None
         golden = _resolve_golden(entry, root, label, where, problems)
         inputs = _resolve_inputs(entry, root, label, where, problems)
+        built = _resolve_cases(entry, root, label, where, problems)
         resolved.append(
             ResolvedPrompt(
                 entry=entry,
@@ -275,9 +278,37 @@ def _resolve(spec: VeranoFile, root: Path, node: yaml.Node | None, problems: lis
                 golden=golden,
                 inputs=inputs,
                 line=line,
+                cases=built,
             )
         )
     return resolved
+
+
+def _resolve_cases(
+    entry: PromptEntry, root: Path, label: str, where: Any, problems: list[Problem]
+) -> case_tables.Built | None:
+    spec = entry.data.cases
+    if spec is None:
+        return None
+    line, key = where("data", "data", "cases", "file"), f"{label}.data.cases.file"
+    path = root / spec.file
+    if not _inside(root, path):
+        problems.append(Problem(line, key, f"'{spec.file}' is outside this folder"))
+    elif not path.is_file():
+        problems.append(Problem(line, key, f"'{spec.file}' does not exist"))
+    elif path.suffix.lower() not in case_tables.SUFFIXES:
+        hint = " Save it as CSV first." if path.suffix.lower() == ".xlsx" else ""
+        problems.append(Problem(line, key, f"'{path.name}' can't be read as rows (use csv, tsv, json or jsonl).{hint}"))
+    else:
+        try:
+            built = case_tables.build(case_tables.read_rows(path), spec)
+        except (ValueError, UnicodeDecodeError) as exc:
+            problems.append(Problem(line, key, f"'{path.name}': {exc}"))
+            return None
+        for message in built.problems:
+            problems.append(Problem(line, key, f"'{path.name}': {message}"))
+        return built
+    return None
 
 
 def _resolve_golden(entry: PromptEntry, root: Path, label: str, where: Any, problems: list[Problem]) -> Path | None:
@@ -320,7 +351,10 @@ def _resolve_inputs(entry: PromptEntry, root: Path, label: str, where: Any, prob
 def _warnings(prompts: list[ResolvedPrompt]) -> list[str]:
     notes = []
     for p in prompts:
-        if p.golden is None and not p.inputs:
+        if p.cases is not None and p.cases.skipped:
+            shown = "; ".join(p.cases.skipped[:3]) + ("; …" if len(p.cases.skipped) > 3 else "")
+            notes.append(f"{p.entry.name}: {len(p.cases.skipped)} rows skipped ({shown}).")
+        if p.golden is None and not p.inputs and p.cases is None:
             notes.append(
                 f"{p.entry.name}: no data. `verano push` sets the project up, but there is nothing to run yet."
             )

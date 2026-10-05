@@ -93,21 +93,23 @@ class ApiClient:
 def _api_error(response: httpx.Response, data: Any) -> CliError:
     error = data.get("error") if isinstance(data, dict) else None
     message = error.get("message") if isinstance(error, dict) else None
-    if response.status_code == 401:
-        return CliError(message or "You are not signed in.", "Run `verano login`.")
-    if response.status_code == 429:
+    code = response.status_code
+    if code == 401:
+        return CliError(message or "You are not signed in.", "Run `verano login`.", code)
+    if code == 429:
         wait = response.headers.get("retry-after")
-        return CliError(message or "Too many requests.", f"Try again in {wait} seconds." if wait else None)
-    if response.status_code >= 500:
-        return CliError(
-            f"Verano had a problem (HTTP {response.status_code}).", "Check its logs: `docker compose logs backend`."
-        )
+        return CliError(message or "Too many requests.", f"Try again in {wait} seconds." if wait else None, code)
+    if code >= 500:
+        return CliError(f"Verano had a problem (HTTP {code}).", "Check its logs: `docker compose logs backend`.", code)
     details = error.get("details") if isinstance(error, dict) else None
     fields = details.get("fields") if isinstance(details, dict) else None
     if isinstance(fields, list) and fields:
         listed = "; ".join(f"{f.get('field', '?')}: {f.get('message', '')}" for f in fields if isinstance(f, dict))
-        return CliError(f"{message or 'The request was refused.'} ({listed})")
-    return CliError(message or f"Verano refused the request (HTTP {response.status_code}).")
+        return CliError(f"{message or 'The request was refused.'} ({listed})", status=code)
+    problems = details.get("problems") if isinstance(details, dict) else None
+    if isinstance(problems, list) and problems:
+        return CliError(f"{message or 'The request was refused.'}", "\n".join(f"- {p}" for p in problems), code)
+    return CliError(message or f"Verano refused the request (HTTP {code}).", status=code)
 
 
 def token_name() -> str:

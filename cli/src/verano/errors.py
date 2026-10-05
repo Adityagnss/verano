@@ -2,7 +2,8 @@
 
 
 class CliError(Exception):
-    def __init__(self, message: str, hint: str | None = None) -> None:
+    def __init__(self, message: str, hint: str | None = None, status: int | None = None) -> None:
         super().__init__(message)
         self.message = message
         self.hint = hint
+        self.status = status  # the HTTP status, when the error came from the server

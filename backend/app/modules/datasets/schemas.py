@@ -157,6 +157,7 @@ class InputFileOut(BaseModel):
     format: FileFormat
     filename: str
     size_bytes: int
+    sha256: str
     row_count: int | None
     profile: FileProfile | None
     column_mapping: ColumnMapping | None

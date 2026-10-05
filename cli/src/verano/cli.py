@@ -81,9 +81,15 @@ def push_command(
     name: Annotated[str | None, typer.Argument(help="Push only this prompt (default: all).")] = None,
     file: FileOption = None,
     dry_run: Annotated[bool, typer.Option("--dry-run", help="Show what would change; change nothing.")] = False,
+    no_data: Annotated[
+        bool, typer.Option("--no-data", help="Leave the test cases alone (prompts, keys, models only).")
+    ] = False,
+    replace_draft: Annotated[
+        bool, typer.Option("--replace-draft", help="Replace unapproved test cases made elsewhere with the file's.")
+    ] = False,
 ) -> None:
-    """Create or update the projects, keys, models and prompts described in verano.yaml."""
-    push.command(file, name, dry_run)
+    """Create or update the projects, keys, models, prompts and test cases described in verano.yaml."""
+    push.command(file, name, dry_run, not no_data, replace_draft)
 
 
 @app.command()

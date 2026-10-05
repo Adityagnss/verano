@@ -7,6 +7,7 @@ and memory use on a 100,000-row golden set.
 """
 
 import csv
+import hashlib
 import json
 import tracemalloc
 from collections.abc import Awaitable, Callable
@@ -230,3 +231,15 @@ async def test_a_100k_row_file_is_streamed_and_keeps_no_row_content_in_memory(
     assert large_peaks["profile"] < small_peaks["profile"] * 1.5, (small_peaks, large_peaks)
     per_extra_row = (large_peaks["import"] - small_peaks["import"]) / (LARGE - SMALL)
     assert per_extra_row < loaded_row / 2, f"{per_extra_row:.0f} B per extra row vs {loaded_row:.0f} B per loaded row"
+
+
+async def test_an_uploaded_file_reports_the_hash_of_its_content(
+    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue
+) -> None:
+    content = b"first ticket text"
+    response = await upload(client, session, "case.txt", content, purpose="input")
+    assert response.status_code == 201, response.text
+    await jobs.drain()
+    done = await get_file(client, session, response.json()["id"])
+    assert done["sha256"] == hashlib.sha256(content).hexdigest()
+    assert done["size_bytes"] == len(content)

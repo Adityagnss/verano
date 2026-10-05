@@ -39,7 +39,8 @@ class FakeVerano:
         path = request.url.path.removeprefix("/api/v1")
         key = (request.method, path)
         self.calls.append(key)
-        self.bodies.append(json.loads(request.content) if request.content else None)
+        is_json = request.headers.get("content-type", "").startswith("application/json")
+        self.bodies.append(json.loads(request.content) if request.content and is_json else None)
         if self.html:
             return httpx.Response(200, text="<html>Welcome</html>")
         if key in self.fail_with:
@@ -48,7 +49,8 @@ class FakeVerano:
 
     def route(self, request: httpx.Request, path: str) -> httpx.Response:
         bearer = request.headers.get("authorization", "").removeprefix("Bearer ")
-        body = json.loads(request.content) if request.content else {}
+        is_json = request.headers.get("content-type", "").startswith("application/json")
+        body = json.loads(request.content) if request.content and is_json else {}
         if (request.method, path) == ("POST", "/auth/login"):
             if body.get("password") != self.password:
                 return error(401, "That email and password don't match an account. Check them and try again.")

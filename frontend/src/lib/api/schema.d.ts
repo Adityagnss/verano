@@ -2335,6 +2335,8 @@ export interface components {
             row_count: number | null;
             /** Section Count */
             section_count: number | null;
+            /** Sha256 */
+            sha256: string;
             /** Size Bytes */
             size_bytes: number;
             status: components["schemas"]["InputFileStatus"];

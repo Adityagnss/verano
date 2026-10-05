@@ -17,6 +17,7 @@ from typing import Any
 
 from verano import auth, ui
 from verano.client import ApiClient
+from verano.data import DataSync
 from verano.errors import CliError
 from verano.loader import Loaded, ResolvedPrompt, find_file, load, normalize_text
 from verano.spec import ENV_REFERENCE
@@ -60,10 +61,20 @@ def resolve_model(wanted: str, profiles: list[dict[str, Any]]) -> dict[str, Any]
 
 
 class Pusher:
-    def __init__(self, api: ApiClient, loaded: Loaded, dry_run: bool, env: Mapping[str, str] | None = None) -> None:
+    def __init__(
+        self,
+        api: ApiClient,
+        loaded: Loaded,
+        dry_run: bool,
+        env: Mapping[str, str] | None = None,
+        with_data: bool = True,
+        replace_draft: bool = False,
+    ) -> None:
         self.api = api
         self.loaded = loaded
         self.dry = dry_run
+        self.with_data = with_data
+        self.replace_draft = replace_draft
         self.env = os.environ if env is None else env
         self._providers: set[str] | None = None
         self._projects: list[dict[str, Any]] | None = None
@@ -104,8 +115,18 @@ class Pusher:
     def _one(self, prompt: ResolvedPrompt, outcome: Outcome) -> None:
         project_id = self._project(prompt, outcome)
         self._keys(project_id, outcome)
-        self._models(project_id, prompt, outcome)
-        self._prompt(project_id, prompt, outcome)
+        judge = self._models(project_id, prompt, outcome)
+        version = self._prompt(project_id, prompt, outcome)
+        if self.with_data:
+            sync = DataSync(
+                self.api,
+                project_id,
+                prompt,
+                lambda text, would: self._say(outcome, text, would=would),
+                self.dry,
+                self.replace_draft,
+            )
+            sync.run(version, judge)
 
     def _all_projects(self) -> list[dict[str, Any]]:
         if self._projects is None:
@@ -160,31 +181,32 @@ class Pusher:
             tail = f" (ends …{created['key_last4']})" if created.get("key_last4") else ""
             self._say(outcome, f"{provider}: key added{tail}, {created['model_count']} models found")
 
-    def _models(self, project_id: str | None, prompt: ResolvedPrompt, outcome: Outcome) -> None:
+    def _models(self, project_id: str | None, prompt: ResolvedPrompt, outcome: Outcome) -> dict[str, Any] | None:
+        """Selects the listed models. Returns the judge's profile, if the entry names a judge."""
         entry = prompt.entry
         if project_id is None:
             self._say(outcome, "", would=f"select models: {', '.join(entry.models)}")
-            return
+            return None
         profiles = self.api.pages(f"/projects/{project_id}/models")
         chosen = [resolve_model(name, profiles) for name in entry.models]
-        if entry.judge:
-            resolve_model(entry.judge, profiles)
+        judge = resolve_model(entry.judge, profiles) if entry.judge else None
         wanted = {p["id"] for p in chosen}
         selected = {p["id"] for p in profiles if p["is_selected"]}
         names = ", ".join(p["display_name"] for p in chosen)
         if selected == wanted:
             self._say(outcome, f"models already selected: {names}")
-            return
-        if self.dry:
+        elif self.dry:
             self._say(outcome, "", would=f"select models: {names}")
-            return
-        self.api.put(
-            f"/projects/{project_id}/models/selection",
-            {"selected": sorted(wanted - selected), "unselected": sorted(selected - wanted)},
-        )
-        self._say(outcome, f"models selected: {names}")
+        else:
+            self.api.put(
+                f"/projects/{project_id}/models/selection",
+                {"selected": sorted(wanted - selected), "unselected": sorted(selected - wanted)},
+            )
+            self._say(outcome, f"models selected: {names}")
+        return judge
 
-    def _prompt(self, project_id: str | None, prompt: ResolvedPrompt, outcome: Outcome) -> None:
+    def _prompt(self, project_id: str | None, prompt: ResolvedPrompt, outcome: Outcome) -> dict[str, Any] | None:
+        """Saves the prompt. Returns its latest version (None when there is nothing to read yet)."""
         entry = prompt.entry
         origin = (
             f" from {entry.source.file}" + (f":{entry.source.line}" if entry.source.line else "")
@@ -196,7 +218,7 @@ class Pusher:
         params = entry.params.given()
         if project_id is None:
             self._say(outcome, "", would="create the prompt (version 1)")
-            return
+            return None
         existing = self.api.pages(f"/projects/{project_id}/prompts")
         mine = next((p for p in existing if p["name"] == entry.name), None)
         others = [p["name"] for p in existing if p["name"] != entry.name]
@@ -205,13 +227,14 @@ class Pusher:
         if mine is None:
             if self.dry:
                 self._say(outcome, "", would="create the prompt (version 1)")
-                return
+                return None
             created = self.api.post(
                 f"/projects/{project_id}/prompts",
                 {"name": entry.name, **templates, "default_params": params, "change_reason": reason},
             )
             self._say(outcome, f"prompt created (version {created['latest_version']['version']})")
-            return
+            version: dict[str, Any] = created["latest_version"]
+            return version
         latest = mine["latest_version"]
         same = (
             normalize_text(latest["system_template"] or "") == (prompt.system or "")
@@ -220,15 +243,18 @@ class Pusher:
         )
         if same:
             self._say(outcome, f"prompt unchanged (version {latest['version']})")
-            return
+            unchanged: dict[str, Any] = latest
+            return unchanged
         if self.dry:
             self._say(outcome, "", would=f"save a new prompt version{origin} (now version {latest['version']})")
-            return
+            return None
         saved = self.api.post(
             f"/projects/{project_id}/prompts/{mine['id']}/versions",
             {**templates, "default_params": params, "change_reason": reason, "parent_version_id": latest["id"]},
         )
         self._say(outcome, f"prompt changed{origin}: saved version {saved['version']}")
+        result: dict[str, Any] = saved
+        return result
 
 
 def summarize(outcomes: list[Outcome], dry_run: bool) -> None:
@@ -245,6 +271,7 @@ def summarize(outcomes: list[Outcome], dry_run: bool) -> None:
     ui.ok(verb)
 
 
-def command(file: Path | None, only: str | None, dry_run: bool) -> None:
+def command(file: Path | None, only: str | None, dry_run: bool, with_data: bool, replace_draft: bool) -> None:
     loaded = load(file or find_file())
-    summarize(Pusher(auth.client(), loaded, dry_run).run(only), dry_run)
+    pusher = Pusher(auth.client(), loaded, dry_run, with_data=with_data, replace_draft=replace_draft)
+    summarize(pusher.run(only), dry_run)
