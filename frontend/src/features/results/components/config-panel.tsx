@@ -15,6 +15,7 @@ import { Section } from "@/components/common/section"
 import type { ExperimentOut } from "@/lib/api/types"
 import { RESULTS_COPY } from "../copy"
 import { useReplication, useRerun } from "../hooks"
+import { comparisonText } from "./comparison-detail"
 import { CONFIG_LAYERS, formatParams, sameConfiguration, shortHash } from "@/lib/config"
 
 function Layer({ title, text, children }: { title: string; text: string; children: React.ReactNode }) {
@@ -116,6 +117,18 @@ export function ConfigPanel({
             .map((m) => (
               <p key={m.model_profile_id} className="text-warning-strong text-xs">
                 {RESULTS_COPY.versionChangedBetween(m.model, m.earlier_versions, m.versions)}
+              </p>
+            ))}
+          {replication.data.models
+            .filter((m) => m.quality)
+            .map((m) => (
+              <p
+                key={`q-${m.model_profile_id}`}
+                className="text-text-secondary text-xs"
+                title={comparisonText(m.quality!)}
+              >
+                {m.model}:{" "}
+                {RESULTS_COPY.rerunQuality(RESULTS_COPY.labels[m.quality!.label] ?? m.quality!.label)}
               </p>
             ))}
           <p className="text-text-muted text-xs">{RESULTS_COPY.replicationNote}</p>

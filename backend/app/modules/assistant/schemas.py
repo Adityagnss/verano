@@ -12,6 +12,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.modules.evaluation.schemas import ComparisonOut
+
 
 class OptimizationStatus(StrEnum):
     ACTIVE = "active"
@@ -32,6 +34,26 @@ class SessionStage(StrEnum):
     CONFIRMING = "confirming"
     DONE = "done"
     FAILED = "failed"
+
+
+class Reason(StrEnum):
+    """Why a candidate is or is not proven better than the current prompt."""
+
+    PROVEN = "proven"
+    WORSE = "worse"
+    NOT_PROVEN = "not_proven"
+    TOO_FEW_CASES = "too_few_cases"
+    DIFFERENT_JUDGE = "different_judge"
+    UNJUDGED = "unjudged"
+
+
+class VerdictOut(BaseModel):
+    """The evidence behind a candidate's outcome: the holdout comparison and the plain-words conclusion."""
+
+    reason: Reason
+    message: str
+    minimum_cases: int
+    comparison: ComparisonOut | None
 
 
 class ImproveRequest(BaseModel):
@@ -63,6 +85,7 @@ class CandidateOut(BaseModel):
     holdout_experiment_id: uuid.UUID | None
     optimize_quality: float | None
     holdout_quality: float | None
+    verdict: VerdictOut | None = None
 
 
 class ImprovementOut(BaseModel):

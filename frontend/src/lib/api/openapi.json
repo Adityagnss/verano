@@ -995,6 +995,16 @@
             "items": {},
             "title": "Target Cluster Ids",
             "type": "array"
+          },
+          "verdict": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VerdictOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -1417,6 +1427,131 @@
           }
         },
         "title": "ColumnMapping",
+        "type": "object"
+      },
+      "ComparisonOut": {
+        "description": "How one set of results compares with another, case by case. `first` is the model (or the new version)\nbeing asked about, `second` what it is compared with; `difference` is first minus second.",
+        "properties": {
+          "cases": {
+            "title": "Cases",
+            "type": "integer"
+          },
+          "comparisons": {
+            "title": "Comparisons",
+            "type": "integer"
+          },
+          "difference": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Difference"
+          },
+          "first_better": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Better"
+          },
+          "first_only_passed": {
+            "title": "First Only Passed",
+            "type": "integer"
+          },
+          "high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "High"
+          },
+          "label": {
+            "$ref": "#/components/schemas/Label"
+          },
+          "level": {
+            "title": "Level",
+            "type": "number"
+          },
+          "low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Low"
+          },
+          "mcnemar_p": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcnemar P"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "only_first": {
+            "title": "Only First",
+            "type": "integer"
+          },
+          "only_second": {
+            "title": "Only Second",
+            "type": "integer"
+          },
+          "pass_rate_difference": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Rate Difference"
+          },
+          "second_only_passed": {
+            "title": "Second Only Passed",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "label",
+          "cases",
+          "only_first",
+          "only_second",
+          "difference",
+          "low",
+          "high",
+          "level",
+          "comparisons",
+          "first_better",
+          "pass_rate_difference",
+          "first_only_passed",
+          "second_only_passed",
+          "mcnemar_p",
+          "method"
+        ],
+        "title": "ComparisonOut",
         "type": "object"
       },
       "ContextFit": {
@@ -3946,6 +4081,11 @@
         "title": "LLMResult",
         "type": "object"
       },
+      "Label": {
+        "enum": ["clear difference", "no clear difference", "too few cases"],
+        "title": "Label",
+        "type": "string"
+      },
       "LogOptions": {
         "properties": {
           "categories": {
@@ -4222,6 +4362,16 @@
           "unscored_cases": {
             "title": "Unscored Cases",
             "type": "integer"
+          },
+          "vs_best": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ComparisonOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -5331,6 +5481,12 @@
         "title": "PurposeCost",
         "type": "object"
       },
+      "Reason": {
+        "description": "Why a candidate is or is not proven better than the current prompt.",
+        "enum": ["proven", "worse", "not_proven", "too_few_cases", "different_judge", "unjudged"],
+        "title": "Reason",
+        "type": "string"
+      },
       "RegenerateRequest": {
         "properties": {
           "category": {
@@ -5395,6 +5551,16 @@
             "format": "uuid",
             "title": "Model Profile Id",
             "type": "string"
+          },
+          "quality": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ComparisonOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "same": {
             "title": "Same",
@@ -6879,6 +7045,35 @@
           "warnings"
         ],
         "title": "ValidationReport",
+        "type": "object"
+      },
+      "VerdictOut": {
+        "description": "The evidence behind a candidate's outcome: the holdout comparison and the plain-words conclusion.",
+        "properties": {
+          "comparison": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ComparisonOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "minimum_cases": {
+            "title": "Minimum Cases",
+            "type": "integer"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/Reason"
+          }
+        },
+        "required": ["reason", "message", "minimum_cases", "comparison"],
+        "title": "VerdictOut",
         "type": "object"
       },
       "VersionOption": {

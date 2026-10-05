@@ -420,6 +420,14 @@ class FakePlatform(FakeVerano):
                     "cost_per_call": "0.0014", "failed_calls": 0,
                 }
             )  # fmt: skip
+        best = max(models, key=lambda m: (m["quality"], m["model"]), default=None)
+        for m in models:
+            if m is not best and best is not None:
+                gap = m["quality"] - best["quality"]
+                m["vs_best"] = {
+                    "label": "clear difference" if abs(gap) > 0.2 else "no clear difference",
+                    "difference": gap, "cases": 3, "low": None, "high": None,
+                }  # fmt: skip
         return {
             "evaluation_run": {"status": "completed"},
             "evaluation_runs": [{"status": "completed"}],

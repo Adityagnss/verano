@@ -11,6 +11,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from app.modules.evaluation.significance import Label
+
 
 class EvaluationRunStatus(StrEnum):
     PENDING = "pending"
@@ -146,6 +148,27 @@ class EvaluationRunOut(BaseModel):
     completed_at: datetime | None
 
 
+class ComparisonOut(BaseModel):
+    """How one set of results compares with another, case by case. `first` is the model (or the new version)
+    being asked about, `second` what it is compared with; `difference` is first minus second."""
+
+    label: Label
+    cases: int
+    only_first: int
+    only_second: int
+    difference: float | None
+    low: float | None
+    high: float | None
+    level: float
+    comparisons: int
+    first_better: bool | None
+    pass_rate_difference: float | None
+    first_only_passed: int
+    second_only_passed: int
+    mcnemar_p: float | None
+    method: str
+
+
 class ModelMetricsOut(BaseModel):
     model_profile_id: uuid.UUID
     model: str
@@ -162,6 +185,7 @@ class ModelMetricsOut(BaseModel):
     stability: float | None
     stable_cases: int
     compared_cases: int
+    vs_best: ComparisonOut | None = None
 
 
 class RescoreEstimate(BaseModel):
@@ -186,6 +210,7 @@ class ReplicationModel(BaseModel):
     earlier_versions: list[str]
     versions: list[str]
     model_changed: bool
+    quality: ComparisonOut | None = None
 
 
 class ReplicationOut(BaseModel):

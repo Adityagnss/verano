@@ -33,7 +33,10 @@ export function CandidateCard({ candidate, baseline }: { candidate: CandidateOut
                   : "neutral"
             }
           >
-            {IMPROVE_COPY.outcome[candidate.outcome]}
+            {candidate.outcome === "not_better" &&
+            (candidate.verdict?.reason === "not_proven" || candidate.verdict?.reason === "too_few_cases")
+              ? IMPROVE_COPY.outcome.not_proven
+              : IMPROVE_COPY.outcome[candidate.outcome]}
           </StatusBadge>
         </CardAction>
       </CardHeader>

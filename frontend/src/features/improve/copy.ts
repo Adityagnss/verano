@@ -34,6 +34,7 @@ export const IMPROVE_COPY = {
     pending: "Testing",
     better: "Better",
     not_better: "Not better",
+    not_proven: "Not proven",
     accepted: "Accepted",
     rejected: "Rejected",
   } as Record<string, string>,
@@ -44,4 +45,15 @@ export const IMPROVE_COPY = {
   accept: "Accept as new version",
   accepted: "Saved as a new prompt version.",
   nothingToAccept: "Nothing to accept yet.",
+  acceptOff:
+    "Accept is off: only an improvement that is clear on enough held-back cases can become the new version.",
+  verdictHeading: "Is it a real improvement?",
+  reasons: {
+    proven: "Proven better",
+    worse: "Clearly worse",
+    not_proven: "Not proven",
+    too_few_cases: "Too few cases to tell",
+    different_judge: "Scored differently",
+    unjudged: "Some cases not judged",
+  } as Record<string, string>,
 }

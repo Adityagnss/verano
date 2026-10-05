@@ -3,3 +3,64 @@ answers:
   "My card was charged twice": billing
   "Where is my parcel?": shipping
   "The app crashes on start": technical
+  # Sixty more tickets, for tests that need enough test cases to compare models.
+  "My parcel has not arrived for order 001": shipping
+  "The app crashes when I open order 002": technical
+  "I was charged twice for order 003": billing
+  "My parcel has not arrived for order 004": shipping
+  "The app crashes when I open order 005": technical
+  "I was charged twice for order 006": billing
+  "My parcel has not arrived for order 007": shipping
+  "The app crashes when I open order 008": technical
+  "I was charged twice for order 009": billing
+  "My parcel has not arrived for order 010": shipping
+  "The app crashes when I open order 011": technical
+  "I was charged twice for order 012": billing
+  "My parcel has not arrived for order 013": shipping
+  "The app crashes when I open order 014": technical
+  "I was charged twice for order 015": billing
+  "My parcel has not arrived for order 016": shipping
+  "The app crashes when I open order 017": technical
+  "I was charged twice for order 018": billing
+  "My parcel has not arrived for order 019": shipping
+  "The app crashes when I open order 020": technical
+  "I was charged twice for order 021": billing
+  "My parcel has not arrived for order 022": shipping
+  "The app crashes when I open order 023": technical
+  "I was charged twice for order 024": billing
+  "My parcel has not arrived for order 025": shipping
+  "The app crashes when I open order 026": technical
+  "I was charged twice for order 027": billing
+  "My parcel has not arrived for order 028": shipping
+  "The app crashes when I open order 029": technical
+  "I was charged twice for order 030": billing
+  "My parcel has not arrived for order 031": shipping
+  "The app crashes when I open order 032": technical
+  "I was charged twice for order 033": billing
+  "My parcel has not arrived for order 034": shipping
+  "The app crashes when I open order 035": technical
+  "I was charged twice for order 036": billing
+  "My parcel has not arrived for order 037": shipping
+  "The app crashes when I open order 038": technical
+  "I was charged twice for order 039": billing
+  "My parcel has not arrived for order 040": shipping
+  "The app crashes when I open order 041": technical
+  "I was charged twice for order 042": billing
+  "My parcel has not arrived for order 043": shipping
+  "The app crashes when I open order 044": technical
+  "I was charged twice for order 045": billing
+  "My parcel has not arrived for order 046": shipping
+  "The app crashes when I open order 047": technical
+  "I was charged twice for order 048": billing
+  "My parcel has not arrived for order 049": shipping
+  "The app crashes when I open order 050": technical
+  "I was charged twice for order 051": billing
+  "My parcel has not arrived for order 052": shipping
+  "The app crashes when I open order 053": technical
+  "I was charged twice for order 054": billing
+  "My parcel has not arrived for order 055": shipping
+  "The app crashes when I open order 056": technical
+  "I was charged twice for order 057": billing
+  "My parcel has not arrived for order 058": shipping
+  "The app crashes when I open order 059": technical
+  "I was charged twice for order 060": billing

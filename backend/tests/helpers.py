@@ -231,3 +231,39 @@ async def run_good(
     await jobs.drain()
     experiment: dict[str, Any] = response.json()
     return experiment
+
+
+def many_tickets(count: int) -> list[tuple[str, str]]:
+    """(ticket, label) pairs that the mock answer key knows (up to 60), for tests that need many cases."""
+    labels = ["billing", "shipping", "technical"]
+    topics = {
+        "billing": "I was charged twice for order",
+        "shipping": "My parcel has not arrived for order",
+        "technical": "The app crashes when I open order",
+    }
+    return [(f"{topics[labels[i % 3]]} {i:03d}", labels[i % 3]) for i in range(1, count + 1)]
+
+
+async def approved_project_with_cases(
+    client: httpx.AsyncClient, session: Session, jobs: Any, count: int = 40
+) -> dict[str, str]:
+    """Like `approved_project` but with `count` golden tickets, enough to tell two models apart. Returns mock model
+    profile ids by name, plus `_dataset_version`."""
+    base = f"/api/v1/projects/{session.project_id}"
+    credential = await add_credential(client, session, "mock")
+    version = await create_prompt(client, session, system_template="Classify the support ticket. Reply with one word.")
+    tickets = many_tickets(count)
+    await add_input_files(client, session, jobs, [text for text, _ in tickets])
+    golden = "ticket,expected\n" + "".join(f"{text},{label}\n" for text, label in tickets)
+    await add_golden(client, session, jobs, "golden.csv", golden.encode(), {"expected_output": "expected"})
+    spec_body = {"prompt_version_id": version["id"], "credential_id": credential["id"], "model": "scripted"}
+    spec = (await client.post(f"{base}/task-specs", json=spec_body, headers=session.headers)).json()
+    await client.put(f"{base}/task-specs/{spec['id']}", json={"spec": spec["spec"]}, headers=session.headers)
+    started = await client.post(
+        f"{base}/generations", json={"task_spec_id": spec["id"], "golden_only": True}, headers=session.headers
+    )
+    await jobs.drain()
+    approved = await client.post(f"{base}/dataset-versions/{started.json()['id']}/approve", headers=session.headers)
+    assert approved.status_code == 200, approved.text
+    models = await client.get(f"{base}/models", params={"limit": 200}, headers=session.headers)
+    return {**{m["model_name"]: m["id"] for m in models.json()["items"]}, "_dataset_version": started.json()["id"]}

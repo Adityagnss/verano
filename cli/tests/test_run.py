@@ -70,6 +70,21 @@ def test_a_run_shows_the_cost_first_then_progress_results_and_a_link(
     assert result.out == ""
 
 
+def test_the_table_says_whether_a_model_is_clearly_behind_the_best_and_json_carries_the_evidence(
+    platform: FakePlatform, run: Run, tmp_path: Path
+) -> None:
+    pushed(platform, run, tmp_path)
+    same = run("run", "--yes")
+    assert "Vs the best" in same.err
+    assert "no clear difference (+0%)" in same.err
+    platform.quality = {"gpt-4o-mini": 0.9, "claude-haiku": 0.4}
+    behind = run("run", "--yes", "--json")
+    assert "clear difference (-50%)" in behind.err
+    models = {m["model"]: m for m in json.loads(behind.out)["prompts"][0]["models"]}
+    assert models["claude-haiku"]["vs_best"]["label"] == "clear difference"
+    assert "vs_best" not in models["gpt-4o-mini"]
+
+
 def test_the_same_defaults_as_the_web_app_apply_only_where_a_model_accepts_them(
     platform: FakePlatform, run: Run, tmp_path: Path
 ) -> None:

@@ -1,6 +1,8 @@
 /** User-facing text for the Results step. */
 import { formatMs } from "@/lib/format"
 
+export const signedPercent = (value: number) => `${value >= 0 ? "+" : ""}${Math.round(value * 100)}%`
+
 export const RESULTS_COPY = {
   title: "See how each model did",
   subtitle:
@@ -45,6 +47,31 @@ export const RESULTS_COPY = {
   scoreAgain: "Score again",
   scoreAgainCost: (calls: number | null, cost: string | null) =>
     `This asks the judge to score every answer again${calls ? ` (about ${calls} judge calls${cost ? `, about $${Number(cost).toFixed(4)}` : ""})` : ""}. The earlier scoring is kept.`,
+  vsBest: "Compared with the best",
+  vsBestHint:
+    "How each model compares with the best one on quality, test case by test case. A clear difference means the gap is larger than chance would explain; otherwise the ranking could be luck.",
+  bestOnQuality: "Best on quality",
+  labels: {
+    "clear difference": "clearly behind",
+    "no clear difference": "no clear difference",
+    "too few cases": "too few cases to tell",
+  } as Record<string, string>,
+  comparisonLines: (
+    cases: number,
+    difference: number | null,
+    low: number | null,
+    high: number | null,
+    level: number,
+  ) =>
+    `${cases} test cases compared. Quality difference ${difference === null ? "—" : signedPercent(difference)}` +
+    (low !== null && high !== null
+      ? `, ${Math.round(level * 1000) / 10}% interval ${signedPercent(low)} to ${signedPercent(high)}.`
+      : ". Too few cases for an interval."),
+  comparisonPass: (difference: number | null, p: number | null, onlyFirst: number, onlySecond: number) =>
+    `Pass rate difference ${difference === null ? "—" : signedPercent(difference)}; ${onlyFirst} cases only this one passed, ${onlySecond} only the other${p === null ? "" : ` (exact test p = ${p < 0.001 ? "<0.001" : p.toFixed(3)})`}.`,
+  comparisonLeftOut: (first: number, second: number) =>
+    `${first + second} cases were left out because one side could not be judged on them.`,
+  rerunQuality: (label: string) => `Scores moved between the runs: ${label}.`,
   seeJudge: "What the judge saw",
   hideJudge: "Hide what the judge saw",
   judgeNoCalls: "The judge was not asked anything about this answer (the other checks need no judge).",

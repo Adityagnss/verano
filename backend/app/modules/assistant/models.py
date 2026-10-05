@@ -12,6 +12,7 @@ import uuid
 from typing import Any
 
 from sqlalchemy import ForeignKey, Index, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base, CreatedAtMixin, IdMixin, str_enum
@@ -53,3 +54,4 @@ class PromptCandidate(IdMixin, CreatedAtMixin, Base):
     optimize_experiment_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("experiments.id", ondelete="SET NULL"))
     holdout_experiment_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("experiments.id", ondelete="SET NULL"))
     outcome: Mapped[CandidateOutcome] = mapped_column(str_enum(CandidateOutcome, "candidate_outcome"))
+    verdict: Mapped[dict[str, Any] | None] = mapped_column(JSONB)

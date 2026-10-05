@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils"
 
 import { RESULTS_COPY } from "../copy"
 import { type Column, isBest } from "../insights"
+import { comparisonText } from "./comparison-detail"
 
 export const percent = (value: number | null | undefined) =>
   value === null || value === undefined ? "—" : `${Math.round(value * 100)}%`
@@ -43,6 +44,7 @@ function Cell({
 
 export function TradeoffTable({ models }: { models: ModelMetricsOut[] }) {
   const c = RESULTS_COPY.columns
+  const compared = models.some((m) => m.vs_best)
   return (
     <div className="border-border overflow-hidden rounded-lg border">
       <Table>
@@ -51,6 +53,7 @@ export function TradeoffTable({ models }: { models: ModelMetricsOut[] }) {
             <TableHead>{c.model}</TableHead>
             <TableHead>{c.quality}</TableHead>
             <TableHead>{c.passRate}</TableHead>
+            {compared ? <TableHead title={RESULTS_COPY.vsBestHint}>{RESULTS_COPY.vsBest}</TableHead> : null}
             <TableHead title={RESULTS_COPY.consistencyHint}>{c.consistency}</TableHead>
             <TableHead title={RESULTS_COPY.stabilityHint}>{c.stability}</TableHead>
             <TableHead>{c.latency}</TableHead>
@@ -74,6 +77,27 @@ export function TradeoffTable({ models }: { models: ModelMetricsOut[] }) {
               <Cell models={models} model={m} column="pass_rate">
                 {percent(m.pass_rate)}
               </Cell>
+              {compared ? (
+                <TableCell className="text-xs">
+                  {m.vs_best ? (
+                    <span
+                      title={comparisonText(m.vs_best)}
+                      className={cn(
+                        "cursor-help rounded-md px-1.5 py-0.5 ring-1",
+                        m.vs_best.label === "clear difference"
+                          ? "bg-danger-soft text-danger-strong ring-danger/20 font-semibold"
+                          : "bg-subtle text-text-secondary ring-border",
+                      )}
+                    >
+                      {RESULTS_COPY.labels[m.vs_best.label] ?? m.vs_best.label}
+                    </span>
+                  ) : (
+                    <span className="text-text-muted">
+                      {isBest(models, m, "quality") ? RESULTS_COPY.bestOnQuality : "—"}
+                    </span>
+                  )}
+                </TableCell>
+              ) : null}
               <Cell models={models} model={m} column="consistency">
                 {percent(m.consistency)}
               </Cell>

@@ -12,6 +12,7 @@ import { toast } from "sonner"
 
 import { EmptyState } from "@/components/common/empty-state"
 import { ErrorMessage } from "@/components/common/error-message"
+import { ComparisonDetail } from "@/features/results/components/comparison-detail"
 import { PageActions } from "@/components/common/page-actions"
 import { Section } from "@/components/common/section"
 import { StatTile } from "@/components/common/stat-tile"
@@ -178,9 +179,27 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
               value={delta === null ? "—" : `${delta >= 0 ? "+" : ""}${Math.round(delta * 100)}%`}
             />
           </div>
+          {confirmed.verdict ? (
+            <div className="bg-subtle ring-border mt-3 flex flex-col gap-1.5 rounded-lg p-3 ring-1">
+              <p className="text-sm font-semibold">
+                {IMPROVE_COPY.verdictHeading} {IMPROVE_COPY.reasons[confirmed.verdict.reason]}
+              </p>
+              {confirmed.verdict.comparison ? (
+                <ComparisonDetail comparison={confirmed.verdict.comparison} />
+              ) : null}
+            </div>
+          ) : null}
         </Section>
       ) : null}
-      <PageActions summary={data && !winner && data.stage === "done" ? IMPROVE_COPY.nothingToAccept : null}>
+      <PageActions
+        summary={
+          data && !winner && data.stage === "done"
+            ? confirmed?.verdict
+              ? IMPROVE_COPY.acceptOff
+              : IMPROVE_COPY.nothingToAccept
+            : null
+        }
+      >
         {primary}
       </PageActions>
     </div>

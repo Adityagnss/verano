@@ -10,7 +10,8 @@ parameters.
 `advance` runs when one of those experiments has been scored. When every candidate's
 optimize test is done, the best one is confirmed by an experiment on the holdout split;
 when that is scored, its holdout quality is compared with the current prompt's on the
-same holdout cases and the session says honestly whether it is better.
+same holdout cases with the significance engine, and the session says honestly whether the
+improvement is proven.
 Both calls use the model that wrote the test cases (the Task Spec's generator model).
 """
 
@@ -26,17 +27,26 @@ from app.core.templates import render_system_prompt
 from app.modules.assistant.domain import DIFFERENT_JUDGE, UNJUDGED, best, verdict
 from app.modules.assistant.models import OptimizationSession, PromptCandidate
 from app.modules.assistant.proposals import failures_of, store_candidates, store_clusters
-from app.modules.assistant.quality import quality
+from app.modules.assistant.quality import quality, split_results
 from app.modules.assistant.repository import AssistantRepository
-from app.modules.assistant.schemas import CandidateDrafts, CandidateOutcome, FailureGroups, SessionStage
+from app.modules.assistant.schemas import (
+    CandidateDrafts,
+    CandidateOutcome,
+    FailureGroups,
+    Reason,
+    SessionStage,
+    VerdictOut,
+)
 from app.modules.datasets.schemas import Split
 from app.modules.datasets.service import DatasetService
 from app.modules.engine.models import Experiment
 from app.modules.engine.repository import EngineRepository
 from app.modules.engine.schemas import ExperimentCreate, ExperimentOrigin, ModelRun, SplitScope
 from app.modules.engine.service import ExperimentService
+from app.modules.evaluation.comparisons import comparison_out
 from app.modules.evaluation.repository import ScoreRepository
 from app.modules.evaluation.results import ResultsService
+from app.modules.evaluation.significance import compare, seed_for
 from app.modules.gateway.dependencies import build_gateway
 from app.modules.gateway.schemas import CallContext, CallPurpose, Message
 from app.modules.generator.repository import TaskSpecRepository
@@ -65,6 +75,7 @@ class ImprovementPipeline:
         self._experiments = ExperimentService.from_container(session, container)
         self._prompts = PromptService(session, self._registry, container.settings)
         self._specs = TaskSpecRepository(session)
+        self._minimum = container.settings.dataset_min_holdout
 
     async def improve(self, session_id: uuid.UUID) -> None:
         row = await self._repo.session(session_id)
@@ -205,17 +216,24 @@ class ImprovementPipeline:
         baseline = await self._engine.experiment(row.baseline_experiment_id) if row.baseline_experiment_id else None
         assert holdout is not None
         assert baseline is not None
-        new = await quality(self._results, self._datasets, holdout, Split.HOLDOUT)
-        old = await quality(self._results, self._datasets, baseline, Split.HOLDOUT)
+        new, new_judged = await split_results(self._results, self._datasets, holdout, Split.HOLDOUT)
+        old, old_judged = await split_results(self._results, self._datasets, baseline, Split.HOLDOUT)
+        proof: VerdictOut
         if await self._results.scored_with(holdout) != await self._results.scored_with(baseline):
-            better, message = False, DIFFERENT_JUDGE
-        elif new is None or old is None:
-            better, message = False, UNJUDGED
+            proof = VerdictOut(
+                reason=Reason.DIFFERENT_JUDGE, message=DIFFERENT_JUDGE, minimum_cases=self._minimum, comparison=None
+            )
+        elif not (new_judged and old_judged):
+            proof = VerdictOut(reason=Reason.UNJUDGED, message=UNJUDGED, minimum_cases=self._minimum, comparison=None)
         else:
-            better, message = verdict(new, old)
-        outcome = CandidateOutcome.BETTER if better else CandidateOutcome.NOT_BETTER
-        await self._repo.update_candidate(candidate.id, {"outcome": outcome})
-        await self._finish(row.id, SessionStage.DONE, message)
+            found = compare(new, old, seed=seed_for(holdout.id, baseline.id))
+            reason, message = verdict(found, self._minimum)
+            proof = VerdictOut(
+                reason=reason, message=message, minimum_cases=self._minimum, comparison=comparison_out(found)
+            )
+        outcome = CandidateOutcome.BETTER if proof.reason is Reason.PROVEN else CandidateOutcome.NOT_BETTER
+        await self._repo.update_candidate(candidate.id, {"outcome": outcome, "verdict": proof.model_dump(mode="json")})
+        await self._finish(row.id, SessionStage.DONE, proof.message)
 
     async def _rerun(self, baseline: Experiment, scope: SplitScope, name: str) -> ExperimentCreate:
         """The baseline's models and settings, scored with the same checks and judge as the numbers being

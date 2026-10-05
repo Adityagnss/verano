@@ -26,6 +26,7 @@ from app.modules.assistant.schemas import (
     ImprovementOut,
     OptimizationStatus,
     SessionStage,
+    VerdictOut,
 )
 from app.modules.datasets.schemas import Split
 from app.modules.datasets.service import DatasetService
@@ -132,9 +133,10 @@ class ImprovementService:
         optimize = await self._engine.experiment(c.optimize_experiment_id) if c.optimize_experiment_id else None
         holdout = await self._engine.experiment(c.holdout_experiment_id) if c.holdout_experiment_id else None
         return CandidateOut(
-            **{name: getattr(c, name) for name in CandidateOut.model_fields if hasattr(c, name)},
+            **{name: getattr(c, name) for name in CandidateOut.model_fields if name != "verdict" and hasattr(c, name)},
             optimize_quality=await self._quality(optimize, Split.OPTIMIZE),
             holdout_quality=await self._quality(holdout, Split.HOLDOUT),
+            verdict=VerdictOut.model_validate(c.verdict) if c.verdict else None,
         )
 
     async def _quality(self, experiment: Experiment | None, split: Split) -> float | None:

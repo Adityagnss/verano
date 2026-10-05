@@ -1669,6 +1669,7 @@ export interface components {
             strategy: string;
             /** Target Cluster Ids */
             target_cluster_ids: unknown[];
+            verdict?: components["schemas"]["VerdictOut"] | null;
         };
         /**
          * CandidateOutcome
@@ -1811,6 +1812,42 @@ export interface components {
             rubric?: string | null;
             /** Tags */
             tags?: string | null;
+        };
+        /**
+         * ComparisonOut
+         * @description How one set of results compares with another, case by case. `first` is the model (or the new version)
+         *     being asked about, `second` what it is compared with; `difference` is first minus second.
+         */
+        ComparisonOut: {
+            /** Cases */
+            cases: number;
+            /** Comparisons */
+            comparisons: number;
+            /** Difference */
+            difference: number | null;
+            /** First Better */
+            first_better: boolean | null;
+            /** First Only Passed */
+            first_only_passed: number;
+            /** High */
+            high: number | null;
+            label: components["schemas"]["Label"];
+            /** Level */
+            level: number;
+            /** Low */
+            low: number | null;
+            /** Mcnemar P */
+            mcnemar_p: number | null;
+            /** Method */
+            method: string;
+            /** Only First */
+            only_first: number;
+            /** Only Second */
+            only_second: number;
+            /** Pass Rate Difference */
+            pass_rate_difference: number | null;
+            /** Second Only Passed */
+            second_only_passed: number;
         };
         /** ContextFit */
         ContextFit: {
@@ -2698,6 +2735,11 @@ export interface components {
             /** Trace Id */
             trace_id: string;
         };
+        /**
+         * Label
+         * @enum {string}
+         */
+        Label: "clear difference" | "no clear difference" | "too few cases";
         /** LogOptions */
         LogOptions: {
             /** Categories */
@@ -2805,6 +2847,7 @@ export interface components {
             stable_cases: number;
             /** Unscored Cases */
             unscored_cases: number;
+            vs_best?: components["schemas"]["ComparisonOut"] | null;
         };
         /** ModelProfileOut */
         ModelProfileOut: {
@@ -3262,6 +3305,12 @@ export interface components {
             /** Cost */
             cost: string;
         };
+        /**
+         * Reason
+         * @description Why a candidate is or is not proven better than the current prompt.
+         * @enum {string}
+         */
+        Reason: "proven" | "worse" | "not_proven" | "too_few_cases" | "different_judge" | "unjudged";
         /** RegenerateRequest */
         RegenerateRequest: {
             category: components["schemas"]["CaseCategory"];
@@ -3294,6 +3343,7 @@ export interface components {
              * Format: uuid
              */
             model_profile_id: string;
+            quality?: components["schemas"]["ComparisonOut"] | null;
             /** Same */
             same: number;
             /** Skipped */
@@ -3863,6 +3913,18 @@ export interface components {
             valid_rows: number;
             /** Warnings */
             warnings: string[];
+        };
+        /**
+         * VerdictOut
+         * @description The evidence behind a candidate's outcome: the holdout comparison and the plain-words conclusion.
+         */
+        VerdictOut: {
+            comparison: components["schemas"]["ComparisonOut"] | null;
+            /** Message */
+            message: string;
+            /** Minimum Cases */
+            minimum_cases: number;
+            reason: components["schemas"]["Reason"];
         };
         /** VersionOption */
         VersionOption: {

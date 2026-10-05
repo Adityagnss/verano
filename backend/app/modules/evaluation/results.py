@@ -26,6 +26,7 @@ from app.modules.engine.models import Experiment, TestCaseRun
 from app.modules.engine.provenance import changed_between, known, summarize
 from app.modules.engine.repository import EngineRepository
 from app.modules.engine.schemas import RunStatus
+from app.modules.evaluation.comparisons import case_results, comparison_out, versus_best
 from app.modules.evaluation.domain import JudgeCandidate, check_instructions_fit, judge_calls_per_answer, suggest_judge
 from app.modules.evaluation.domain import Score as ScoreValue
 from app.modules.evaluation.metrics import CaseOutcome, WeightedScore, case_result, model_metrics
@@ -35,6 +36,7 @@ from app.modules.evaluation.schemas import (
     CaseAgreement,
     CaseOutput,
     CaseResultOut,
+    ComparisonOut,
     EvaluationRunOut,
     EvaluationRunStatus,
     EvaluatorSetVersionOut,
@@ -51,6 +53,7 @@ from app.modules.evaluation.schemas import (
     ScoreStatus,
 )
 from app.modules.evaluation.service import EvaluatorSetService, judge_call_out
+from app.modules.evaluation.significance import compare, seed_for
 from app.modules.evaluation.stability import Answer, ModelStability, case_agreements, model_stability, replication
 from app.modules.projects.schemas import ProjectOut
 from app.modules.registry.service import RegistryService
@@ -102,9 +105,13 @@ class ResultsService:
             outcomes = [o for o, _, _ in await self._outcomes(experiment, run)]
             stable = model_stability(await self._answers(experiment))
             nothing = ModelStability(stability=None, stable_cases=0, compared_cases=0)
+            metrics = model_metrics(outcomes)
+            versus = versus_best(run.id, experiment.id, metrics, outcomes)
             models = [
-                ModelMetricsOut(**vars(m), **vars(stable.get(m.model_profile_id, nothing)))
-                for m in model_metrics(outcomes)
+                ModelMetricsOut(
+                    **vars(m), **vars(stable.get(m.model_profile_id, nothing)), vs_best=versus.get(m.model_profile_id)
+                )
+                for m in metrics
             ]
         return ResultsOut(
             experiment_id=experiment.id,
@@ -330,6 +337,7 @@ class ResultsService:
         if config_hash(current) != config_hash(earlier):
             raise Conflict(NOT_REPLICABLE)
         found = replication(await self._answers(current), await self._answers(earlier))
+        quality = await self._quality_between(current, earlier)
         names = {m["model_profile_id"]: m["display_name"] for m in current.config["models"]}
         now = summarize(await self._engine.returned_models(current.id))
         before = summarize(await self._engine.returned_models(earlier.id))
@@ -343,6 +351,7 @@ class ResultsService:
                 earlier_versions=sorted(known(before.get(model_id, []))),
                 versions=sorted(known(now.get(model_id, []))),
                 model_changed=changed_between(before.get(model_id, []), now.get(model_id, [])),
+                quality=quality.get(model_id),
             )
             for model_id, r in found.items()
         ]
@@ -356,6 +365,22 @@ class ResultsService:
             model_changed=any(m.model_changed for m in models),
             models=models,
         )
+
+    async def _quality_between(self, current: Experiment, earlier: Experiment) -> dict[uuid.UUID, ComparisonOut]:
+        """Did the scores move between a run and its re-run? The same engine as everywhere else, per model, on
+        the cases judged in both; nothing when the two were scored with different checks or a different judge."""
+        if await self.scored_with(current) != await self.scored_with(earlier):
+            return {}
+        now, before = await self.outcomes(current), await self.outcomes(earlier)
+        found = {}
+        for model_id in {o.model_profile_id for o in now}:
+            result = compare(
+                case_results(o for o in now if o.model_profile_id == model_id),
+                case_results(o for o in before if o.model_profile_id == model_id),
+                seed=seed_for(current.id, earlier.id, model_id),
+            )
+            found[model_id] = comparison_out(result)
+        return found
 
     async def _answers(self, experiment: Experiment) -> list[Answer]:
         return [
