@@ -10,15 +10,19 @@ from fastapi import APIRouter, Query, status
 from fastapi.responses import Response
 
 from app.core.security import CurrentPrincipal
-from app.modules.evaluation.dependencies import ResultsServiceDep
+from app.modules.evaluation.dependencies import ResultsServiceDep, ScoringServiceDep
 from app.modules.evaluation.schemas import (
     CaseResultOut,
     EvaluatorSetVersionOut,
+    JudgeCallOut,
     JudgeSuggestion,
     ReplicationOut,
     RescoreEstimate,
     RescoreRequest,
     ResultsOut,
+    TryJudgeEstimate,
+    TryJudgeOut,
+    TryJudgeRequest,
 )
 from app.modules.projects.dependencies import ProjectScope
 
@@ -79,6 +83,27 @@ async def rescore_estimate(
     experiment_id: uuid.UUID, body: RescoreRequest, project: ProjectScope, service: ResultsServiceDep
 ) -> RescoreEstimate:
     return await service.rescore_estimate(project, experiment_id, body)
+
+
+@router.get("/answers/{test_case_run_id}/judge-calls")
+async def get_judge_calls(
+    experiment_id: uuid.UUID, test_case_run_id: uuid.UUID, project: ProjectScope, service: ResultsServiceDep
+) -> list[JudgeCallOut]:
+    return await service.judge_calls(project.id, experiment_id, test_case_run_id)
+
+
+@router.post("/judge/try/estimate")
+async def try_judge_estimate(
+    experiment_id: uuid.UUID, body: TryJudgeRequest, project: ProjectScope, scoring: ScoringServiceDep
+) -> TryJudgeEstimate:
+    return await scoring.try_estimate(project.id, experiment_id, body)
+
+
+@router.post("/judge/try")
+async def try_judge(
+    experiment_id: uuid.UUID, body: TryJudgeRequest, project: ProjectScope, scoring: ScoringServiceDep
+) -> TryJudgeOut:
+    return await scoring.try_judge(project.id, experiment_id, body)
 
 
 project_router = APIRouter(prefix="/projects/{project_id}", tags=["evaluators"])

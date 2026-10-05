@@ -23,6 +23,33 @@ class EvalCase:
     context: list[str] = field(default_factory=list)
 
 
+def judge_calls_per_answer(checks: list[dict[str, Any]]) -> int:
+    """Judge calls one answer needs: a judged check made of criteria first has the judge write its own
+    evaluation steps (one call) and then scores (another); a check given its steps scores directly."""
+    return sum(1 if check.get("evaluation_steps") else 2 for check in checks if check.get("kind") == "deepeval")
+
+
+INSTRUCTIONS_TOO_LONG = (
+    "The judging instructions are about {tokens} tokens, too long for this judge (it reads {window}) once the "
+    "answer is added. Shorten them or choose a judge with a larger context window."
+)
+
+
+def check_instructions_fit(checks: list[dict[str, Any]], context_window: int | None) -> None:
+    """Refuses instructions that would take up more than half of the judge's context window, which leaves too
+    little room for the question and the answer. Unknown windows are not checked. About 4 characters a token."""
+    from app.core.errors import ValidationFailed
+
+    if not context_window:
+        return
+    chars = sum(
+        len(str(c.get("criteria") or "")) + sum(len(str(x)) for x in c.get("evaluation_steps") or []) for c in checks
+    )
+    tokens = chars // 4
+    if tokens > context_window // 2:
+        raise ValidationFailed(INSTRUCTIONS_TOO_LONG.format(tokens=tokens, window=context_window))
+
+
 @dataclass(frozen=True)
 class Score:
     value: float

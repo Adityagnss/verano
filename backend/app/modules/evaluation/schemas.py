@@ -9,7 +9,7 @@ from decimal import Decimal
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class EvaluationRunStatus(StrEnum):
@@ -24,6 +24,14 @@ class EvaluationTrigger(StrEnum):
     RESCORE = "rescore"
 
 
+MAX_CRITERIA_CHARS = 4000
+MAX_STEPS = 10
+MAX_STEP_CHARS = 1000
+NEEDS_CRITERIA = "A judged check needs criteria or evaluation steps: say in words what a good answer is."
+TOO_LONG = "Criteria can be at most {n} characters."
+TOO_MANY_STEPS = f"Use at most {MAX_STEPS} evaluation steps, each at most {MAX_STEP_CHARS} characters."
+
+
 class EvaluatorConfigIn(BaseModel):
     evaluator_name: str = Field(min_length=1, max_length=100)
     evaluator_version: str = Field(min_length=1, max_length=32)
@@ -31,6 +39,29 @@ class EvaluatorConfigIn(BaseModel):
     threshold: float = Field(ge=0.0, le=1.0)
     weight: float = Field(gt=0.0)
     required: bool = False
+
+    @model_validator(mode="after")
+    def _judged_checks_say_what_to_judge(self) -> "EvaluatorConfigIn":
+        if self.config.get("kind") != "deepeval":
+            return self
+        criteria = str(self.config.get("criteria") or "").strip()
+        raw_steps = self.config.get("evaluation_steps") or []
+        if not isinstance(raw_steps, list):
+            raise ValueError(TOO_MANY_STEPS)
+        steps = [str(step).strip() for step in raw_steps if str(step).strip()]
+        if len(steps) > MAX_STEPS or any(len(step) > MAX_STEP_CHARS for step in steps):
+            raise ValueError(TOO_MANY_STEPS)
+        if len(criteria) > MAX_CRITERIA_CHARS:
+            raise ValueError(TOO_LONG.format(n=MAX_CRITERIA_CHARS))
+        if not criteria and not steps:
+            raise ValueError(NEEDS_CRITERIA)
+        cleaned = {k: v for k, v in self.config.items() if k not in ("criteria", "evaluation_steps")}
+        if criteria:
+            cleaned["criteria"] = criteria
+        if steps:
+            cleaned["evaluation_steps"] = steps
+        self.config = cleaned
+        return self
 
 
 class EvaluatorConfigOut(EvaluatorConfigIn):
@@ -68,6 +99,39 @@ class RescoreRequest(BaseModel):
 
     evaluator_set_version_id: uuid.UUID | None = None
     judge: JudgeChoice | None = None
+    evaluators: list[EvaluatorConfigIn] | None = Field(default=None, min_length=1)
+    change_reason: str | None = Field(default=None, max_length=2000)
+
+
+class JudgeCallOut(BaseModel):
+    """One call the judge was asked to make about an answer, exactly as it was sent."""
+
+    id: uuid.UUID
+    evaluator: str | None
+    evaluation_run_id: uuid.UUID | None
+    preview: bool
+    model: str
+    status: str
+    request_messages: list[Any]
+    output_text: str | None
+    error_message: str | None
+    cost: Decimal | None
+    created_at: datetime
+
+
+class TryJudgeRequest(BaseModel):
+    """Run one judged check on one stored answer, to see what the judge says before scoring everything again."""
+
+    test_case_run_id: uuid.UUID
+    evaluator: EvaluatorConfigIn
+    judge: JudgeChoice | None = None
+
+
+class TryJudgeEstimate(BaseModel):
+    judge_calls: int
+    judge_cost: Decimal | None
+    price_known: bool
+    judge_model: str | None
 
 
 class EvaluationRunOut(BaseModel):
@@ -190,3 +254,8 @@ class CaseResultOut(BaseModel):
     split: str | None
     outputs: list[CaseOutput]
     agreement: list[CaseAgreement]
+
+
+class TryJudgeOut(BaseModel):
+    score: ScoreOut
+    calls: list[JudgeCallOut]

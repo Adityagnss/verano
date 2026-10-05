@@ -4,7 +4,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { api, call } from "@/lib/api/client"
-import type { JudgeChoice } from "@/lib/api/types"
+import type { EvaluatorConfigIn, JudgeChoice } from "@/lib/api/types"
 
 function experimentPath(projectId: string, experimentId: string) {
   return { path: { project_id: projectId, experiment_id: experimentId } }
@@ -90,11 +90,19 @@ export function useRerun(projectId: string) {
 export function useScoreAgain(projectId: string) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ experimentId, judge }: { experimentId: string; judge?: JudgeChoice | null }) =>
+    mutationFn: ({
+      experimentId,
+      judge,
+      evaluators,
+    }: {
+      experimentId: string
+      judge?: JudgeChoice | null
+      evaluators?: EvaluatorConfigIn[] | null
+    }) =>
       call(() =>
         api.POST("/api/v1/projects/{project_id}/experiments/{experiment_id}/rescore", {
           params: experimentPath(projectId, experimentId),
-          body: judge ? { judge } : {},
+          body: { ...(judge ? { judge } : {}), ...(evaluators ? { evaluators } : {}) },
         }),
       ),
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["projects", projectId] }),
@@ -119,17 +127,88 @@ export function useRescoreEstimate(
   projectId: string,
   experimentId: string | null,
   judge: JudgeChoice | null,
+  evaluators: EvaluatorConfigIn[] | null = null,
 ) {
   return useQuery({
-    queryKey: ["projects", projectId, "rescore-estimate", experimentId, judge],
+    queryKey: ["projects", projectId, "rescore-estimate", experimentId, judge, evaluators],
     queryFn: () =>
       call(() =>
         api.POST("/api/v1/projects/{project_id}/experiments/{experiment_id}/rescore/estimate", {
           params: experimentPath(projectId, experimentId ?? ""),
-          body: judge ? { judge } : {},
+          body: { ...(judge ? { judge } : {}), ...(evaluators ? { evaluators } : {}) },
         }),
       ),
     enabled: experimentId !== null,
     retry: false,
+  })
+}
+
+/** The checks (criteria, steps, thresholds) and judge of one evaluator-set version. */
+export function useEvaluatorVersion(projectId: string, versionId: string | null) {
+  return useQuery({
+    queryKey: ["projects", projectId, "evaluator-version", versionId],
+    queryFn: () =>
+      call(() =>
+        api.GET("/api/v1/projects/{project_id}/evaluator-set-versions/{version_id}", {
+          params: { path: { project_id: projectId, version_id: versionId ?? "" } },
+        }),
+      ),
+    enabled: versionId !== null,
+  })
+}
+
+/** Every call the judge made about one answer, exactly as sent (loaded when asked for). */
+export function useJudgeCalls(projectId: string, experimentId: string, answerId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["projects", projectId, "judge-calls", experimentId, answerId],
+    queryFn: () =>
+      call(() =>
+        api.GET(
+          "/api/v1/projects/{project_id}/experiments/{experiment_id}/answers/{test_case_run_id}/judge-calls",
+          {
+            params: {
+              path: { project_id: projectId, experiment_id: experimentId, test_case_run_id: answerId },
+            },
+          },
+        ),
+      ),
+    enabled,
+  })
+}
+
+type TryBody = { test_case_run_id: string; evaluator: EvaluatorConfigIn; judge?: JudgeChoice | null }
+
+function tryBody({ judge, ...rest }: TryBody) {
+  return judge ? { ...rest, judge } : rest
+}
+
+/** What trying the judge on one answer would cost. */
+export function useTryEstimate(projectId: string, experimentId: string | null, body: TryBody | null) {
+  return useQuery({
+    queryKey: ["projects", projectId, "try-estimate", experimentId, body],
+    queryFn: () =>
+      call(() =>
+        api.POST("/api/v1/projects/{project_id}/experiments/{experiment_id}/judge/try/estimate", {
+          params: experimentPath(projectId, experimentId ?? ""),
+          body: tryBody(body!),
+        }),
+      ),
+    enabled: experimentId !== null && body !== null,
+    retry: false,
+  })
+}
+
+/** Runs one judged check on one stored answer; nothing is scored or changed. */
+export function useTryJudge(projectId: string, experimentId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (body: TryBody) =>
+      call(() =>
+        api.POST("/api/v1/projects/{project_id}/experiments/{experiment_id}/judge/try", {
+          params: experimentPath(projectId, experimentId),
+          body: tryBody(body),
+        }),
+      ),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["projects", projectId, "judge-calls"] }),
   })
 }

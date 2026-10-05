@@ -111,7 +111,9 @@ export const TESTS_COPY = {
     length: "Passes when the answer length is inside the task's limits.",
     constraints: "Checks the task's constraints (for example one word, lowercase, valid JSON).",
   } as Record<string, string>,
-  judgeInfo: "An AI judge reads the answer and scores it against the criteria below.",
+  judgeInfo:
+    "An AI judge reads the test case, the answer (and the expected answer, if there is one) and the criteria below, and gives a score from 0 to 100%. After a run you can read exactly what it was sent, and change the criteria on the Results page.",
+  stepsInfo: "The judge follows these evaluation steps instead of the criteria:",
   noConstraints:
     "Checks the constraints written in the task above (for example: valid JSON). If the task has none, nothing is checked.",
   constraintsList: "Checks",

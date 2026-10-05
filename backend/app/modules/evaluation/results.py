@@ -26,7 +26,7 @@ from app.modules.engine.models import Experiment, TestCaseRun
 from app.modules.engine.provenance import changed_between, known, summarize
 from app.modules.engine.repository import EngineRepository
 from app.modules.engine.schemas import RunStatus
-from app.modules.evaluation.domain import JudgeCandidate, suggest_judge
+from app.modules.evaluation.domain import JudgeCandidate, check_instructions_fit, judge_calls_per_answer, suggest_judge
 from app.modules.evaluation.domain import Score as ScoreValue
 from app.modules.evaluation.metrics import CaseOutcome, WeightedScore, case_result, model_metrics
 from app.modules.evaluation.models import EvaluationRun, Score
@@ -38,6 +38,7 @@ from app.modules.evaluation.schemas import (
     EvaluationRunOut,
     EvaluationRunStatus,
     EvaluatorSetVersionOut,
+    JudgeCallOut,
     JudgeChoice,
     JudgeSuggestion,
     ModelMetricsOut,
@@ -49,13 +50,14 @@ from app.modules.evaluation.schemas import (
     ScoreOut,
     ScoreStatus,
 )
-from app.modules.evaluation.service import EvaluatorSetService
+from app.modules.evaluation.service import EvaluatorSetService, judge_call_out
 from app.modules.evaluation.stability import Answer, ModelStability, case_agreements, model_stability, replication
 from app.modules.projects.schemas import ProjectOut
 from app.modules.registry.service import RegistryService
 
 EXPERIMENT_NOT_FOUND = "This experiment doesn't exist in this project."
 RUN_NOT_FOUND = "This scoring run doesn't belong to this experiment."
+NOTHING_CHANGED = "Nothing was changed, so there is nothing to score again. Use Score again to repeat the scoring."
 NOT_SCORED = "This experiment hasn't been scored yet."
 STILL_RUNNING = "Wait until the experiment has finished before rescoring it."
 SCORE_JOB = "evaluation.score_experiment"
@@ -223,10 +225,26 @@ class ResultsService:
         experiment = await self._experiment(project.id, experiment_id)
         if experiment.status.value not in SCORED_STATES:
             raise Conflict(STILL_RUNNING)
-        version = body.evaluator_set_version_id or experiment.evaluator_set_version_id
-        if body.judge is not None:
-            await self._registry.call_target(project.id, body.judge.credential_id, body.judge.model)
-            version = (await self._evaluators.with_judge(project.id, version, body.judge, principal)).id
+        version = await self._base_version(experiment, body)
+        if body.judge is not None or body.evaluators is not None:
+            current = await self._evaluators.get_version(project.id, version)
+            choice = body.judge or current.judge
+            if choice is not None:
+                target = await self._registry.call_target(project.id, choice.credential_id, choice.model)
+                wanted = body.evaluators or current.evaluators
+                check_instructions_fit([e.config for e in wanted], target.profile.context_window)
+        if body.judge is not None or body.evaluators is not None:
+            changed = await self._evaluators.with_changes(
+                project.id,
+                version,
+                principal,
+                evaluators=body.evaluators,
+                judge=body.judge,
+                change_reason=body.change_reason,
+            )
+            if body.evaluators is not None and body.judge is None and changed.id == version:
+                raise Conflict(NOTHING_CHANGED)
+            version = changed.id
         await self._session.commit()
         self._jobs.enqueue(
             SCORE_JOB, experiment_id=str(experiment.id), trigger="rescore", evaluator_set_version_id=str(version)
@@ -238,9 +256,7 @@ class ResultsService:
     ) -> RescoreEstimate:
         """What scoring again would cost, from the answers already stored. Writes nothing."""
         experiment = await self._experiment(project.id, experiment_id)
-        version = await self._evaluators.get_version(
-            project.id, body.evaluator_set_version_id or experiment.evaluator_set_version_id
-        )
+        version = await self._evaluators.get_version(project.id, await self._base_version(experiment, body))
         choice = body.judge or version.judge
         if choice is None and experiment.config.get("judge"):
             stored = experiment.config["judge"]
@@ -248,7 +264,8 @@ class ResultsService:
         profile = None
         if choice is not None:
             profile = (await self._registry.call_target(project.id, choice.credential_id, choice.model)).profile
-        judged_checks = sum(1 for e in version.evaluators if e.config.get("kind") == "deepeval")
+        checks = body.evaluators if body.evaluators is not None else version.evaluators
+        judged_checks = judge_calls_per_answer([e.config for e in checks])
         answers = [
             (row.input_tokens or 0, row.output_tokens or 0)
             for row in await self._engine.runs(experiment.id)
@@ -261,6 +278,18 @@ class ResultsService:
             price_known=cost is not None,
             judge_model=choice.model if choice else None,
         )
+
+    async def _base_version(self, experiment: Experiment, body: RescoreRequest) -> uuid.UUID:
+        """The checks being changed: the one named, else the ones the results show now, else the original."""
+        shown = await self.scored_with(experiment)
+        return body.evaluator_set_version_id or shown or experiment.evaluator_set_version_id
+
+    async def judge_calls(
+        self, project_id: uuid.UUID, experiment_id: uuid.UUID, test_case_run_id: uuid.UUID
+    ) -> list[JudgeCallOut]:
+        """Every judge call made about one answer, exactly as sent, oldest first."""
+        await self._experiment(project_id, experiment_id)
+        return [judge_call_out(call) for call in await self._scores.judge_calls(experiment_id, test_case_run_id)]
 
     async def scored_with(self, experiment: Experiment) -> uuid.UUID | None:
         """The evaluator-set version of the scoring pass the results show (the latest completed one)."""

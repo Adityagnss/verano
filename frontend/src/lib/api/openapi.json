@@ -3560,6 +3560,110 @@
         "title": "ItemUpdate",
         "type": "object"
       },
+      "JudgeCallOut": {
+        "description": "One call the judge was asked to make about an answer, exactly as it was sent.",
+        "properties": {
+          "cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "evaluation_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evaluation Run Id"
+          },
+          "evaluator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evaluator"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "output_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Text"
+          },
+          "preview": {
+            "title": "Preview",
+            "type": "boolean"
+          },
+          "request_messages": {
+            "items": {},
+            "title": "Request Messages",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "evaluator",
+          "evaluation_run_id",
+          "preview",
+          "model",
+          "status",
+          "request_messages",
+          "output_text",
+          "error_message",
+          "cost",
+          "created_at"
+        ],
+        "title": "JudgeCallOut",
+        "type": "object"
+      },
       "JudgeChoice": {
         "description": "The model that scores the judged checks, chosen on purpose and kept on the evaluator-set version.",
         "properties": {
@@ -5416,6 +5520,18 @@
       "RescoreRequest": {
         "description": "Score again with the same checks, a given version of them, or the same checks judged by another model.",
         "properties": {
+          "change_reason": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Reason"
+          },
           "evaluator_set_version_id": {
             "anyOf": [
               {
@@ -5427,6 +5543,21 @@
               }
             ],
             "title": "Evaluator Set Version Id"
+          },
+          "evaluators": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/EvaluatorConfigIn"
+                },
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evaluators"
           },
           "judge": {
             "anyOf": [
@@ -6494,6 +6625,87 @@
           "output_tokens"
         ],
         "title": "Totals",
+        "type": "object"
+      },
+      "TryJudgeEstimate": {
+        "properties": {
+          "judge_calls": {
+            "title": "Judge Calls",
+            "type": "integer"
+          },
+          "judge_cost": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Judge Cost"
+          },
+          "judge_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Judge Model"
+          },
+          "price_known": {
+            "title": "Price Known",
+            "type": "boolean"
+          }
+        },
+        "required": ["judge_calls", "judge_cost", "price_known", "judge_model"],
+        "title": "TryJudgeEstimate",
+        "type": "object"
+      },
+      "TryJudgeOut": {
+        "properties": {
+          "calls": {
+            "items": {
+              "$ref": "#/components/schemas/JudgeCallOut"
+            },
+            "title": "Calls",
+            "type": "array"
+          },
+          "score": {
+            "$ref": "#/components/schemas/ScoreOut"
+          }
+        },
+        "required": ["score", "calls"],
+        "title": "TryJudgeOut",
+        "type": "object"
+      },
+      "TryJudgeRequest": {
+        "description": "Run one judged check on one stored answer, to see what the judge says before scoring everything again.",
+        "properties": {
+          "evaluator": {
+            "$ref": "#/components/schemas/EvaluatorConfigIn"
+          },
+          "judge": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JudgeChoice"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "test_case_run_id": {
+            "format": "uuid",
+            "title": "Test Case Run Id",
+            "type": "string"
+          }
+        },
+        "required": ["test_case_run_id", "evaluator"],
+        "title": "TryJudgeRequest",
         "type": "object"
       },
       "UploadPurpose": {
@@ -8616,6 +8828,76 @@
         "tags": ["experiments"]
       }
     },
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/answers/{test_case_run_id}/judge-calls": {
+      "get": {
+        "operationId": "get_judge_calls_api_v1_projects__project_id__experiments__experiment_id__answers__test_case_run_id__judge_calls_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "test_case_run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Test Case Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/JudgeCallOut"
+                  },
+                  "title": "Response Get Judge Calls Api V1 Projects  Project Id  Experiments  Experiment Id  Answers  Test Case Run Id  Judge Calls Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Judge Calls",
+        "tags": ["results"]
+      }
+    },
     "/api/v1/projects/{project_id}/experiments/{experiment_id}/cancel": {
       "post": {
         "operationId": "cancel_experiment_api_v1_projects__project_id__experiments__experiment_id__cancel_post",
@@ -8827,6 +9109,138 @@
           }
         ],
         "summary": "Export Csv",
+        "tags": ["results"]
+      }
+    },
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/judge/try": {
+      "post": {
+        "operationId": "try_judge_api_v1_projects__project_id__experiments__experiment_id__judge_try_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TryJudgeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TryJudgeOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Try Judge",
+        "tags": ["results"]
+      }
+    },
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/judge/try/estimate": {
+      "post": {
+        "operationId": "try_judge_estimate_api_v1_projects__project_id__experiments__experiment_id__judge_try_estimate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TryJudgeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TryJudgeEstimate"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Try Judge Estimate",
         "tags": ["results"]
       }
     },

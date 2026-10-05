@@ -472,6 +472,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/answers/{test_case_run_id}/judge-calls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Judge Calls */
+        get: operations["get_judge_calls_api_v1_projects__project_id__experiments__experiment_id__answers__test_case_run_id__judge_calls_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/experiments/{experiment_id}/cancel": {
         parameters: {
             query?: never;
@@ -517,6 +534,40 @@ export interface paths {
         get: operations["export_csv_api_v1_projects__project_id__experiments__experiment_id__export_csv_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/judge/try": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Try Judge */
+        post: operations["try_judge_api_v1_projects__project_id__experiments__experiment_id__judge_try_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/judge/try/estimate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Try Judge Estimate */
+        post: operations["try_judge_estimate_api_v1_projects__project_id__experiments__experiment_id__judge_try_estimate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2518,6 +2569,40 @@ export interface components {
             tags?: string[] | null;
         };
         /**
+         * JudgeCallOut
+         * @description One call the judge was asked to make about an answer, exactly as it was sent.
+         */
+        JudgeCallOut: {
+            /** Cost */
+            cost: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error Message */
+            error_message: string | null;
+            /** Evaluation Run Id */
+            evaluation_run_id: string | null;
+            /** Evaluator */
+            evaluator: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Model */
+            model: string;
+            /** Output Text */
+            output_text: string | null;
+            /** Preview */
+            preview: boolean;
+            /** Request Messages */
+            request_messages: unknown[];
+            /** Status */
+            status: string;
+        };
+        /**
          * JudgeChoice
          * @description The model that scores the judged checks, chosen on purpose and kept on the evaluator-set version.
          */
@@ -3260,8 +3345,12 @@ export interface components {
          * @description Score again with the same checks, a given version of them, or the same checks judged by another model.
          */
         RescoreRequest: {
+            /** Change Reason */
+            change_reason?: string | null;
             /** Evaluator Set Version Id */
             evaluator_set_version_id?: string | null;
+            /** Evaluators */
+            evaluators?: components["schemas"]["EvaluatorConfigIn"][] | null;
             judge?: components["schemas"]["JudgeChoice"] | null;
         };
         /** ResultsOut */
@@ -3678,6 +3767,36 @@ export interface components {
             passed: number;
             /** Unknown Price Answers */
             unknown_price_answers: number;
+        };
+        /** TryJudgeEstimate */
+        TryJudgeEstimate: {
+            /** Judge Calls */
+            judge_calls: number;
+            /** Judge Cost */
+            judge_cost: string | null;
+            /** Judge Model */
+            judge_model: string | null;
+            /** Price Known */
+            price_known: boolean;
+        };
+        /** TryJudgeOut */
+        TryJudgeOut: {
+            /** Calls */
+            calls: components["schemas"]["JudgeCallOut"][];
+            score: components["schemas"]["ScoreOut"];
+        };
+        /**
+         * TryJudgeRequest
+         * @description Run one judged check on one stored answer, to see what the judge says before scoring everything again.
+         */
+        TryJudgeRequest: {
+            evaluator: components["schemas"]["EvaluatorConfigIn"];
+            judge?: components["schemas"]["JudgeChoice"] | null;
+            /**
+             * Test Case Run Id
+             * Format: uuid
+             */
+            test_case_run_id: string;
         };
         /**
          * UploadPurpose
@@ -4892,6 +5011,39 @@ export interface operations {
             };
         };
     };
+    get_judge_calls_api_v1_projects__project_id__experiments__experiment_id__answers__test_case_run_id__judge_calls_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                experiment_id: string;
+                test_case_run_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JudgeCallOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     cancel_experiment_api_v1_projects__project_id__experiments__experiment_id__cancel_post: {
         parameters: {
             query?: never;
@@ -4980,6 +5132,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    try_judge_api_v1_projects__project_id__experiments__experiment_id__judge_try_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                experiment_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TryJudgeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TryJudgeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    try_judge_estimate_api_v1_projects__project_id__experiments__experiment_id__judge_try_estimate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                experiment_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TryJudgeRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TryJudgeEstimate"];
                 };
             };
             /** @description Validation Error */

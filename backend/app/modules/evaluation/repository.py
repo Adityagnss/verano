@@ -12,6 +12,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.evaluation.models import EvaluationRun, EvaluatorConfig, EvaluatorSet, EvaluatorSetVersion, Score
 from app.modules.evaluation.schemas import EvaluationRunStatus
+from app.modules.gateway.models import LLMCall
+from app.modules.gateway.schemas import CallPurpose
 
 
 class EvaluatorRepository:
@@ -89,4 +91,16 @@ class ScoreRepository:
 
     async def scores(self, experiment_id: uuid.UUID, run_id: uuid.UUID) -> list[Score]:
         query = select(Score).where(Score.experiment_id == experiment_id, Score.evaluation_run_id == run_id)
+        return list((await self._session.scalars(query)).all())
+
+    async def judge_calls(self, experiment_id: uuid.UUID, test_case_run_id: uuid.UUID) -> list[LLMCall]:
+        query = (
+            select(LLMCall)
+            .where(
+                LLMCall.experiment_id == experiment_id,
+                LLMCall.test_case_run_id == test_case_run_id,
+                LLMCall.purpose == CallPurpose.JUDGE,
+            )
+            .order_by(LLMCall.started_at, LLMCall.id)
+        )
         return list((await self._session.scalars(query)).all())

@@ -45,6 +45,32 @@ export const RESULTS_COPY = {
   scoreAgain: "Score again",
   scoreAgainCost: (calls: number | null, cost: string | null) =>
     `This asks the judge to score every answer again${calls ? ` (about ${calls} judge calls${cost ? `, about $${Number(cost).toFixed(4)}` : ""})` : ""}. The earlier scoring is kept.`,
+  seeJudge: "What the judge saw",
+  hideJudge: "Hide what the judge saw",
+  judgeNoCalls: "The judge was not asked anything about this answer (the other checks need no judge).",
+  judgeCall: (n: number, total: number, evaluator: string | null) =>
+    `Request ${n} of ${total}${evaluator ? ` · ${evaluator.replaceAll("_", " ")}` : ""}`,
+  judgePreview: "(preview, not part of the results)",
+  judgeReply: "The judge replied",
+  judgeFailed: "The call failed",
+  judgingHeading: "How the judge scores",
+  judgingHint:
+    "The judge reads the test case, the answer and these criteria. Change them or the judge model, try it on one answer, then score again: the results of the earlier scoring are kept, and scores from different criteria or judges are never mixed.",
+  criteria: "Criteria",
+  criteriaHint: "In words, what a good answer is. {rubric} stands for each test case's own rubric.",
+  steps: "Evaluation steps (optional)",
+  stepsHint:
+    "One step per line, at most 10. When given, they replace the criteria: the judge follows exactly these.",
+  tryHeading: "Try the judge on one answer",
+  tryPick: "Answer to try",
+  tryRun: "Try the judge",
+  trying: "Asking the judge…",
+  tryCost: (calls: number, cost: string | null) =>
+    `This makes ${calls} judge ${calls === 1 ? "call" : "calls"}${cost ? ` (about $${Number(cost).toFixed(4)})` : " (price unknown)"}. Nothing is scored or changed.`,
+  tryResult: (value: number, passed: boolean) =>
+    `Score ${Math.round(value * 100)}% · ${passed ? "pass" : "fail"}`,
+  scoreWithChanges: "Score again with these changes",
+  nothingChanged: "Nothing changed yet.",
   judgeLabel: "Judge model",
   judgeHint:
     "The model that scores the judged checks. It is kept with the checks, so scores from different judges are never compared directly.",

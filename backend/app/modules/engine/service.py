@@ -47,6 +47,7 @@ from app.modules.engine.schemas import (
     SplitScope,
     TestCaseRunOut,
 )
+from app.modules.evaluation.domain import judge_calls_per_answer
 from app.modules.evaluation.schemas import JudgeChoice
 from app.modules.evaluation.service import EvaluatorSetService
 from app.modules.gateway.domain import filter_params
@@ -252,7 +253,7 @@ class ExperimentService:
         if choice is not None:
             judge = {"credential_id": str(choice.credential_id), "model": choice.model, "source": source}
             judge_profile = (await self._registry.call_target(project_id, choice.credential_id, choice.model)).profile
-        judge_metrics = sum(1 for e in evaluators.evaluators if e.config.get("kind") == "deepeval")
+        judge_metrics = judge_calls_per_answer([e.config for e in evaluators.evaluators])
         if judge_metrics and judge_profile is None:
             raise ValidationFailed(NO_JUDGE_CHOSEN)
         return _PlanInputs(

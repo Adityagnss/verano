@@ -4,7 +4,8 @@ The DeepEval adapter (ADR 0003): LLM-judge metrics run through our gateway, neve
 `GatewayJudge` is DeepEval's custom-model class backed by `GatewayService`, so every judge
 call is rate-limited, retried, costed and recorded like any other call (purpose `judge`),
 and structured replies go through the gateway's JSON repair. `judge` runs G-Eval for one
-case with the evaluator's criteria; "{rubric}" means the case's own rubric. The G-Eval
+case with the evaluator's criteria, or its own evaluation steps when it has them; "{rubric}" means
+the case's own rubric. The G-Eval
 score is already normalized to 0.0-1.0. Telemetry is switched off before DeepEval loads.
 """
 
@@ -53,11 +54,34 @@ def _judge_class() -> type:
     return GatewayJudge
 
 
-def criteria_for(config: dict[str, Any], case: EvalCase) -> str | None:
-    criteria = str(config.get("criteria") or "")
+def steps_of(config: dict[str, Any]) -> list[str]:
+    return [str(step).strip() for step in config.get("evaluation_steps") or [] if str(step).strip()]
+
+
+def _rubric_text(case: EvalCase) -> str | None:
+    return "A good answer meets every one of these criteria: " + "; ".join(case.rubric) if case.rubric else None
+
+
+def instructions_for(config: dict[str, Any], case: EvalCase) -> tuple[str | None, list[str]] | None:
+    """What the judge is asked about this case: (criteria, steps), or None when the check does not apply
+    (it uses the case's own rubric and the case has none). Steps, when given, replace the criteria, and a step
+    that is exactly "{rubric}" stands for the case's rubric."""
+    steps = steps_of(config)
+    if steps:
+        if RUBRIC not in steps:
+            return None, steps
+        rubric = _rubric_text(case)
+        return (None, [rubric if step == RUBRIC else step for step in steps]) if rubric else None
+    criteria = str(config.get("criteria") or "").strip()
     if criteria == RUBRIC:
-        return "A good answer meets every one of these criteria: " + "; ".join(case.rubric) if case.rubric else None
-    return criteria or None
+        rubric = _rubric_text(case)
+        return (rubric, []) if rubric else None
+    return (criteria, []) if criteria else None
+
+
+def criteria_for(config: dict[str, Any], case: EvalCase) -> str | None:
+    asked = instructions_for(config, case)
+    return asked[0] if asked else None
 
 
 async def judge(
@@ -69,9 +93,10 @@ async def judge(
     threshold: float,
     case: EvalCase,
 ) -> Score | None:
-    criteria = criteria_for(config, case)
-    if criteria is None:
+    asked = instructions_for(config, case)
+    if asked is None:
         return None
+    criteria, steps = asked
     from deepeval.metrics import GEval
     from deepeval.test_case import LLMTestCase, SingleTurnParams
 
@@ -83,6 +108,7 @@ async def judge(
     metric = GEval(
         name=name,
         criteria=criteria,
+        evaluation_steps=steps or None,
         evaluation_params=params,
         model=_judge_class()(gateway, target, context),
         threshold=threshold,

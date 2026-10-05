@@ -93,6 +93,16 @@ export function EvaluatorCard({
             {e.evaluator_name === "constraints" ? (
               <ConstraintList list={(e.config as Config).constraints} />
             ) : null}
+            {Array.isArray((e.config as Config).evaluation_steps) ? (
+              <div className="text-text-secondary text-xs">
+                <p>{TESTS_COPY.stepsInfo}</p>
+                <ol className="list-decimal pl-5">
+                  {((e.config as Config).evaluation_steps as unknown[]).map((step) => (
+                    <li key={String(step)}>{String(step)}</li>
+                  ))}
+                </ol>
+              </div>
+            ) : null}
             {e.position in criteria ? (
               <>
                 <Label htmlFor={`criteria-${e.position}`} className="text-muted-foreground text-xs">

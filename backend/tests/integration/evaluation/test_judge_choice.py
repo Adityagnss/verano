@@ -112,7 +112,10 @@ async def test_scoring_again_with_another_judge_is_a_separate_pass_and_the_first
     body = {"judge": judge_of(models, "judge_down")}
     asked = await client.post(f"{path}/rescore/estimate", json=body, headers=session.headers)
     assert asked.status_code == 200, asked.text
-    assert (asked.json()["judge_calls"], asked.json()["judge_model"]) == (6, "judge_down")
+    assert (asked.json()["judge_calls"], asked.json()["judge_model"]) == (
+        12,
+        "judge_down",
+    )  # criteria: one call writes the steps, one scores
     assert asked.json()["judge_cost"] is not None
     assert await version_count(container) == count
 

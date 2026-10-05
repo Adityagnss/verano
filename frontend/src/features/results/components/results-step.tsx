@@ -31,6 +31,7 @@ import { bestOn, brokenModels, isBest } from "../insights"
 import { CaseView } from "./case-view"
 import { ConfigPanel } from "./config-panel"
 import { UnjudgedBanner } from "./unjudged-banner"
+import { JudgingPanel } from "./judging-panel"
 import { PassRateChart, percent, TradeoffTable } from "./tradeoff-table"
 
 const FINISHED = new Set(["completed", "cancelled", "evaluating"])
@@ -152,6 +153,14 @@ export function ResultsStep({ projectId, experimentId }: { projectId: string; ex
       {current ? (
         <ConfigPanel projectId={projectId} experiment={current} all={experiments.data ?? []} />
       ) : null}
+      {scored && chosen && results.data?.evaluation_run ? (
+        <JudgingPanel
+          projectId={projectId}
+          experimentId={chosen}
+          versionId={results.data.evaluation_run.evaluator_set_version_id}
+          cases={cases.data ?? []}
+        />
+      ) : null}
       {scored ? (
         <Section
           title={RESULTS_COPY.casesHeading}
@@ -182,7 +191,12 @@ export function ResultsStep({ projectId, experimentId }: { projectId: string; ex
           ) : (
             <div className="flex flex-col gap-2">
               {(cases.data ?? []).map((item) => (
-                <CaseView key={item.dataset_item_id} item={item} />
+                <CaseView
+                  key={item.dataset_item_id}
+                  item={item}
+                  projectId={projectId}
+                  experimentId={chosen ?? ""}
+                />
               ))}
             </div>
           )}

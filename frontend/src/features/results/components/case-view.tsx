@@ -10,13 +10,22 @@ import type { CaseResultOut } from "@/lib/api/types"
 import { cn } from "@/lib/utils"
 
 import { RESULTS_COPY } from "../copy"
+import { JudgeCalls } from "./judge-calls"
 
 function inputText(item: CaseResultOut): string {
   const values = Object.values(item.inputs)
   return values.length === 1 ? String(values[0]) : JSON.stringify(item.inputs)
 }
 
-export function CaseView({ item }: { item: CaseResultOut }) {
+export function CaseView({
+  item,
+  projectId,
+  experimentId,
+}: {
+  item: CaseResultOut
+  projectId: string
+  experimentId: string
+}) {
   const failed = item.outputs.filter((o) => o.judged && !o.passed).length
   const notJudged = item.outputs.filter((o) => !o.judged).length
   return (
@@ -129,6 +138,9 @@ export function CaseView({ item }: { item: CaseResultOut }) {
                   ),
                 )}
               </ul>
+              {o.scores.length ? (
+                <JudgeCalls projectId={projectId} experimentId={experimentId} answerId={o.test_case_run_id} />
+              ) : null}
             </div>
           ))}
         </div>

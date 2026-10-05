@@ -19,22 +19,33 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.container import Container
-from app.core.errors import AppError
+from app.core.errors import AppError, Conflict, NotFound, ValidationFailed
 from app.core.ids import uuid7
 from app.core.jobs import JobQueue
 from app.core.security import utcnow
 from app.modules.datasets.models import DatasetItem
 from app.modules.datasets.service import DatasetService
+from app.modules.engine.estimate import estimate_judging
 from app.modules.engine.models import Experiment, TestCaseRun
 from app.modules.engine.repository import EngineRepository
 from app.modules.engine.schemas import ExperimentOrigin, ExperimentStatus, RunStatus
 from app.modules.engine.service import ExperimentService
-from app.modules.evaluation.domain import EvalCase, Score, Unscored
+from app.modules.evaluation.domain import EvalCase, Score, Unscored, check_instructions_fit, judge_calls_per_answer
 from app.modules.evaluation.models import EvaluationRun, EvaluatorConfig
-from app.modules.evaluation.plugins.deepeval_adapter import criteria_for, judge
+from app.modules.evaluation.plugins.deepeval_adapter import instructions_for, judge
 from app.modules.evaluation.plugins.rules import RULES
 from app.modules.evaluation.repository import EvaluatorRepository, ScoreRepository
-from app.modules.evaluation.schemas import EvaluationRunStatus, EvaluationTrigger, ScoreStatus
+from app.modules.evaluation.schemas import (
+    EvaluationRunStatus,
+    EvaluationTrigger,
+    JudgeChoice,
+    ScoreOut,
+    ScoreStatus,
+    TryJudgeEstimate,
+    TryJudgeOut,
+    TryJudgeRequest,
+)
+from app.modules.evaluation.service import judge_call_out
 from app.modules.gateway.dependencies import build_gateway
 from app.modules.gateway.schemas import CallContext
 from app.modules.gateway.service import GatewayService
@@ -48,6 +59,9 @@ ADVANCE_JOB = "assistant.advance"
 CALL_ERROR = "call_error"
 DEEPEVAL = "deepeval"
 NO_JUDGE = "No judge model is available, so this answer could not be judged."
+NOT_TRYABLE = "Only a judged check can be tried on an answer."
+NOT_APPLICABLE = "This check does not apply to this answer: it uses the test case's own rubric and the case has none."
+NO_SUCH_ANSWER = "This answer doesn't belong to this experiment, or it has no output to judge."
 JUDGE_FAILED = "The judge could not score this answer: {why}"
 
 
@@ -173,9 +187,14 @@ class ScoringService:
             task_spec=spec,
             context=[str(c) for c in item.context],
         )
-        context = CallContext(project_id=experiment.project_id, experiment_id=experiment.id, test_case_run_id=row.id)
         scored = []
         for config in configs:
+            context = CallContext(
+                project_id=experiment.project_id,
+                experiment_id=experiment.id,
+                test_case_run_id=row.id,
+                labels={"evaluation_run_id": str(run_id), "evaluator": config.evaluator_name},
+            )
             result = await self._evaluate(config, case, target, context, limit)
             if result is None:
                 continue
@@ -212,7 +231,7 @@ class ScoringService:
         if config.config.get("kind") != DEEPEVAL:
             rule = RULES.get(config.evaluator_name)
             return rule(case, config.config, config.threshold) if rule else None
-        if criteria_for(config.config, case) is None:
+        if instructions_for(config.config, case) is None:
             return None
         if target is None:
             return Unscored(NO_JUDGE)
@@ -227,3 +246,94 @@ class ScoringService:
             except Exception as exc:
                 log.warning("judge %s failed unexpectedly", config.evaluator_name, exc_info=True)
                 return Unscored(JUDGE_FAILED.format(why=f"{type(exc).__name__}: {str(exc)[:200]}"))
+
+    async def try_estimate(
+        self, project_id: uuid.UUID, experiment_id: uuid.UUID, body: TryJudgeRequest
+    ) -> TryJudgeEstimate:
+        """What trying one judged check on one stored answer would cost. Writes nothing."""
+        _, row, _, choice = await self._try_inputs(project_id, experiment_id, body)
+        profile = None
+        if choice is not None:
+            profile = (await self._registry.call_target(project_id, choice.credential_id, choice.model)).profile
+        calls, cost = estimate_judging(
+            profile, [(row.input_tokens or 0, row.output_tokens or 0)], judge_calls_per_answer([body.evaluator.config])
+        )
+        return TryJudgeEstimate(
+            judge_calls=calls,
+            judge_cost=cost,
+            price_known=cost is not None,
+            judge_model=choice.model if choice else None,
+        )
+
+    async def try_judge(self, project_id: uuid.UUID, experiment_id: uuid.UUID, body: TryJudgeRequest) -> TryJudgeOut:
+        """Runs one judged check on one stored answer: the judge's calls are recorded (and costed to the
+        experiment) and labelled as a preview, but nothing is scored and no results change."""
+        experiment, row, item, choice = await self._try_inputs(project_id, experiment_id, body)
+        if choice is None:
+            raise ValidationFailed(NO_JUDGE)
+        target = await self._registry.call_target(project_id, choice.credential_id, choice.model)
+        check_instructions_fit([body.evaluator.config], target.profile.context_window)
+        spec = await self._spec(experiment)
+        case = EvalCase(
+            inputs=item.inputs,
+            output=row.raw_output or "",
+            expected=item.expected_output,
+            rubric=[str(c) for c in item.rubric] if item.rubric else None,
+            task_spec=spec,
+            context=[str(c) for c in item.context],
+        )
+        name = body.evaluator.evaluator_name
+        context = CallContext(
+            project_id=project_id,
+            experiment_id=experiment.id,
+            test_case_run_id=row.id,
+            labels={"preview": "true", "evaluator": name},
+        )
+        config = EvaluatorConfig(
+            evaluator_name=name,
+            evaluator_version=body.evaluator.evaluator_version,
+            config=body.evaluator.config,
+            threshold=body.evaluator.threshold,
+            weight=body.evaluator.weight,
+            required=body.evaluator.required,
+        )
+        started = utcnow()
+        result = await self._evaluate(config, case, target, context, asyncio.Semaphore(1))
+        if result is None:
+            raise Conflict(NOT_APPLICABLE)
+        await self._session.commit()
+        calls = [
+            c
+            for c in await self._scores.judge_calls(experiment.id, row.id)
+            if c.labels.get("preview") == "true" and c.created_at >= started
+        ]
+        if isinstance(result, Unscored):
+            shown = ScoreOut(
+                evaluator_name=name, value=0.0, passed=False, reason=result.reason, status=ScoreStatus.UNSCORED
+            )
+        else:
+            shown = ScoreOut(evaluator_name=name, value=result.value, passed=result.passed, reason=result.reason)
+        return TryJudgeOut(score=shown, calls=[judge_call_out(c) for c in calls])
+
+    async def _try_inputs(
+        self, project_id: uuid.UUID, experiment_id: uuid.UUID, body: TryJudgeRequest
+    ) -> tuple[Experiment, TestCaseRun, DatasetItem, JudgeChoice | None]:
+        if body.evaluator.config.get("kind") != DEEPEVAL:
+            raise ValidationFailed(NOT_TRYABLE)
+        experiment = await self._engine.experiment(experiment_id, project_id)
+        if experiment is None:
+            raise NotFound("This experiment doesn't exist in this project.")
+        row = next((r for r in await self._engine.runs(experiment.id) if r.id == body.test_case_run_id), None)
+        if row is None or row.status is not RunStatus.SUCCEEDED:
+            raise NotFound(NO_SUCH_ANSWER)
+        item = (await self._datasets.items(experiment.dataset_version_id, ids=[row.dataset_item_id]))[0]
+        runs = await self._scores.runs(experiment.id)
+        shown = next((r.evaluator_set_version_id for r in runs if r.status is EvaluationRunStatus.COMPLETED), None)
+        choice = body.judge
+        if choice is None:
+            stored = await self._evaluators.judge_of(
+                shown or experiment.evaluator_set_version_id
+            ) or experiment.config.get("judge")
+            if stored:
+                choice = JudgeChoice(credential_id=uuid.UUID(str(stored["credential_id"])), model=stored["model"])
+        return experiment, row, item, choice
