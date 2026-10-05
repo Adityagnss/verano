@@ -2025,6 +2025,10 @@
       },
       "ExperimentOption": {
         "properties": {
+          "config_hash": {
+            "title": "Config Hash",
+            "type": "string"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -2049,7 +2053,7 @@
             "type": "string"
           }
         },
-        "required": ["id", "name", "created_at", "prompt_version_id", "prompt_version"],
+        "required": ["id", "name", "created_at", "prompt_version_id", "prompt_version", "config_hash"],
         "title": "ExperimentOption",
         "type": "object"
       },
@@ -2088,6 +2092,9 @@
             "additionalProperties": true,
             "title": "Config",
             "type": "object"
+          },
+          "configuration": {
+            "$ref": "#/components/schemas/RunConfiguration"
           },
           "created_at": {
             "format": "date-time",
@@ -2195,6 +2202,7 @@
           "total_calls",
           "stop_reason",
           "progress",
+          "configuration",
           "created_at",
           "started_at",
           "completed_at"
@@ -3933,6 +3941,55 @@
         "title": "ModelSelection",
         "type": "object"
       },
+      "ModelSetting": {
+        "description": "One model as the run was configured; `params` are the settings that reach the model.",
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "ignored_params": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ignored Params",
+            "type": "array"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "model_profile_id": {
+            "format": "uuid",
+            "title": "Model Profile Id",
+            "type": "string"
+          },
+          "params": {
+            "additionalProperties": true,
+            "title": "Params",
+            "type": "object"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "runs": {
+            "title": "Runs",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "model_profile_id",
+          "display_name",
+          "provider",
+          "model",
+          "runs",
+          "params",
+          "ignored_params"
+        ],
+        "title": "ModelSetting",
+        "type": "object"
+      },
       "OptimizationStatus": {
         "enum": ["active", "closed"],
         "title": "OptimizationStatus",
@@ -4767,6 +4824,89 @@
         "enum": ["trusted", "draft", "approved"],
         "title": "ReviewStatus",
         "type": "string"
+      },
+      "RunConfiguration": {
+        "description": "What an experiment was set up with. `hash` is the same for the same configuration.",
+        "properties": {
+          "dataset_version_id": {
+            "format": "uuid",
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "evaluator_set_version_id": {
+            "format": "uuid",
+            "title": "Evaluator Set Version Id",
+            "type": "string"
+          },
+          "hash": {
+            "title": "Hash",
+            "type": "string"
+          },
+          "judge_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Judge Model"
+          },
+          "libraries": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Libraries",
+            "type": "object"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/ModelSetting"
+            },
+            "title": "Models",
+            "type": "array"
+          },
+          "prompt_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version"
+          },
+          "prompt_version_id": {
+            "format": "uuid",
+            "title": "Prompt Version Id",
+            "type": "string"
+          },
+          "split_scope": {
+            "$ref": "#/components/schemas/SplitScope"
+          }
+        },
+        "required": [
+          "hash",
+          "prompt_version_id",
+          "prompt_version",
+          "dataset_version_id",
+          "evaluator_set_version_id",
+          "split_scope",
+          "judge_model",
+          "models",
+          "libraries"
+        ],
+        "title": "RunConfiguration",
+        "type": "object"
       },
       "RunStatus": {
         "enum": ["pending", "running", "succeeded", "failed", "skipped"],

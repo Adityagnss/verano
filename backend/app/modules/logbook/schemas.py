@@ -144,6 +144,7 @@ class ExperimentOption(BaseModel):
     created_at: datetime
     prompt_version_id: uuid.UUID
     prompt_version: int
+    config_hash: str
 
 
 class VersionOption(BaseModel):

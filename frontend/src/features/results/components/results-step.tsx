@@ -29,6 +29,7 @@ import { RESULTS_COPY } from "../copy"
 import { downloadCsv, useCases, useResults } from "../hooks"
 import { bestOn, brokenModels, isBest } from "../insights"
 import { CaseView } from "./case-view"
+import { ConfigPanel } from "./config-panel"
 import { PassRateChart, percent, TradeoffTable } from "./tradeoff-table"
 
 const FINISHED = new Set(["completed", "cancelled", "evaluating"])
@@ -57,6 +58,7 @@ export function ResultsStep({ projectId, experimentId }: { projectId: string; ex
       />
     )
   const metrics = results.data?.models ?? []
+  const current = (experiments.data ?? []).find((e) => e.id === chosen)
   const tiles = [
     {
       label: RESULTS_COPY.tiles.quality,
@@ -144,6 +146,9 @@ export function ResultsStep({ projectId, experimentId }: { projectId: string; ex
             </div>
           </Section>
         </>
+      ) : null}
+      {current ? (
+        <ConfigPanel projectId={projectId} experiment={current} all={experiments.data ?? []} />
       ) : null}
       {scored ? (
         <Section

@@ -1840,6 +1840,8 @@ export interface components {
         };
         /** ExperimentOption */
         ExperimentOption: {
+            /** Config Hash */
+            config_hash: string;
             /**
              * Created At
              * Format: date-time
@@ -1875,6 +1877,7 @@ export interface components {
             config: {
                 [key: string]: unknown;
             };
+            configuration: components["schemas"]["RunConfiguration"];
             /**
              * Created At
              * Format: date-time
@@ -2562,6 +2565,31 @@ export interface components {
             unselected: string[];
         };
         /**
+         * ModelSetting
+         * @description One model as the run was configured; `params` are the settings that reach the model.
+         */
+        ModelSetting: {
+            /** Display Name */
+            display_name: string;
+            /** Ignored Params */
+            ignored_params: string[];
+            /** Model */
+            model: string;
+            /**
+             * Model Profile Id
+             * Format: uuid
+             */
+            model_profile_id: string;
+            /** Params */
+            params: {
+                [key: string]: unknown;
+            };
+            /** Provider */
+            provider: string;
+            /** Runs */
+            runs: number;
+        };
+        /**
          * OptimizationStatus
          * @enum {string}
          */
@@ -2881,6 +2909,40 @@ export interface components {
          * @enum {string}
          */
         ReviewStatus: "trusted" | "draft" | "approved";
+        /**
+         * RunConfiguration
+         * @description What an experiment was set up with. `hash` is the same for the same configuration.
+         */
+        RunConfiguration: {
+            /**
+             * Dataset Version Id
+             * Format: uuid
+             */
+            dataset_version_id: string;
+            /**
+             * Evaluator Set Version Id
+             * Format: uuid
+             */
+            evaluator_set_version_id: string;
+            /** Hash */
+            hash: string;
+            /** Judge Model */
+            judge_model: string | null;
+            /** Libraries */
+            libraries: {
+                [key: string]: string | null;
+            };
+            /** Models */
+            models: components["schemas"]["ModelSetting"][];
+            /** Prompt Version */
+            prompt_version: number | null;
+            /**
+             * Prompt Version Id
+             * Format: uuid
+             */
+            prompt_version_id: string;
+            split_scope: components["schemas"]["SplitScope"];
+        };
         /**
          * RunStatus
          * @enum {string}

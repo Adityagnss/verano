@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.sqltypes import Float
 
 from app.core.errors import NotFound
+from app.modules.engine.fingerprint import config_hash
 from app.modules.engine.models import Experiment
 from app.modules.engine.schemas import RunStatus
 from app.modules.evaluation.models import Score
@@ -97,13 +98,7 @@ class LogbookService:
     async def options(self, project_id: uuid.UUID) -> LogOptions:
         a = answers(project_id)
         experiments = await self._repo.execute(
-            select(
-                Experiment.id,
-                Experiment.name,
-                Experiment.created_at,
-                Experiment.prompt_version_id,
-                PromptVersion.version,
-            )
+            select(Experiment, PromptVersion.version)
             .join(PromptVersion, PromptVersion.id == Experiment.prompt_version_id)
             .where(Experiment.project_id == project_id)
             .order_by(Experiment.id.desc())
@@ -125,8 +120,15 @@ class LogbookService:
         )
         return LogOptions(
             experiments=[
-                ExperimentOption(id=i, name=n, created_at=c, prompt_version_id=v, prompt_version=number)
-                for i, n, c, v, number in experiments
+                ExperimentOption(
+                    id=e.id,
+                    name=e.name,
+                    created_at=e.created_at,
+                    prompt_version_id=e.prompt_version_id,
+                    prompt_version=number,
+                    config_hash=config_hash(e),
+                )
+                for e, number in experiments
             ],
             prompt_versions=[VersionOption(id=i, version=v) for i, v in versions],
             models=models,

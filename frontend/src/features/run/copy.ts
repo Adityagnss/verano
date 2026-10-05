@@ -8,6 +8,8 @@ export const RUN_COPY = {
     "Run a model 2+ times to see how consistent it is.",
     "Check the cost preview and set a budget cap if you like.",
     "Results are scored automatically when the run finishes.",
+    "You set the model, prompt, test cases and settings. Verano locks and records the versions, a fingerprint of the configuration, cost, tokens and time. The provider controls the model snapshot, hardware and routing, which Verano records but cannot guarantee.",
+    "Runs set up the same way get the same fingerprint, so Results can tell you when two experiments are replicable. That is not a promise of identical answers.",
   ],
   modelsHeading: "Choose models and settings",
   modelsHint: "The models you ticked in step 1. Untick any you want to leave out of this run.",

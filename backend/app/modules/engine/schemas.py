@@ -96,6 +96,32 @@ class ModelProgress(BaseModel):
     cost: Decimal = Decimal(0)
 
 
+class ModelSetting(BaseModel):
+    """One model as the run was configured; `params` are the settings that reach the model."""
+
+    model_profile_id: uuid.UUID
+    display_name: str
+    provider: str
+    model: str
+    runs: int
+    params: dict[str, Any]
+    ignored_params: list[str]
+
+
+class RunConfiguration(BaseModel):
+    """What an experiment was set up with. `hash` is the same for the same configuration."""
+
+    hash: str
+    prompt_version_id: uuid.UUID
+    prompt_version: int | None
+    dataset_version_id: uuid.UUID
+    evaluator_set_version_id: uuid.UUID
+    split_scope: SplitScope
+    judge_model: str | None
+    models: list[ModelSetting]
+    libraries: dict[str, str | None]
+
+
 class ExperimentOut(BaseModel):
     id: uuid.UUID
     project_id: uuid.UUID
@@ -112,6 +138,7 @@ class ExperimentOut(BaseModel):
     total_calls: int
     stop_reason: str | None
     progress: list[ModelProgress]
+    configuration: RunConfiguration
     created_at: datetime
     started_at: datetime | None
     completed_at: datetime | None

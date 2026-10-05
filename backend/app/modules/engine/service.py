@@ -29,6 +29,7 @@ from app.modules.datasets.schemas import ItemFilter, Split
 from app.modules.datasets.service import DatasetService
 from app.modules.engine.domain import chunks, ensure_transition, plan_matrix
 from app.modules.engine.estimate import estimate_experiment
+from app.modules.engine.fingerprint import run_configuration
 from app.modules.engine.models import Experiment, ExperimentEvent
 from app.modules.engine.repository import EngineRepository
 from app.modules.engine.schemas import (
@@ -164,7 +165,8 @@ class ExperimentService:
 
     async def list_experiments(self, project: ProjectOut, page: PageParams) -> Page[ExperimentOut]:
         rows = await self._repo.experiments(project.id, page)
-        return to_page([await self._out(row) for row in rows], page, lambda item: item.id)
+        numbers = await self._repo.prompt_numbers([row.prompt_version_id for row in rows])
+        return to_page([await self._out(row, numbers) for row in rows], page, lambda item: item.id)
 
     async def get(self, project_id: uuid.UUID, experiment_id: uuid.UUID) -> ExperimentOut:
         return await self._out(await self._experiment(project_id, experiment_id))
@@ -297,7 +299,8 @@ class ExperimentService:
             raise NotFound(EXPERIMENT_NOT_FOUND)
         return row
 
-    async def _out(self, row: Experiment) -> ExperimentOut:
+    async def _out(self, row: Experiment, numbers: dict[uuid.UUID, int] | None = None) -> ExperimentOut:
+        numbers = numbers or await self._repo.prompt_numbers([row.prompt_version_id])
         progress: dict[uuid.UUID, ModelProgress] = {}
         for model_id, model, status, count, cost in await self._repo.progress(row.id):
             entry = progress.setdefault(model_id, ModelProgress(model_profile_id=model_id, model=model))
@@ -309,6 +312,7 @@ class ExperimentService:
             **{name: getattr(row, name) for name in ExperimentOut.model_fields if hasattr(row, name)},
             stop_reason=await self._repo.last_reason(row.id),
             progress=list(progress.values()),
+            configuration=run_configuration(row, numbers.get(row.prompt_version_id)),
         )
 
 

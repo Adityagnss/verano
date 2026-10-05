@@ -11,6 +11,7 @@ import { type Choice, MultiSelect } from "@/components/common/multi-select"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { LogOptions } from "@/lib/api/types"
+import { sameConfiguration, shortHash } from "@/lib/config"
 import { cn } from "@/lib/utils"
 
 import { LOGBOOK_COPY } from "../copy"
@@ -115,7 +116,11 @@ export function FilterBar({
           choices={(options?.experiments ?? []).map((e) => ({
             value: e.id,
             label: e.name,
-            hint: `v${e.prompt_version} · ${new Date(e.created_at).toLocaleString()}`,
+            hint: `v${e.prompt_version} · config ${shortHash(e.config_hash)}${
+              sameConfiguration(options?.experiments ?? [], e.id, (x) => x.config_hash).length
+                ? " (same as others)"
+                : ""
+            } · ${new Date(e.created_at).toLocaleString()}`,
           }))}
         />
         <MultiSelect

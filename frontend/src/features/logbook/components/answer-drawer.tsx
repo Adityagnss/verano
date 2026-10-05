@@ -13,6 +13,7 @@ import { ErrorMessage } from "@/components/common/error-message"
 import { StatusBadge } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { formatParams } from "@/lib/config"
 import { formatCost, formatMs } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
@@ -129,10 +130,7 @@ export function AnswerDrawer({
                   label="Tokens in / out"
                   value={`${row.input_tokens ?? "—"} / ${row.output_tokens ?? "—"}`}
                 />
-                <Fact
-                  label="Settings"
-                  value={`temp ${row.temperature ?? "default"} · max ${row.max_tokens ?? "default"}`}
-                />
+                <Fact label="Settings" value={formatParams(data?.params ?? {})} />
               </dl>
               {row.error ? (
                 <p className="bg-danger-soft text-danger-strong rounded-lg p-3 text-sm">{row.error}</p>

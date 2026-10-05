@@ -130,3 +130,32 @@ async def test_repeated_runs_use_the_next_seed_and_ignored_settings_are_recorded
     seeds = {run: {r.params["seed"] for r in rows if r.model == "good" and r.run_number == run} for run in (1, 2, 3)}
     assert seeds == {1: {42}, 2: {43}, 3: {44}}
     assert len({r.param_set_key for r in rows if r.model == "good"}) == 1
+
+
+async def test_the_same_setup_has_the_same_configuration_hash_and_the_logbook_lists_it(
+    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue
+) -> None:
+    models = await approved_project(client, session, jobs)
+
+    def body(seed: int, name: str) -> dict[str, Any]:
+        return {
+            "name": name,
+            "models": [{"model_profile_id": models["good"], "params": {"temperature": 0, "seed": seed}}],
+        }
+
+    first = await start(client, session, body(42, "First"))
+    again = await start(client, session, {**body(42, "Second"), "budget_cap": "5"})
+    other = await start(client, session, body(43, "Third"))
+    await jobs.drain()
+    hashes = {e["name"]: e["configuration"]["hash"] for e in (first, again, other)}
+    assert hashes["First"] == hashes["Second"] != hashes["Third"]
+    configuration = first["configuration"]
+    assert [(m["display_name"], m["runs"], m["params"]) for m in configuration["models"]] == [
+        ("good", 1, {"temperature": 0.0, "seed": 42})
+    ]
+    assert "litellm" in configuration["libraries"]
+
+    options = await client.get(f"/api/v1/projects/{session.project_id}/logbook/options", headers=session.headers)
+    assert options.status_code == 200, options.text
+    listed = {e["name"]: e["config_hash"] for e in options.json()["experiments"]}
+    assert listed == hashes
