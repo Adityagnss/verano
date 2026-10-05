@@ -71,6 +71,7 @@ class GenerationStatus(StrEnum):
     RUNNING = "running"
     SUCCEEDED = "succeeded"
     FAILED = "failed"
+    STOPPED = "stopped"
 
 
 class GeneratorModel(BaseModel):
@@ -109,6 +110,8 @@ class GenerationRequest(BaseModel):
     task_spec_id: uuid.UUID
     target_size: int | None = Field(default=None, ge=5, le=1000)
     golden_only: bool = False
+    budget_cap: Decimal | None = Field(default=None, gt=0)
+    accept_cost: bool = False
 
 
 class GenerationState(BaseModel):
@@ -116,6 +119,9 @@ class GenerationState(BaseModel):
     task_spec_id: uuid.UUID
     target_size: int
     golden_only: bool
+    budget_cap: Decimal | None = None
+    spent: Decimal = Decimal(0)
+    cancel_requested: bool = False
     embedding_model: str | None = None
     counts: dict[str, int] = {}
     dropped_duplicates: int = 0
@@ -151,3 +157,5 @@ class GenerationEstimate(BaseModel):
     output_tokens: int
     cost: Decimal | None
     price_known: bool
+    confirm_above: Decimal = Decimal(0)
+    needs_confirmation: bool = False

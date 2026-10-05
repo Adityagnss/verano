@@ -3,8 +3,10 @@ Integration tests for the Eval Generator and Review & Approve on mock/scripted: 
 draft and confirmation, gap-filling generation grounded in a document, dedupe, label
 balance, drafted answers that never touch golden rows, evaluator selection, mandatory
 review, the stratified 70/30 split, the frozen version, and "Use only my golden set".
+Also the safety limits: cancel, the generation budget cap and the cost confirmation.
 """
 
+from decimal import Decimal
 from typing import Any
 
 import httpx
@@ -167,3 +169,79 @@ async def test_golden_only_makes_no_generation_calls(
     assert version["by_source"] == {"golden": {"total": 3, "draft": 0, "without_answer": 0}}
     approved = await client.post(api(session, f"/dataset-versions/{version_id}/approve"), headers=session.headers)
     assert approved.status_code == 200, approved.text
+
+
+async def generation_state(client: httpx.AsyncClient, session: Session, version_id: str) -> dict[str, Any]:
+    version = (await client.get(api(session, f"/dataset-versions/{version_id}"), headers=session.headers)).json()
+    state: dict[str, Any] = version["generation"]
+    return state
+
+
+async def test_cancel_stops_before_the_next_model_call(
+    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue
+) -> None:
+    prompt = await create_prompt(client, session)
+    await ingest(client, session, jobs, GOLDEN)
+    spec_id = await confirmed_spec(client, session, prompt["id"])
+    started = await client.post(
+        api(session, "/generations"), json={"task_spec_id": spec_id, "target_size": 20}, headers=session.headers
+    )
+    version_id = started.json()["id"]
+    second = await client.post(
+        api(session, "/generations"), json={"task_spec_id": spec_id, "target_size": 20}, headers=session.headers
+    )
+    assert second.status_code == 409
+
+    cancel = api(session, f"/dataset-versions/{version_id}/generation/cancel")
+    assert (await client.post(cancel, headers=session.headers)).status_code == 200
+    await jobs.drain()
+
+    state = await generation_state(client, session, version_id)
+    assert state["status"] == "stopped"
+    assert "your request" in state["message"]
+    assert (await client.post(cancel, headers=session.headers)).status_code == 409
+    assert len(await items(client, session, version_id, source="golden")) == 3
+
+
+async def test_budget_cap_stops_generation_and_keeps_the_cases(
+    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue
+) -> None:
+    prompt = await create_prompt(client, session)
+    await ingest(client, session, jobs, GOLDEN)
+    spec_id = await confirmed_spec(client, session, prompt["id"])
+    request = {"task_spec_id": spec_id, "target_size": 20, "budget_cap": "0.000000001"}
+    started = await client.post(api(session, "/generations"), json=request, headers=session.headers)
+    version_id = started.json()["id"]
+    await jobs.drain()
+
+    state = await generation_state(client, session, version_id)
+    assert state["status"] == "stopped"
+    assert "budget" in state["message"]
+    assert float(state["spent"]) >= 1e-9
+    generated = await items(client, session, version_id, source="generated")
+    assert 0 < len(generated) < 17
+
+
+async def test_a_costly_run_needs_the_cost_confirmed(
+    client: httpx.AsyncClient,
+    session: Session,
+    jobs: InlineJobQueue,
+    container: Container,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    prompt = await create_prompt(client, session)
+    await ingest(client, session, jobs, GOLDEN)
+    spec_id = await confirmed_spec(client, session, prompt["id"])
+    monkeypatch.setattr(container.settings, "generator_confirm_cost", Decimal("0.000000001"))
+    request = {"task_spec_id": spec_id, "target_size": 20}
+
+    estimate = (await client.post(api(session, "/generations/estimate"), json=request, headers=session.headers)).json()
+    assert estimate["needs_confirmation"] is True
+    refused = await client.post(api(session, "/generations"), json=request, headers=session.headers)
+    assert refused.status_code == 409
+    assert "Confirm the cost" in refused.json()["error"]["message"]
+    accepted = await client.post(
+        api(session, "/generations"), json={**request, "accept_cost": True}, headers=session.headers
+    )
+    assert accepted.status_code == 202, accepted.text
+    await jobs.drain()

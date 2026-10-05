@@ -101,7 +101,7 @@ def test_labels_evaluators_and_generator_choice() -> None:
 
     best = suggest_generator([profile("small", "0.6"), profile("large", "15")])
     assert best is not None
-    assert best.model_name == "large"
+    assert best.model_name == "small"
     local = [profile("llama3.2:3b", "0"), profile("qwen2.5:14b", "0")]
     best = suggest_generator(local)
     assert best is not None

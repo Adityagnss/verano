@@ -27,6 +27,7 @@ import { useDebounced } from "@/lib/use-debounced"
 
 import { TESTS_COPY } from "../copy"
 import {
+  useCancelGeneration,
   useCurrentVersion,
   useDraftSpec,
   useEstimate,
@@ -85,6 +86,8 @@ export function TestsStep({ projectId }: { projectId: string }) {
   const [picked, setChosen] = useState<string | null>(null)
   const [size, setSize] = useState(String(DEFAULT_SIZE))
   const [goldenOnly, setGoldenOnly] = useState(false)
+  const [budget, setBudget] = useState<string | null>(null)
+  const [accepted, setAccepted] = useState(false)
 
   const models = useMemo(() => suggestion.data?.candidates ?? [], [suggestion.data])
   const preferred = spec.data?.generator_credential_id
@@ -100,14 +103,31 @@ export function TestsStep({ projectId }: { projectId: string }) {
   const items = useItems(projectId, current?.id, running)
   const evaluators = useEvaluators(projectId, current?.id, Boolean(current?.evaluator_set_version_id))
   const actions = useVersionActions(projectId, current?.id ?? "")
+  const cancel = useCancelGeneration(projectId, current?.id ?? "")
   const confirmed = spec.data?.status === "confirmed"
   const hasGolden = (current?.by_source.golden?.total ?? 0) > 0
-  const request: GenerationRequest | null =
+  const sizeRequest =
     confirmed && specId
-      ? { task_spec_id: specId, target_size: Number(size) || DEFAULT_SIZE, golden_only: goldenOnly }
+      ? {
+          task_spec_id: specId,
+          target_size: Number(size) || DEFAULT_SIZE,
+          golden_only: goldenOnly,
+          accept_cost: false,
+        }
       : null
-  const settledRequest = useDebounced(request, 300)
+  const settledRequest = useDebounced(sizeRequest, 300)
   const estimate = useEstimate(projectId, frozen || running ? null : settledRequest)
+  const cost = estimate.data?.cost ? Number(estimate.data.cost) : 0
+  const suggestedBudget = cost > 0 ? Math.max(0.05, cost * 2).toFixed(2) : ""
+  const budgetValue = budget ?? suggestedBudget
+  const needsConfirm = Boolean(estimate.data?.needs_confirmation) && !goldenOnly
+  const request: GenerationRequest | null = sizeRequest
+    ? {
+        ...sizeRequest,
+        budget_cap: goldenOnly || Number(budgetValue) <= 0 ? undefined : budgetValue,
+        accept_cost: needsConfirm && accepted,
+      }
+    : null
 
   if (prompt.data === null)
     return (
@@ -183,7 +203,7 @@ export function TestsStep({ projectId }: { projectId: string }) {
     <Button
       size="lg"
       onClick={() => void generate().catch(() => undefined)}
-      disabled={!confirmed || running || start.isPending}
+      disabled={!confirmed || running || start.isPending || (needsConfirm && !accepted)}
     >
       {running ? TESTS_COPY.generating : TESTS_COPY.generate}
     </Button>
@@ -227,6 +247,22 @@ export function TestsStep({ projectId }: { projectId: string }) {
               </StatusBadge>
             ) : current?.generation?.status === "failed" ? (
               <StatusBadge tone="danger">{TESTS_COPY.failed}</StatusBadge>
+            ) : current?.generation?.status === "stopped" ? (
+              <StatusBadge tone="warning">{TESTS_COPY.stoppedBadge}</StatusBadge>
+            ) : null
+          }
+          action={
+            running ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void cancel.mutateAsync().catch(() => undefined)}
+                disabled={cancel.isPending || Boolean(current?.generation?.cancel_requested)}
+              >
+                {cancel.isPending || current?.generation?.cancel_requested
+                  ? TESTS_COPY.stopping
+                  : TESTS_COPY.stop}
+              </Button>
             ) : null
           }
         >
@@ -240,7 +276,22 @@ export function TestsStep({ projectId }: { projectId: string }) {
                 max={1000}
                 value={size}
                 disabled={goldenOnly || !confirmed}
-                onChange={(e) => setSize(e.target.value)}
+                onChange={(e) => {
+                  setSize(e.target.value)
+                  setAccepted(false)
+                }}
+              />
+            </div>
+            <div className="flex w-48 flex-col gap-1.5">
+              <Label htmlFor="budget">{TESTS_COPY.budget}</Label>
+              <Input
+                id="budget"
+                type="number"
+                min={0}
+                step="0.01"
+                value={budgetValue}
+                disabled={goldenOnly || !confirmed}
+                onChange={(e) => setBudget(e.target.value)}
               />
             </div>
             {hasGolden ? (
@@ -265,11 +316,24 @@ export function TestsStep({ projectId }: { projectId: string }) {
               </div>
             ) : null}
           </div>
-          <p className="text-text-muted text-xs">{TESTS_COPY.sizeHint}</p>
+          <p className="text-text-muted text-xs">
+            {TESTS_COPY.sizeHint} {TESTS_COPY.budgetHint}
+          </p>
+          {needsConfirm && confirmed ? (
+            <label className="bg-warning-soft text-warning-strong ring-warning/25 flex items-center gap-2 rounded-lg p-3 text-sm ring-1">
+              <Checkbox checked={accepted} onCheckedChange={(checked) => setAccepted(checked)} />
+              {estimate.data?.price_known
+                ? TESTS_COPY.confirmCost(formatCost(estimate.data.cost))
+                : TESTS_COPY.confirmCostUnknown}
+            </label>
+          ) : null}
           <ErrorMessage error={estimate.error ?? start.error} />
           {running ? <p className="text-sm">{TESTS_COPY.progress(total)}</p> : null}
           {current?.generation?.status === "failed" ? (
             <p className="text-danger-strong text-sm">{String(current.generation.message ?? "")}</p>
+          ) : null}
+          {current?.generation?.status === "stopped" ? (
+            <p className="text-warning-strong text-sm">{String(current.generation.message ?? "")}</p>
           ) : null}
         </Section>
       ) : null}

@@ -54,6 +54,8 @@ async def estimate_generation(
         sizes.input_tokens, sizes.output_tokens, profile.input_price_per_mtok, profile.output_price_per_mtok
     )
     return GenerationEstimate(
+        confirm_above=settings.generator_confirm_cost,
+        needs_confirmation=cost is None or cost > settings.generator_confirm_cost,
         cases_to_generate=sum(targets.values()),
         answers_to_draft=answers,
         calls=sizes.calls,

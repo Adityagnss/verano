@@ -14,6 +14,7 @@ favor its own style.
 
 import uuid
 from collections.abc import AsyncIterator
+from decimal import Decimal
 from pathlib import Path
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -64,6 +65,11 @@ SPEC_NOT_FOUND = "This Task Spec doesn't exist in this project."
 NOT_CONFIRMED = "Confirm the Task Spec (or edit and save it) before generating test cases."
 WRONG_INPUTS = "input_variables must be exactly the prompt's inputs: {names}."
 RUNNING = "Test cases are already being generated for this dataset version."
+NOT_RUNNING = "Nothing is being generated for this dataset version."
+CONFIRM_COST = (
+    "This run is estimated to cost {cost} (or its price is unknown), above {limit}. "
+    "Confirm the cost (accept_cost) to start."
+)
 NEVER_GENERATED = "Run the generator once before regenerating a category."
 UNDER_TEST = "{model} is also a model under test. A model can favor its own style; a different generator is safer."
 SUMMARY_CHARS = 300
@@ -200,11 +206,16 @@ class GeneratorService:
             raise Conflict(NOT_CONFIRMED)
         draft = await self._datasets.ensure_draft(project.id)
         self._not_running(draft.generation)
+        estimate = await self.estimate(project, body)
+        if estimate.needs_confirmation and not body.accept_cost:
+            cost = "an unknown amount" if estimate.cost is None else f"${estimate.cost:.2f}"
+            raise Conflict(CONFIRM_COST.format(cost=cost, limit=f"${estimate.confirm_above:.2f}"))
         state = GenerationState(
             status=GenerationStatus.RUNNING,
             task_spec_id=row.id,
             target_size=body.target_size or self._settings.generator_default_size,
             golden_only=body.golden_only,
+            budget_cap=body.budget_cap,
         )
         return await self._launch(project, draft.id, state, regenerate=None, task_spec_id=row.id)
 
@@ -219,7 +230,19 @@ class GeneratorService:
         self._not_running(draft.generation)
         state = GenerationState.model_validate(draft.generation)
         state.status, state.message = GenerationStatus.RUNNING, None
+        state.spent, state.cancel_requested = Decimal(0), False
         return await self._launch(project, draft.id, state, regenerate=category, task_spec_id=state.task_spec_id)
+
+    async def cancel(self, project: ProjectOut, version_id: uuid.UUID) -> DatasetVersionOut:
+        """Asks the running job to stop before its next model call; cases already written are kept."""
+        version = await self._datasets.get_version(project.id, version_id)
+        if not version.generation or version.generation.get("status") != GenerationStatus.RUNNING:
+            raise Conflict(NOT_RUNNING)
+        state = GenerationState.model_validate(version.generation)
+        state.cancel_requested = True
+        await self._datasets.update_version(version_id, {"generation": state.model_dump(mode="json")})
+        await self._session.commit()
+        return await self._datasets.get_version(project.id, version_id)
 
     async def edit_evaluators(
         self, project: ProjectOut, version_id: uuid.UUID, body: EvaluatorSetUpdate, principal: Principal

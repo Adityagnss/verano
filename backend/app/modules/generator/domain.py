@@ -2,8 +2,9 @@
 Pure Eval Generator logic (DEVELOPMENT.md 2.3). No I/O.
 
 - `suggest_generator` picks the default generator model: the selected model with the
-  highest known output price; if none is priced (only local models), the largest local
-  model by the parameter size in its name (decision 25).
+  lowest known output price (a smaller model is enough to write test cases, decision 48);
+  if none is priced (only local models), the largest local model by the parameter size in
+  its name.
 - `plan_targets` decides how many cases each category still needs: the dataset is
   `target size` (or the real row count if larger), split by the category shares; real
   rows count toward their own category (happy_path if theirs isn't one), and generation
@@ -77,7 +78,7 @@ def _local_size(profile: ModelProfileOut) -> float:
 def suggest_generator(profiles: Sequence[ModelProfileOut]) -> ModelProfileOut | None:
     priced = [p for p in profiles if p.output_price_per_mtok is not None and p.output_price_per_mtok > Decimal(0)]
     if priced:
-        return max(priced, key=lambda p: p.output_price_per_mtok or Decimal(0))
+        return min(priced, key=lambda p: p.output_price_per_mtok or Decimal(0))
     return max(profiles, key=_local_size, default=None)
 
 

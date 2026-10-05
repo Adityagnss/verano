@@ -42,7 +42,7 @@ from app.modules.generator.domain import (
 )
 from app.modules.generator.plugins.embedders import Embedder, build_embedder
 from app.modules.generator.repository import TaskSpecRepository
-from app.modules.generator.run import GenerationRun, RunDeps
+from app.modules.generator.run import GenerationRun, GenerationStopped, RunDeps
 from app.modules.generator.schemas import (
     CaseCategory,
     GenerationState,
@@ -106,13 +106,17 @@ class GenerationPipeline:
         version = await self._datasets.get_version(project_id, version_id)
         state = GenerationState.model_validate(version.generation)
         try:
-            await self._run(project_id, version_id, state, regenerate)
+            stopped = await self._run(project_id, version_id, state, regenerate)
         except AppError as exc:
             await self.fail(project_id, version_id, exc.message)
             return
-        state.status = GenerationStatus.SUCCEEDED
+        state.cancel_requested = False
+        state.status = GenerationStatus.STOPPED if stopped else GenerationStatus.SUCCEEDED
+        state.message = stopped
         await self._save_state(version_id, state)
-        await self._publish(version_id, "done", ProgressStatus.SUCCEEDED, message="Test cases are ready for review.")
+        await self._publish(
+            version_id, "done", ProgressStatus.SUCCEEDED, message=stopped or "Test cases are ready for review."
+        )
 
     async def fail(self, project_id: uuid.UUID, version_id: uuid.UUID, message: str) -> None:
         await self._session.rollback()
@@ -125,7 +129,8 @@ class GenerationPipeline:
 
     async def _run(
         self, project_id: uuid.UUID, version_id: uuid.UUID, state: GenerationState, regenerate: CaseCategory | None
-    ) -> None:
+    ) -> str | None:
+        """Runs the stages; returns why the run stopped early (cancel or budget cap), if it did."""
         record = await self._specs.get(project_id, state.task_spec_id)
         if record is None:
             raise ValidationFailed(SPEC_GONE)
@@ -142,6 +147,7 @@ class GenerationPipeline:
             self._publish,
         )
         run = GenerationRun(deps, project_id, version_id, state, spec, record)
+        stopped: str | None = None
         if not state.golden_only:
             prompt = await self._prompts.get_version(project_id, record.prompt_version_id)
             sections = await self._documents.project_sections(project_id, self._settings.generator_max_sections)
@@ -149,13 +155,18 @@ class GenerationPipeline:
             await self._datasets.delete_generated(version_id, regenerate.value if regenerate else None)
             await self._session.commit()
             state.embedding_model = self._embedder.name
-            await run.generate(regenerate)
-            await run.draft_answers()
-            if regenerate is None:
-                await run.balance_labels()
+            try:
+                await run.generate(regenerate)
+                await run.draft_answers()
+                if regenerate is None:
+                    await run.balance_labels()
+            except GenerationStopped as stop:
+                stopped = stop.message
+            await run.refresh_spent()
         if regenerate is None:
             await self._select_evaluators(project_id, version_id, spec)
         state.counts = await run.counts()
+        return stopped
 
     async def _select_evaluators(self, project_id: uuid.UUID, version_id: uuid.UUID, spec: TaskSpec) -> None:
         choices = select_evaluators(spec, self._evaluator_catalog)

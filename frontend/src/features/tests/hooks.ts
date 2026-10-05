@@ -159,6 +159,19 @@ export function useStartGeneration(projectId: string) {
   })
 }
 
+export function useCancelGeneration(projectId: string, versionId: string) {
+  const invalidate = useInvalidate(projectId)
+  return useMutation({
+    mutationFn: () =>
+      call(() =>
+        api.POST("/api/v1/projects/{project_id}/dataset-versions/{version_id}/generation/cancel", {
+          params: versionPath(projectId, versionId),
+        }),
+      ),
+    onSettled: invalidate,
+  })
+}
+
 export function useVersionActions(projectId: string, versionId: string) {
   const invalidate = useInvalidate(projectId)
   const params = versionPath(projectId, versionId)

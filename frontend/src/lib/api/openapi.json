@@ -2304,6 +2304,12 @@
             "title": "Cases To Generate",
             "type": "integer"
           },
+          "confirm_above": {
+            "default": "0",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+            "title": "Confirm Above",
+            "type": "string"
+          },
           "cost": {
             "anyOf": [
               {
@@ -2319,6 +2325,11 @@
           "input_tokens": {
             "title": "Input Tokens",
             "type": "integer"
+          },
+          "needs_confirmation": {
+            "default": false,
+            "title": "Needs Confirmation",
+            "type": "boolean"
           },
           "output_tokens": {
             "title": "Output Tokens",
@@ -2343,6 +2354,27 @@
       },
       "GenerationRequest": {
         "properties": {
+          "accept_cost": {
+            "default": false,
+            "title": "Accept Cost",
+            "type": "boolean"
+          },
+          "budget_cap": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Cap"
+          },
           "golden_only": {
             "default": false,
             "title": "Golden Only",
@@ -6781,6 +6813,62 @@
         "tags": ["generator"]
       }
     },
+    "/api/v1/projects/{project_id}/dataset-versions/{version_id}/generation/cancel": {
+      "post": {
+        "operationId": "cancel_generation_api_v1_projects__project_id__dataset_versions__version_id__generation_cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatasetVersionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Cancel Generation",
+        "tags": ["generator"]
+      }
+    },
     "/api/v1/projects/{project_id}/dataset-versions/{version_id}/generation/events": {
       "get": {
         "operationId": "generation_events_api_v1_projects__project_id__dataset_versions__version_id__generation_events_get",
@@ -11195,7 +11283,7 @@
     },
     "/api/v1/prompt-notes": {
       "get": {
-        "description": "The measured prompt-technique notes Improve reads, shown to users as the Prompt guide.",
+        "description": "The Prompt guide page: the full prompting reference (a superset of the notes Improve reads).",
         "operationId": "prompt_notes_api_v1_prompt_notes_get",
         "responses": {
           "200": {

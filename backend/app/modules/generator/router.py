@@ -79,6 +79,13 @@ async def regenerate_category(
     return await service.regenerate(project, version_id, body.category)
 
 
+@router.post(f"{VERSION}/generation/cancel")
+async def cancel_generation(
+    version_id: uuid.UUID, project: ProjectScope, service: GeneratorServiceDep
+) -> DatasetVersionOut:
+    return await service.cancel(project, version_id)
+
+
 @router.get(f"{VERSION}/generation/events")
 async def generation_events(
     version_id: uuid.UUID, project: ProjectScope, service: GeneratorServiceDep

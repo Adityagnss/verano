@@ -11,6 +11,7 @@ With VERANO_ENVIRONMENT=production, settings that only make sense for local deve
 (a non-Secure refresh cookie, the mock provider) are refused at startup.
 """
 
+from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
 
@@ -105,6 +106,7 @@ class Settings(BaseSettings):
     dataset_holdout_ratio: float = 0.3
     dataset_min_holdout: int = 30
     generator_default_size: int = 10
+    generator_confirm_cost: Decimal = Decimal("0.25")
     generator_batch_size: int = 10
     generator_example_rows: int = 5
     generator_task_spec_rows: int = 10

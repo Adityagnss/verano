@@ -281,6 +281,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/dataset-versions/{version_id}/generation/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Generation */
+        post: operations["cancel_generation_api_v1_projects__project_id__dataset_versions__version_id__generation_cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/dataset-versions/{version_id}/generation/events": {
         parameters: {
             query?: never;
@@ -1115,7 +1132,7 @@ export interface paths {
         };
         /**
          * Prompt Notes
-         * @description The measured prompt-technique notes Improve reads, shown to users as the Prompt guide.
+         * @description The Prompt guide page: the full prompting reference (a superset of the notes Improve reads).
          */
         get: operations["prompt_notes_api_v1_prompt_notes_get"];
         put?: never;
@@ -1952,10 +1969,20 @@ export interface components {
             calls: number;
             /** Cases To Generate */
             cases_to_generate: number;
+            /**
+             * Confirm Above
+             * @default 0
+             */
+            confirm_above: string;
             /** Cost */
             cost: string | null;
             /** Input Tokens */
             input_tokens: number;
+            /**
+             * Needs Confirmation
+             * @default false
+             */
+            needs_confirmation: boolean;
             /** Output Tokens */
             output_tokens: number;
             /** Price Known */
@@ -1963,6 +1990,13 @@ export interface components {
         };
         /** GenerationRequest */
         GenerationRequest: {
+            /**
+             * Accept Cost
+             * @default false
+             */
+            accept_cost: boolean;
+            /** Budget Cap */
+            budget_cap?: number | string | null;
             /**
              * Golden Only
              * @default false
@@ -3891,6 +3925,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EvaluatorSetVersionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_generation_api_v1_projects__project_id__dataset_versions__version_id__generation_cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DatasetVersionOut"];
                 };
             };
             /** @description Validation Error */

@@ -34,6 +34,7 @@ from app.modules.generator.domain import (
 )
 from app.modules.generator.models import TaskSpecRecord
 from app.modules.generator.plugins.embedders import Embedder
+from app.modules.generator.repository import TaskSpecRepository
 from app.modules.generator.schemas import (
     CaseCategory,
     DraftAnswers,
@@ -47,7 +48,17 @@ from app.modules.generator.service import PROMPTS_DIR
 from app.modules.prompts.schemas import PromptVersionOut
 
 BALANCE_CASES_PER_LABEL = 2
+STOPPED_BY_USER = "Stopped at your request. The test cases written so far are kept."
+BUDGET_REACHED = "Stopped: the budget of ${cap} was reached. The test cases written so far are kept."
 Publish = Callable[..., Awaitable[None]]
+
+
+class GenerationStopped(Exception):
+    """The user cancelled, or the budget cap was reached; what was written so far is kept."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+        self.message = message
 
 
 @dataclass(frozen=True)
@@ -83,12 +94,27 @@ class GenerationRun:
         self.prompt: PromptVersionOut | None = None
         self.sections: list[str] = []
         self.kept: list[list[float]] | None = None
+        self.run_id = uuid.uuid4().hex
+        self._spend = TaskSpecRepository(deps.session)
+
+    async def checkpoint(self) -> None:
+        """Called before every model call: stops the run on a cancel request or a reached budget cap."""
+        await self.refresh_spent()
+        version = await self.deps.datasets.get_version(self.project_id, self.version_id)
+        if (version.generation or {}).get("cancel_requested"):
+            raise GenerationStopped(STOPPED_BY_USER)
+        cap = self.state.budget_cap
+        if cap is not None and self.state.spent >= cap:
+            raise GenerationStopped(BUDGET_REACHED.format(cap=f"{cap:.2f}"))
+
+    async def refresh_spent(self) -> None:
+        self.state.spent = await self._spend.run_spend(self.project_id, self.run_id)
 
     def _model(self) -> str:
         return self.record.generator_model or ""
 
     def _call(self, step: str) -> tuple[uuid.UUID, CallPurpose, CallContext]:
-        labels = {"step": step, "dataset_version": str(self.version_id)}
+        labels = {"step": step, "dataset_version": str(self.version_id), "run": self.run_id}
         assert self.record.generator_credential_id is not None
         return (
             self.record.generator_credential_id,
@@ -140,6 +166,7 @@ class GenerationRun:
 
     async def _batch(self, category: CaseCategory, count: int, target_label: str | None) -> int:
         assert self.kept is not None
+        await self.checkpoint()
         batch = await self.deps.gateway.complete_json(
             self._model(),
             [Message(role="user", content=await self._cases_prompt(category, count, target_label))],
@@ -208,6 +235,7 @@ class GenerationRun:
         size = self.settings.generator_answer_batch_size
         for start in range(0, len(drafts), size):
             batch = drafts[start : start + size]
+            await self.checkpoint()
             text = render_system_prompt(
                 PROMPTS_DIR,
                 "answers.jinja",
