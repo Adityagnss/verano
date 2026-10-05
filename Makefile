@@ -13,6 +13,7 @@ IMAGE_LABEL := label=dev.verano.image
 COMPOSE := docker compose
 COMPOSE_BUILD := docker compose -f docker-compose.yml -f $(BASE_OVERRIDE)
 BACKEND := cd backend &&
+CLI := cd cli &&
 LOCAL_OLLAMA := http://ollama:11434
 
 .DEFAULT_GOAL := help
@@ -29,6 +30,7 @@ env: ## Create .env from .env.example with generated secrets (never overwrites)
 
 install: ## Install dependencies exactly as locked (uv sync --frozen, npm ci)
 	$(BACKEND) uv sync --frozen
+	$(CLI) uv sync --frozen
 	$(FRONTEND) npm ci --prefer-offline --no-audit --no-fund
 
 builder: ## Create the dedicated `verano` image builder (once; later calls are no-ops)
@@ -63,14 +65,17 @@ test: ## Run only the tests affected by your changes
 test-all: ## Run the full test suite (phase checkpoints)
 	$(BACKEND) uv run pytest -q
 
-lint: ## Backend ruff + format check + mypy, frontend eslint + prettier + tsc
+lint: ## Backend and CLI ruff + format check + mypy, frontend eslint + prettier + tsc
 	$(BACKEND) uv run ruff check . ../scripts && uv run ruff format --check . ../scripts && uv run mypy app tests benchmarks ../scripts
+	$(CLI) uv run ruff check . && uv run ruff format --check . && uv run mypy src tests
 	$(FRONTEND) npm run lint && npm run typecheck
 
 fmt: ## Auto-format, then auto-fix what can be fixed (formatting always runs first)
 	$(BACKEND) uv run ruff format . ../scripts
+	$(CLI) uv run ruff format .
 	$(FRONTEND) npm run format
 	$(BACKEND) uv run ruff check --fix . ../scripts
+	$(CLI) uv run ruff check --fix .
 
 models: ## Pull the local Ollama models (once)
 	scripts/pull_models.sh
@@ -87,9 +92,11 @@ e2e: env base-images ## Browser tests (Chromium, WebKit, Firefox) against the st
 
 ci: base-images ## The "CI green" gate: locked installs, lint, types, full tests (incl. migrations), builds, images (a running stack is moved onto the new images)
 	$(BACKEND) uv sync --frozen
+	$(CLI) uv sync --frozen
 	$(FRONTEND) npm ci --prefer-offline --no-audit --no-fund
 	$(MAKE) lint
 	$(BACKEND) uv run pytest -q
+	$(CLI) uv run pytest -q
 	$(FRONTEND) npm run build
 	$(COMPOSE_BUILD) build
 	@if [ -n "$$($(COMPOSE) ps -q)" ]; then $(COMPOSE) up -d --wait --no-build; fi
