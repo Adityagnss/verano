@@ -92,6 +92,32 @@ class TaskSpecUpdate(BaseModel):
     spec: TaskSpec
 
 
+class ProvidedTaskSpec(BaseModel):
+    """A Task Spec the user wrote (in `verano.yaml`, for example) instead of having a model draft it.
+    The inputs always come from the prompt itself, so they are not part of it."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    task_type: TaskType
+    goal: str = Field(min_length=3, max_length=500)
+    output_format: OutputFormat
+    allowed_outputs: list[str] | None = None
+    output_schema: dict[str, object] | None = None
+    constraints: list[str] = []
+    risk_areas: list[str] = []
+
+    @model_validator(mode="after")
+    def _labels_for_classification(self) -> "ProvidedTaskSpec":
+        if self.task_type is TaskType.CLASSIFICATION and not self.allowed_outputs:
+            raise ValueError("a classification task must list its allowed_outputs")
+        return self
+
+
+class TaskSpecProvide(BaseModel):
+    spec: ProvidedTaskSpec
+    judge: GeneratorModel | None = None
+
+
 class TaskSpecOut(BaseModel):
     id: uuid.UUID
     project_id: uuid.UUID

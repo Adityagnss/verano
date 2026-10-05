@@ -90,6 +90,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Tokens */
+        get: operations["list_tokens_api_v1_auth_tokens_get"];
+        put?: never;
+        /** Create Token */
+        post: operations["create_token_api_v1_auth_tokens_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/tokens/{token_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke Token */
+        delete: operations["revoke_token_api_v1_auth_tokens__token_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects": {
         parameters: {
             query?: never;
@@ -1052,6 +1087,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/prompt-versions/{version_id}/task-spec": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Provide Task Spec */
+        put: operations["provide_task_spec_api_v1_projects__project_id__prompt_versions__version_id__task_spec_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/prompts": {
         parameters: {
             query?: never;
@@ -1322,6 +1374,67 @@ export interface components {
          * @enum {string}
          */
         AnswerSort: "time" | "experiment" | "version" | "model" | "case" | "passed" | "quality" | "golden_match" | "cost" | "latency" | "tokens";
+        /** ApiTokenCreate */
+        ApiTokenCreate: {
+            /**
+             * Expires In Days
+             * @default 90
+             */
+            expires_in_days: number | null;
+            /** Name */
+            name: string;
+        };
+        /**
+         * ApiTokenCreated
+         * @description The only time the token itself is returned.
+         */
+        ApiTokenCreated: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Expires At */
+            expires_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Last Used At */
+            last_used_at: string | null;
+            /** Name */
+            name: string;
+            /** Prefix */
+            prefix: string;
+            /** Revoked At */
+            revoked_at: string | null;
+            /** Token */
+            token: string;
+        };
+        /** ApiTokenOut */
+        ApiTokenOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Expires At */
+            expires_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Last Used At */
+            last_used_at: string | null;
+            /** Name */
+            name: string;
+            /** Prefix */
+            prefix: string;
+            /** Revoked At */
+            revoked_at: string | null;
+        };
         /** AuthConfigOut */
         AuthConfigOut: {
             /** Password Min Length */
@@ -2926,6 +3039,33 @@ export interface components {
             /** Version */
             version: number;
         };
+        /**
+         * ProvidedTaskSpec
+         * @description A Task Spec the user wrote (in `verano.yaml`, for example) instead of having a model draft it.
+         *     The inputs always come from the prompt itself, so they are not part of it.
+         */
+        ProvidedTaskSpec: {
+            /** Allowed Outputs */
+            allowed_outputs?: string[] | null;
+            /**
+             * Constraints
+             * @default []
+             */
+            constraints: string[];
+            /** Goal */
+            goal: string;
+            output_format: components["schemas"]["OutputFormat"];
+            /** Output Schema */
+            output_schema?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Risk Areas
+             * @default []
+             */
+            risk_areas: string[];
+            task_type: components["schemas"]["TaskType"];
+        };
         /** ProviderOut */
         ProviderOut: {
             /** Default Base Url */
@@ -3286,6 +3426,11 @@ export interface components {
              */
             warnings: string[];
         };
+        /** TaskSpecProvide */
+        TaskSpecProvide: {
+            judge?: components["schemas"]["GeneratorModel"] | null;
+            spec: components["schemas"]["ProvidedTaskSpec"];
+        };
         /**
          * TaskSpecStatus
          * @enum {string}
@@ -3638,6 +3783,88 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SessionOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_tokens_api_v1_auth_tokens_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiTokenOut"][];
+                };
+            };
+        };
+    };
+    create_token_api_v1_auth_tokens_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiTokenCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiTokenCreated"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_token_api_v1_auth_tokens__token_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -5900,6 +6127,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RenderedPrompt"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    provide_task_spec_api_v1_projects__project_id__prompt_versions__version_id__task_spec_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskSpecProvide"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TaskSpecOut"];
                 };
             };
             /** @description Validation Error */

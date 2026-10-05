@@ -22,6 +22,7 @@ from app.modules.generator.schemas import (
     GeneratorSuggestion,
     TaskSpecDraftRequest,
     TaskSpecOut,
+    TaskSpecProvide,
     TaskSpecUpdate,
 )
 from app.modules.projects.dependencies import ProjectScope
@@ -44,6 +45,13 @@ async def draft_task_spec(
     body: TaskSpecDraftRequest, project: ProjectScope, service: GeneratorServiceDep
 ) -> TaskSpecOut:
     return await service.draft_spec(project, body)
+
+
+@router.put("/prompt-versions/{version_id}/task-spec")
+async def provide_task_spec(
+    version_id: uuid.UUID, body: TaskSpecProvide, project: ProjectScope, service: GeneratorServiceDep
+) -> TaskSpecOut:
+    return await service.provide_spec(project, version_id, body)
 
 
 @router.get("/task-specs/{spec_id}")

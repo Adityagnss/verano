@@ -6,6 +6,7 @@ review, the stratified 70/30 split, the frozen version, and "Use only my golden 
 Also the safety limits: cancel, the generation budget cap and the cost confirmation.
 """
 
+import uuid
 from decimal import Decimal
 from typing import Any
 
@@ -245,3 +246,73 @@ async def test_a_costly_run_needs_the_cost_confirmed(
     )
     assert accepted.status_code == 202, accepted.text
     await jobs.drain()
+
+
+async def test_a_task_spec_you_wrote_is_confirmed_without_any_model_call_and_repeating_it_is_harmless(
+    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue, container: Container
+) -> None:
+    prompt = await create_prompt(client, session)
+    await ingest(client, session, jobs, GOLDEN)
+    path = api(session, f"/prompt-versions/{prompt['id']}/task-spec")
+    written = {
+        "task_type": "classification",
+        "goal": "Label each support ticket",
+        "output_format": "single_label",
+        "allowed_outputs": ["billing", "shipping", "technical"],
+    }
+    first = await client.put(path, json={"spec": written}, headers=session.headers)
+    assert first.status_code == 200, first.text
+    assert first.json()["status"] == "confirmed"
+    assert first.json()["spec"]["input_variables"] == ["ticket"]
+    assert first.json()["generator_model"] is None
+    again = await client.put(path, json={"spec": written}, headers=session.headers)
+    assert again.json()["id"] == first.json()["id"]
+    changed = await client.put(
+        path, json={"spec": {**written, "goal": "Label tickets by team"}}, headers=session.headers
+    )
+    assert changed.json()["id"] != first.json()["id"]
+
+    async with container.database.sessions() as db:
+        calls = (await db.scalars(select(LLMCall).where(LLMCall.purpose == "generation"))).all()
+    assert list(calls) == []
+    started = await client.post(
+        api(session, "/generations"),
+        json={"task_spec_id": first.json()["id"], "golden_only": True},
+        headers=session.headers,
+    )
+    assert started.status_code == 202, started.text
+    await jobs.drain()
+
+
+async def test_a_written_task_spec_is_checked_and_its_judge_must_be_one_of_your_models(
+    client: httpx.AsyncClient, session: Session
+) -> None:
+    prompt = await create_prompt(client, session)
+    path = api(session, f"/prompt-versions/{prompt['id']}/task-spec")
+    base = {"task_type": "summarization", "goal": "Summarize the ticket", "output_format": "free_text"}
+    for bad in (
+        {**base, "task_type": "classification"},
+        {**base, "goal": "x"},
+        {**base, "input_variables": ["other"]},
+        {**base, "task_type": "poetry"},
+    ):
+        response = await client.put(path, json={"spec": bad}, headers=session.headers)
+        assert response.status_code == 422, bad
+    credential = await add_credential(client, session, "mock")
+    unknown = await client.put(
+        path,
+        json={"spec": base, "judge": {"credential_id": credential["id"], "model": "no-such-model"}},
+        headers=session.headers,
+    )
+    assert unknown.status_code == 404
+    judged = await client.put(
+        path,
+        json={"spec": base, "judge": {"credential_id": credential["id"], "model": "scripted"}},
+        headers=session.headers,
+    )
+    assert judged.status_code == 200, judged.text
+    assert judged.json()["generator_model"] == "scripted"
+    missing = await client.put(
+        api(session, f"/prompt-versions/{uuid.uuid4()}/task-spec"), json={"spec": base}, headers=session.headers
+    )
+    assert missing.status_code == 404

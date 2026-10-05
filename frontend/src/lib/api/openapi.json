@@ -432,6 +432,169 @@
         "title": "AnswerSort",
         "type": "string"
       },
+      "ApiTokenCreate": {
+        "properties": {
+          "expires_in_days": {
+            "anyOf": [
+              {
+                "maximum": 365.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 90,
+            "title": "Expires In Days"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": ["name"],
+        "title": "ApiTokenCreate",
+        "type": "object"
+      },
+      "ApiTokenCreated": {
+        "description": "The only time the token itself is returned.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used At"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "prefix": {
+            "title": "Prefix",
+            "type": "string"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "prefix",
+          "created_at",
+          "expires_at",
+          "last_used_at",
+          "revoked_at",
+          "token"
+        ],
+        "title": "ApiTokenCreated",
+        "type": "object"
+      },
+      "ApiTokenOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_used_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Used At"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "prefix": {
+            "title": "Prefix",
+            "type": "string"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          }
+        },
+        "required": ["id", "name", "prefix", "created_at", "expires_at", "last_used_at", "revoked_at"],
+        "title": "ApiTokenOut",
+        "type": "object"
+      },
       "AuthConfigOut": {
         "properties": {
           "password_min_length": {
@@ -4794,6 +4957,69 @@
         "title": "PromptVersionOut",
         "type": "object"
       },
+      "ProvidedTaskSpec": {
+        "additionalProperties": false,
+        "description": "A Task Spec the user wrote (in `verano.yaml`, for example) instead of having a model draft it.\nThe inputs always come from the prompt itself, so they are not part of it.",
+        "properties": {
+          "allowed_outputs": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed Outputs"
+          },
+          "constraints": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Constraints",
+            "type": "array"
+          },
+          "goal": {
+            "maxLength": 500,
+            "minLength": 3,
+            "title": "Goal",
+            "type": "string"
+          },
+          "output_format": {
+            "$ref": "#/components/schemas/OutputFormat"
+          },
+          "output_schema": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Schema"
+          },
+          "risk_areas": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Risk Areas",
+            "type": "array"
+          },
+          "task_type": {
+            "$ref": "#/components/schemas/TaskType"
+          }
+        },
+        "required": ["task_type", "goal", "output_format"],
+        "title": "ProvidedTaskSpec",
+        "type": "object"
+      },
       "ProviderOut": {
         "properties": {
           "default_base_url": {
@@ -5622,6 +5848,26 @@
         "title": "TaskSpecOut",
         "type": "object"
       },
+      "TaskSpecProvide": {
+        "properties": {
+          "judge": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GeneratorModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "spec": {
+            "$ref": "#/components/schemas/ProvidedTaskSpec"
+          }
+        },
+        "required": ["spec"],
+        "title": "TaskSpecProvide",
+        "type": "object"
+      },
       "TaskSpecStatus": {
         "enum": ["draft", "confirmed"],
         "title": "TaskSpecStatus",
@@ -6385,6 +6631,115 @@
           }
         },
         "summary": "Signup",
+        "tags": ["auth"]
+      }
+    },
+    "/api/v1/auth/tokens": {
+      "get": {
+        "operationId": "list_tokens_api_v1_auth_tokens_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ApiTokenOut"
+                  },
+                  "title": "Response List Tokens Api V1 Auth Tokens Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Tokens",
+        "tags": ["auth"]
+      },
+      "post": {
+        "operationId": "create_token_api_v1_auth_tokens_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiTokenCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiTokenCreated"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Token",
+        "tags": ["auth"]
+      }
+    },
+    "/api/v1/auth/tokens/{token_id}": {
+      "delete": {
+        "operationId": "revoke_token_api_v1_auth_tokens__token_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Token Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Revoke Token",
         "tags": ["auth"]
       }
     },
@@ -11232,6 +11587,72 @@
         ],
         "summary": "Render Version",
         "tags": ["prompts"]
+      }
+    },
+    "/api/v1/projects/{project_id}/prompt-versions/{version_id}/task-spec": {
+      "put": {
+        "operationId": "provide_task_spec_api_v1_projects__project_id__prompt_versions__version_id__task_spec_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskSpecProvide"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskSpecOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Provide Task Spec",
+        "tags": ["generator"]
       }
     },
     "/api/v1/projects/{project_id}/prompts": {

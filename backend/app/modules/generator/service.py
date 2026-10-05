@@ -52,6 +52,7 @@ from app.modules.generator.schemas import (
     TaskSpec,
     TaskSpecDraftRequest,
     TaskSpecOut,
+    TaskSpecProvide,
     TaskSpecStatus,
     TaskType,
 )
@@ -184,6 +185,36 @@ class GeneratorService:
         )
         await self._repo.add(row)
         warnings = [UNDER_TEST.format(model=target.profile.display_name)] if target.profile.is_selected else []
+        return spec_out(row, warnings)
+
+    async def provide_spec(self, project: ProjectOut, version_id: uuid.UUID, body: TaskSpecProvide) -> TaskSpecOut:
+        """A confirmed Task Spec from a spec the user wrote: no model call. The same spec and judge
+        for the same prompt version give back the spec already stored, so repeating it is harmless."""
+        version = await self._prompts.get_version(project.id, version_id)
+        spec = TaskSpec(**body.spec.model_dump(), input_variables=version.required_inputs)
+        warnings: list[str] = []
+        if body.judge is not None:
+            target = await self._registry.call_target(project.id, body.judge.credential_id, body.judge.model)
+            if target.profile.is_selected:
+                warnings.append(UNDER_TEST.format(model=target.profile.display_name))
+        dumped = spec.model_dump(mode="json")
+        for existing in await self._repo.confirmed_for_version(project.id, version.id):
+            same_judge = (existing.generator_credential_id, existing.generator_model) == (
+                (body.judge.credential_id, body.judge.model) if body.judge else (None, None)
+            )
+            if existing.spec == dumped and same_judge:
+                return spec_out(existing, warnings)
+        row = TaskSpecRecord(
+            project_id=project.id,
+            prompt_version_id=version.id,
+            spec=dumped,
+            schema_version=TASK_SPEC_SCHEMA_VERSION,
+            status=TaskSpecStatus.CONFIRMED,
+            confirmed_at=utcnow(),
+            generator_credential_id=body.judge.credential_id if body.judge else None,
+            generator_model=body.judge.model if body.judge else None,
+        )
+        await self._repo.add(row)
         return spec_out(row, warnings)
 
     async def get_spec(self, project: ProjectOut, spec_id: uuid.UUID) -> TaskSpecOut:
