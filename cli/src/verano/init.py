@@ -19,7 +19,9 @@ from verano.scan.findings import Entry, ScanResult, to_entry
 from verano.scan.render import render
 from verano.scan.run import scan
 
-LEVEL = "Read with syntax trees (high accuracy). Nothing leaves your machine."
+LEVEL = "Python, TypeScript and JavaScript are read with syntax trees (high accuracy). Nothing leaves your machine."
+BROAD_LEVEL = "Other languages are found by clues (medium accuracy), so those findings are never ticked for you."
+HIGH = {"Python", "TypeScript/JavaScript"}
 
 
 def summary(result: ScanResult) -> str:
@@ -39,6 +41,8 @@ def describe(entry: Entry) -> str:
 
 def show(result: ScanResult, entries: list[Entry], ticked: set[int]) -> None:
     ui.info(f"Scanned {summary(result)}. {LEVEL}")
+    if set(result.by_language) - HIGH:
+        ui.info(BROAD_LEVEL)
     unreadable = [e for e in entries if not e.finding.usable]
     found = len(entries)
     ui.info(f"Found {found} prompt{'s' if found != 1 else ''}; could not read {len(unreadable)}.")
@@ -86,7 +90,8 @@ def run(path: Path, output: Path | None, yes: bool, force: bool, print_only: boo
     if not entries:
         ui.info(f"Scanned {summary(result)}. {LEVEL}")
         ui.info("No LLM calls with a prompt were found.")
-        ui.info("Verano reads Python, TypeScript and JavaScript so far. You can also write verano.yaml by hand.")
+        ui.info("Verano reads Python, TypeScript, JavaScript, Java, Go, C#, Ruby, PHP, Rust, Kotlin and Swift.")
+        ui.info("For any other language, or prompts kept in text files, write verano.yaml by hand.")
         return
     default = {i for i, e in enumerate(entries) if e.runnable}
     show(result, entries, default)

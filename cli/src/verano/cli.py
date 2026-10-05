@@ -14,7 +14,7 @@ from typing import Annotated
 import click
 import typer
 
-from verano import __version__, auth, init, push, runner, ui, validate
+from verano import __version__, auth, push, runner, ui, validate
 from verano.config import DEFAULT_URL, ENV_URL
 from verano.errors import CliError
 
@@ -82,6 +82,8 @@ def init_command(
     include_tests: Annotated[bool, typer.Option("--include-tests", help="Also read test folders.")] = False,
 ) -> None:
     """Scan your code for prompts and write a verano.yaml. Nothing is sent anywhere."""
+    from verano import init
+
     init.run(path, output, yes, force, print_only, include_tests)
 
 

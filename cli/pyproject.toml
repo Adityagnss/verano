@@ -14,6 +14,14 @@ dependencies = [
     "tree-sitter>=0.26.0",
     "tree-sitter-javascript>=0.25.0",
     "tree-sitter-typescript>=0.23.2",
+    "tree-sitter-java>=0.23.5",
+    "tree-sitter-go>=0.25.0",
+    "tree-sitter-c-sharp>=0.23.5",
+    "tree-sitter-ruby>=0.23.1",
+    "tree-sitter-php>=0.24.1",
+    "tree-sitter-rust>=0.24.2",
+    "tree-sitter-kotlin>=1.1.0",
+    "tree-sitter-swift>=0.7.4",
 ]
 
 [project.scripts]
@@ -41,6 +49,10 @@ target-version = "py310"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "PT", "N", "C4", "PIE", "RET", "ERA"]
 ignore = ["B008", "N818", "RUF001", "RUF002", "RUF003"]
+
+[tool.ruff.lint.per-file-ignores]
+# These tests hold source code in other languages as text; wrapping it would change what is being scanned.
+"tests/test_scan_*.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.10"

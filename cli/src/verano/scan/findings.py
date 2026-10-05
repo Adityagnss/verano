@@ -36,6 +36,7 @@ class Finding:
     file: str
     line: int
     kind: str = "call"  # "call": a model call, "prompt": a prompt template with no call next to it
+    level: str = "full"  # "full": read from the syntax tree; "broad": found by clues, medium accuracy
     provider: str | None = None
     model: str | None = None
     system: str | None = None
@@ -61,7 +62,7 @@ class Finding:
 
     @property
     def runnable(self) -> bool:
-        return self.usable and len(self.variables) <= 1
+        return self.usable and len(self.variables) <= 1 and self.level == "full"
 
 
 @dataclass
@@ -118,6 +119,8 @@ def to_entry(finding: Finding, taken: set[str]) -> Entry:
         reason = "; ".join(finding.problems)
     elif not finding.has_prompt:
         reason = "no prompt text was found"
+    elif finding.level != "full" and finding.usable:
+        reason = "found by clues (medium accuracy); check the text, then include it by number"
     elif len(finding.variables) > 1:
         names = ", ".join(finding.variables)
         reason = (

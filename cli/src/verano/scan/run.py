@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from verano.scan import walk
+from verano.scan import broad_scan, walk
 from verano.scan.findings import ScanResult
 from verano.scan.python_scan import read_python, scan_source
 from verano.scan.ts_scan import SUFFIXES as JS_SUFFIXES
@@ -34,7 +34,7 @@ def _read_bytes(path: Path) -> bytes | None:
 
 def scan(root: Path, include_tests: bool = False) -> ScanResult:
     result = ScanResult()
-    for path in walk.source_files(root, {".py", *JS_SUFFIXES}, include_tests):
+    for path in walk.source_files(root, {".py", *JS_SUFFIXES, *broad_scan.SUFFIXES}, include_tests):
         relative = path.relative_to(root).as_posix()
         if walk.too_big(path):
             result.files_skipped.append(f"{relative}: larger than 1 MB")
@@ -51,12 +51,22 @@ def scan(root: Path, include_tests: bool = False) -> ScanResult:
                 if data is None:
                     result.files_skipped.append(f"{relative}: could not be read")
                     continue
-                findings, other = scan_js(data, relative, path.suffix.lower())
+                if path.suffix.lower() in JS_SUFFIXES:
+                    findings, other = scan_js(data, relative, path.suffix.lower())
+                else:
+                    findings, other = broad_scan.scan_source(data, relative, path.suffix.lower())
         except (SyntaxError, ValueError, RecursionError):
             result.files_skipped.append(f"{relative}: could not be parsed")
             continue
         result.files_scanned += 1
-        language = "Python" if path.suffix.lower() == ".py" else "TypeScript/JavaScript"
+        suffix = path.suffix.lower()
+        language = (
+            "Python"
+            if suffix == ".py"
+            else "TypeScript/JavaScript"
+            if suffix in JS_SUFFIXES
+            else broad_scan.language_name(suffix)
+        )
         result.by_language[language] = result.by_language.get(language, 0) + 1
         result.findings += findings
         result.other += other
