@@ -10,7 +10,7 @@ from fastapi import APIRouter, Query, status
 from fastapi.responses import Response
 
 from app.modules.evaluation.dependencies import ResultsServiceDep
-from app.modules.evaluation.schemas import CaseResultOut, RescoreRequest, ResultsOut
+from app.modules.evaluation.schemas import CaseResultOut, ReplicationOut, RescoreRequest, ResultsOut
 from app.modules.projects.dependencies import ProjectScope
 
 router = APIRouter(prefix="/projects/{project_id}/experiments/{experiment_id}", tags=["results"])
@@ -33,6 +33,16 @@ async def get_cases(
     failed_only: Annotated[bool, Query()] = False,
 ) -> list[CaseResultOut]:
     return await service.cases(project.id, experiment_id, evaluation_run_id, failed_only)
+
+
+@router.get("/replication")
+async def get_replication(
+    experiment_id: uuid.UUID,
+    against: Annotated[uuid.UUID, Query()],
+    project: ProjectScope,
+    service: ResultsServiceDep,
+) -> ReplicationOut:
+    return await service.replication(project.id, experiment_id, against)
 
 
 @router.get("/export.csv")

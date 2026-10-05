@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
 from app.core.container import Container
-from app.core.errors import NotFound, ValidationFailed
+from app.core.errors import Conflict, NotFound, ValidationFailed
 from app.core.jobs import JobQueue
 from app.core.pagination import Page, PageParams, to_page
 from app.core.security import Principal, utcnow
@@ -39,6 +39,7 @@ from app.modules.engine.schemas import (
     ExperimentOut,
     ExperimentStatus,
     ModelProgress,
+    ModelRun,
     RunStatus,
     SplitScope,
     TestCaseRunOut,
@@ -59,6 +60,9 @@ NO_APPROVED = "Approve your test cases (step 4) before starting an experiment."
 NO_CASES = "There are no test cases in this part of the dataset."
 UNKNOWN_MODELS = "Some chosen models aren't in this project any more. Refresh the Keys step."
 NO_PROMPT = "Save a prompt (step 2) before starting an experiment."
+NOT_FINISHED = "Wait until this experiment has finished before running it again."
+RERUN_PREFIX = "Re-run: "
+FINISHED = {ExperimentStatus.COMPLETED, ExperimentStatus.CANCELLED, ExperimentStatus.FAILED}
 CANCELLED = "Cancelled by the user."
 LIBRARIES = ("litellm", "deepeval")
 
@@ -132,6 +136,24 @@ class ExperimentService:
         for ids in chunks(await self._repo.run_ids(experiment.id, RunStatus.PENDING), self._settings.engine_chunk_size):
             self._jobs.enqueue(RUN_CHUNK_JOB, experiment_id=str(experiment.id), run_ids=[str(i) for i in ids])
         return await self.get(project_id, experiment.id)
+
+    async def rerun(self, project: ProjectOut, principal: Principal | None, experiment_id: uuid.UUID) -> ExperimentOut:
+        """A new experiment with the same configuration: the same prompt, test cases, models,
+        settings, runs and budget. Its fingerprint matches the original's."""
+        row = await self._experiment(project.id, experiment_id)
+        if row.status not in FINISHED:
+            raise Conflict(NOT_FINISHED)
+        body = ExperimentCreate(
+            name=f"{RERUN_PREFIX}{row.name}"[:200],
+            dataset_version_id=row.dataset_version_id,
+            split_scope=row.split_scope,
+            models=[
+                ModelRun(model_profile_id=entry["model_profile_id"], runs=entry["runs"], params=entry["params"])
+                for entry in row.config["models"]
+            ],
+            budget_cap=row.budget_cap,
+        )
+        return await self.start(project.id, principal, body, ExperimentOrigin.MANUAL, row.prompt_version_id)
 
     async def cancel(self, project: ProjectOut, experiment_id: uuid.UUID) -> ExperimentOut:
         experiment = await self._experiment(project.id, experiment_id)

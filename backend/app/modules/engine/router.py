@@ -50,6 +50,13 @@ async def cancel_experiment(
     return await service.cancel(project, experiment_id)
 
 
+@router.post(f"{EXPERIMENT}/rerun", status_code=status.HTTP_201_CREATED)
+async def rerun_experiment(
+    experiment_id: uuid.UUID, project: ProjectScope, principal: CurrentPrincipal, service: ExperimentServiceDep
+) -> ExperimentOut:
+    return await service.rerun(project, principal, experiment_id)
+
+
 @router.get(f"{EXPERIMENT}/runs/{{run_id}}")
 async def get_run(
     experiment_id: uuid.UUID, run_id: uuid.UUID, project: ProjectScope, service: ExperimentServiceDep

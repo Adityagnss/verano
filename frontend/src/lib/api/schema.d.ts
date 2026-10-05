@@ -471,6 +471,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/replication": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Replication */
+        get: operations["get_replication_api_v1_projects__project_id__experiments__experiment_id__replication_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/rerun": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rerun Experiment */
+        post: operations["rerun_experiment_api_v1_projects__project_id__experiments__experiment_id__rerun_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/experiments/{experiment_id}/rescore": {
         parameters: {
             query?: never;
@@ -1425,6 +1459,21 @@ export interface components {
          */
         CandidateOutcome: "pending" | "better" | "not_better" | "accepted" | "rejected";
         /**
+         * CaseAgreement
+         * @description One model's repeated answers to one test case: `same` of `runs` match.
+         */
+        CaseAgreement: {
+            /**
+             * Model Profile Id
+             * Format: uuid
+             */
+            model_profile_id: string;
+            /** Runs */
+            runs: number;
+            /** Same */
+            same: number;
+        };
+        /**
          * CaseCategory
          * @enum {string}
          */
@@ -1462,6 +1511,8 @@ export interface components {
         };
         /** CaseResultOut */
         CaseResultOut: {
+            /** Agreement */
+            agreement: components["schemas"]["CaseAgreement"][];
             /** Category */
             category: string;
             /**
@@ -2432,6 +2483,8 @@ export interface components {
         ModelMetricsOut: {
             /** Cases */
             cases: number;
+            /** Compared Cases */
+            compared_cases: number;
             /** Consistency */
             consistency: number | null;
             /** Cost */
@@ -2453,6 +2506,10 @@ export interface components {
             pass_rate: number;
             /** Quality */
             quality: number;
+            /** Stability */
+            stability: number | null;
+            /** Stable Cases */
+            stable_cases: number;
         };
         /** ModelProfileOut */
         ModelProfileOut: {
@@ -2885,6 +2942,48 @@ export interface components {
             /** Messages */
             messages: components["schemas"]["Message"][];
             shape: components["schemas"]["PromptShape"];
+        };
+        /** ReplicationModel */
+        ReplicationModel: {
+            /** Compared */
+            compared: number;
+            /** Model */
+            model: string;
+            /**
+             * Model Profile Id
+             * Format: uuid
+             */
+            model_profile_id: string;
+            /** Same */
+            same: number;
+            /** Skipped */
+            skipped: number;
+        };
+        /**
+         * ReplicationOut
+         * @description Did this experiment give the same answers as an earlier one with the same configuration?
+         */
+        ReplicationOut: {
+            /**
+             * Against Id
+             * Format: uuid
+             */
+            against_id: string;
+            /** Against Name */
+            against_name: string;
+            /** Compared */
+            compared: number;
+            /**
+             * Experiment Id
+             * Format: uuid
+             */
+            experiment_id: string;
+            /** Models */
+            models: components["schemas"]["ReplicationModel"][];
+            /** Same */
+            same: number;
+            /** Skipped */
+            skipped: number;
         };
         /** RescoreRequest */
         RescoreRequest: {
@@ -4467,6 +4566,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_replication_api_v1_projects__project_id__experiments__experiment_id__replication_get: {
+        parameters: {
+            query: {
+                against: string;
+            };
+            header?: never;
+            path: {
+                experiment_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReplicationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rerun_experiment_api_v1_projects__project_id__experiments__experiment_id__rerun_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                experiment_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperimentOut"];
                 };
             };
             /** @description Validation Error */

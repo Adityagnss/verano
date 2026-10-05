@@ -6,10 +6,15 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { ErrorMessage } from "@/components/common/error-message"
 import { Section } from "@/components/common/section"
 import type { ExperimentOut } from "@/lib/api/types"
+import { RESULTS_COPY } from "../copy"
+import { useReplication, useRerun } from "../hooks"
 import { CONFIG_LAYERS, formatParams, sameConfiguration, shortHash } from "@/lib/config"
 
 function Layer({ title, text, children }: { title: string; text: string; children: React.ReactNode }) {
@@ -42,12 +47,33 @@ export function ConfigPanel({
   experiment: ExperimentOut
   all: ExperimentOut[]
 }) {
+  const router = useRouter()
+  const rerun = useRerun(projectId)
   const c = experiment.configuration
   const same = sameConfiguration(all, experiment.id, (e) => e.configuration.hash)
+  const earlier = same
+    .filter(
+      (e) => e.created_at < experiment.created_at && ["completed", "cancelled", "failed"].includes(e.status),
+    )
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))[0]
+  const replication = useReplication(projectId, experiment.id, earlier?.id ?? null)
   return (
     <Section
       title="Run configuration"
       description="Everything this experiment was set up with, in three groups."
+      action={
+        <Button
+          variant="outline"
+          size="sm"
+          title={RESULTS_COPY.rerunHint}
+          disabled={rerun.isPending}
+          onClick={() =>
+            rerun.mutate(experiment.id, { onSuccess: () => router.push(`/projects/${projectId}/run`) })
+          }
+        >
+          {rerun.isPending ? RESULTS_COPY.rerunning : RESULTS_COPY.rerun}
+        </Button>
+      }
       badge={
         <Badge variant={same.length ? "default" : "outline"} title={c.hash}>
           {same.length ? "Same configuration" : "Configuration"} · {shortHash(c.hash)}
@@ -70,6 +96,24 @@ export function ConfigPanel({
       ) : (
         <p className="text-text-muted text-sm">No other experiment in this project has this configuration.</p>
       )}
+      <ErrorMessage error={rerun.error} />
+      {replication.data ? (
+        <div className="bg-subtle ring-border rounded-lg p-3 text-sm ring-1">
+          <p className="font-medium">
+            {RESULTS_COPY.replication(
+              replication.data.same,
+              replication.data.compared,
+              replication.data.against_name,
+            )}
+          </p>
+          {replication.data.skipped ? (
+            <p className="text-text-muted text-xs">
+              {RESULTS_COPY.replicationSkipped(replication.data.skipped)}
+            </p>
+          ) : null}
+          <p className="text-text-muted text-xs">{RESULTS_COPY.replicationNote}</p>
+        </div>
+      ) : null}
       <div className="grid gap-4 lg:grid-cols-3">
         <Layer {...CONFIG_LAYERS.youSet}>
           <Item label="Prompt">{c.prompt_version ? `Version ${c.prompt_version}` : "—"}</Item>

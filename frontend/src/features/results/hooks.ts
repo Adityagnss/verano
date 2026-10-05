@@ -1,7 +1,7 @@
 /** Results hooks: one experiment's per-model metrics, its case view, and the CSV download. */
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { api, call } from "@/lib/api/client"
 
@@ -54,4 +54,33 @@ export async function downloadCsv(projectId: string, experimentId: string): Prom
   link.download = `experiment-${experimentId}.csv`
   link.click()
   URL.revokeObjectURL(url)
+}
+
+/** Did this experiment answer like an earlier one with the same configuration? */
+export function useReplication(projectId: string, experimentId: string, againstId: string | null) {
+  return useQuery({
+    queryKey: ["projects", projectId, "replication", experimentId, againstId],
+    queryFn: () =>
+      call(() =>
+        api.GET("/api/v1/projects/{project_id}/experiments/{experiment_id}/replication", {
+          params: { ...experimentPath(projectId, experimentId), query: { against: againstId ?? "" } },
+        }),
+      ),
+    enabled: againstId !== null,
+    retry: false,
+  })
+}
+
+/** A new experiment with the same configuration as this one. */
+export function useRerun(projectId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (experimentId: string) =>
+      call(() =>
+        api.POST("/api/v1/projects/{project_id}/experiments/{experiment_id}/rerun", {
+          params: experimentPath(projectId, experimentId),
+        }),
+      ),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["projects", projectId] }),
+  })
 }

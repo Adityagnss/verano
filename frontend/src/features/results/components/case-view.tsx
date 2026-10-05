@@ -68,6 +68,19 @@ export function CaseView({ item }: { item: CaseResultOut }) {
             <span className="font-mono">{item.expected_output}</span>
           </p>
         ) : null}
+        {item.agreement.length ? (
+          <ul className="text-text-secondary flex flex-col gap-0.5 text-xs">
+            {item.agreement.map((a) => (
+              <li key={a.model_profile_id}>
+                {RESULTS_COPY.agreement(
+                  item.outputs.find((o) => o.model_profile_id === a.model_profile_id)?.model ?? "",
+                  a.same,
+                  a.runs,
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : null}
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {item.outputs.map((o) => (
             <div

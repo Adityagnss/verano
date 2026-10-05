@@ -4,6 +4,7 @@ and recorded completely, a failing call recorded without failing the run, the bu
 stopping the run with finished results kept, and cancel skipping pending calls.
 """
 
+import uuid
 from typing import Any
 
 import httpx
@@ -159,3 +160,55 @@ async def test_the_same_setup_has_the_same_configuration_hash_and_the_logbook_li
     assert options.status_code == 200, options.text
     listed = {e["name"]: e["config_hash"] for e in options.json()["experiments"]}
     assert listed == hashes
+
+
+async def test_a_rerun_has_the_same_configuration_and_reproduces_the_answers_and_stability_is_reported(
+    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue
+) -> None:
+    models = await approved_project(client, session, jobs)
+    body = {"models": [{"model_profile_id": models["echo"], "runs": 3, "params": {"temperature": 0, "seed": 42}}]}
+    original = await start(client, session, body)
+
+    early = await client.post(url(session, f"/{original['id']}/rerun"), headers=session.headers)
+    assert early.status_code == 409, early.text
+    await jobs.drain()
+
+    response = await client.post(url(session, f"/{original['id']}/rerun"), headers=session.headers)
+    assert response.status_code == 201, response.text
+    again = response.json()
+    await jobs.drain()
+    assert again["id"] != original["id"]
+    assert again["name"].startswith("Re-run: ")
+    assert again["configuration"]["hash"] == original["configuration"]["hash"]
+    assert again["prompt_version_id"] == original["prompt_version_id"]
+    assert again["total_calls"] == original["total_calls"] == 9
+
+    results = (await client.get(url(session, f"/{original['id']}/results"), headers=session.headers)).json()
+    (echo,) = results["models"]
+    assert (echo["stability"], echo["stable_cases"], echo["compared_cases"]) == (1.0, 3, 3)
+    cases = (await client.get(url(session, f"/{original['id']}/cases"), headers=session.headers)).json()
+    assert all(c["agreement"] == [{"model_profile_id": models["echo"], "same": 3, "runs": 3}] for c in cases)
+
+    check = await client.get(
+        url(session, f"/{again['id']}/replication"), params={"against": original["id"]}, headers=session.headers
+    )
+    assert check.status_code == 200, check.text
+    assert (check.json()["same"], check.json()["compared"], check.json()["skipped"]) == (9, 9, 0)
+    assert check.json()["against_name"] == original["name"]
+
+
+async def test_replication_is_only_for_finished_experiments_set_up_the_same_way(
+    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue
+) -> None:
+    models = await approved_project(client, session, jobs)
+    first = await start(client, session, {"models": [{"model_profile_id": models["echo"], "params": {"seed": 1}}]})
+    second = await start(client, session, {"models": [{"model_profile_id": models["echo"], "params": {"seed": 2}}]})
+    await jobs.drain()
+    path = url(session, f"/{first['id']}/replication")
+    different = await client.get(path, params={"against": second["id"]}, headers=session.headers)
+    assert different.status_code == 409
+    assert "same way" in different.json()["error"]["message"]
+    itself = await client.get(path, params={"against": first["id"]}, headers=session.headers)
+    assert itself.status_code == 409
+    unknown = await client.get(path, params={"against": str(uuid.uuid4())}, headers=session.headers)
+    assert unknown.status_code == 404

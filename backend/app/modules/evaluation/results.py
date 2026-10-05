@@ -19,6 +19,7 @@ from app.core.container import Container
 from app.core.errors import Conflict, NotFound
 from app.core.jobs import JobQueue
 from app.modules.datasets.service import DatasetService
+from app.modules.engine.fingerprint import config_hash
 from app.modules.engine.models import Experiment, TestCaseRun
 from app.modules.engine.repository import EngineRepository
 from app.modules.engine.schemas import RunStatus
@@ -27,15 +28,19 @@ from app.modules.evaluation.metrics import CaseOutcome, WeightedScore, case_resu
 from app.modules.evaluation.models import EvaluationRun, Score
 from app.modules.evaluation.repository import ScoreRepository
 from app.modules.evaluation.schemas import (
+    CaseAgreement,
     CaseOutput,
     CaseResultOut,
     EvaluationRunOut,
     EvaluationRunStatus,
     ModelMetricsOut,
+    ReplicationModel,
+    ReplicationOut,
     RescoreRequest,
     ResultsOut,
     ScoreOut,
 )
+from app.modules.evaluation.stability import Answer, ModelStability, case_agreements, model_stability, replication
 
 EXPERIMENT_NOT_FOUND = "This experiment doesn't exist in this project."
 RUN_NOT_FOUND = "This scoring run doesn't belong to this experiment."
@@ -43,6 +48,8 @@ NOT_SCORED = "This experiment hasn't been scored yet."
 STILL_RUNNING = "Wait until the experiment has finished before rescoring it."
 SCORE_JOB = "evaluation.score_experiment"
 SCORED_STATES = {"completed", "cancelled", "failed"}
+NOT_REPLICABLE = "These experiments weren't set up the same way, so comparing their answers is not a replication check."
+SAME_EXPERIMENT = "Pick a different experiment to compare with."
 
 
 class ResultsService:
@@ -63,7 +70,12 @@ class ResultsService:
         models = []
         if run is not None:
             outcomes = [o for o, _, _ in await self._outcomes(experiment, run)]
-            models = [ModelMetricsOut(**vars(m)) for m in model_metrics(outcomes)]
+            stable = model_stability(await self._answers(experiment))
+            nothing = ModelStability(stability=None, stable_cases=0, compared_cases=0)
+            models = [
+                ModelMetricsOut(**vars(m), **vars(stable.get(m.model_profile_id, nothing)))
+                for m in model_metrics(outcomes)
+            ]
         return ResultsOut(
             experiment_id=experiment.id,
             evaluation_run=EvaluationRunOut.model_validate(run) if run else None,
@@ -98,6 +110,7 @@ class ResultsService:
                     ],
                 )
             )
+        agreements = case_agreements(await self._answers(experiment))
         items = await self._datasets.items(experiment.dataset_version_id, ids=list(grouped))
         return [
             CaseResultOut(
@@ -109,6 +122,11 @@ class ResultsService:
                 source=item.source.value,
                 split=item.split.value if item.split else None,
                 outputs=sorted(grouped[item.id], key=lambda o: (o.model, o.run_number)),
+                agreement=[
+                    CaseAgreement(model_profile_id=model_id, same=found.same, runs=found.runs)
+                    for (model_id, item_id), found in agreements.items()
+                    if item_id == item.id
+                ],
             )
             for item in items
             if not failed_only or any(not output.passed for output in grouped[item.id])
@@ -169,6 +187,47 @@ class ResultsService:
             SCORE_JOB, experiment_id=str(experiment.id), trigger="rescore", evaluator_set_version_id=str(version)
         )
         return await self.results(project_id, experiment_id, None)
+
+    async def replication(
+        self, project_id: uuid.UUID, experiment_id: uuid.UUID, against_id: uuid.UUID
+    ) -> ReplicationOut:
+        """Call by call: did this experiment answer like an earlier one set up the same way?"""
+        if experiment_id == against_id:
+            raise Conflict(SAME_EXPERIMENT)
+        current = await self._experiment(project_id, experiment_id)
+        earlier = await self._experiment(project_id, against_id)
+        if any(e.status.value not in SCORED_STATES for e in (current, earlier)):
+            raise Conflict(STILL_RUNNING)
+        if config_hash(current) != config_hash(earlier):
+            raise Conflict(NOT_REPLICABLE)
+        found = replication(await self._answers(current), await self._answers(earlier))
+        names = {m["model_profile_id"]: m["display_name"] for m in current.config["models"]}
+        models = [
+            ReplicationModel(
+                model_profile_id=model_id,
+                model=names.get(str(model_id), ""),
+                same=r.same,
+                compared=r.compared,
+                skipped=r.skipped,
+            )
+            for model_id, r in found.items()
+        ]
+        return ReplicationOut(
+            experiment_id=current.id,
+            against_id=earlier.id,
+            against_name=earlier.name,
+            same=sum(m.same for m in models),
+            compared=sum(m.compared for m in models),
+            skipped=sum(m.skipped for m in models),
+            models=models,
+        )
+
+    async def _answers(self, experiment: Experiment) -> list[Answer]:
+        return [
+            Answer(row.model_profile_id, row.dataset_item_id, row.run_number, row.raw_output or "")
+            for row in await self._engine.runs(experiment.id)
+            if row.status is RunStatus.SUCCEEDED
+        ]
 
     async def outcomes(self, experiment: Experiment) -> list[CaseOutcome]:
         run = self._pick(await self._scores.runs(experiment.id), None)

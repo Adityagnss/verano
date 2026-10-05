@@ -843,6 +843,27 @@
         "title": "CandidateOutcome",
         "type": "string"
       },
+      "CaseAgreement": {
+        "description": "One model's repeated answers to one test case: `same` of `runs` match.",
+        "properties": {
+          "model_profile_id": {
+            "format": "uuid",
+            "title": "Model Profile Id",
+            "type": "string"
+          },
+          "runs": {
+            "title": "Runs",
+            "type": "integer"
+          },
+          "same": {
+            "title": "Same",
+            "type": "integer"
+          }
+        },
+        "required": ["model_profile_id", "same", "runs"],
+        "title": "CaseAgreement",
+        "type": "object"
+      },
       "CaseCategory": {
         "enum": ["happy_path", "edge_case", "tricky", "format_stress", "adversarial"],
         "title": "CaseCategory",
@@ -947,6 +968,13 @@
       },
       "CaseResultOut": {
         "properties": {
+          "agreement": {
+            "items": {
+              "$ref": "#/components/schemas/CaseAgreement"
+            },
+            "title": "Agreement",
+            "type": "array"
+          },
           "category": {
             "title": "Category",
             "type": "string"
@@ -1015,7 +1043,8 @@
           "category",
           "source",
           "split",
-          "outputs"
+          "outputs",
+          "agreement"
         ],
         "title": "CaseResultOut",
         "type": "object"
@@ -3647,6 +3676,10 @@
             "title": "Cases",
             "type": "integer"
           },
+          "compared_cases": {
+            "title": "Compared Cases",
+            "type": "integer"
+          },
           "consistency": {
             "anyOf": [
               {
@@ -3713,6 +3746,21 @@
           "quality": {
             "title": "Quality",
             "type": "number"
+          },
+          "stability": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stability"
+          },
+          "stable_cases": {
+            "title": "Stable Cases",
+            "type": "integer"
           }
         },
         "required": [
@@ -3725,7 +3773,10 @@
           "latency_ms",
           "cost",
           "cost_per_call",
-          "failed_calls"
+          "failed_calls",
+          "stability",
+          "stable_cases",
+          "compared_cases"
         ],
         "title": "ModelMetricsOut",
         "type": "object"
@@ -4764,6 +4815,75 @@
         },
         "required": ["shape", "messages"],
         "title": "RenderedPrompt",
+        "type": "object"
+      },
+      "ReplicationModel": {
+        "properties": {
+          "compared": {
+            "title": "Compared",
+            "type": "integer"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "model_profile_id": {
+            "format": "uuid",
+            "title": "Model Profile Id",
+            "type": "string"
+          },
+          "same": {
+            "title": "Same",
+            "type": "integer"
+          },
+          "skipped": {
+            "title": "Skipped",
+            "type": "integer"
+          }
+        },
+        "required": ["model_profile_id", "model", "same", "compared", "skipped"],
+        "title": "ReplicationModel",
+        "type": "object"
+      },
+      "ReplicationOut": {
+        "description": "Did this experiment give the same answers as an earlier one with the same configuration?",
+        "properties": {
+          "against_id": {
+            "format": "uuid",
+            "title": "Against Id",
+            "type": "string"
+          },
+          "against_name": {
+            "title": "Against Name",
+            "type": "string"
+          },
+          "compared": {
+            "title": "Compared",
+            "type": "integer"
+          },
+          "experiment_id": {
+            "format": "uuid",
+            "title": "Experiment Id",
+            "type": "string"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/ReplicationModel"
+            },
+            "title": "Models",
+            "type": "array"
+          },
+          "same": {
+            "title": "Same",
+            "type": "integer"
+          },
+          "skipped": {
+            "title": "Skipped",
+            "type": "integer"
+          }
+        },
+        "required": ["experiment_id", "against_id", "against_name", "same", "compared", "skipped", "models"],
+        "title": "ReplicationOut",
         "type": "object"
       },
       "RescoreRequest": {
@@ -7937,6 +8057,128 @@
         ],
         "summary": "Export Csv",
         "tags": ["results"]
+      }
+    },
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/replication": {
+      "get": {
+        "operationId": "get_replication_api_v1_projects__project_id__experiments__experiment_id__replication_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "against",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Against",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplicationOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Replication",
+        "tags": ["results"]
+      }
+    },
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/rerun": {
+      "post": {
+        "operationId": "rerun_experiment_api_v1_projects__project_id__experiments__experiment_id__rerun_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Rerun Experiment",
+        "tags": ["experiments"]
       }
     },
     "/api/v1/projects/{project_id}/experiments/{experiment_id}/rescore": {

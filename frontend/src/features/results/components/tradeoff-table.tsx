@@ -52,6 +52,7 @@ export function TradeoffTable({ models }: { models: ModelMetricsOut[] }) {
             <TableHead>{c.quality}</TableHead>
             <TableHead>{c.passRate}</TableHead>
             <TableHead title={RESULTS_COPY.consistencyHint}>{c.consistency}</TableHead>
+            <TableHead title={RESULTS_COPY.stabilityHint}>{c.stability}</TableHead>
             <TableHead>{c.latency}</TableHead>
             <TableHead>{c.cost}</TableHead>
             <TableHead>{c.perCall}</TableHead>
@@ -71,6 +72,20 @@ export function TradeoffTable({ models }: { models: ModelMetricsOut[] }) {
               <Cell models={models} model={m} column="consistency">
                 {percent(m.consistency)}
               </Cell>
+              <TableCell className="tabular-nums">
+                {m.stability === null ? (
+                  <span className="text-text-muted" title={RESULTS_COPY.stabilityHint}>
+                    needs 2+ runs
+                  </span>
+                ) : (
+                  <span title={RESULTS_COPY.stability(m.stable_cases, m.compared_cases)}>
+                    {percent(m.stability)}
+                    <span className="text-text-muted block text-xs">
+                      {RESULTS_COPY.stability(m.stable_cases, m.compared_cases)}
+                    </span>
+                  </span>
+                )}
+              </TableCell>
               <Cell models={models} model={m} column="latency_ms">
                 {m.latency_ms === null ? "—" : RESULTS_COPY.ms(m.latency_ms)}
               </Cell>

@@ -9,6 +9,7 @@ export const RESULTS_COPY = {
     "Quality: the average score of each answer (0–100%).",
     "Passed: share of test cases where every check passed.",
     "How consistent: same pass/fail across repeated runs (needs 2+ runs).",
+    'Same answer: how alike the answers themselves are across runs. Separate from consistency, and from "same configuration", which only says two experiments were set up identically.',
     "Click any test case below to see every model's answer side by side.",
   ],
   tiles: { quality: "Best quality", passRate: "Most passed", cost: "Cheapest per call", speed: "Fastest" },
@@ -27,12 +28,27 @@ export const RESULTS_COPY = {
     quality: "Quality",
     passRate: "Passed",
     consistency: "How consistent",
+    stability: "Same answer",
     latency: "Avg. time",
     cost: "Cost",
     perCall: "Per call",
     failed: "Failed calls",
   },
   consistencyHint: "Share of test cases where every run got the same pass/fail result. Needs 2+ runs.",
+  stabilityHint:
+    "How alike the answers are across repeated runs of the same test case: the largest group of matching answers out of the runs, averaged over cases. Matching means the same text (spacing ignored, or the same JSON). Needs 2+ runs. This is separate from consistency, which compares pass/fail.",
+  stability: (stable: number, compared: number) => `${stable} of ${compared} cases identical`,
+  agreement: (model: string, same: number, runs: number) =>
+    `${model}: same answer in ${same} of ${runs} runs`,
+  rerun: "Re-run with same settings",
+  rerunning: "Starting…",
+  rerunHint: "Starts a new experiment with the same prompt, test cases, models and settings.",
+  replication: (same: number, compared: number, name: string) =>
+    `Same answer in ${same} of ${compared} calls as "${name}".`,
+  replicationSkipped: (count: number) =>
+    `${count} calls had nothing to compare with (failed, or not in the other run).`,
+  replicationNote:
+    "A fixed seed makes matching answers more likely, but providers can change models, hardware or routing, so this is a check and not a guarantee.",
   chartTitle: "Passed test cases",
   casesHeading: "Test cases",
   failedOnly: "Only cases with a failure",

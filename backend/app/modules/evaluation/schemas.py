@@ -81,6 +81,29 @@ class ModelMetricsOut(BaseModel):
     cost: Decimal | None
     cost_per_call: Decimal | None
     failed_calls: int
+    stability: float | None
+    stable_cases: int
+    compared_cases: int
+
+
+class ReplicationModel(BaseModel):
+    model_profile_id: uuid.UUID
+    model: str
+    same: int
+    compared: int
+    skipped: int
+
+
+class ReplicationOut(BaseModel):
+    """Did this experiment give the same answers as an earlier one with the same configuration?"""
+
+    experiment_id: uuid.UUID
+    against_id: uuid.UUID
+    against_name: str
+    same: int
+    compared: int
+    skipped: int
+    models: list[ReplicationModel]
 
 
 class ResultsOut(BaseModel):
@@ -111,6 +134,14 @@ class CaseOutput(BaseModel):
     scores: list[ScoreOut]
 
 
+class CaseAgreement(BaseModel):
+    """One model's repeated answers to one test case: `same` of `runs` match."""
+
+    model_profile_id: uuid.UUID
+    same: int
+    runs: int
+
+
 class CaseResultOut(BaseModel):
     dataset_item_id: uuid.UUID
     inputs: dict[str, Any]
@@ -120,3 +151,4 @@ class CaseResultOut(BaseModel):
     source: str
     split: str | None
     outputs: list[CaseOutput]
+    agreement: list[CaseAgreement]
