@@ -354,6 +354,8 @@ def _warnings(prompts: list[ResolvedPrompt]) -> list[str]:
         if p.cases is not None and p.cases.skipped:
             shown = "; ".join(p.cases.skipped[:3]) + ("; …" if len(p.cases.skipped) > 3 else "")
             notes.append(f"{p.entry.name}: {len(p.cases.skipped)} rows skipped ({shown}).")
+        if "TODO" in p.entry.task.goal.upper() or any("TODO" in m.upper() for m in p.entry.models):
+            notes.append(f"{p.entry.name}: still has TODO values to fill in (task goal or model).")
         if p.golden is None and not p.inputs and p.cases is None:
             notes.append(
                 f"{p.entry.name}: no data. `verano push` sets the project up, but there is nothing to run yet."

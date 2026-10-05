@@ -14,7 +14,7 @@ from typing import Annotated
 import click
 import typer
 
-from verano import __version__, auth, push, runner, ui, validate
+from verano import __version__, auth, init, push, runner, ui, validate
 from verano.config import DEFAULT_URL, ENV_URL
 from verano.errors import CliError
 
@@ -68,6 +68,21 @@ def login(
 FileOption = Annotated[
     Path | None, typer.Option("--file", "-f", help="The verano.yaml to use (default: ./verano.yaml).")
 ]
+
+
+@app.command("init")
+def init_command(
+    path: Annotated[Path, typer.Argument(help="The folder that holds your code (default: here).")] = Path("."),
+    output: Annotated[
+        Path | None, typer.Option("--output", "-o", help="Where to write (default: <folder>/verano.yaml).")
+    ] = None,
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Don't ask: include everything that can be tested.")] = False,
+    force: Annotated[bool, typer.Option("--force", help="Replace an existing verano.yaml.")] = False,
+    print_only: Annotated[bool, typer.Option("--print", help="Show the file instead of writing it.")] = False,
+    include_tests: Annotated[bool, typer.Option("--include-tests", help="Also read test folders.")] = False,
+) -> None:
+    """Scan your code for prompts and write a verano.yaml. Nothing is sent anywhere."""
+    init.run(path, output, yes, force, print_only, include_tests)
 
 
 @app.command("validate")
