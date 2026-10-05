@@ -235,3 +235,35 @@ def test_an_unexpected_failure_is_a_short_message_unless_debugging(
     assert result.code == 1
     assert "can't be read" in result.err
     assert "Traceback" not in result.err
+
+
+def test_validate_shows_what_push_would_set_up_and_sends_nothing(
+    server: FakeVerano, run: Run, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "verano.yaml").write_text(
+        "version: 1\nproject: shop\nprompts:\n  - name: tag\n    user: 'Tag {{ item }}'\n"
+        "    task: {type: classification, goal: Tag items, allowed_outputs: [a, b]}\n"
+        "    models: [m1, m2]\n    runs: 2\n"
+    )
+    monkeypatch.chdir(tmp_path)
+    result = run("validate")
+    assert result.code == 0
+    assert "verano.yaml is valid: 1 prompt" in result.err
+    assert 'tag  →  project "shop · tag"' in result.out
+    assert "models:  m1, m2 · 2 runs" in result.out
+    assert "variables I can see: item" in result.out
+    assert server.calls == []
+    (tmp_path / "verano.yaml").write_text("version: 1\n")
+    broken = run("validate")
+    assert broken.code == 1
+    assert "has 2 problems" in broken.err
+
+
+def test_validate_without_a_file_says_how_to_make_one(
+    server: FakeVerano, run: Run, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    result = run("validate")
+    assert result.code == 1
+    assert "There is no verano.yaml" in result.err
+    assert "verano init" in result.err

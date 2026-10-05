@@ -8,12 +8,13 @@ module, and every request goes through `ApiClient`, the public HTTP API.
 import os
 import sys
 import traceback
+from pathlib import Path
 from typing import Annotated
 
 import click
 import typer
 
-from verano import __version__, auth, ui
+from verano import __version__, auth, ui, validate
 from verano.config import DEFAULT_URL, ENV_URL
 from verano.errors import CliError
 
@@ -62,6 +63,17 @@ def login(
 ) -> None:
     """Sign in and save a personal API token on this machine."""
     auth.login(url, email, password_stdin, token, days)
+
+
+FileOption = Annotated[
+    Path | None, typer.Option("--file", "-f", help="The verano.yaml to use (default: ./verano.yaml).")
+]
+
+
+@app.command("validate")
+def validate_command(file: FileOption = None) -> None:
+    """Check verano.yaml and show what `push` would set up. Nothing is sent anywhere."""
+    validate.validate(file)
 
 
 @app.command()
