@@ -113,6 +113,11 @@ compares with the last completed run of the same models and settings on the same
 | Full | Python, TypeScript, JavaScript | A real syntax tree: follows constants, f-strings, template literals, `.format()` | High |
 | Broad | Java, Go, C#, Ruby, PHP, Rust, Kotlin, Swift | Finds model names, SDK imports, API addresses and long instruction-like text near them | Medium: never ticked for you |
 
+In Java code that uses **Spring AI** or **LangChain4j**, the prompt is read from the message calls
+(`defaultSystem(...)`, `.user(...)`, `new SystemMessage(...)`, `UserMessage.from(...)`): strings,
+`static final` constants and `"text" + value` joins, where each value becomes a `{{ variable }}`.
+Those libraries keep the model in configuration, so set `models:` yourself.
+
 It always says what it could not read (a prompt built by a function call, messages passed in from
 elsewhere) instead of guessing. Prompts kept in text files, and unusual frameworks, are for a later
 `init --deep`; write those into `verano.yaml` by hand.

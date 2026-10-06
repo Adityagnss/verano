@@ -292,3 +292,56 @@ def test_init_never_ticks_a_clue_based_finding_for_you_but_writes_it_when_chosen
     assert prompt.system is not None
     assert "{{ attachment }}" in prompt.system
     assert prompt.entry.models == ["gpt-4o-mini"]
+
+
+SPRING_AI = '''
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.SystemMessage;
+
+class AdviceReader {
+    private static final String CODE = "O1";
+    private static final String SYSTEM_PROMPT =
+            """
+            You read payment advice documents.
+            Return only JSON with the total and the rows.
+            """;
+    private final ChatClient chat;
+
+    AdviceReader(ChatClient.Builder builder) {
+        this.chat = builder.defaultSystem(SYSTEM_PROMPT).build();
+    }
+
+    String reread(String instruction, String text) {
+        return chat.prompt().user("Instruction from the user:\\n" + instruction + "\\n\\nAdvice text:\\n" + text).call().content();
+    }
+}
+
+class Orchestrator {
+    void build(List<Message> messages, String systemPrompt, String userContent) {
+        messages.add(new SystemMessage(systemPrompt));
+        messages.add(new UserMessage(userContent));
+    }
+}
+'''
+
+
+def test_spring_ai_prompts_are_read_from_the_calls_with_a_text_block_and_joined_variables() -> None:
+    f = one(SPRING_AI, ".java")
+    assert f.system == "You read payment advice documents.\nReturn only JSON with the total and the rows."
+    assert f.user == "Instruction from the user:\n{{ instruction }}\n\nAdvice text:\n{{ text }}"
+    assert f.variables == ["instruction", "text"]
+    assert f.model is None
+    assert any("Spring AI" in n for n in f.notes)
+
+
+def test_a_prompt_that_only_exists_at_run_time_is_never_guessed() -> None:
+    findings, _ = scan_source(SPRING_AI.encode(), "Orchestrator.java", ".java")
+    assert [f.function for f in findings] == ["reread"]
+
+
+def test_an_upper_case_code_is_not_an_openai_model() -> None:
+    source = (
+        'class T { static final String A = "O1"; String s = "The headline number of reconciled rows in scope today."; }'
+    )
+    findings, _ = scan_source(source.encode(), "T.java", ".java")
+    assert findings == []

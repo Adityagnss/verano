@@ -21,12 +21,13 @@ from tree_sitter import Language, Node, Parser
 
 from verano.scan.common import Text, escape, identifier_from, infer_provider, variable
 from verano.scan.findings import Finding
+from verano.scan.java_calls import CALL_NOTE, ClassCalls, JavaCalls, pick, uses_library
 
 MODEL_NAME = re.compile(
-    r"^(?:gpt-[\w.\-]+|chatgpt-[\w.\-]+|o[134](?:-[\w.\-]+)?|claude-[\w.\-]+|gemini-[\w.\-]+|grok-[\w.\-]+"
+    r"^(?:gpt-[\w.\-]+|chatgpt-[\w.\-]+|(?-i:o[134](?:-[\w.\-]+)?)|claude-[\w.\-]+|gemini-[\w.\-]+|grok-[\w.\-]+"
     r"|mistral-[\w.\-]+|mixtral-[\w.\-]+|codestral[\w.\-]*|llama[\w.\-:]*|qwen[\w.\-:]*)$",
     re.I,
-)
+)  # OpenAI's o-series only in lower case: "O1" / "O3" are as often a code of the app's own (F3)
 AMBIGUOUS = re.compile(r"^(?:llama|qwen)", re.I)
 URL_HINTS = {
     "api.openai.com": "openai", "api.anthropic.com": "anthropic", "generativelanguage.googleapis.com": "gemini",
@@ -288,6 +289,7 @@ class Literal:
 class Scanner:
     def __init__(self, source: bytes, file: str, suffix: str) -> None:
         self.lang = LANGS[suffix]
+        self.suffix = suffix
         self.file = file
         self.source = source
         self.tree = parser_for(suffix).parse(source)
@@ -383,6 +385,12 @@ class Scanner:
         return system, user
 
     def run(self) -> None:
+        if self.suffix == ".java" and uses_library(self.source):
+            calls = JavaCalls(self.tree.root_node, self._read_string).classes()
+            self.findings = [f for f in (self._from_calls(c) for c in calls) if f.has_prompt]
+            if self.findings:
+                self.findings.sort(key=lambda f: f.line)
+                return
         models = [lit for lit in self.literals if MODEL_NAME.fullmatch(lit.plain.strip())]
         seen: set[tuple[int | None, str]] = set()
         for model in models:
@@ -408,6 +416,30 @@ class Scanner:
                     if finding.has_prompt:
                         self.findings.append(finding)
         self.findings.sort(key=lambda f: f.line)
+
+    def _read_string(self, node: Node) -> Text:
+        body, interpolated = body_of(txt(node), self.lang.style, node.type)
+        return interpolate(body, self.lang.style, interpolated)
+
+    def _from_calls(self, owner: ClassCalls) -> Finding:
+        first = next((c for c in owner.calls if c.role == "user"), owner.calls[0])
+        finding = Finding(self.file, first.line, function=first.method or owner.name, level="broad")
+        if len(self.hints) == 1:
+            (finding.provider,) = tuple(self.hints)
+        system, why_system = pick(owner.calls, "system")
+        user, why_user = pick(owner.calls, "user")
+        for text in (system, user):
+            for name in text.variables:
+                if name not in finding.variables:
+                    finding.variables.append(name)
+            finding.problems += [f"the prompt {p}" for p in text.problems if "positional" not in p]
+        finding.problems += why_system + why_user
+        finding.system = system.text.strip() or None
+        finding.user = user.text.strip() or None
+        finding.notes += [CALL_NOTE, "settings such as temperature are not read at this level; set `params:` yourself."]
+        if self.has_error:
+            finding.notes.append("this file has syntax the scanner could not fully read.")
+        return finding
 
     def _build(self, line: int, function: str | None, model: str | None, region: list[Literal]) -> Finding:
         finding = Finding(self.file, line, function=function, level="broad")
