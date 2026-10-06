@@ -23,6 +23,11 @@ NO_GENERATOR = (
     "This Task Spec has no model to write test cases with: it was written by hand (for example with "
     "`verano push`). Draft the Task Spec on the Tests step and choose a model, or use only your own test cases."
 )
+NO_INPUTS = (
+    "Your prompt has no {{ variables }}, so every generated test case would send exactly the same text. "
+    "Keep the instructions fixed and put the part that changes from case to case (for example the data to "
+    "work on) in a variable such as {{ data }}, or use only your own test cases."
+)
 CATEGORIES = load_yaml(Path(__file__).parent / "config" / "generation.yaml", GenerationCatalog)
 NOTHING = GenerationEstimate(
     cases_to_generate=0,
@@ -47,6 +52,8 @@ async def estimate_generation(
         return NOTHING
     if row.generator_credential_id is None or row.generator_model is None:
         raise Conflict(NO_GENERATOR)
+    if not row.spec.get("input_variables"):
+        raise Conflict(NO_INPUTS)
     draft = await datasets.find_draft(project_id)
     existing = await datasets.items(draft.id) if draft else []
     items = [item for item in existing if item.source is not ItemSource.GENERATED]

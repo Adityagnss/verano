@@ -39,6 +39,14 @@ class ListingSpec(BaseModel):
     chat_rules: list[ChatRule] = []
 
 
+class ModelRule(BaseModel):
+    """Settings a family of a provider's models refuses, matched by a regular expression on the model name."""
+
+    pattern: str
+    unsupported_parameters: list[str] = []
+    reason: str = ""
+
+
 class ProviderSpec(BaseModel):
     display_name: str
     client: str
@@ -57,6 +65,7 @@ class ProviderSpec(BaseModel):
     key_check_path: str | None = None
     parameter_ranges: dict[str, ParameterRange] = {}
     unsupported_parameters: list[str] = []
+    model_rules: list[ModelRule] = []
     extra_parameters: list[str] = []
     rate_limits: RateLimits
 

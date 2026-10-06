@@ -36,6 +36,11 @@ providers:
     requires_key: true
     listing: {items_path: data}
     exclude_id_patterns: [embedding, whisper, tts, dall-e, moderation, davinci, babbage, realtime, audio, transcribe, image, search, computer-use, sora, codex]
+    model_rules:
+      # Reasoning models refuse sampling settings (seen live: gpt-5-nano rejected temperature 0).
+      - pattern: '^(o\d|gpt-5(?!-chat))'
+        unsupported_parameters: [temperature, top_p, presence_penalty, frequency_penalty]
+        reason: OpenAI reasoning models accept only their default sampling
     rate_limits: {rpm: 500, tpm: 200000}
 
   anthropic:

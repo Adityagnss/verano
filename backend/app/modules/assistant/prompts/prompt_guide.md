@@ -525,16 +525,6 @@ Wrong: {{ wrong_cases }}
 - Was the winner checked on cases it was not written from?
 - Is the added cost (tokens, calls, delay) worth the gain?
 
-## Further reading
-
-- Prompt Engineering Guide, techniques: https://www.promptingguide.ai/techniques
-- Source repository: https://github.com/dair-ai/Prompt-Engineering-Guide
-- Reasoning models: https://www.promptingguide.ai/guides/reasoning-llms
-- Context engineering: https://www.promptingguide.ai/guides/context-engineering-guide
-- AI agents: https://www.promptingguide.ai/agents
-
-Published results come from papers on specific models and tasks. Treat them as ideas to test on your own cases, not as promises.
-
 ## Glossary
 
 - **Spread:** how much a score moves when nothing changes. Any gain smaller than this is noise.

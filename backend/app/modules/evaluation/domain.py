@@ -82,7 +82,14 @@ def score(value: float, threshold: float, reason: str, **metadata: Any) -> Score
 
 
 NO_OTHER = "Every model you can reach is also being tested, so the judge will be one of them."
-STRONGEST = "{model} is the highest-priced model that is not being tested, a rough sign of the most capable one."
+STRONGEST = (
+    "{model} is the lowest-priced model not being tested that costs at least as much as the models you test "
+    "(a rough sign it is as capable), and it can read as much as they can."
+)
+NOTHING_STRONGER = (
+    "{model} is not being tested and can read as much as the models you test; no model of at least their price "
+    "was found, so it may be weaker than them."
+)
 
 
 @dataclass(frozen=True)
@@ -91,15 +98,29 @@ class JudgeCandidate:
     model: str
     under_test: bool
     output_price: float | None
+    context_window: int | None = None
 
 
 def suggest_judge(profiles: list[JudgeCandidate]) -> tuple[JudgeCandidate | None, str]:
-    """The priced model that is not under test with the highest output price (price is a rough proxy for
-    capability); a model under test only when nothing else exists. The user decides."""
-    free = [p for p in profiles if not p.under_test and p.output_price is not None]
-    if free:
-        best = max(free, key=lambda p: p.output_price or 0)
+    """A priced model not under test that can read at least as much as every model under test (the judge
+    reads the case and the answer), and of those the cheapest that costs at least as much as the dearest
+    model under test (price is a rough proxy for capability). Never simply the most expensive model: that
+    can be a legacy model at many times the price with a small context window. A model under test only
+    when nothing else exists. The user decides."""
+    tested = [p for p in profiles if p.under_test]
+    floor_price = max((p.output_price or 0 for p in tested), default=0.0)
+    windows = [p.context_window for p in tested if p.context_window]
+    needed = min(windows) if windows else 0
+    free = [
+        p for p in profiles if not p.under_test and p.output_price is not None and (p.context_window or 0) >= needed
+    ]
+    stronger = [p for p in free if (p.output_price or 0) >= floor_price]
+    if stronger:
+        best = min(stronger, key=lambda p: (p.output_price or 0, p.model))
         return best, STRONGEST.format(model=best.model)
+    if free:
+        best = max(free, key=lambda p: (p.output_price or 0, p.model))
+        return best, NOTHING_STRONGER.format(model=best.model)
     priced = [p for p in profiles if p.output_price is not None]
     if priced:
         return max(priced, key=lambda p: p.output_price or 0), NO_OTHER

@@ -56,6 +56,8 @@ class TaskSpec(BaseModel):
     def _labels_for_classification(self) -> "TaskSpec":
         if self.task_type is TaskType.CLASSIFICATION and not self.allowed_outputs:
             raise ValueError("a classification task must list its allowed_outputs")
+        if self.task_type is not TaskType.CLASSIFICATION:
+            self.allowed_outputs = None  # labels mean nothing outside classification (a draft once listed JSON keys)
         return self
 
 

@@ -68,7 +68,7 @@ def test_a_case_with_an_unscored_check_is_not_judged_and_never_a_pass_or_a_zero(
     assert case_result([good]) == (True, 1.0, True)
     assert case_result([good, missing]) == (False, 0.0, False)
     assert case_result([missing]) == (False, 0.0, False)
-    assert case_result([]) == (True, 1.0, True)
+    assert case_result([]) == (False, 0.0, False)  # no check applied: not judged, never a pass
 
 
 def test_unscored_cases_are_counted_and_left_out_of_quality_pass_rate_and_consistency() -> None:
@@ -100,3 +100,38 @@ def test_a_model_with_nothing_judged_has_no_quality_instead_of_a_made_up_one() -
     [metrics] = model_metrics(rows)
     assert (metrics.quality, metrics.pass_rate, metrics.consistency) == (None, None, None)
     assert (metrics.judged_cases, metrics.unscored_cases) == (0, 2)
+
+
+def test_the_suggested_judge_is_the_cheapest_at_least_as_strong_model_that_can_read_the_cases() -> None:
+    from app.modules.evaluation.domain import JudgeCandidate, suggest_judge
+
+    def model(name: str, price: float, window: int, tested: bool = False) -> JudgeCandidate:
+        return JudgeCandidate(None, name, tested, price, window)
+
+    found, reason = suggest_judge(
+        [
+            model("gpt-4.1-nano", 0.4, 1_047_576, tested=True),
+            model("gpt-5-nano", 0.4, 272_000, tested=True),
+            model("gpt-4", 60.0, 8_192),  # the old rule's pick: dearest, and too small to read the case
+            model("o1-pro", 600.0, 200_000),
+            model("gpt-4o-mini", 0.6, 128_000),
+            model("gpt-4.1-mini", 1.6, 1_047_576),
+            model("gpt-5-mini", 2.0, 400_000),
+        ]
+    )
+    assert found is not None
+    assert found.model == "gpt-4.1-mini"
+    assert "at least as much as the models you test" in reason
+
+
+def test_labels_belong_to_classification_only() -> None:
+    from app.modules.generator.schemas import TaskSpec
+
+    spec = TaskSpec(
+        task_type="transformation",
+        goal="Draft a matching rule",
+        input_variables=["data"],
+        output_format="json",
+        allowed_outputs=["filter_conditions", "grouping_columns"],
+    )
+    assert spec.allowed_outputs is None

@@ -8,6 +8,7 @@ never invented: when no source knows it, the profile says "unknown" (NULL), and 
 providers marked `free` in the catalog get an explicit $0. No I/O and no provider names.
 """
 
+import re
 from decimal import Decimal
 from typing import TypeVar
 
@@ -127,6 +128,9 @@ def build_parameters(
 ) -> dict[str, ParameterRange]:
     supported = _supported_names(raw, metadata, catalog, spec)
     unsupported = set(spec.unsupported_parameters) | set(override.unsupported_parameters)
+    for rule in spec.model_rules:
+        if re.search(rule.pattern, raw.id):
+            unsupported |= set(rule.unsupported_parameters)
     parameters = {
         name: merge_range(
             base, spec.parameter_ranges.get(name), raw.parameter_ranges.get(name), override.parameters.get(name)

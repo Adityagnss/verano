@@ -326,6 +326,7 @@ class ResultsService:
                 p.model_name,
                 p.is_selected,
                 float(p.output_price_per_mtok) if p.output_price_per_mtok is not None else None,
+                p.context_window,
             )
             for p in profiles
         ]

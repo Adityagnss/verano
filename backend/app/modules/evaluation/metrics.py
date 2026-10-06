@@ -58,11 +58,10 @@ class ModelMetrics:
 
 
 def case_result(scores: list[WeightedScore]) -> tuple[bool, float, bool]:
-    """(passed, quality, judged). A case with an unscored evaluator is not judged: it has no result."""
-    if any(not s.scored for s in scores):
+    """(passed, quality, judged). A case with an unscored evaluator, or with no check that applied to it
+    at all, is not judged: it has no result, and it never counts as a pass."""
+    if not scores or any(not s.scored for s in scores):
         return False, 0.0, False
-    if not scores:
-        return True, 1.0, True
     total = sum(s.weight for s in scores) or 1.0
     quality = sum(s.score.value * s.weight for s in scores) / total
     return all(s.score.passed for s in scores), quality, True

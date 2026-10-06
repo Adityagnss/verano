@@ -129,3 +129,15 @@ def test_top_k_is_offered_only_when_the_provider_or_the_models_listing_names_it(
         CATALOG, spec(extra_parameters=["top_k"]), nothing_listed, None, ModelOverride(unsupported_parameters=["top_k"])
     )
     assert "top_k" not in refused.parameters
+
+
+def test_a_model_rule_removes_settings_a_family_of_models_refuses() -> None:
+    openai = spec(model_rules=[{"pattern": r"^(o\d|gpt-5(?!-chat))", "unsupported_parameters": ["temperature"]}])
+    for name, has_temperature in [
+        ("gpt-5-nano", False),
+        ("o3-mini", False),
+        ("gpt-5-chat-latest", True),
+        ("gpt-4.1", True),
+    ]:
+        profile = build_profile(CATALOG, openai, RawModel(id=name), METADATA, None)
+        assert ("temperature" in profile.parameters) is has_temperature, name

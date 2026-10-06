@@ -322,3 +322,23 @@ async def test_a_written_task_spec_is_checked_and_its_judge_must_be_one_of_your_
         api(session, f"/prompt-versions/{uuid.uuid4()}/task-spec"), json={"spec": base}, headers=session.headers
     )
     assert missing.status_code == 404
+
+
+async def test_a_prompt_with_no_variables_is_not_given_generated_cases(
+    client: httpx.AsyncClient, session: Session
+) -> None:
+    prompt = await create_prompt(
+        client, session, system_template="Draft the rule.", user_template="All the data, pasted."
+    )
+    credential = await add_credential(client, session, "mock")
+    body = {"prompt_version_id": prompt["id"], "credential_id": credential["id"], "model": "scripted"}
+    drafted = (await client.post(api(session, "/task-specs"), json=body, headers=session.headers)).json()
+    assert drafted["spec"]["input_variables"] == []
+    await client.put(
+        api(session, f"/task-specs/{drafted['id']}"), json={"spec": drafted["spec"]}, headers=session.headers
+    )
+    refused = await client.post(
+        api(session, "/generations/estimate"), json={"task_spec_id": drafted["id"]}, headers=session.headers
+    )
+    assert refused.status_code == 409, refused.text
+    assert "no {{ variables }}" in refused.json()["error"]["message"]
