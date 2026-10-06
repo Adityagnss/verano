@@ -184,6 +184,20 @@ def test_a_token_for_ci_is_printed_alone_on_standard_output(server: FakeVerano, 
     assert not credentials_path().exists()
 
 
+def test_a_token_from_stdin_without_email_uses_the_saved_sign_in(server: FakeVerano, run: Run) -> None:
+    login(run)
+    result = run("token", "create", "--name", "ci", "--password-stdin", stdin=PASSWORD + "\n")
+    assert result.code == 0
+    assert result.out == "vrn_secret2\n"
+
+
+def test_a_password_from_stdin_is_never_read_as_the_email(server: FakeVerano, run: Run) -> None:
+    result = run("token", "create", "--name", "ci", "--password-stdin", stdin=PASSWORD + "\n")
+    assert result.code == 1
+    assert "--password-stdin needs --email" in result.err
+    assert server.bodies == []
+
+
 def test_listing_and_revoking_tokens(server: FakeVerano, run: Run) -> None:
     login(run)
     server.tokens["tok-9"] = {

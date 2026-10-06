@@ -40,10 +40,21 @@ def _read_password(from_stdin: bool) -> str:
     return password
 
 
+def _known_email(url: str, password_stdin: bool) -> str:
+    """The email when none was given. With the password on stdin, stdin can't also answer a
+    question, so the saved sign-in for this server is used, or the user is told to pass --email."""
+    if not password_stdin:
+        return str(typer.prompt("Email"))
+    saved = load_credentials()
+    if saved and saved.email and saved.url == url:
+        return saved.email
+    raise CliError("--password-stdin needs --email.", "Add --email you@example.com.")
+
+
 def _session(url: str, email: str | None, password_stdin: bool) -> tuple[ApiClient, ApiClient, str]:
     """Sign in with a password. Returns the anonymous client (it holds the refresh cookie), the
     signed-in one, and the account email. The browser-style session is only used to make a token."""
-    email = email or typer.prompt("Email")
+    email = email or _known_email(url, password_stdin)
     password = _read_password(password_stdin)
     anonymous = ApiClient(url)
     session: dict[str, Any] = anonymous.post("/auth/login", {"email": email, "password": password})
