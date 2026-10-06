@@ -1,0 +1,25 @@
+# Part of the real-model check kit (DEVELOPMENT.md, H5 step 5.0). Runs on a free local model;
+# change `keys` and `models` to try a real provider. Check it with `verano validate`.
+
+version: 1
+project: "kit-classification"
+keys:
+  ollama: none
+prompts:
+  - name: review-sentiment
+    system: |-
+      You read customer product reviews. Reply with exactly one word: positive, negative or mixed.
+
+      positive - the customer is happy overall
+      negative - the customer is unhappy overall
+      mixed    - the review clearly praises one thing and criticises another
+    user: "Review: {{ attachment }}"
+    params: {temperature: 0, max_tokens: 5}
+    task:
+      type: classification
+      goal: Label the overall sentiment of a product review
+      allowed_outputs: [positive, negative, mixed]
+    data:
+      cases: {file: data/cases.csv, input: review, expected: expected}
+    models: ["qwen2.5:3b"]
+    runs: 2

@@ -1,0 +1,24 @@
+# A deliberately weak prompt for check 5.6 (DEVELOPMENT.md, H5): it does not list the labels or
+# say what each one means, so Improve has something real to fix. The task below still lists the
+# allowed outputs, because the task describes what is wanted, not what the prompt says.
+#   verano push -f verano.weak.yaml && verano run -f verano.weak.yaml
+# The project name differs from verano.yaml so the strong prompt is kept as the control.
+
+version: 1
+project: "support-triage-weak"
+keys:
+  openai: env:OPENAI_API_KEY
+prompts:
+  - name: classify-ticket
+    system: "You help the support team. Say what kind of ticket this is."
+    user: "Ticket: {{ attachment }}"
+    params: {temperature: 0, max_tokens: 5}
+    task:
+      type: classification
+      goal: Route each support ticket to the team that should handle it
+      allowed_outputs: [billing, shipping, technical]
+    data:
+      cases: {file: data/tickets.csv, input: ticket, expected: expected}
+    models: [gpt-4o-mini]
+    runs: 1
+    budget: 0.50

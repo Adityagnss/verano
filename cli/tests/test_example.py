@@ -44,3 +44,26 @@ def test_the_readme_commands_exist(run: Run) -> None:
     for command in ("login", "init", "validate", "push", "run", "status"):
         assert f"verano {command}" in text
         assert run(command, "--help").code == 0
+
+
+KIT = EXAMPLE.parent / "task-types"
+
+
+@pytest.mark.parametrize("folder", sorted(p.name for p in KIT.iterdir()) if KIT.exists() else [])
+def test_every_check_kit_file_is_valid_and_loads_all_its_rows(folder: str) -> None:
+    (prompt,) = load(KIT / folder / "verano.yaml").prompts
+    assert prompt.cases is not None
+    assert 30 <= len(prompt.cases.cases) <= 40
+    assert prompt.cases.skipped == []
+    if prompt.entry.task.type in {"summarization", "generation", "conversation"}:
+        assert prompt.entry.judge is not None
+
+
+def test_the_weak_prompt_lists_no_labels_but_its_task_does() -> None:
+    (prompt,) = load(EXAMPLE / "verano.weak.yaml").prompts
+    labels = prompt.entry.task.allowed_outputs or []
+    assert set(labels) == {"billing", "shipping", "technical"}
+    assert prompt.system is not None
+    assert not any(label in prompt.system.lower() for label in labels)
+    assert prompt.cases is not None
+    assert len(prompt.cases.cases) == 100

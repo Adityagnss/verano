@@ -1,0 +1,24 @@
+# Part of the real-model check kit (DEVELOPMENT.md, H5 step 5.0). Runs on a free local model;
+# change `keys` and `models` to try a real provider. Check it with `verano validate`.
+
+version: 1
+project: "kit-generation"
+keys:
+  ollama: none
+prompts:
+  - name: product-description
+    system: |-
+      Write a product description for an online shop in 2 or 3 sentences.
+      Use only the features given; do not invent any.
+    user: "Features: {{ attachment }}"
+    params: {temperature: 0.7, max_tokens: 150}
+    task:
+      type: generation
+      goal: Write a short shop description from a list of product features
+      constraints: [2 or 3 sentences, only the given features]
+      risks: [invented features, medical or safety claims]
+    data:
+      cases: {file: data/cases.csv, input: product, rubric: rubric}
+    judge: "qwen2.5:3b"   # the same model judges itself here; use a stronger judge for check 5.5
+    models: ["qwen2.5:3b"]
+    runs: 2

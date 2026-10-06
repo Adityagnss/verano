@@ -1,0 +1,65 @@
+question,expected
+"Context: The Eiffel Tower was completed in 1889 for the World's Fair in Paris. It is 330 metres tall.
+Question: In what year was the Eiffel Tower completed?",1889
+"Context: Our store opens at 9 am on weekdays and 10 am on Saturdays. We are closed on Sundays.
+Question: What time does the store open on Saturday?",10 am
+"Context: The warranty covers manufacturing defects for 24 months. Accidental damage is not covered.
+Question: Is accidental damage covered by the warranty?",No
+"Context: Mount Kilimanjaro, in Tanzania, is the highest mountain in Africa at 5,895 metres.
+Question: In which country is Mount Kilimanjaro?",Tanzania
+"Context: Refunds are issued to the original payment method within 5 to 7 business days.
+Question: How long do refunds take?",5 to 7 business days
+"Context: The meeting was moved from Tuesday to Thursday because the CFO is travelling.
+Question: Why was the meeting moved?",The CFO is travelling
+"Context: Python 3.12 was released in October 2023. It improved error messages and f-string parsing.
+Question: When was Python 3.12 released?",October 2023
+"Context: The recipe needs 200 g of flour, 2 eggs and 100 ml of milk.
+Question: How much milk does the recipe need?",100 ml
+"Context: Employees get 25 days of paid leave per year, plus public holidays.
+Question: How many days of paid leave do employees get?",25 days
+"Context: The library allows members to borrow up to 6 books for 3 weeks.
+Question: How many books can a member borrow?",6
+"Context: Venus is the hottest planet in the solar system, even though Mercury is closer to the Sun.
+Question: Which planet is the hottest?",Venus
+"Context: Free shipping applies to orders over $50 within the continental US.
+Question: What is the minimum order for free shipping?",$50
+"Context: The bridge was closed in 2019 and reopened in 2022 after repairs.
+Question: When did the bridge reopen?",2022
+"Context: Marie Curie won the Nobel Prize in Physics in 1903 and in Chemistry in 1911.
+Question: In which field did Marie Curie win her 1911 Nobel Prize?",Chemistry
+"Context: The device charges fully in 90 minutes and runs for 12 hours.
+Question: How long does a full charge take?",90 minutes
+"Context: Parking is free for the first two hours, then $3 per hour.
+Question: How much does parking cost after two hours?",$3 per hour
+"Context: The company was founded in Oslo by two engineers, Ingrid and Lars.
+Question: Where was the company founded?",Oslo
+"Context: The report is due on 15 March. Drafts should reach the editor by 1 March.
+Question: When should drafts reach the editor?",1 March
+"Context: Water boils at 100 degrees Celsius at sea level, but at a lower temperature at high altitude.
+Question: Does water boil at a higher or lower temperature at high altitude?",Lower
+"Context: Our plan includes 3 user seats. Extra seats cost $8 per month each.
+Question: How many user seats does the plan include?",3
+"Context: The museum is free on the first Sunday of every month.
+Question: When is the museum free?",The first Sunday of every month
+"Context: The Amazon River flows through Peru, Colombia and Brazil before reaching the Atlantic.
+Question: Into which ocean does the Amazon flow?",The Atlantic
+"Context: Passwords must have at least 12 characters, including a number.
+Question: What is the minimum password length?",12 characters
+"Context: The train leaves at 14:05 from platform 4 and arrives at 16:40.
+Question: Which platform does the train leave from?",Platform 4
+"Context: The vaccine is given in two doses, four weeks apart.
+Question: How far apart are the two doses?",Four weeks
+"Context: The article was written by Dana Okafor and edited by Sam Reyes.
+Question: Who edited the article?",Sam Reyes
+"Context: Leaves turn red in autumn because chlorophyll breaks down and anthocyanins are produced.
+Question: What pigment makes leaves red in autumn?",Anthocyanins
+"Context: The hotel's check-in time is 3 pm and check-out is 11 am.
+Question: What is the check-out time?",11 am
+"Context: The festival runs for five days, starting on 10 August.
+Question: On what date does the festival start?",10 August
+"Context: The app supports English, Spanish and Japanese. French is planned for next year.
+Question: Does the app support French today?",No
+"Context: Honey never spoils; edible honey has been found in ancient Egyptian tombs.
+Question: Where has edible ancient honey been found?",In ancient Egyptian tombs
+"Context: The gym is open 24 hours, but staff are present only from 8 am to 8 pm.
+Question: When are staff present at the gym?",From 8 am to 8 pm

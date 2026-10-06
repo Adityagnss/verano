@@ -1,0 +1,37 @@
+transcript,rubric
+"Customer: Hi, my parcel says delivered but it's not here.","The assistant's next reply: apologises; asks to check with neighbours or a safe place; offers to open a trace or claim; does not blame the customer. Polite, concise, and in plain words."
+Customer: Can I change the size of an order I placed an hour ago?,"The assistant's next reply: says whether it can be changed before dispatch; asks for the order number and the new size. Polite, concise, and in plain words."
+Customer: I was charged twice for the same order!!,"The assistant's next reply: apologises; acknowledges the double charge; asks for order number or last 4 digits of card, not the full card number; explains the refund. Polite, concise, and in plain words."
+"Customer: How do I reset my password?
+Assistant: You can use the 'Forgot password' link on the sign-in page.
+Customer: I did, but no email arrives.","The assistant's next reply: suggests checking spam and the address used; offers to resend or verify the email; does not repeat the first answer only. Polite, concise, and in plain words."
+Customer: Do you deliver to Iceland?,"The assistant's next reply: answers clearly or says it will check; does not invent a delivery time or price. Polite, concise, and in plain words."
+Customer: Your product broke after two days. I'm furious.,"The assistant's next reply: acknowledges frustration calmly; apologises; offers a replacement or refund route; asks for order details. Polite, concise, and in plain words."
+Customer: Is the blue jacket waterproof or just water-resistant?,"The assistant's next reply: does not guess if unknown; asks which product or offers to check; no invented specs. Polite, concise, and in plain words."
+Customer: I want to cancel my subscription.,"The assistant's next reply: respects the request; explains how to cancel or does it; may mention what happens to remaining time; no pressure tactics. Polite, concise, and in plain words."
+Customer: Can you give me a discount code?,"The assistant's next reply: polite; does not invent a code; mentions current offers or newsletter if appropriate. Polite, concise, and in plain words."
+"Customer: What's your returns policy?
+Assistant: You can return items within 30 days.
+Customer: Even if I opened it?","The assistant's next reply: answers the follow-up specifically; stays consistent with the 30-day policy; says conditions for opened items or offers to check. Polite, concise, and in plain words."
+Customer: The app crashes every time I open my basket.,"The assistant's next reply: apologises; asks for device and app version; suggests updating or reinstalling; offers to report the bug. Polite, concise, and in plain words."
+"Customer: I ordered a gift, can you remove the price from the receipt?","The assistant's next reply: confirms gift receipt or price-free packing slip options or how to request them. Polite, concise, and in plain words."
+Customer: Hello?,"The assistant's next reply: greets warmly and asks how it can help; short. Polite, concise, and in plain words."
+Customer: My discount code SAVE10 says it's expired but your email said it's valid until Friday.,"The assistant's next reply: apologises; does not argue; offers to check or apply the discount; asks for the order or email. Polite, concise, and in plain words."
+Customer: Can I pay with PayPal?,"The assistant's next reply: answers about payment methods or says it will check; short and clear. Polite, concise, and in plain words."
+Customer: I need the invoice for my company with our VAT number.,"The assistant's next reply: explains how to get an invoice with VAT details; asks for the order number and VAT number. Polite, concise, and in plain words."
+Customer: Why is shipping so expensive to Canada?,"The assistant's next reply: explains briefly (carrier costs, duties) without being defensive; mentions cheaper options if any; no invented numbers. Polite, concise, and in plain words."
+Customer: The item I received is not what I ordered.,"The assistant's next reply: apologises; asks for order number and a photo; offers exchange or refund; covers return shipping. Polite, concise, and in plain words."
+Customer: Are your products tested on animals?,"The assistant's next reply: answers honestly or says it will check; does not make claims it cannot know. Polite, concise, and in plain words."
+"Customer: I forgot to add something to my order, can you add it?","The assistant's next reply: explains whether orders can be modified; offers a way (new order, combined shipping if possible). Polite, concise, and in plain words."
+Customer: Can I speak to a human?,"The assistant's next reply: respects the request; explains how to reach a person or hands over; no stalling. Polite, concise, and in plain words."
+"Customer: My delivery is a week late.
+Assistant: I'm sorry! Can you share your order number?
+Customer: It's 48213.","The assistant's next reply: uses the order number; says what it will do next (check tracking, contact carrier); gives a realistic next step, no invented status. Polite, concise, and in plain words."
+Customer: Do you price match?,"The assistant's next reply: answers clearly or says it will check; does not promise a match it cannot confirm. Polite, concise, and in plain words."
+Customer: I'd like to leave a complaint about one of your drivers.,"The assistant's next reply: takes it seriously; apologises; asks for details (date, order); explains what happens next. Polite, concise, and in plain words."
+Customer: Is my personal data shared with other companies?,"The assistant's next reply: answers carefully; points to the privacy policy; does not make legal promises. Polite, concise, and in plain words."
+Customer: Can I return a sale item?,"The assistant's next reply: explains the rule for sale items or offers to check; consistent and clear. Polite, concise, and in plain words."
+"Customer: Thank you so much, you've been really helpful!","The assistant's next reply: short warm closing; asks if anything else is needed; no new information. Polite, concise, and in plain words."
+Customer: The website says out of stock. When will it be back?,"The assistant's next reply: does not invent a date; offers a back-in-stock alert or to check. Polite, concise, and in plain words."
+"Customer: I received a damaged parcel, the box was crushed but the item seems fine.","The assistant's next reply: thanks them; checks whether they want to keep it; asks them to check the item fully and keep photos. Polite, concise, and in plain words."
+Customer: asdfgh,"The assistant's next reply: politely says it didn't understand and asks how it can help. Polite, concise, and in plain words."

@@ -1,0 +1,41 @@
+ticket,expected,group
+"I was charged twice for my order last week, please refund one payment.",billing,pair-1
+My parcel has not arrived and the tracking has not updated in five days.,shipping,pair-2
+"I can't log in to the app, it says my password is wrong but I just reset it.",technical,pair-3
+Please send me an invoice for my March order with my company name on it.,billing,pair-4
+The box arrived crushed and the glass inside is broken.,shipping,pair-5
+The checkout page shows an error 500 when I click pay.,technical,pair-6
+I returned the shoes two weeks ago and still have no refund.,billing,pair-7
+The courier left my parcel with a neighbour I don't know.,shipping,pair-8
+The website keeps logging me out every few minutes.,technical,pair-9
+My discount code was not applied at checkout and I paid full price.,billing,pair-10
+I was charged for a subscription I cancelled in January.,billing,distinct
+Can I pay by bank transfer instead of card?,billing,distinct
+Why does my invoice show VAT when I gave you our VAT number?,billing,distinct
+I want to change the card used for my monthly plan.,billing,distinct
+The refund went to an old card that is now closed.,billing,distinct
+Do you deliver to the Canary Islands?,shipping,distinct
+My order was sent to my old address.,shipping,distinct
+Can I collect my order from a pickup point instead?,shipping,distinct
+Tracking says delivered but the parcel is not here.,shipping,distinct
+"Half of my order arrived, where is the rest?",shipping,distinct
+The app crashes when I open the basket on Android.,technical,distinct
+I never receive the email to confirm my account.,technical,distinct
+Images on product pages do not load in Safari.,technical,distinct
+Two-factor codes arrive after they have already expired.,technical,distinct
+The search returns nothing even for products I can see on the home page.,technical,distinct
+My order was charged in dollars although I chose euros.,billing,distinct
+"The parcel is stuck at customs, what do I need to do?",shipping,distinct
+I cannot upload a photo with my product review.,technical,distinct
+Can I get a receipt without prices for a gift?,billing,distinct
+The delivery time slot I picked is not available any more.,shipping,distinct
+"I got charged two times for my order last week, please refund one of the payments.",billing,pair-1
+My package hasn't arrived and tracking hasn't updated for five days.,shipping,pair-2
+"Cannot log into the app, it says wrong password even though I just reset it.",technical,pair-3
+Could you send me an invoice for my order from March with my company's name on it?,billing,pair-4
+The box came crushed and the glass in it is broken.,shipping,pair-5
+When I click pay the checkout page shows error 500.,technical,pair-6
+I sent the shoes back two weeks ago and I still haven't had a refund.,billing,pair-7
+The delivery driver left my package with a neighbour I don't know.,shipping,pair-8
+The site keeps logging me out every couple of minutes.,technical,pair-9
+The discount code didn't apply at checkout so I paid the full price.,billing,pair-10

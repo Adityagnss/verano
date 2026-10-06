@@ -1,0 +1,24 @@
+# Part of the real-model check kit (DEVELOPMENT.md, H5 step 5.0). Runs on a free local model;
+# change `keys` and `models` to try a real provider. Check it with `verano validate`.
+
+version: 1
+project: "kit-conversation"
+keys:
+  ollama: none
+prompts:
+  - name: support-reply
+    system: |-
+      You are the support assistant of an online shop. Write the assistant's next reply to the
+      conversation. Be polite and brief. Never invent order details, prices, dates or codes;
+      say you will check instead.
+    user: "{{ attachment }}"
+    params: {temperature: 0.3, max_tokens: 200}
+    task:
+      type: conversation
+      goal: Write the next support reply in a customer conversation
+      constraints: [polite, brief, no invented order details]
+    data:
+      cases: {file: data/cases.csv, input: transcript, rubric: rubric}
+    judge: "qwen2.5:3b"   # the same model judges itself here; use a stronger judge for check 5.5
+    models: ["qwen2.5:3b"]
+    runs: 2

@@ -1,0 +1,31 @@
+# Part of the real-model check kit (DEVELOPMENT.md, H5 step 5.0). Runs on a free local model;
+# change `keys` and `models` to try a real provider. Check it with `verano validate`.
+
+version: 1
+project: "kit-extraction"
+keys:
+  ollama: none
+prompts:
+  - name: invoice-payment
+    system: |-
+      Extract the payment from the message as JSON with exactly these keys:
+      invoice_id (string), amount (number, what was actually paid), currency (ISO 4217 code),
+      date (YYYY-MM-DD, the payment date). Reply with the JSON only.
+    user: "{{ attachment }}"
+    params: {temperature: 0, max_tokens: 120}
+    task:
+      type: extraction
+      goal: Pull the paid invoice, amount, currency and payment date out of a payment email
+      output_schema:
+        type: object
+        required: [invoice_id, amount, currency, date]
+        properties:
+          invoice_id: {type: string}
+          amount: {type: number}
+          currency: {type: string}
+          date: {type: string}
+      risks: [two invoices named in one message, an amount written in words, day/month order]
+    data:
+      cases: {file: data/cases.csv, input: email, expected: expected}
+    models: ["qwen2.5:3b"]
+    runs: 2

@@ -1,0 +1,22 @@
+# Part of the real-model check kit (DEVELOPMENT.md, H5 step 5.0). Runs on a free local model;
+# change `keys` and `models` to try a real provider. Check it with `verano validate`.
+
+version: 1
+project: "kit-transformation"
+keys:
+  ollama: none
+prompts:
+  - name: date-to-iso
+    system: |-
+      Rewrite the date in ISO format (YYYY-MM-DD). A note in brackets says whether it is a US
+      (month first) or UK (day first) date. Reply with the date only.
+    user: "{{ attachment }}"
+    params: {temperature: 0, max_tokens: 12}
+    task:
+      type: transformation
+      goal: Rewrite a date written in any common style as YYYY-MM-DD
+      risks: [US and UK day/month order]
+    data:
+      cases: {file: data/cases.csv, input: date, expected: expected}
+    models: ["qwen2.5:3b"]
+    runs: 2
