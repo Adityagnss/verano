@@ -20,6 +20,12 @@ export const IMPROVE_COPY = {
   experiment: "Improve from",
   start: "Find what's failing and suggest fixes",
   startHint: "Costs a few model calls plus the candidate test runs, on the same models you tested.",
+  retry: "Try again",
+  writerLabel: "Model that writes the improvements",
+  writerHint: (model: string | null | undefined) =>
+    model
+      ? `The last try used ${model}. Pick a model that can read your whole prompt and test cases.`
+      : "It reads your prompt and the failed cases, so pick one that can read all of them.",
   stages: {
     analyzing: "Looking at the failures…",
     testing: "Testing 3 candidates on the improving cases…",

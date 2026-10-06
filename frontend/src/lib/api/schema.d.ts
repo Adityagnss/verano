@@ -2535,6 +2535,7 @@ export interface components {
              * Format: uuid
              */
             experiment_id: string;
+            writer?: components["schemas"]["JudgeChoice"] | null;
         };
         /** ImprovementOut */
         ImprovementOut: {
@@ -2567,6 +2568,8 @@ export interface components {
             root_prompt_version_id: string;
             stage: components["schemas"]["SessionStage"];
             status: components["schemas"]["OptimizationStatus"];
+            /** Writer Model */
+            writer_model?: string | null;
         };
         /**
          * InputFileKind

@@ -12,7 +12,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.modules.evaluation.schemas import ComparisonOut
+from app.modules.evaluation.schemas import ComparisonOut, JudgeChoice
 
 
 class OptimizationStatus(StrEnum):
@@ -58,6 +58,8 @@ class VerdictOut(BaseModel):
 
 class ImproveRequest(BaseModel):
     experiment_id: uuid.UUID
+    # The model that writes the improvements; left out, the experiment's judge does
+    writer: JudgeChoice | None = None
 
 
 class ClusterOut(BaseModel):
@@ -93,6 +95,7 @@ class ImprovementOut(BaseModel):
     status: OptimizationStatus
     stage: SessionStage
     message: str | None
+    writer_model: str | None = None
     root_prompt_version_id: uuid.UUID
     baseline_experiment_id: uuid.UUID | None
     baseline_optimize_quality: float | None

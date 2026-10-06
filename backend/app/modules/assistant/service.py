@@ -35,6 +35,7 @@ from app.modules.engine.repository import EngineRepository
 from app.modules.engine.schemas import ExperimentOrigin, SplitScope
 from app.modules.evaluation.repository import ScoreRepository
 from app.modules.evaluation.results import ResultsService
+from app.modules.evaluation.schemas import JudgeChoice
 from app.modules.projects.schemas import ProjectOut
 from app.modules.prompts.schemas import PromptSource, PromptVersionCreate
 from app.modules.prompts.service import PromptService
@@ -58,10 +59,13 @@ class ImprovementService:
         self._scores = ScoreRepository(session)
         self._datasets = DatasetService(session, container.settings)
         self._results = ResultsService.from_container(session, container)
-        self._prompts = PromptService(session, RegistryService(session, container), container.settings)
+        self._registry = RegistryService(session, container)
+        self._prompts = PromptService(session, self._registry, container.settings)
         self._jobs: JobQueue = container.jobs
 
-    async def start(self, project: ProjectOut, experiment_id: uuid.UUID) -> ImprovementOut:
+    async def start(
+        self, project: ProjectOut, experiment_id: uuid.UUID, writer: JudgeChoice | None = None
+    ) -> ImprovementOut:
         experiment = await self._experiment(project.id, experiment_id)
         if experiment.origin is not ExperimentOrigin.MANUAL:
             raise ValidationFailed(NOT_MANUAL)
@@ -69,12 +73,15 @@ class ImprovementService:
             raise ValidationFailed(NEEDS_BOTH_SPLITS)
         if not any(r.status.value == "completed" for r in await self._scores.runs(experiment.id)):
             raise Conflict(NOT_SCORED)
+        if writer is not None:  # refused here, with the registry's message, if the key or model is gone
+            await self._registry.call_target(project.id, writer.credential_id, writer.model)
         row = OptimizationSession(
             project_id=project.id,
             root_prompt_version_id=experiment.prompt_version_id,
             status=OptimizationStatus.ACTIVE,
             baseline_experiment_id=experiment.id,
             stage=SessionStage.ANALYZING,
+            writer=writer.model_dump(mode="json") if writer else None,
         )
         await self._repo.add(row)
         await self._session.commit()
@@ -97,6 +104,9 @@ class ImprovementService:
             status=row.status,
             stage=SessionStage(row.stage),
             message=row.message,
+            writer_model=(row.writer or {}).get("model") or (baseline.config.get("judge") or {}).get("model")
+            if baseline
+            else None,
             root_prompt_version_id=row.root_prompt_version_id,
             baseline_experiment_id=row.baseline_experiment_id,
             baseline_optimize_quality=await self._quality(baseline, Split.OPTIMIZE),

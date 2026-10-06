@@ -38,6 +38,8 @@ class OptimizationSession(IdMixin, CreatedAtMixin, Base):
     baseline_experiment_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("experiments.id", ondelete="SET NULL"))
     stage: Mapped[str] = mapped_column(String(32), default="analyzing", server_default="analyzing")
     message: Mapped[str | None] = mapped_column(Text)
+    # The model that writes the failure groups and candidates; null means the baseline's judge
+    writer: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
 
 
 class PromptCandidate(IdMixin, CreatedAtMixin, Base):

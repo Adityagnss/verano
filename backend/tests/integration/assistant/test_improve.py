@@ -146,3 +146,33 @@ async def test_only_a_proven_candidate_can_be_accepted_and_it_becomes_a_new_prom
     prompt = (await client.get(f"{base}/prompts", headers=session.headers)).json()["items"][0]["latest_version"]
     assert prompt["id"] != before["id"]
     assert prompt["change_reason"].startswith("Accepted improvement")
+
+
+async def test_improve_can_start_again_with_a_chosen_writer_model(
+    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue
+) -> None:
+    base = f"/api/v1/projects/{session.project_id}"
+    models = await approved_project(client, session, jobs)
+    body = {"models": [{"model_profile_id": models["echo"], "runs": 1}]}
+    experiment = (await client.post(f"{base}/experiments", json=body, headers=session.headers)).json()
+    await jobs.drain()
+    first = await improve(client, session, jobs, experiment["id"])
+    judge = (await client.get(f"{base}/experiments/{experiment['id']}", headers=session.headers)).json()["config"][
+        "judge"
+    ]
+    assert first["writer_model"] == judge["model"]
+
+    wrong = {"experiment_id": experiment["id"], "writer": {"credential_id": judge["credential_id"], "model": "no-such"}}
+    refused = await client.post(f"{base}/improvements", json=wrong, headers=session.headers)
+    assert refused.status_code >= 400
+    again = {"experiment_id": experiment["id"], "writer": judge}
+    started = await client.post(f"{base}/improvements", json=again, headers=session.headers)
+    assert started.status_code == 202, started.text
+    await jobs.drain()
+    latest = (
+        await client.get(
+            f"{base}/improvements/latest", params={"experiment_id": experiment["id"]}, headers=session.headers
+        )
+    ).json()
+    assert latest["id"] != first["id"]
+    assert latest["writer_model"] == judge["model"]

@@ -12,7 +12,7 @@ optimize test is done, the best one is confirmed by an experiment on the holdout
 when that is scored, its holdout quality is compared with the current prompt's on the
 same holdout cases with the significance engine, and the session says honestly whether the
 improvement is proven.
-Both calls use the model that wrote the test cases (the Task Spec's generator model).
+Both calls use the model chosen when the session was started, else the baseline experiment's judge.
 """
 
 import uuid
@@ -111,11 +111,12 @@ class ImprovementPipeline:
         prompt = await self._prompts.get_version(baseline.project_id, baseline.prompt_version_id)
         spec = await self._spec(baseline)
         groups = await self._ask(
-            baseline, "failures.jinja", FailureGroups, "failure_groups", prompt, spec, cases=failures
+            baseline, row.writer, "failures.jinja", FailureGroups, "failure_groups", prompt, spec, cases=failures
         )
         clusters = await store_clusters(self._repo, baseline, run.id, groups, failures)
         drafts = await self._ask(
             baseline,
+            row.writer,
             "candidates.jinja",
             CandidateDrafts,
             "candidates",
@@ -145,6 +146,7 @@ class ImprovementPipeline:
     async def _ask(
         self,
         baseline: Experiment,
+        writer: dict[str, Any] | None,
         template: str,
         schema: type[Any],
         step: str,
@@ -152,11 +154,11 @@ class ImprovementPipeline:
         spec: dict[str, Any],
         **values: Any,
     ) -> Any:
-        judge = baseline.config.get("judge")
-        if not judge:
+        chosen = writer or baseline.config.get("judge")
+        if not chosen:
             raise AppError(NO_MODEL)
         target = await self._registry.call_target(
-            baseline.project_id, uuid.UUID(judge["credential_id"]), judge["model"]
+            baseline.project_id, uuid.UUID(chosen["credential_id"]), chosen["model"]
         )
         await self._session.commit()
         text = render_system_prompt(

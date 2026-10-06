@@ -3288,6 +3288,16 @@
             "format": "uuid",
             "title": "Experiment Id",
             "type": "string"
+          },
+          "writer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JudgeChoice"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": ["experiment_id"],
@@ -3375,6 +3385,17 @@
           },
           "status": {
             "$ref": "#/components/schemas/OptimizationStatus"
+          },
+          "writer_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Writer Model"
           }
         },
         "required": [

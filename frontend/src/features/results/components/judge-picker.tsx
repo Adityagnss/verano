@@ -27,11 +27,16 @@ export function JudgePicker({
   id,
   picked,
   onPick,
+  label = RESULTS_COPY.judgeLabel,
+  forJudging = true,
 }: {
   projectId: string
   id: string
   picked: string
   onPick: (key: string) => void
+  label?: string
+  /** False when the model writes rather than judges: the self-judging warning and reason don't apply. */
+  forJudging?: boolean
 }) {
   const suggestion = useJudgeSuggestion(projectId)
   const models = useModels(projectId)
@@ -47,7 +52,7 @@ export function JudgePicker({
   const suggested = suggestion.data?.suggested
   return (
     <div className="flex max-w-md flex-col gap-1.5">
-      <Label htmlFor={id}>{RESULTS_COPY.judgeLabel}</Label>
+      <Label htmlFor={id}>{label}</Label>
       <NativeSelect id={id} value={chosen ? judgeKey(chosen) : ""} onChange={(e) => onPick(e.target.value)}>
         {chosen === null ? <option value="">{RESULTS_COPY.judgeNone}</option> : null}
         {candidates.map((c) => (
@@ -57,8 +62,10 @@ export function JudgePicker({
           </option>
         ))}
       </NativeSelect>
-      <p className="text-text-muted text-xs">{suggestion.data?.reason ?? RESULTS_COPY.judgeHint}</p>
-      {self ? <p className="text-warning-strong text-xs">{RESULTS_COPY.judgeSelf}</p> : null}
+      {forJudging ? (
+        <p className="text-text-muted text-xs">{suggestion.data?.reason ?? RESULTS_COPY.judgeHint}</p>
+      ) : null}
+      {forJudging && self ? <p className="text-warning-strong text-xs">{RESULTS_COPY.judgeSelf}</p> : null}
     </div>
   )
 }

@@ -6,6 +6,7 @@
 "use client"
 
 import { CircleCheck, Info } from "lucide-react"
+import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -21,6 +22,7 @@ import { StepHeader } from "@/components/common/step-header"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { NativeSelect } from "@/components/ui/select"
+import { JudgePicker, useChosenJudge } from "@/features/results/components/judge-picker"
 import { useExperiments } from "@/features/run/hooks"
 import { cn } from "@/lib/utils"
 
@@ -40,6 +42,9 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
   const data = session.data ?? null
   const winner = data?.candidates.find((c) => c.outcome === "better") ?? null
   const confirmed = data?.candidates.find((c) => c.holdout_experiment_id) ?? null
+  const stopped = data?.stage === "failed"
+  const [writerKey, setWriterKey] = useState("")
+  const writer = useChosenJudge(projectId, writerKey)
 
   if (experiments.data && finished.length === 0)
     return (
@@ -60,9 +65,23 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
     toast.success(IMPROVE_COPY.accepted)
   }
 
+  // The first try uses the experiment's judge unless another model is picked; a retry uses the pick
+  // (or the suggested model), since the judge is often why it stopped.
   const primary = !data ? (
-    <Button size="lg" disabled={!chosen || start.isPending} onClick={() => chosen && start.mutate(chosen)}>
+    <Button
+      size="lg"
+      disabled={!chosen || start.isPending}
+      onClick={() => chosen && start.mutate({ experimentId: chosen, writer: writerKey ? writer : null })}
+    >
       {IMPROVE_COPY.start}
+    </Button>
+  ) : stopped ? (
+    <Button
+      size="lg"
+      disabled={!chosen || !writer || start.isPending}
+      onClick={() => chosen && start.mutate({ experimentId: chosen, writer })}
+    >
+      {IMPROVE_COPY.retry}
     </Button>
   ) : (
     <Button
@@ -103,6 +122,19 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
               ))}
             </NativeSelect>
             {!data ? <p className="text-text-muted text-xs">{IMPROVE_COPY.startHint}</p> : null}
+            {!data || stopped ? (
+              <div className="mt-2 flex flex-col gap-1">
+                <JudgePicker
+                  projectId={projectId}
+                  id="writer"
+                  picked={writerKey}
+                  onPick={setWriterKey}
+                  label={IMPROVE_COPY.writerLabel}
+                  forJudging={false}
+                />
+                <p className="text-text-muted text-xs">{IMPROVE_COPY.writerHint(data?.writer_model)}</p>
+              </div>
+            ) : null}
           </div>
         }
       />

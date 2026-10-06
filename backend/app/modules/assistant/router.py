@@ -35,7 +35,7 @@ async def prompt_notes(principal: CurrentPrincipal) -> PromptNotes:
 async def start_improvement(
     body: ImproveRequest, project: ProjectScope, service: ImprovementServiceDep
 ) -> ImprovementOut:
-    return await service.start(project, body.experiment_id)
+    return await service.start(project, body.experiment_id, body.writer)
 
 
 @router.get("/latest")

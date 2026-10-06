@@ -4,6 +4,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { api, call } from "@/lib/api/client"
+import type { JudgeChoice } from "@/lib/api/types"
 
 const WORKING = new Set(["analyzing", "testing", "confirming"])
 
@@ -33,11 +34,11 @@ function useInvalidate(projectId: string) {
 export function useStartImprove(projectId: string) {
   const invalidate = useInvalidate(projectId)
   return useMutation({
-    mutationFn: (experimentId: string) =>
+    mutationFn: ({ experimentId, writer }: { experimentId: string; writer: JudgeChoice | null }) =>
       call(() =>
         api.POST("/api/v1/projects/{project_id}/improvements", {
           params: path(projectId),
-          body: { experiment_id: experimentId },
+          body: { experiment_id: experimentId, writer },
         }),
       ),
     onSettled: invalidate,
