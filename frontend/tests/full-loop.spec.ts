@@ -18,6 +18,8 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   await signUp(page, uniqueEmail("tests"))
   await page.getByLabel("Project name").fill("Support triage")
   await page.getByRole("button", { name: "Create project" }).click()
+  await expect(page).toHaveURL(/\/projects\/[^/]+\//)
+  const project = new URL(page.url()).pathname.split("/").slice(0, 3).join("/")
 
   const mock = page.locator('[data-slot="card"]', { hasText: "Mock (development)" })
   await mock.getByRole("button", { name: "Connect" }).click()
@@ -126,4 +128,34 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   await expect(page.getByRole("cell", { name: "echo" }).first()).toBeVisible()
   await page.getByRole("tab", { name: "Guardrails" }).click()
   await expect(page.getByText("What stops spending")).toBeVisible()
+
+  // Prompt versions: save version 2, test it, compare it with version 1 on the Dashboard
+  await page.goto(`${project}/prompt`)
+  await page.getByLabel("System prompt").fill("Classify the support ticket. Reply with one lowercase word.")
+  await page.getByRole("button", { name: "Save new version" }).click()
+  await expect(page).toHaveURL(/\/data$/)
+  await page.goto(`${project}/run`)
+  await expect(page.getByLabel("Prompt version to test")).toContainText("Version 2 (latest)")
+  await expect(page.getByLabel("Prompt version to test")).toContainText("Version 1")
+  await expect(page.getByRole("radio", { name: /Repeatable/ })).toBeChecked()
+  await page.getByRole("checkbox", { name: "Mock Scripted" }).click()
+  await expect(page.getByText(/Estimated total/)).toBeVisible()
+  await page.getByRole("button", { name: "Start experiment" }).click()
+  await page.getByRole("button", { name: "See results" }).click({ timeout: 90_000 })
+  await expect(page.getByRole("columnheader", { name: "Quality" })).toBeVisible({ timeout: 30_000 })
+  await page.goto(`${project}/dashboard`)
+  await expect(page.getByText("All versions at a glance")).toBeVisible()
+  await expect(page.getByRole("columnheader", { name: "V1" })).toBeVisible()
+  await expect(page.getByRole("columnheader", { name: "V2" })).toBeVisible()
+  // Version 1 was scored again above with edited criteria, so the honest answer here is that the two runs
+  // can't be compared until one is scored like the other; with the same checks it shows the comparison.
+  await expect(page.getByText(/cases? fixed|scored with different checks/).first()).toBeVisible({
+    timeout: 30_000,
+  })
+
+  // Light and dark themes
+  await page.getByRole("radio", { name: "Dark" }).click()
+  await expect(page.locator("html")).toHaveClass(/dark/)
+  await page.getByRole("radio", { name: "Light" }).click()
+  await expect(page.locator("html")).not.toHaveClass(/dark/)
 })

@@ -1,10 +1,12 @@
 /**
- * Client-side providers for the whole app: TanStack Query (cached server state; 4xx
- * answers are not retried because they won't change on retry) and the toast host.
+ * Client-side providers for the whole app: the light / dark theme (next-themes, a `.dark` class on
+ * <html>), TanStack Query (cached server state; 4xx answers are not retried because they won't
+ * change on retry) and the toast host.
  */
 "use client"
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { ThemeProvider } from "next-themes"
 import { type ReactNode, useState } from "react"
 
 import { Toaster } from "@/components/ui/sonner"
@@ -23,9 +25,11 @@ export function AppProviders({ children }: { children: ReactNode }) {
     () => new QueryClient({ defaultOptions: { queries: { retry: shouldRetry, staleTime: STALE_MS } } }),
   )
   return (
-    <QueryClientProvider client={client}>
-      {children}
-      <Toaster theme="light" position="top-right" richColors />
-    </QueryClientProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <QueryClientProvider client={client}>
+        {children}
+        <Toaster position="top-right" richColors />
+      </QueryClientProvider>
+    </ThemeProvider>
   )
 }

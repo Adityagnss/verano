@@ -17,6 +17,7 @@ import { RESULTS_COPY } from "../copy"
 import { useReplication, useRerun } from "../hooks"
 import { comparisonText } from "./comparison-detail"
 import { CONFIG_LAYERS, formatParams, sameConfiguration, shortHash } from "@/lib/config"
+import { versionName } from "@/lib/format"
 
 function Layer({ title, text, children }: { title: string; text: string; children: React.ReactNode }) {
   return (
@@ -136,7 +137,13 @@ export function ConfigPanel({
       ) : null}
       <div className="grid gap-4 lg:grid-cols-3">
         <Layer {...CONFIG_LAYERS.youSet}>
-          <Item label="Prompt">{c.prompt_version ? `Version ${c.prompt_version}` : "—"}</Item>
+          <Item label="Prompt">
+            {c.prompt_version
+              ? c.prompt_version < 0
+                ? versionName(c.prompt_version)
+                : `Version ${c.prompt_version}`
+              : "—"}
+          </Item>
           <Item label="Test cases">
             {c.split_scope === "all" ? "All approved cases" : `${c.split_scope} part only`}
           </Item>

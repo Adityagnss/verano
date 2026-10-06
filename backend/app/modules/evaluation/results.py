@@ -321,6 +321,18 @@ class ResultsService:
         run = self._pick(await self._scores.runs(experiment.id), None)
         return run.evaluator_set_version_id if run else None
 
+    async def same_scoring(self, first: Experiment, second: Experiment) -> bool:
+        """Were the two scored the same way: the same checks with the same settings and the same judge? Compared
+        by content, because every run that picks a judge saves its own evaluator-set version."""
+        ids = (await self.scored_with(first), await self.scored_with(second))
+        if ids[0] is None or ids[1] is None:
+            return False
+        if ids[0] == ids[1]:
+            return True
+        a = await self._evaluators.get_version(first.project_id, ids[0])
+        b = await self._evaluators.get_version(second.project_id, ids[1])
+        return _scoring_content(a) == _scoring_content(b)
+
     async def evaluator_version(self, project_id: uuid.UUID, version_id: uuid.UUID) -> EvaluatorSetVersionOut:
         return await self._evaluators.get_version(project_id, version_id)
 
@@ -354,7 +366,7 @@ class ResultsService:
         earlier = await self._experiment(project_id, against_id)
         if any(e.status.value not in SCORED_STATES for e in (current, earlier)):
             raise Conflict(STILL_RUNNING)
-        if await self.scored_with(current) != await self.scored_with(earlier):
+        if not await self.same_scoring(current, earlier):
             raise Conflict(OTHER_CHECKS)
         now, before = await self.outcomes(current), await self.outcomes(earlier)
         names = {m["model_profile_id"]: m["display_name"] for m in current.config["models"]}
@@ -427,7 +439,7 @@ class ResultsService:
     async def _quality_between(self, current: Experiment, earlier: Experiment) -> dict[uuid.UUID, ComparisonOut]:
         """Did the scores move between a run and its re-run? The same engine as everywhere else, per model, on
         the cases judged in both; nothing when the two were scored with different checks or a different judge."""
-        if await self.scored_with(current) != await self.scored_with(earlier):
+        if not await self.same_scoring(current, earlier):
             return {}
         now, before = await self.outcomes(current), await self.outcomes(earlier)
         found = {}
@@ -501,3 +513,12 @@ class ResultsService:
         if row is None:
             raise NotFound(EXPERIMENT_NOT_FOUND)
         return row
+
+
+def _scoring_content(version: EvaluatorSetVersionOut) -> tuple[object, ...]:
+    checks = tuple(
+        (c.evaluator_name, c.evaluator_version, repr(sorted(c.config.items())), c.threshold, c.weight, c.required)
+        for c in sorted(version.evaluators, key=lambda c: c.position)
+    )
+    judge = (str(version.judge.credential_id), version.judge.model) if version.judge else None
+    return checks, judge

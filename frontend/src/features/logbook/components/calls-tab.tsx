@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input"
 import { NativeSelect } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { CallRow, LogOptions } from "@/lib/api/types"
-import { formatCost, formatMs } from "@/lib/format"
+import { formatCost, formatMs, versionName } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 import { LOGBOOK_COPY } from "../copy"
@@ -211,7 +211,7 @@ export function CallsTab({ projectId, options }: { projectId: string; options: L
             choices={(options?.experiments ?? []).map((e) => ({
               value: e.id,
               label: e.name,
-              hint: `v${e.prompt_version}`,
+              hint: versionName(e.prompt_version),
             }))}
           />
           <label className="text-text-secondary flex items-center gap-1.5 text-sm">

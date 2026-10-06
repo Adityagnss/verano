@@ -84,7 +84,7 @@ class PromptService:
         parent = body.parent_version_id or (await self._repo.latest_versions([prompt.id]))[prompt.id].id
         if (await self._version(project_id, parent)).prompt_id != prompt.id:
             raise ValidationFailed(PARENT_ELSEWHERE)
-        number = await self._repo.next_version_number(prompt.id)
+        number = await self._repo.next_version_number(prompt.id, candidate)
         return await self._save(
             prompt, principal, body, parent_version_id=parent, number=number, source=source, candidate=candidate
         )

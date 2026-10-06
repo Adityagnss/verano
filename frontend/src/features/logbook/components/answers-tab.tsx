@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button"
 import { NativeSelect } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { AnswerRow, LogOptions } from "@/lib/api/types"
-import { formatCost, formatMs } from "@/lib/format"
+import { formatCost, formatMs, versionName } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 import { LOGBOOK_COPY } from "../copy"
@@ -76,7 +76,7 @@ const COLUMNS: Column[] = [
     key: "version",
     sort: "version",
     show: true,
-    cell: (r) => <StatusBadge tone="brand">v{r.prompt_version}</StatusBadge>,
+    cell: (r) => <StatusBadge tone="brand">{versionName(r.prompt_version)}</StatusBadge>,
   },
   {
     key: "model",

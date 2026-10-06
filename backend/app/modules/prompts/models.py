@@ -6,7 +6,8 @@ Versions are immutable: every save inserts a new row with `parent_version_id`, a
 template, or both (a check constraint enforces at least one), plus the detected
 `{{variables}}` and default parameters. A version with `is_candidate` is an improvement the
 assistant is testing; it never becomes the prompt's latest version unless the user accepts
-it, which saves a new, normal version.
+it, which saves a new, normal version. Candidates are numbered -1, -2, ... so they never use
+up the version numbers people see.
 """
 
 import uuid

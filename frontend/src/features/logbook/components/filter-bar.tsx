@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils"
 
 import { LOGBOOK_COPY } from "../copy"
 import { type AnswerFilters, EMPTY_FILTERS, activeCount } from "../domain"
+import { versionName } from "@/lib/format"
 
 const SOURCES: Choice[] = [
   { value: "golden", label: "Golden", hint: "has your correct answer" },
@@ -40,7 +41,7 @@ export function FilterBar({
 }) {
   const set = <K extends keyof AnswerFilters>(key: K, value: AnswerFilters[K]) =>
     onChange({ ...filters, [key]: value })
-  const versions = new Map((options?.prompt_versions ?? []).map((v) => [v.id, `v${v.version}`]))
+  const versions = new Map((options?.prompt_versions ?? []).map((v) => [v.id, versionName(v.version)]))
   const chips: { key: string; label: string; remove: () => void }[] = []
   const many = (key: keyof AnswerFilters, name: (v: string) => string) => {
     for (const v of filters[key] as string[])
@@ -116,7 +117,7 @@ export function FilterBar({
           choices={(options?.experiments ?? []).map((e) => ({
             value: e.id,
             label: e.name,
-            hint: `v${e.prompt_version} · config ${shortHash(e.config_hash)}${
+            hint: `${versionName(e.prompt_version)} · config ${shortHash(e.config_hash)}${
               sameConfiguration(options?.experiments ?? [], e.id, (x) => x.config_hash).length
                 ? " (same as others)"
                 : ""

@@ -221,7 +221,7 @@ class ImprovementPipeline:
         new, new_judged = await split_results(self._results, self._datasets, holdout, Split.HOLDOUT)
         old, old_judged = await split_results(self._results, self._datasets, baseline, Split.HOLDOUT)
         proof: VerdictOut
-        if await self._results.scored_with(holdout) != await self._results.scored_with(baseline):
+        if not await self._results.same_scoring(holdout, baseline):
             proof = VerdictOut(
                 reason=Reason.DIFFERENT_JUDGE, message=DIFFERENT_JUDGE, minimum_cases=self._minimum, comparison=None
             )

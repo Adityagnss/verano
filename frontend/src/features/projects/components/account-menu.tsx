@@ -5,6 +5,7 @@ import { LogOut } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 import { COMMON_COPY } from "@/components/common/copy"
+import { ThemeSwitch } from "@/components/common/theme-switch"
 import { Button } from "@/components/ui/button"
 import { useSession } from "@/lib/auth/use-session"
 
@@ -16,6 +17,7 @@ export function AccountMenu() {
   const signOut = useSignOutAndLeave(() => router.replace("/login"))
   return (
     <div className="flex items-center gap-3 text-sm">
+      <ThemeSwitch />
       <span className="text-muted-foreground hidden max-w-[16rem] truncate lg:inline">{user?.email}</span>
       <Button
         variant="ghost"

@@ -33,9 +33,20 @@ class PromptRepository:
         query = keyset(select(Prompt).where(Prompt.project_id == project_id), Prompt.id, page)
         return list((await self._session.scalars(query)).all())
 
-    async def next_version_number(self, prompt_id: uuid.UUID) -> int:
+    async def next_version_number(self, prompt_id: uuid.UUID, candidate: bool = False) -> int:
+        """Saved versions count 1, 2, 3...; Improve's candidates count -1, -2, -3... so testing them never
+        uses up the numbers people see (an accepted candidate is saved again as the next real version)."""
+        if candidate:
+            lowest = await self._session.scalar(
+                select(func.min(PromptVersion.version)).where(
+                    PromptVersion.prompt_id == prompt_id, PromptVersion.version < 0
+                )
+            )
+            return int(lowest or 0) - 1
         current = await self._session.scalar(
-            select(func.max(PromptVersion.version)).where(PromptVersion.prompt_id == prompt_id)
+            select(func.max(PromptVersion.version)).where(
+                PromptVersion.prompt_id == prompt_id, PromptVersion.version > 0
+            )
         )
         return int(current or 0) + 1
 
@@ -51,7 +62,12 @@ class PromptRepository:
         return {row.prompt_id: row for row in (await self._session.scalars(query)).all()}
 
     async def versions(self, prompt_id: uuid.UUID, page: PageParams) -> list[PromptVersion]:
-        query = keyset(select(PromptVersion).where(PromptVersion.prompt_id == prompt_id), PromptVersion.id, page)
+        """The saved versions; Improve's candidates are not versions until accepted, so they are left out."""
+        query = keyset(
+            select(PromptVersion).where(PromptVersion.prompt_id == prompt_id, PromptVersion.is_candidate.is_(False)),
+            PromptVersion.id,
+            page,
+        )
         return list((await self._session.scalars(query)).all())
 
     async def version(self, project_id: uuid.UUID, version_id: uuid.UUID) -> PromptVersion | None:

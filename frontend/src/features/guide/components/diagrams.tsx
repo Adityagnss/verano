@@ -7,12 +7,12 @@ import type { ReactNode } from "react"
 
 type Tone = "blue" | "gold" | "green" | "red" | "grey" | "violet"
 const FILL: Record<Tone, [string, string]> = {
-  blue: ["#e6eefe", "#2563eb"],
-  gold: ["#fdf3d6", "#b7791f"],
-  green: ["#e6f4ec", "#22804a"],
-  red: ["#fbeae6", "#c23b22"],
-  grey: ["#f1f4f9", "#8b95a7"],
-  violet: ["#f1eefb", "#5a45b0"],
+  blue: ["var(--dg-blue)", "var(--dg-blue-line)"],
+  gold: ["var(--dg-gold)", "var(--dg-gold-line)"],
+  green: ["var(--dg-green)", "var(--dg-green-line)"],
+  red: ["var(--dg-red)", "var(--dg-red-line)"],
+  grey: ["var(--dg-grey)", "var(--dg-grey-line)"],
+  violet: ["var(--dg-violet)", "var(--dg-violet-line)"],
 }
 
 const LABELS: Record<string, string> = {
@@ -84,7 +84,7 @@ function Frame({ label, height = 150, children }: { label: string; height?: numb
             markerHeight="7"
             orient="auto"
           >
-            <path d="M0 0 10 5 0 10z" fill="#55627a" />
+            <path d="M0 0 10 5 0 10z" fill="var(--dg-note)" />
           </marker>
         </defs>
         {children}
@@ -121,12 +121,12 @@ function Box({
         textAnchor="middle"
         fontSize={13}
         fontWeight={600}
-        fill="#14203a"
+        fill="var(--dg-ink)"
       >
         {title}
       </text>
       {sub ? (
-        <text x={x + w / 2} y={y + h / 2 + 14} textAnchor="middle" fontSize={11} fill="#55627a">
+        <text x={x + w / 2} y={y + h / 2 + 14} textAnchor="middle" fontSize={11} fill="var(--dg-note)">
           {sub}
         </text>
       ) : null}
@@ -153,7 +153,7 @@ function Line({
       y1={y1}
       x2={x2}
       y2={y2}
-      stroke="#55627a"
+      stroke="var(--dg-note)"
       strokeWidth={1.6}
       strokeDasharray={dashed ? "5 4" : undefined}
       markerEnd="url(#verano-arrow)"
@@ -166,7 +166,7 @@ function Note({
   y,
   children,
   anchor = "middle",
-  color = "#55627a",
+  color = "var(--dg-note)",
 }: {
   x: number
   y: number
@@ -290,13 +290,13 @@ function FewShot() {
 function JsonOrder() {
   return (
     <Diagram label={LABELS["reasoning-first-in-json"]} height={120}>
-      <Note x={10} y={20} anchor="start" color="#c23b22">
+      <Note x={10} y={20} anchor="start" color="var(--dg-red-line)">
         Answer first: the model must guess
       </Note>
       <Box x={10} y={28} w={120} h={30} title={'"answer": ?'} tone="red" />
       <Box x={150} y={28} w={150} h={30} title={'"reasoning": …'} tone="grey" />
       <Line x1={130} y1={43} x2={148} y2={43} />
-      <Note x={10} y={84} anchor="start" color="#22804a">
+      <Note x={10} y={84} anchor="start" color="var(--dg-green-line)">
         Reasoning first: the answer follows the working
       </Note>
       <Box x={10} y={92} w={150} h={26} title={'"reasoning": …'} tone="green" />
@@ -381,7 +381,7 @@ function Cache() {
       <Note x={544} y={90}>
         changes every call
       </Note>
-      <Note x={230} y={108} color="#22804a">
+      <Note x={230} y={108} color="var(--dg-green-line)">
         about 100× faster, about a tenth of the price
       </Note>
     </Diagram>
@@ -455,7 +455,7 @@ function Elbow({ d, dashed = false }: { d: string; dashed?: boolean }) {
     <path
       d={d}
       fill="none"
-      stroke="#55627a"
+      stroke="var(--dg-note)"
       strokeWidth={1.6}
       strokeDasharray={dashed ? "5 4" : undefined}
       markerEnd="url(#verano-arrow)"
@@ -541,7 +541,7 @@ function StepBack() {
       <Line x1={120} y1={44} x2={168} y2={44} />
       <Line x1={320} y1={44} x2={368} y2={44} />
       <Line x1={480} y1={44} x2={528} y2={44} />
-      <Note x={320} y={104} color="#c23b22">
+      <Note x={320} y={104} color="var(--dg-red-line)">
         without the step, a model may jump to a specific, wrong answer
       </Note>
     </Diagram>
@@ -565,7 +565,7 @@ function TreeOfThoughts() {
       <Line x1={280} y1={128} x2={338} y2={128} />
       <Line x1={450} y1={28} x2={498} y2={68} />
       <Line x1={450} y1={124} x2={498} y2={88} />
-      <Note x={315} y={80} color="#8b95a7">
+      <Note x={315} y={80} color="var(--dg-grey-line)">
         dropped
       </Note>
     </Diagram>
@@ -584,7 +584,7 @@ function Grounding() {
       <Line x1={260} y1={47} x2={288} y2={47} />
       <Line x1={420} y1={47} x2={448} y2={47} />
       <Line x1={520} y1={47} x2={548} y2={47} />
-      <Note x={320} y={104} color="#22804a">
+      <Note x={320} y={104} color="var(--dg-green-line)">
         not in the documents: reply “not found” instead of guessing
       </Note>
     </Diagram>
@@ -642,7 +642,7 @@ function Refine() {
       <Line x1={320} y1={46} x2={368} y2={46} />
       <Line x1={480} y1={46} x2={528} y2={46} />
       <Line x1={245} y1={100} x2={245} y2={72} dashed />
-      <Note x={350} y={120} anchor="start" color="#c23b22">
+      <Note x={350} y={120} anchor="start" color="var(--dg-red-line)">
         checking with nothing new: no gain, can get worse
       </Note>
     </Diagram>
@@ -668,7 +668,7 @@ function ReasoningLadder() {
       <Note x={500} y={60}>
         not good
       </Note>
-      <Note x={320} y={20} color="#22804a">
+      <Note x={320} y={20} color="var(--dg-green-line)">
         stop at the first one that is good enough on your test cases
       </Note>
     </Diagram>
@@ -681,25 +681,52 @@ function TokenBudget() {
       <Note x={10} y={30} anchor="start">
         Small limit
       </Note>
-      <rect x={110} y={14} width={360} height={26} rx={6} fill="#f1eefb" stroke="#5a45b0" strokeWidth={1.5} />
+      <rect
+        x={110}
+        y={14}
+        width={360}
+        height={26}
+        rx={6}
+        fill="var(--dg-violet)"
+        stroke="var(--dg-violet-line)"
+        strokeWidth={1.5}
+      />
       <Note x={290} y={31}>
         thinking uses all of it
       </Note>
-      <Note x={482} y={31} anchor="start" color="#c23b22">
+      <Note x={482} y={31} anchor="start" color="var(--dg-red-line)">
         no answer left
       </Note>
       <Note x={10} y={92} anchor="start">
         Enough room
       </Note>
-      <rect x={110} y={76} width={220} height={26} rx={6} fill="#f1eefb" stroke="#5a45b0" strokeWidth={1.5} />
+      <rect
+        x={110}
+        y={76}
+        width={220}
+        height={26}
+        rx={6}
+        fill="var(--dg-violet)"
+        stroke="var(--dg-violet-line)"
+        strokeWidth={1.5}
+      />
       <Note x={220} y={93}>
         thinking
       </Note>
-      <rect x={334} y={76} width={130} height={26} rx={6} fill="#e6f4ec" stroke="#22804a" strokeWidth={1.5} />
+      <rect
+        x={334}
+        y={76}
+        width={130}
+        height={26}
+        rx={6}
+        fill="var(--dg-green)"
+        stroke="var(--dg-green-line)"
+        strokeWidth={1.5}
+      />
       <Note x={399} y={93}>
         answer
       </Note>
-      <Note x={482} y={93} anchor="start" color="#22804a">
+      <Note x={482} y={93} anchor="start" color="var(--dg-green-line)">
         full answer
       </Note>
       <Note x={320} y={136}>
@@ -812,7 +839,7 @@ function AgentParts() {
       <Line x1={120} y1={104} x2={198} y2={156} />
       <Box x={450} y={40} w={180} h={50} title="Test in Verano" sub="each one, today" tone="green" />
       <Box x={450} y={120} w={180} h={50} title="Whole agent, real tools" sub="after V1" tone="grey" />
-      <path d="M404 24 H414 V156 H404" fill="none" stroke="#55627a" strokeWidth={1.6} />
+      <path d="M404 24 H414 V156 H404" fill="none" stroke="var(--dg-note)" strokeWidth={1.6} />
       <Line x1={414} y1={65} x2={448} y2={65} />
     </Diagram>
   )

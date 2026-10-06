@@ -27,3 +27,8 @@ export function formatTokens(value: number | null | undefined): string {
 export function formatPricePair(input: string | null, output: string | null): string {
   return `${USD.format(Number(input))} / ${USD.format(Number(output))}`
 }
+
+/** A prompt version's short name: v3 for a saved version, "Improve candidate 1" for one Improve is testing. */
+export function versionName(version: number): string {
+  return version < 0 ? `Improve candidate ${-version}` : `v${version}`
+}

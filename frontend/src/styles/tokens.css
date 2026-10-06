@@ -5,6 +5,8 @@
  * are" and "the winner"; the names are kept from the earlier palette); pass / fail /
  * attention colors only for status, always with a word or an icon. Each tag color has a
  * soft background and a strong text step. Every color in the UI comes from these variables.
+ * Dark mode (`.dark` on <html>, set by the theme switch) redefines the same names; its chart
+ * colors were checked with the palette validator against the dark panel color.
  */
 :root {
   --bg-base: #f3f6fb;
@@ -52,4 +54,82 @@
 
   --shadow-float: 0 8px 24px rgb(20 32 58 / 0.08), 0 1px 2px rgb(20 32 58 / 0.06);
   --radius-base: 10px;
+
+  /* Guide diagrams */
+  --dg-ink: #14203a;
+  --dg-note: #55627a;
+  --dg-blue: #e6eefe;
+  --dg-blue-line: #2563eb;
+  --dg-gold: #fdf3d6;
+  --dg-gold-line: #b7791f;
+  --dg-green: #e6f4ec;
+  --dg-green-line: #22804a;
+  --dg-red: #fbeae6;
+  --dg-red-line: #c23b22;
+  --dg-grey: #f1f4f9;
+  --dg-grey-line: #8b95a7;
+  --dg-violet: #f1eefb;
+  --dg-violet-line: #5a45b0;
+}
+
+.dark {
+  --bg-base: #0d1320;
+  --bg-surface: #151d2e;
+  --bg-subtle: #1a2337;
+  --bg-elevated: #222c43;
+  --border-color: #29344d;
+  --border-strong: #3b4865;
+
+  --ink: #e7ecf6;
+  --ink-hover: #ffffff;
+  --text-primary: #e7ecf6;
+  --text-secondary: #a6b1c6;
+  --text-muted: #8591a8;
+
+  --lagoon: #4f8ef0;
+  --lagoon-soft: #1a2a4b;
+  --lagoon-strong: #93b5ff;
+
+  --marigold: #7ea6ff;
+  --marigold-soft: #1e2f57;
+  --marigold-strong: #b9cdff;
+
+  --status-success: #38b971;
+  --status-success-soft: #13301f;
+  --status-success-strong: #86dcaa;
+  --status-warning: #d9a23f;
+  --status-warning-soft: #33270f;
+  --status-warning-strong: #f0c97c;
+  --status-danger: #ec6a52;
+  --status-danger-soft: #3a1b15;
+  --status-danger-strong: #ffa594;
+  --tag-violet-soft: #251f43;
+  --tag-violet-strong: #b8aaf3;
+  --tag-gold-soft: #33290d;
+  --tag-gold-strong: #e8c76a;
+
+  --series-1: #3f86e0;
+  --series-2: #df6c38;
+  --series-3: #1ea676;
+  --series-4: #bd8b12;
+  --series-other: #7d879a;
+  --chart-series-1: #4f8ef0;
+  --chart-track: #222c43;
+
+  --shadow-float: 0 8px 24px rgb(0 0 0 / 0.35), 0 1px 2px rgb(0 0 0 / 0.3);
+
+  --dg-ink: #e7ecf6;
+  --dg-note: #a6b1c6;
+  --dg-blue: #1a2a4b;
+  --dg-blue-line: #6e9ff5;
+  --dg-gold: #33290d;
+  --dg-gold-line: #d4a640;
+  --dg-green: #13301f;
+  --dg-green-line: #4cc483;
+  --dg-red: #3a1b15;
+  --dg-red-line: #ef7d66;
+  --dg-grey: #1e2638;
+  --dg-grey-line: #7d879a;
+  --dg-violet: #251f43;
+  --dg-violet-line: #a796f0;
 }

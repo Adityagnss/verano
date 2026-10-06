@@ -62,7 +62,9 @@ function runLabel(f: Finished): string {
   return `${f.label.toUpperCase()}, ${f.experiment.name}, ${new Date(f.experiment.created_at).toLocaleDateString()}`
 }
 
-export function VersionsPanel({ projectId, finished }: { projectId: string; finished: Finished[] }) {
+export function VersionsPanel({ projectId, finished: all }: { projectId: string; finished: Finished[] }) {
+  // Only your own runs: Improve's candidate tests are not prompt versions you saved
+  const finished = all.filter((f) => f.experiment.origin === "manual")
   const versions = latestPerVersion(finished)
   const models = [...new Set(versions.flatMap((v) => v.results.models.map((m) => m.model)))].sort()
   const newest = [...finished].reverse()

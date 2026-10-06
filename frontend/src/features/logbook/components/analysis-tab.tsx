@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ModelBars, TrendChart, colorOf } from "@/features/dashboard/components/charts"
 import { usd } from "@/features/dashboard/domain"
 import type { AnalysisOut, GroupStats, LogOptions } from "@/lib/api/types"
-import { formatMs } from "@/lib/format"
+import { formatMs, versionName } from "@/lib/format"
 
 import { type AnswerFilters, findings, grid } from "../domain"
 import { useAnalysis } from "../hooks"
@@ -141,7 +141,7 @@ export function AnalysisTab({
     model,
     points: versions.map((v, index) => ({
       index,
-      label: `v${v}`,
+      label: versionName(v),
       date: "",
       value: analysis?.groups.find((g) => g.model === model && g.prompt_version === v)?.pass_rate ?? null,
     })),
@@ -310,7 +310,7 @@ export function AnalysisTab({
                       key={`${g.prompt_version}-${g.model}`}
                       className="border-border border-t tabular-nums"
                     >
-                      <td className="py-2 pr-4">v{g.prompt_version}</td>
+                      <td className="py-2 pr-4">{versionName(g.prompt_version)}</td>
                       <td className="py-2 pr-4 font-medium">{g.model}</td>
                       <td className="py-2 pr-4">{g.answers}</td>
                       <td className="py-2 pr-4">{g.passed}</td>

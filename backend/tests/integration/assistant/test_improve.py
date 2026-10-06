@@ -58,6 +58,9 @@ async def test_improve_uses_only_optimize_failures_and_reports_honestly(
         assert scored["evaluator_set_version_id"] == experiment["evaluator_set_version_id"]
     assert confirmed[0]["outcome"] == "not_better"
     assert result["message"].startswith("Not proven")
+    prompt_id = before["prompt_id"]
+    listed = (await client.get(f"{base}/prompts/{prompt_id}/versions", headers=session.headers)).json()["items"]
+    assert [v["id"] for v in listed] == [before["id"]]  # candidates are not saved versions
     proof = confirmed[0]["verdict"]
     assert proof["reason"] == "too_few_cases"
     assert proof["minimum_cases"] == 30

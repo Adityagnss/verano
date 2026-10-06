@@ -4,6 +4,7 @@
  * plain-language findings shown on the Analysis tab. No React here.
  */
 import type { AnalysisOut, GroupStats } from "@/lib/api/types"
+import { versionName } from "@/lib/format"
 
 export type AnswerFilters = {
   experiment_ids: string[]
@@ -167,7 +168,7 @@ export function findings(analysis: AnalysisOut): string[] {
   const best = [...rated].sort((a, b) => (b.pass_rate ?? 0) - (a.pass_rate ?? 0))[0]
   if (best)
     out.push(
-      `Highest pass rate: ${best.model} on v${best.prompt_version}, ${pct(best.pass_rate ?? 0)} of ${best.answers} answers.`,
+      `Highest pass rate: ${best.model} on ${versionName(best.prompt_version)}, ${pct(best.pass_rate ?? 0)} of ${best.answers} answers.`,
     )
   const versions = [...new Set(rated.map((g) => g.prompt_version))].sort((a, b) => a - b)
   if (versions.length >= 2) {
@@ -179,7 +180,7 @@ export function findings(analysis: AnalysisOut): string[] {
     const last = versions[versions.length - 1]
     const change = Math.round((mean(last) - mean(first)) * 100)
     out.push(
-      `Average pass rate across models went from ${pct(mean(first))} on v${first} to ${pct(mean(last))} on v${last} (${change >= 0 ? "+" : ""}${change} points).`,
+      `Average pass rate across models went from ${pct(mean(first))} on ${versionName(first)} to ${pct(mean(last))} on ${versionName(last)} (${change >= 0 ? "+" : ""}${change} points).`,
     )
   }
   if (checks[0]) out.push(`Most common failed check: “${checks[0].check}”, ${checks[0].failures} failures.`)
@@ -196,7 +197,7 @@ export function findings(analysis: AnalysisOut): string[] {
   const broken = groups.filter((g) => g.failed_calls > 0)
   for (const g of broken)
     out.push(
-      `${g.model} on v${g.prompt_version}: ${g.failed_calls} of ${g.answers} calls failed, so its pass rate is not meaningful.`,
+      `${g.model} on ${versionName(g.prompt_version)}: ${g.failed_calls} of ${g.answers} calls failed, so its pass rate is not meaningful.`,
     )
   if (totals.unknown_price_answers > 0)
     out.push(
