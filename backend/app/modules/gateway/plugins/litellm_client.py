@@ -96,6 +96,15 @@ class LiteLLMClient:
             finish_reason=choice.finish_reason,
             input_tokens=int(getattr(usage, "prompt_tokens", 0) or 0),
             output_tokens=int(getattr(usage, "completion_tokens", 0) or 0),
+            cached_input_tokens=_detail(usage, "prompt_tokens_details", "cached_tokens"),
+            reasoning_tokens=_detail(usage, "completion_tokens_details", "reasoning_tokens"),
             model=(str(reported).strip() or None) if reported else None,
             headers={str(k).lower(): str(v) for k, v in (hidden.get("additional_headers") or {}).items()},
         )
+
+
+def _detail(usage: Any, group: str, name: str) -> int | None:
+    """A token count inside the usage details (cached input, reasoning), or None when not reported."""
+    details = getattr(usage, group, None)
+    value = details.get(name) if isinstance(details, dict) else getattr(details, name, None)
+    return int(value) if isinstance(value, int | float) and not isinstance(value, bool) else None

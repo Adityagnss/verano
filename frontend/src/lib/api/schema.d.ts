@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/v1/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Activity */
+        get: operations["activity_api_v1_activity_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/config": {
         parameters: {
             query?: never;
@@ -1352,6 +1369,105 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ActivityKey */
+        ActivityKey: {
+            /** Id */
+            id: string;
+            /** Labels */
+            labels: string[];
+            /** Last4 */
+            last4: string | null;
+            /** Projects */
+            projects: number;
+            /** Provider */
+            provider: string;
+        };
+        /** ActivityOut */
+        ActivityOut: {
+            /** Days */
+            days: number;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Failures */
+            failures: components["schemas"]["FailureCount"][];
+            /** Keys */
+            keys: components["schemas"]["ActivityKey"][];
+            /**
+             * Prior Start
+             * Format: date
+             */
+            prior_start: string;
+            /** Projects */
+            projects: components["schemas"]["ActivityProject"][];
+            /** Rows */
+            rows: components["schemas"]["ActivityRow"][];
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /** Timezone */
+            timezone: string;
+        };
+        /** ActivityProject */
+        ActivityProject: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /**
+         * ActivityRow
+         * @description One day's calls for one project, key, model and purpose.
+         */
+        ActivityRow: {
+            /** Cached Input Tokens */
+            cached_input_tokens: number;
+            /** Cost */
+            cost: string;
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Failed */
+            failed: number;
+            /** Input Tokens */
+            input_tokens: number;
+            /** Input Tokens With Cache Report */
+            input_tokens_with_cache_report: number;
+            /** Key */
+            key: string | null;
+            /** Model */
+            model: string;
+            /** Output Tokens */
+            output_tokens: number;
+            /**
+             * Period
+             * @enum {string}
+             */
+            period: "current" | "prior";
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Provider */
+            provider: string;
+            purpose: components["schemas"]["CallPurpose"];
+            /** Reasoning Tokens */
+            reasoning_tokens: number;
+            /** Requests */
+            requests: number;
+            /** Unknown Price Calls */
+            unknown_price_calls: number;
+        };
         /** AnalysisOut */
         AnalysisOut: {
             /** Failed Checks */
@@ -2249,6 +2365,13 @@ export interface components {
          * @enum {string}
          */
         ExperimentStatus: "draft" | "planned" | "running" | "paused" | "evaluating" | "completed" | "cancelled" | "failed";
+        /** FailureCount */
+        FailureCount: {
+            /** Count */
+            count: number;
+            /** Error Type */
+            error_type: string;
+        };
         /**
          * FileFormat
          * @enum {string}
@@ -3945,6 +4068,38 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    activity_api_v1_activity_get: {
+        parameters: {
+            query?: {
+                days?: number;
+                tz?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     auth_config_api_v1_auth_config_get: {
         parameters: {
             query?: never;

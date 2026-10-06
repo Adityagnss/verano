@@ -1,7 +1,7 @@
 /** The projects list, with a one-field form to create a project and open its first step. */
 "use client"
 
-import { ArrowRight, FolderKanban, Plus } from "lucide-react"
+import { Activity, ArrowRight, FolderKanban, Plus } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import type { FormEvent } from "react"
@@ -36,7 +36,15 @@ export function ProjectsPage() {
     <main className="mx-auto flex min-h-screen max-w-6xl flex-col gap-8 px-4 py-8 sm:px-6 sm:py-10">
       <header className="flex items-center justify-between gap-4">
         <Logo size={32} />
-        <AccountMenu />
+        <div className="flex items-center gap-4">
+          <Link
+            href="/activity"
+            className="text-text-secondary hover:text-foreground inline-flex items-center gap-1.5 text-sm font-medium"
+          >
+            <Activity className="size-4" aria-hidden /> Activity
+          </Link>
+          <AccountMenu />
+        </div>
       </header>
       <section className="from-lagoon-soft to-card ring-lagoon/15 flex flex-col gap-2 rounded-2xl bg-gradient-to-br px-6 py-7 ring-1 sm:px-8">
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{PROJECTS_COPY.title}</h1>

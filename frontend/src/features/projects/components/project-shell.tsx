@@ -9,7 +9,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BookOpen, LayoutDashboard, Menu, Table2, X } from "lucide-react"
+import { Activity, BookOpen, LayoutDashboard, Menu, Table2, X } from "lucide-react"
 import { type ReactNode, useState } from "react"
 
 import { COMMON_COPY } from "@/components/common/copy"
@@ -47,6 +47,16 @@ function ToolLinks({ projectId, pathname }: { projectId: string; pathname: strin
       <DashboardLink projectId={projectId} active={pathname.endsWith("/dashboard")} />
       <LogbookLink projectId={projectId} active={pathname.endsWith("/logbook")} />
       <GuideLink projectId={projectId} active={pathname.endsWith("/guide")} />
+      <Link
+        href="/activity"
+        className="hover:bg-subtle flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
+      >
+        <Activity className="text-lagoon-strong size-4" />
+        <span className="flex flex-col leading-tight">
+          Activity
+          <span className="text-text-muted text-xs font-normal">Usage across all projects</span>
+        </span>
+      </Link>
     </div>
   )
 }

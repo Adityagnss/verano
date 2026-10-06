@@ -25,6 +25,7 @@ class LLMCall(IdMixin, CreatedAtMixin, Base):
         Index(None, "project_id", "id"),
         Index(None, "project_id", "purpose"),
         Index(None, "experiment_id"),
+        Index(None, "project_id", "started_at"),
     )
 
     project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"))
@@ -42,6 +43,8 @@ class LLMCall(IdMixin, CreatedAtMixin, Base):
     finish_reason: Mapped[str | None] = mapped_column(String(64))
     input_tokens: Mapped[int | None]
     output_tokens: Mapped[int | None]
+    cached_input_tokens: Mapped[int | None]
+    reasoning_tokens: Mapped[int | None]
     cost: Mapped[Decimal | None] = mapped_column(Numeric(18, 8))
     latency_ms: Mapped[int | None]
     ttft_ms: Mapped[int | None]

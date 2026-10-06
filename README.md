@@ -119,7 +119,9 @@ everything the command line does; use whichever you prefer.
 
 Alongside the steps: a **Dashboard** (the latest run, pass rate across prompt versions, where
 the money went), a **Logbook** (every answer and every model call, filterable, with CSV
-export) and a **Prompt guide** (a prompting reference with copy-ready templates).
+export) and a **Prompt guide** (a prompting reference with copy-ready templates). Across all
+projects, **Activity** shows spend, requests and tokens over time by model, key, project and
+purpose, compared with the period before, and what was refused or failed.
 
 To test local models, install [Ollama](https://ollama.com) (`brew install ollama`), run
 `make models`, then add the "Ollama (local)" provider on the Keys screen. `make up-local`

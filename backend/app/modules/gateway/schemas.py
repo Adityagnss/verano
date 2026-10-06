@@ -66,6 +66,9 @@ class ProviderResponse(BaseModel):
     finish_reason: str | None
     input_tokens: int
     output_tokens: int
+    # Parts of the counts above, when the provider reports them (None: not reported)
+    cached_input_tokens: int | None = None
+    reasoning_tokens: int | None = None
     model: str | None = None
     headers: dict[str, str] = {}
 

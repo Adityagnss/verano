@@ -246,6 +246,8 @@ class GatewayService:
             "finish_reason": response.finish_reason,
             "input_tokens": response.input_tokens,
             "output_tokens": response.output_tokens,
+            "cached_input_tokens": response.cached_input_tokens,
+            "reasoning_tokens": response.reasoning_tokens,
             "cost": cost,
             "latency_ms": latency_ms,
         }

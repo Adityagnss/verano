@@ -5,6 +5,7 @@ Adding a module's routes to the API is one line here.
 
 from fastapi import APIRouter
 
+from app.modules.activity.router import router as activity_router
 from app.modules.assistant.router import notes_router
 from app.modules.assistant.router import router as improve_router
 from app.modules.auth.router import router as auth_router
@@ -27,6 +28,7 @@ for module_router in (
     projects_router,
     registry_router,
     gateway_router,
+    activity_router,
     prompts_router,
     datasets_router,
     documents_router,
