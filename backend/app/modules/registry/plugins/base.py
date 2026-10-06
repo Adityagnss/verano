@@ -116,4 +116,8 @@ class BaseProviderClient:
         raise NotImplementedError
 
     async def validate(self, api_key: str | None, base_url: str) -> None:
-        await self.list_models(api_key, base_url)
+        if self.spec.key_check_path:
+            headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+            await self.http.get_json(f"{base_url.rstrip('/')}{self.spec.key_check_path}", headers)
+        else:
+            await self.list_models(api_key, base_url)

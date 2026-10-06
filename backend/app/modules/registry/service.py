@@ -116,7 +116,10 @@ class RegistryService:
         if spec.requires_key and not api_key:
             raise ValidationFailed(KEY_REQUIRED.format(provider=spec.display_name))
         base_url = body.base_url or self._default_base_url(spec) or ""
-        raw_models = await self._client(spec).list_models(api_key, base_url)
+        client = self._client(spec)
+        if spec.key_check_path:
+            await client.validate(api_key, base_url)
+        raw_models = await client.list_models(api_key, base_url)
         credential = await self._repo.add_credential(
             ProviderCredential(
                 project_id=project.id,

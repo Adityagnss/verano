@@ -53,8 +53,9 @@ ROUTES: dict[str, Callable[[respx.MockRouter], object]] = {
     "xai": lambda m: m.get("https://api.x.ai/v1/models").mock(fixture_response("xai", "models.json")),
     "mistral": lambda m: m.get("https://api.mistral.ai/v1/models").mock(fixture_response("mistral", "models.json")),
     "together": lambda m: m.get("https://api.together.xyz/v1/models").mock(fixture_response("together", "models.json")),
-    "openrouter": lambda m: m.get("https://openrouter.ai/api/v1/models").mock(
-        fixture_response("openrouter", "models.json")
+    "openrouter": lambda m: (
+        m.get("https://openrouter.ai/api/v1/key").mock(httpx.Response(200, json={"data": {"is_free_tier": True}})),
+        m.get("https://openrouter.ai/api/v1/models").mock(fixture_response("openrouter", "models.json")),
     ),
     "ollama": lambda m: (
         m.get(f"{OLLAMA}/api/tags").mock(fixture_response("ollama", "tags.json")),
@@ -70,7 +71,8 @@ AUTH_URLS = {
     "xai": ("https://api.x.ai/v1/models", 400),
     "mistral": ("https://api.mistral.ai/v1/models", 401),
     "together": ("https://api.together.xyz/v1/models", 401),
-    "openrouter": ("https://openrouter.ai/api/v1/models", 401),
+    # OpenRouter's model list answers any key (seen live, check 5.1); only /key refuses a wrong one.
+    "openrouter": ("https://openrouter.ai/api/v1/key", 401),
 }
 
 

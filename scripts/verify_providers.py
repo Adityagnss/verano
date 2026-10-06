@@ -5,8 +5,10 @@ Run once before a public release by whoever holds the keys; it is not part of de
 or CI. For every provider whose key is set as VERIFY_<PROVIDER>_KEY (for example
 VERIFY_OPENAI_KEY), it: lists models through Verano's own provider client, makes one tiny
 completion (max_tokens=1) through Verano's LiteLLM adapter, and sends one deliberately bad
-key. It prints every place the live response shape differs from the fixture in
-backend/tests/fixtures/providers/<provider>/, so the fixtures can be corrected.
+key (through the same check Verano runs when a key is added). `VERIFY_<PROVIDER>_MODEL` names
+the model for the tiny call; without it the first listed model is used. It prints every place
+the live response shape differs from the fixture in backend/tests/fixtures/providers/<provider>/,
+so the fixtures can be corrected.
 Run from backend/: `PYTHONPATH=. uv run python ../scripts/verify_providers.py`.
 """
 
@@ -101,7 +103,9 @@ async def verify(provider: str, spec: ProviderSpec, key: str, http: httpx.AsyncC
     raw = await http.get(f"{base_url.rstrip('/')}/models", headers={"Authorization": f"Bearer {key}", "x-api-key": key})
     if raw.is_success:
         problems += shape_differences(provider, raw.json())
-    chat_model = next((m.id for m in models), None)
+    # The first listed model can be retired for new keys (Gemini) or paid (OpenRouter's free
+    # tier), so VERIFY_<PROVIDER>_MODEL picks the one to call.
+    chat_model = os.environ.get(f"VERIFY_{provider.upper()}_MODEL") or next((m.id for m in models), None)
     if chat_model:
         try:
             call_target = target(provider, spec, chat_model, key, base_url)
@@ -109,7 +113,7 @@ async def verify(provider: str, spec: ProviderSpec, key: str, http: httpx.AsyncC
         except ProviderError as exc:
             problems.append(f"tiny completion on {chat_model} failed: {exc.message}")
     try:
-        await client.list_models(BAD_KEY, base_url)
+        await client.validate(BAD_KEY, base_url)
         problems.append("a bad key was accepted")
     except ProviderAuthError:
         pass

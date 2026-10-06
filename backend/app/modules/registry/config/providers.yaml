@@ -59,6 +59,9 @@ providers:
     requires_key: true
     auth_error_markers: [API_KEY_INVALID]
     extra_parameters: [top_k]
+    # Listed with generateContent but not chat models (seen live, check 5.1): speech, images,
+    # music, robotics, transcription, research agents, computer use.
+    exclude_id_patterns: [tts, image, nano-banana, lyria, robotics, transcribe, deep-research, computer-use, customtools, antigravity]
     rate_limits: {rpm: 15, tpm: 250000}
 
   groq:
@@ -117,6 +120,7 @@ providers:
     litellm_prefix: openrouter
     base_url: https://openrouter.ai/api/v1
     requires_key: true
+    key_check_path: /key   # the model list is public, so it can't tell a wrong key from a right one
     listing:
       items_path: data
       fields:

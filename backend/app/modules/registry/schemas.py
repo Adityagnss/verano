@@ -52,6 +52,9 @@ class ProviderSpec(BaseModel):
     listing: ListingSpec = ListingSpec()
     exclude_id_patterns: list[str] = []
     auth_error_markers: list[str] = []
+    # An endpoint that needs a valid key, for providers whose model list is public (OpenRouter):
+    # listing alone would accept any key.
+    key_check_path: str | None = None
     parameter_ranges: dict[str, ParameterRange] = {}
     unsupported_parameters: list[str] = []
     extra_parameters: list[str] = []
