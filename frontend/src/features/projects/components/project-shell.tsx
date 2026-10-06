@@ -132,7 +132,7 @@ export function ProjectShell({ projectId, children }: { projectId: string; child
   const steps = stepItems(projectId, pathname, done)
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[17.5rem_1fr]">
-      <aside className="border-border bg-card sticky top-0 hidden h-screen flex-col gap-7 border-r px-3 py-5 lg:flex">
+      <aside className="border-border bg-card sticky top-0 hidden h-screen flex-col gap-7 overflow-y-auto border-r px-3 py-5 lg:flex">
         <Link href="/projects" className="px-3">
           <Logo />
         </Link>

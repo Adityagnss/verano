@@ -112,4 +112,18 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
 
   await page.getByRole("link", { name: /Prompt guide/ }).click()
   await expect(page.getByRole("heading", { name: "The one habit: measure first" })).toBeVisible()
+
+  await page.getByRole("link", { name: /Activity/ }).click()
+  await expect(page.getByRole("heading", { name: "Activity", level: 1 })).toBeVisible()
+  await expect(page.getByText("Top API keys")).toBeVisible()
+  await expect(
+    page
+      .getByText("mock no key needed")
+      .or(page.getByText(/^mock ending/))
+      .first(),
+  ).toBeVisible()
+  await page.getByRole("tab", { name: "Explore" }).click()
+  await expect(page.getByRole("cell", { name: "echo" }).first()).toBeVisible()
+  await page.getByRole("tab", { name: "Guardrails" }).click()
+  await expect(page.getByText("What stops spending")).toBeVisible()
 })
