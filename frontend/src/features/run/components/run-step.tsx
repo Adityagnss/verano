@@ -17,9 +17,11 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { NativeSelect } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useModels } from "@/features/keys/hooks"
+import { useCurrentPrompt, usePromptVersions } from "@/features/prompt/hooks"
 import { JudgePicker, useChosenJudge } from "@/features/results/components/judge-picker"
 import { useCurrentVersion } from "@/features/tests/hooks"
 import type { ModelProfileOut } from "@/lib/api/types"
@@ -38,6 +40,8 @@ import {
   warning,
   MAX_RUNS,
   type Row,
+  randomnessOf,
+  withRandomness,
 } from "../settings"
 import { ProgressCard } from "./progress-card"
 
@@ -111,11 +115,24 @@ export function RunStep({ projectId }: { projectId: string }) {
   const [budget, setBudget] = useState("")
   const [open, setOpen] = useState<Record<string, boolean>>({})
   const [pickedJudge, setPickedJudge] = useState("")
+  const [pickedVersion, setPickedVersion] = useState("")
+  const prompt = useCurrentPrompt(projectId)
+  const versions = usePromptVersions(projectId, prompt.data?.id ?? null)
   const judge = useChosenJudge(projectId, pickedJudge)
   const selected = useMemo(() => (models.data ?? []).filter((m) => m.is_selected), [models.data])
   const approved = version.data?.status === "approved"
   const plan = approved ? toBody(selected, rows, budget) : null
-  const body = useDebounced(plan && judge ? { ...plan, judge } : plan, 300)
+  const promptVersion = pickedVersion || null
+  const body = useDebounced(
+    plan ? { ...plan, ...(judge ? { judge } : {}), prompt_version_id: promptVersion } : plan,
+    300,
+  )
+  const randomness = randomnessOf(selected, rows)
+  function chooseRandomness(mode: "repeatable" | "default") {
+    setRows(
+      Object.fromEntries(selected.map((m) => [m.id, withRandomness(m, rows[m.id] ?? defaultRow(m), mode)])),
+    )
+  }
   const estimate = useExperimentEstimate(projectId, body)
   const latest = experiments.data?.find((e) => e.origin === "manual")
 
@@ -151,6 +168,48 @@ export function RunStep({ projectId }: { projectId: string }) {
         title={RUN_COPY.modelsHeading}
         description={`${RUN_COPY.modelsHint} ${RUN_COPY.modelsHint2}`}
       >
+        <div className="grid gap-5 md:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="prompt-version">{RUN_COPY.versionLabel}</Label>
+            <NativeSelect
+              id="prompt-version"
+              value={pickedVersion}
+              onChange={(e) => setPickedVersion(e.target.value)}
+              className="h-9 max-w-md"
+            >
+              {(versions.data ?? []).map((v, i) => (
+                <option key={v.id} value={i === 0 ? "" : v.id}>
+                  {i === 0
+                    ? RUN_COPY.versionLatest(v.version)
+                    : RUN_COPY.versionOption(v.version, v.change_reason)}
+                </option>
+              ))}
+            </NativeSelect>
+            <p className="text-text-muted text-xs">{RUN_COPY.versionHint}</p>
+          </div>
+          <fieldset className="flex flex-col gap-1.5">
+            <legend className="mb-1.5 text-sm font-medium">{RUN_COPY.randomnessLabel}</legend>
+            {(["repeatable", "default"] as const).map((mode) => (
+              <label key={mode} className="flex items-start gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="randomness"
+                  className="accent-lagoon mt-1"
+                  checked={randomness === mode}
+                  onChange={() => chooseRandomness(mode)}
+                />
+                <span>
+                  <span className="font-medium">{RUN_COPY.randomness[mode].label}</span>
+                  <span className="text-text-muted block text-xs">{RUN_COPY.randomness[mode].hint}</span>
+                </span>
+              </label>
+            ))}
+            {randomness === "custom" ? (
+              <p className="text-text-muted text-xs">{RUN_COPY.randomness.custom}</p>
+            ) : null}
+            <p className="text-text-muted text-xs">{RUN_COPY.replicabilityHint}</p>
+          </fieldset>
+        </div>
         <div className="border-border overflow-hidden rounded-lg border">
           <Table>
             <TableHeader>

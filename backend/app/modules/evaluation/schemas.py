@@ -226,6 +226,26 @@ class ReplicationOut(BaseModel):
     models: list[ReplicationModel]
 
 
+class VersionModelComparison(BaseModel):
+    model_profile_id: uuid.UUID
+    model: str
+    comparison: "ComparisonOut"
+    fixed: list[uuid.UUID]  # test cases that pass now and failed before
+    broken: list[uuid.UUID]  # test cases that failed now and passed before
+
+
+class VersionComparisonOut(BaseModel):
+    """Two finished experiments side by side, usually two prompt versions on the same test cases: per model,
+    the quality difference with the usual "clear difference" rule, and which cases got fixed or broken."""
+
+    experiment_id: uuid.UUID
+    against_id: uuid.UUID
+    prompt_version: int | None
+    against_prompt_version: int | None
+    same_test_cases: bool
+    models: list[VersionModelComparison]
+
+
 class ResultsOut(BaseModel):
     experiment_id: uuid.UUID
     evaluation_run: EvaluationRunOut | None

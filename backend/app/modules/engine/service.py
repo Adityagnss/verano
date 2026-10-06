@@ -65,6 +65,10 @@ NO_APPROVED = "Approve your test cases (step 4) before starting an experiment."
 NO_CASES = "There are no test cases in this part of the dataset."
 UNKNOWN_MODELS = "Some chosen models aren't in this project any more. Refresh the Keys step."
 NO_PROMPT = "Save a prompt (step 2) before starting an experiment."
+OTHER_INPUTS = (
+    "Prompt version {version} needs the inputs {needs}, but the approved test cases give {have}. "
+    "Test a version with the same inputs, or approve test cases for this one."
+)
 NOT_FINISHED = "Wait until this experiment has finished before running it again."
 NO_JUDGE_CHOSEN = (
     "Some of the checks that score the answers are judged by a model, but no judge model is chosen. "
@@ -235,8 +239,18 @@ class ExperimentService:
             raise ValidationFailed(UNKNOWN_MODELS)
         for model in body.models:
             filter_params(model.params, found[model.model_profile_id].parameters)
-        prompt = await self._prompts.get_version(project_id, prompt_version_id or await self._latest_prompt(project_id))
+        chosen = prompt_version_id or body.prompt_version_id or await self._latest_prompt(project_id)
+        prompt = await self._prompts.get_version(project_id, chosen)
         spec = await self._specs.get(project_id, version.task_spec_id) if version.task_spec_id else None
+        cases_have = sorted(spec.spec.get("input_variables") or []) if spec else None
+        if cases_have is not None and sorted(prompt.required_inputs) != cases_have:
+            raise ValidationFailed(
+                OTHER_INPUTS.format(
+                    version=prompt.version,
+                    needs=", ".join(prompt.required_inputs) or "none",
+                    have=", ".join(cases_have) or "none",
+                )
+            )
         base_version_id = body.evaluator_set_version_id or version.evaluator_set_version_id
         if base_version_id is None:
             raise ValidationFailed(NO_APPROVED)

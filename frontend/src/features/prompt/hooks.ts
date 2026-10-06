@@ -26,6 +26,22 @@ export function useCurrentPrompt(projectId: string) {
   })
 }
 
+/** Every saved version of the project's prompt, newest first. */
+export function usePromptVersions(projectId: string, promptId: string | null) {
+  return useQuery({
+    queryKey: ["projects", projectId, "prompt-versions", promptId],
+    enabled: promptId !== null,
+    queryFn: async () => {
+      const page = await call(() =>
+        api.GET("/api/v1/projects/{project_id}/prompts/{prompt_id}/versions", {
+          params: { path: { project_id: projectId, prompt_id: promptId ?? "" }, query: { limit: 100 } },
+        }),
+      )
+      return [...page.items].sort((a, b) => b.version - a.version)
+    },
+  })
+}
+
 export type Draft = {
   name: string
   system_template: string

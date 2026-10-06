@@ -23,6 +23,7 @@ from app.modules.evaluation.schemas import (
     TryJudgeEstimate,
     TryJudgeOut,
     TryJudgeRequest,
+    VersionComparisonOut,
 )
 from app.modules.projects.dependencies import ProjectScope
 
@@ -46,6 +47,16 @@ async def get_cases(
     failed_only: Annotated[bool, Query()] = False,
 ) -> list[CaseResultOut]:
     return await service.cases(project.id, experiment_id, evaluation_run_id, failed_only)
+
+
+@router.get("/compare")
+async def compare_experiments(
+    experiment_id: uuid.UUID,
+    against: Annotated[uuid.UUID, Query()],
+    project: ProjectScope,
+    service: ResultsServiceDep,
+) -> VersionComparisonOut:
+    return await service.compare_versions(project.id, experiment_id, against)
 
 
 @router.get("/replication")

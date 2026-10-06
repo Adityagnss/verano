@@ -12,6 +12,16 @@ export const PROMPT_COPY = {
   editorHeading: "Your prompt",
   editorHint: "At least one of the two boxes must be filled.",
   versionBadge: (n: number) => `Version ${n}`,
+  versionsHeading: "Versions",
+  versionsHint: "Every save is kept. Load one into the editor to start from it; saving makes a new version.",
+  latest: "Latest",
+  load: "Load into editor",
+  loaded: "In the editor",
+  noReason: "No note",
+  startedFrom: (n: number, next: number) =>
+    `The editor shows version ${n}. Change it and save to make version ${next}, or save it as it is to make it the latest again.`,
+  unchangedHint: (n: number, next: number) =>
+    `This is version ${n}. Edit the text above to save version ${next}. To test a version, pick it on the Run step.`,
   reviewHint: "Updates as you type.",
   name: "Prompt name",
   namePlaceholder: "e.g. Ticket triage",

@@ -19,6 +19,7 @@ import { formatMs } from "@/lib/format"
 import { useDashboardData } from "../hooks"
 import { finishedExperiments, insights, pct, spend, trends, usd, versionLabels } from "../domain"
 import { ModelBars, SpendBar, TrendChart, colorOf } from "./charts"
+import { VersionsPanel } from "./versions-panel"
 
 export function DashboardPage({ projectId }: { projectId: string }) {
   const data = useDashboardData(projectId)
@@ -150,6 +151,13 @@ export function DashboardPage({ projectId }: { projectId: string }) {
                 </tbody>
               </table>
             </div>
+          </Section>
+
+          <Section
+            title="Prompt versions"
+            description="How each prompt version did, and any two runs compared case by case."
+          >
+            <VersionsPanel projectId={projectId} finished={finished} />
           </Section>
 
           <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">

@@ -23,7 +23,14 @@ import type { PromptVersionOut } from "@/lib/api/types"
 import { useDebounced } from "@/lib/use-debounced"
 
 import { PROMPT_COPY } from "../copy"
-import { type Draft, defaultParams, useCurrentPrompt, useInspect, useSavePrompt } from "../hooks"
+import {
+  type Draft,
+  defaultParams,
+  useCurrentPrompt,
+  useInspect,
+  usePromptVersions,
+  useSavePrompt,
+} from "../hooks"
 import { PromptCheck } from "./prompt-check"
 
 const EMPTY: Draft = {
@@ -66,7 +73,10 @@ export function PromptStep({ projectId }: { projectId: string }) {
     [current.data],
   )
   const [edits, setDraft] = useState<Draft | null>(null)
+  const [loaded, setLoaded] = useState<number | null>(null)
   const draft = edits ?? saved ?? EMPTY
+  const versions = usePromptVersions(projectId, current.data?.id ?? null)
+  const latestNumber = current.data?.latest_version.version ?? 0
 
   const selectedIds = useMemo(
     () => (models.data ?? []).filter((m) => m.is_selected).map((m) => m.id),
@@ -79,10 +89,12 @@ export function PromptStep({ projectId }: { projectId: string }) {
   const set = (field: keyof Draft) => (event: { target: { value: string } }) =>
     setDraft({ ...draft, [field]: event.target.value })
   const empty = !draft.system_template.trim() && !draft.user_template.trim()
-  const unchanged = sameAsSaved(draft, saved)
+  const unchanged = sameAsSaved(draft, saved) && (loaded === null || loaded === latestNumber)
 
   async function submit() {
     const version = await save.mutateAsync(draft)
+    setLoaded(null)
+    setDraft(null)
     toast.success(PROMPT_COPY.version(version.version))
     router.push(`/projects/${projectId}/data`)
   }
@@ -172,6 +184,46 @@ export function PromptStep({ projectId }: { projectId: string }) {
               <Input id="change_reason" value={draft.change_reason} onChange={set("change_reason")} />
             </div>
           ) : null}
+          {current.data && (versions.data?.length ?? 0) > 1 ? (
+            <div className="border-border flex flex-col gap-2 border-t pt-4">
+              <h3 className="text-sm font-medium">{PROMPT_COPY.versionsHeading}</h3>
+              <p className="text-muted-foreground text-xs">{PROMPT_COPY.versionsHint}</p>
+              <ul className="border-border divide-border divide-y rounded-lg border">
+                {(versions.data ?? []).map((v) => {
+                  const showing = (loaded ?? latestNumber) === v.version
+                  return (
+                    <li key={v.id} className="flex items-center gap-3 px-3 py-2 text-sm">
+                      <span className="w-10 font-semibold tabular-nums">V{v.version}</span>
+                      <span className="text-text-secondary min-w-0 flex-1 truncate">
+                        {v.change_reason || PROMPT_COPY.noReason}
+                      </span>
+                      <span className="text-text-muted hidden text-xs sm:inline">
+                        {new Date(v.created_at).toLocaleString()}
+                      </span>
+                      {v.version === latestNumber ? (
+                        <StatusBadge tone="neutral">{PROMPT_COPY.latest}</StatusBadge>
+                      ) : null}
+                      {showing ? (
+                        <span className="text-text-muted w-28 text-right text-xs">{PROMPT_COPY.loaded}</span>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-28"
+                          onClick={() => {
+                            setDraft(fromVersion(current.data?.name ?? "", v))
+                            setLoaded(v.version)
+                          }}
+                        >
+                          {PROMPT_COPY.load}
+                        </Button>
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          ) : null}
         </Section>
         <Section
           number={2}
@@ -185,7 +237,11 @@ export function PromptStep({ projectId }: { projectId: string }) {
       <PageActions
         summary={
           <div className="flex flex-col gap-1">
-            {unchanged ? <span>{PROMPT_COPY.unchanged}</span> : null}
+            {unchanged && current.data ? (
+              <span>{PROMPT_COPY.unchangedHint(latestNumber, latestNumber + 1)}</span>
+            ) : loaded !== null && loaded !== latestNumber ? (
+              <span>{PROMPT_COPY.startedFrom(loaded, latestNumber + 1)}</span>
+            ) : null}
             <ErrorMessage error={save.error} />
           </div>
         }

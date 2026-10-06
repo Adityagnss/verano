@@ -2543,6 +2543,18 @@
             ],
             "title": "Name"
           },
+          "prompt_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version Id"
+          },
           "split_scope": {
             "$ref": "#/components/schemas/SplitScope",
             "default": "all"
@@ -7332,6 +7344,99 @@
         "title": "VerdictOut",
         "type": "object"
       },
+      "VersionComparisonOut": {
+        "description": "Two finished experiments side by side, usually two prompt versions on the same test cases: per model,\nthe quality difference with the usual \"clear difference\" rule, and which cases got fixed or broken.",
+        "properties": {
+          "against_id": {
+            "format": "uuid",
+            "title": "Against Id",
+            "type": "string"
+          },
+          "against_prompt_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Against Prompt Version"
+          },
+          "experiment_id": {
+            "format": "uuid",
+            "title": "Experiment Id",
+            "type": "string"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/VersionModelComparison"
+            },
+            "title": "Models",
+            "type": "array"
+          },
+          "prompt_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version"
+          },
+          "same_test_cases": {
+            "title": "Same Test Cases",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "experiment_id",
+          "against_id",
+          "prompt_version",
+          "against_prompt_version",
+          "same_test_cases",
+          "models"
+        ],
+        "title": "VersionComparisonOut",
+        "type": "object"
+      },
+      "VersionModelComparison": {
+        "properties": {
+          "broken": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Broken",
+            "type": "array"
+          },
+          "comparison": {
+            "$ref": "#/components/schemas/ComparisonOut"
+          },
+          "fixed": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Fixed",
+            "type": "array"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "model_profile_id": {
+            "format": "uuid",
+            "title": "Model Profile Id",
+            "type": "string"
+          }
+        },
+        "required": ["model_profile_id", "model", "comparison", "fixed", "broken"],
+        "title": "VersionModelComparison",
+        "type": "object"
+      },
       "VersionOption": {
         "properties": {
           "id": {
@@ -9548,6 +9653,72 @@
           }
         ],
         "summary": "Get Cases",
+        "tags": ["results"]
+      }
+    },
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/compare": {
+      "get": {
+        "operationId": "compare_experiments_api_v1_projects__project_id__experiments__experiment_id__compare_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "against",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Against",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionComparisonOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Compare Experiments",
         "tags": ["results"]
       }
     },

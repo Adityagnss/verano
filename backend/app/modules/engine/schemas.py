@@ -65,6 +65,8 @@ class ExperimentCreate(BaseModel):
     budget_cap: Decimal | None = Field(default=None, gt=0)
     judge: JudgeChoice | None = None
     evaluator_set_version_id: uuid.UUID | None = None
+    # Which saved prompt version to test; left out, the latest one
+    prompt_version_id: uuid.UUID | None = None
 
 
 class ModelEstimate(BaseModel):

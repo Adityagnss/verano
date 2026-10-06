@@ -12,6 +12,24 @@ export const RUN_COPY = {
     "Runs set up the same way get the same fingerprint, so Results can tell you when two experiments are replicable. That is not a promise of identical answers.",
   ],
   modelsHeading: "Choose models and settings",
+  versionLabel: "Prompt version to test",
+  versionLatest: (n: number) => `Version ${n} (latest)`,
+  versionOption: (n: number, note: string | null | undefined) => `Version ${n}${note ? `: ${note}` : ""}`,
+  versionHint: "Test any saved version on the same test cases, then compare them on the Dashboard.",
+  randomnessLabel: "Randomness",
+  randomness: {
+    repeatable: {
+      label: "Repeatable",
+      hint: "Temperature 0 and a fixed seed, where the model accepts them. Best for comparing models and prompt versions.",
+    },
+    default: {
+      label: "Model's own default",
+      hint: "The provider's usual settings: more varied answers, closer to how a chat app behaves.",
+    },
+    custom: "Set by hand per model below.",
+  },
+  replicabilityHint:
+    "Repeatable makes answers as alike as the provider allows, but it is not a guarantee. To check: after the run, open Results and press Re-run with same settings; it compares the answers call by call.",
   modelsHint: "The models you ticked in step 1. Untick any you want to leave out of this run.",
   previewHint: "Nothing is spent until you press Start experiment.",
   runningHint: "Updates live while the models answer.",

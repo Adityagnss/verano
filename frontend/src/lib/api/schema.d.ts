@@ -540,6 +540,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Compare Experiments */
+        get: operations["compare_experiments_api_v1_projects__project_id__experiments__experiment_id__compare_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/experiments/{experiment_id}/export.csv": {
         parameters: {
             query?: never;
@@ -2240,6 +2257,8 @@ export interface components {
             models: components["schemas"]["ModelRun"][];
             /** Name */
             name?: string | null;
+            /** Prompt Version Id */
+            prompt_version_id?: string | null;
             /** @default all */
             split_scope: components["schemas"]["SplitScope"];
         };
@@ -4052,6 +4071,46 @@ export interface components {
             minimum_cases: number;
             reason: components["schemas"]["Reason"];
         };
+        /**
+         * VersionComparisonOut
+         * @description Two finished experiments side by side, usually two prompt versions on the same test cases: per model,
+         *     the quality difference with the usual "clear difference" rule, and which cases got fixed or broken.
+         */
+        VersionComparisonOut: {
+            /**
+             * Against Id
+             * Format: uuid
+             */
+            against_id: string;
+            /** Against Prompt Version */
+            against_prompt_version: number | null;
+            /**
+             * Experiment Id
+             * Format: uuid
+             */
+            experiment_id: string;
+            /** Models */
+            models: components["schemas"]["VersionModelComparison"][];
+            /** Prompt Version */
+            prompt_version: number | null;
+            /** Same Test Cases */
+            same_test_cases: boolean;
+        };
+        /** VersionModelComparison */
+        VersionModelComparison: {
+            /** Broken */
+            broken: string[];
+            comparison: components["schemas"]["ComparisonOut"];
+            /** Fixed */
+            fixed: string[];
+            /** Model */
+            model: string;
+            /**
+             * Model Profile Id
+             * Format: uuid
+             */
+            model_profile_id: string;
+        };
         /** VersionOption */
         VersionOption: {
             /**
@@ -5318,6 +5377,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CaseResultOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compare_experiments_api_v1_projects__project_id__experiments__experiment_id__compare_get: {
+        parameters: {
+            query: {
+                against: string;
+            };
+            header?: never;
+            path: {
+                experiment_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionComparisonOut"];
                 };
             };
             /** @description Validation Error */

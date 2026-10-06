@@ -64,6 +64,34 @@ export function defaultRow(m: ModelProfileOut): Row {
   }
 }
 
+export type Randomness = "repeatable" | "default" | "custom"
+
+/** Repeatable: temperature 0 and the benchmark seed where the model accepts them. Default: the provider decides. */
+export function withRandomness(m: ModelProfileOut, row: Row, mode: Exclude<Randomness, "custom">): Row {
+  const repeatable = mode === "repeatable"
+  return {
+    ...row,
+    temperature: repeatable && supports(m, "temperature") ? clamp(m, "temperature", 0) : "",
+    seed: repeatable && supports(m, "seed") ? BENCHMARK_SEED : "",
+    top_p: "",
+  }
+}
+
+/** Which choice the current rows match, or "custom" when they were edited by hand. */
+export function randomnessOf(models: ModelProfileOut[], rows: Record<string, Row>): Randomness {
+  for (const mode of ["repeatable", "default"] as const) {
+    const same = models.every((m) => {
+      const row = rows[m.id] ?? defaultRow(m)
+      const expected = withRandomness(m, row, mode)
+      return (
+        row.temperature === expected.temperature && row.seed === expected.seed && row.top_p === expected.top_p
+      )
+    })
+    if (same) return mode
+  }
+  return "custom"
+}
+
 /** One stop sequence per line; `\n`, `\t` and `\\` stand for a newline, a tab and a backslash. */
 export function parseStop(text: string): string[] {
   return text

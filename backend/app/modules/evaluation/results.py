@@ -52,6 +52,8 @@ from app.modules.evaluation.schemas import (
     ResultsOut,
     ScoreOut,
     ScoreStatus,
+    VersionComparisonOut,
+    VersionModelComparison,
 )
 from app.modules.evaluation.service import EvaluatorSetService, judge_call_out
 from app.modules.evaluation.significance import compare, seed_for
@@ -68,6 +70,10 @@ SCORE_JOB = "evaluation.score_experiment"
 SCORED_STATES = {"completed", "cancelled", "failed"}
 NOT_REPLICABLE = "These experiments weren't set up the same way, so comparing their answers is not a replication check."
 SAME_EXPERIMENT = "Pick a different experiment to compare with."
+OTHER_CHECKS = (
+    "These experiments were scored with different checks or a different judge, so their scores can't be "
+    "compared. Score one of them again with the other's checks and judge first."
+)
 
 
 class ResultsService:
@@ -335,6 +341,45 @@ class ResultsService:
             suggested=JudgeChoice(credential_id=best.credential_id, model=best.model) if best else None,
             reason=reason,
             candidates=[JudgeChoice(credential_id=c.credential_id, model=c.model) for c in candidates],
+        )
+
+    async def compare_versions(
+        self, project_id: uuid.UUID, experiment_id: uuid.UUID, against_id: uuid.UUID
+    ) -> VersionComparisonOut:
+        """`experiment_id` (usually the newer prompt version) against `against_id`, per model, on the cases both
+        judged. Refused when the two were scored differently, since their numbers would not mean the same."""
+        if experiment_id == against_id:
+            raise Conflict(SAME_EXPERIMENT)
+        current = await self._experiment(project_id, experiment_id)
+        earlier = await self._experiment(project_id, against_id)
+        if any(e.status.value not in SCORED_STATES for e in (current, earlier)):
+            raise Conflict(STILL_RUNNING)
+        if await self.scored_with(current) != await self.scored_with(earlier):
+            raise Conflict(OTHER_CHECKS)
+        now, before = await self.outcomes(current), await self.outcomes(earlier)
+        names = {m["model_profile_id"]: m["display_name"] for m in current.config["models"]}
+        numbers = await self._engine.prompt_numbers([current.prompt_version_id, earlier.prompt_version_id])
+        models = []
+        for model_id in sorted({o.model_profile_id for o in now} & {o.model_profile_id for o in before}, key=str):
+            mine = case_results(o for o in now if o.model_profile_id == model_id)
+            theirs = case_results(o for o in before if o.model_profile_id == model_id)
+            common = set(mine) & set(theirs)
+            models.append(
+                VersionModelComparison(
+                    model_profile_id=model_id,
+                    model=names.get(str(model_id), str(model_id)),
+                    comparison=comparison_out(compare(mine, theirs, seed=seed_for(current.id, earlier.id, model_id))),
+                    fixed=sorted(uuid.UUID(c) for c in common if mine[c].passed and not theirs[c].passed),
+                    broken=sorted(uuid.UUID(c) for c in common if theirs[c].passed and not mine[c].passed),
+                )
+            )
+        return VersionComparisonOut(
+            experiment_id=current.id,
+            against_id=earlier.id,
+            prompt_version=numbers.get(current.prompt_version_id),
+            against_prompt_version=numbers.get(earlier.prompt_version_id),
+            same_test_cases=current.dataset_version_id == earlier.dataset_version_id,
+            models=models,
         )
 
     async def replication(
