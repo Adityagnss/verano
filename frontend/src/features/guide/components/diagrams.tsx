@@ -47,6 +47,18 @@ const LABELS: Record<string, string> = {
     "Meta-prompting: the task, good examples and failures go to a prompt-writing model that returns candidates to be scored",
   "critique-and-revise-with-new-information":
     "Critique and revise: a draft is checked against new information such as a test or rule, then revised",
+  "use-one-or-not":
+    "Start with a plain model; only if it is not good enough try a reasoning model at low, then medium, then high effort",
+  "thinking-uses-your-token-limit":
+    "The token limit covers thinking and answer: a small limit can be used up by thinking and leave no answer",
+  "the-parts-of-the-context":
+    "The context: role, instructions, examples, live facts, documents, tools, memory and the marked input all reach the model",
+  "workflow-or-agent":
+    "A workflow runs steps fixed in code; an agent lets the model choose the next step in a loop with tools",
+  "tool-calling-step-by-step":
+    "Tool calling: your code sends the request and tools, the model picks a tool, your code runs it, the result goes back",
+  "testing-an-agent-with-verano-today":
+    "An agent split into prompts that Verano can test one by one today; the whole agent with real tools comes after V1",
 }
 
 /** Plain-text description of a diagram, keyed by the slug of its heading (used when the page is copied). */
@@ -637,6 +649,175 @@ function Refine() {
   )
 }
 
+function ReasoningLadder() {
+  return (
+    <Diagram label={LABELS["use-one-or-not"]} height={130}>
+      <Box x={10} y={44} w={120} h={48} title="Plain model" sub="cheap, fast" tone="blue" />
+      <Box x={210} y={44} w={100} h={48} title="Low effort" sub="reasoning" tone="violet" />
+      <Box x={370} y={44} w={100} h={48} title="Medium" tone="violet" />
+      <Box x={530} y={44} w={100} h={48} title="High" sub="slowest, dearest" tone="violet" />
+      <Line x1={130} y1={68} x2={208} y2={68} />
+      <Line x1={310} y1={68} x2={368} y2={68} />
+      <Line x1={470} y1={68} x2={528} y2={68} />
+      <Note x={170} y={60}>
+        not good
+      </Note>
+      <Note x={340} y={60}>
+        not good
+      </Note>
+      <Note x={500} y={60}>
+        not good
+      </Note>
+      <Note x={320} y={20} color="#22804a">
+        stop at the first one that is good enough on your test cases
+      </Note>
+    </Diagram>
+  )
+}
+
+function TokenBudget() {
+  return (
+    <Diagram label={LABELS["thinking-uses-your-token-limit"]} height={150}>
+      <Note x={10} y={30} anchor="start">
+        Small limit
+      </Note>
+      <rect x={110} y={14} width={360} height={26} rx={6} fill="#f1eefb" stroke="#5a45b0" strokeWidth={1.5} />
+      <Note x={290} y={31}>
+        thinking uses all of it
+      </Note>
+      <Note x={482} y={31} anchor="start" color="#c23b22">
+        no answer left
+      </Note>
+      <Note x={10} y={92} anchor="start">
+        Enough room
+      </Note>
+      <rect x={110} y={76} width={220} height={26} rx={6} fill="#f1eefb" stroke="#5a45b0" strokeWidth={1.5} />
+      <Note x={220} y={93}>
+        thinking
+      </Note>
+      <rect x={334} y={76} width={130} height={26} rx={6} fill="#e6f4ec" stroke="#22804a" strokeWidth={1.5} />
+      <Note x={399} y={93}>
+        answer
+      </Note>
+      <Note x={482} y={93} anchor="start" color="#22804a">
+        full answer
+      </Note>
+      <Note x={320} y={136}>
+        max_tokens is one budget for both, and you pay for both
+      </Note>
+    </Diagram>
+  )
+}
+
+function ContextParts() {
+  const parts: [string, "blue" | "gold" | "green" | "grey" | "violet" | "red"][] = [
+    ["Role and goal", "blue"],
+    ["Instructions", "blue"],
+    ["Output format", "blue"],
+    ["Examples", "green"],
+    ["Today's date", "gold"],
+    ["Documents", "gold"],
+    ["Tools", "violet"],
+    ["Memory", "violet"],
+  ]
+  return (
+    <Diagram label={LABELS["the-parts-of-the-context"]} height={190}>
+      {parts.map(([title, tone], i) => (
+        <Box
+          key={title}
+          x={10 + (i % 2) * 150}
+          y={8 + Math.floor(i / 2) * 36}
+          w={140}
+          h={28}
+          title={title}
+          tone={tone}
+        />
+      ))}
+      <Box x={85} y={154} w={140} h={28} title="<input> marked" tone="grey" />
+      <Box x={380} y={70} w={110} h={48} title="Model" sub="knows only this" tone="violet" />
+      <Box x={540} y={70} w={90} h={48} title="Answer" tone="green" />
+      <Line x1={302} y1={94} x2={378} y2={94} />
+      <Line x1={490} y1={94} x2={538} y2={94} />
+      <Note x={340} y={86}>
+        one call
+      </Note>
+    </Diagram>
+  )
+}
+
+function WorkflowAgent() {
+  return (
+    <Diagram label={LABELS["workflow-or-agent"]} height={190}>
+      <Note x={10} y={22} anchor="start">
+        Workflow: your code fixes the steps
+      </Note>
+      <Box x={10} y={32} w={110} h={40} title="Step A" tone="blue" />
+      <Box x={170} y={32} w={110} h={40} title="Step B" tone="blue" />
+      <Box x={330} y={32} w={110} h={40} title="Step C" tone="blue" />
+      <Box x={520} y={32} w={110} h={40} title="Answer" tone="green" />
+      <Line x1={120} y1={52} x2={168} y2={52} />
+      <Line x1={280} y1={52} x2={328} y2={52} />
+      <Line x1={440} y1={52} x2={518} y2={52} />
+      <Note x={10} y={112} anchor="start">
+        Agent: the model picks the next step
+      </Note>
+      <Box x={10} y={122} w={150} h={44} title="Model decides" sub="plan, then act" tone="violet" />
+      <Box x={250} y={122} w={140} h={44} title="Tools" sub="search, data, APIs" tone="gold" />
+      <Box x={520} y={122} w={110} h={44} title="Answer" tone="green" />
+      <Line x1={160} y1={136} x2={248} y2={136} />
+      <Line x1={248} y1={154} x2={162} y2={154} />
+      <Line x1={390} y1={144} x2={518} y2={144} />
+      <Note x={455} y={136}>
+        when done
+      </Note>
+      <Note x={204} y={182}>
+        loops until done
+      </Note>
+    </Diagram>
+  )
+}
+
+function ToolCalling() {
+  return (
+    <Diagram label={LABELS["tool-calling-step-by-step"]} height={160}>
+      <Box x={10} y={30} w={140} h={50} title="Your code" sub="request + tool list" tone="blue" />
+      <Box x={200} y={30} w={130} h={50} title="Model" sub="picks tool + inputs" tone="violet" />
+      <Box x={380} y={30} w={120} h={50} title="Your code" sub="runs the tool" tone="gold" />
+      <Box x={540} y={30} w={90} h={50} title="Answer" tone="green" />
+      <Line x1={150} y1={55} x2={198} y2={55} />
+      <Line x1={330} y1={55} x2={378} y2={55} />
+      <Elbow d="M440 82 V118 H265 V84" dashed />
+      <Note x={352} y={136}>
+        the result goes back to the model as a new message
+      </Note>
+      <Elbow d="M330 40 H350 V16 H585 V28" />
+      <Note x={468} y={12}>
+        no tool needed: answer
+      </Note>
+    </Diagram>
+  )
+}
+
+function AgentParts() {
+  return (
+    <Diagram label={LABELS["testing-an-agent-with-verano-today"]} height={200}>
+      <Box x={10} y={70} w={110} h={50} title="Your agent" tone="violet" />
+      <Box x={200} y={6} w={200} h={36} title="Routing prompt" sub="classification" tone="blue" />
+      <Box x={200} y={50} w={200} h={36} title="Planning prompt" sub="JSON output" tone="blue" />
+      <Box x={200} y={94} w={200} h={36} title="Tool-choice prompt" sub="classification" tone="blue" />
+      <Box x={200} y={138} w={200} h={36} title="Final-answer prompt" sub="AI judge" tone="blue" />
+      <Line x1={120} y1={86} x2={198} y2={24} />
+      <Line x1={120} y1={91} x2={198} y2={68} />
+      <Line x1={120} y1={99} x2={198} y2={112} />
+      <Line x1={120} y1={104} x2={198} y2={156} />
+      <Box x={450} y={40} w={180} h={50} title="Test in Verano" sub="each one, today" tone="green" />
+      <Box x={450} y={120} w={180} h={50} title="Whole agent, real tools" sub="after V1" tone="grey" />
+      <path d="M404 24 H414 V156 H404" fill="none" stroke="#55627a" strokeWidth={1.6} />
+      <Line x1={414} y1={65} x2={448} y2={65} />
+    </Diagram>
+  )
+}
+
 export const DIAGRAMS: Record<string, ReactNode> = {
   "how-verano-uses-this-guide": <VeranoLoop />,
   "which-technique-should-i-try-first": <WhichFirst />,
@@ -658,5 +839,11 @@ export const DIAGRAMS: Record<string, ReactNode> = {
   "prompt-caching": <Cache />,
   "ai-judge": <Judge />,
   "untrusted-text-and-injection": <Injection />,
+  "use-one-or-not": <ReasoningLadder />,
+  "thinking-uses-your-token-limit": <TokenBudget />,
+  "the-parts-of-the-context": <ContextParts />,
+  "workflow-or-agent": <WorkflowAgent />,
+  "tool-calling-step-by-step": <ToolCalling />,
+  "testing-an-agent-with-verano-today": <AgentParts />,
   "automatic-prompt-search": <Search />,
 }
