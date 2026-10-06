@@ -130,6 +130,17 @@ def test_an_expired_token_says_to_sign_in_again(server: FakeVerano, run: Run) ->
     assert "verano login" in result.err
 
 
+def test_a_revoked_token_in_ci_says_to_make_a_new_one_not_to_log_in(
+    server: FakeVerano, run: Run, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("VERANO_API_TOKEN", "vrn_revoked")
+    result = run("whoami")
+    assert result.code == 1
+    assert "invalid, expired or revoked" in result.err
+    assert "verano token create --name ci" in result.err
+    assert "verano login" not in result.err
+
+
 def test_ci_signs_in_through_the_environment_alone(
     server: FakeVerano, run: Run, monkeypatch: pytest.MonkeyPatch
 ) -> None:

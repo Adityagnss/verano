@@ -275,6 +275,12 @@ async def test_a_task_spec_you_wrote_is_confirmed_without_any_model_call_and_rep
     async with container.database.sessions() as db:
         calls = (await db.scalars(select(LLMCall).where(LLMCall.purpose == "generation"))).all()
     assert list(calls) == []
+    for route in ("/generations/estimate", "/generations"):  # nothing to write cases with: said up front
+        refused = await client.post(
+            api(session, route), json={"task_spec_id": first.json()["id"]}, headers=session.headers
+        )
+        assert refused.status_code == 409, refused.text
+        assert "no model to write test cases with" in refused.json()["error"]["message"]
     started = await client.post(
         api(session, "/generations"),
         json={"task_spec_id": first.json()["id"], "golden_only": True},

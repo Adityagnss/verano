@@ -5,6 +5,7 @@ Every failure becomes a `CliError` with a message a person can act on: the serve
 the address is wrong (an HTML page came back), the token is no good, or the API said no.
 """
 
+import os
 import socket
 from typing import Any
 
@@ -90,12 +91,22 @@ class ApiClient:
         raise _api_error(response, data)
 
 
+def _sign_in_hint() -> str:
+    """A token from the environment is a CI secret: logging in on that machine won't replace it."""
+    if os.environ.get("VERANO_API_TOKEN"):
+        return (
+            "The token in VERANO_API_TOKEN no longer works. "
+            "Make a new one with `verano token create --name ci` and update the secret."
+        )
+    return "Run `verano login`."
+
+
 def _api_error(response: httpx.Response, data: Any) -> CliError:
     error = data.get("error") if isinstance(data, dict) else None
     message = error.get("message") if isinstance(error, dict) else None
     code = response.status_code
     if code == 401:
-        return CliError(message or "You are not signed in.", "Run `verano login`.", code)
+        return CliError(message or "You are not signed in.", _sign_in_hint(), code)
     if code == 429:
         wait = response.headers.get("retry-after")
         return CliError(message or "Too many requests.", f"Try again in {wait} seconds." if wait else None, code)

@@ -10,6 +10,7 @@ from pathlib import Path
 
 from app.core.config import Settings
 from app.core.datafiles import load_yaml
+from app.core.errors import Conflict
 from app.modules.datasets.schemas import ItemSource
 from app.modules.datasets.service import DatasetService
 from app.modules.gateway.domain import compute_cost
@@ -18,6 +19,10 @@ from app.modules.generator.models import TaskSpecRecord
 from app.modules.generator.schemas import GenerationEstimate, GenerationRequest
 from app.modules.registry.service import RegistryService
 
+NO_GENERATOR = (
+    "This Task Spec has no model to write test cases with: it was written by hand (for example with "
+    "`verano push`). Draft the Task Spec on the Tests step and choose a model, or use only your own test cases."
+)
 CATEGORIES = load_yaml(Path(__file__).parent / "config" / "generation.yaml", GenerationCatalog)
 NOTHING = GenerationEstimate(
     cases_to_generate=0,
@@ -38,8 +43,10 @@ async def estimate_generation(
     row: TaskSpecRecord,
     body: GenerationRequest,
 ) -> GenerationEstimate:
-    if body.golden_only or row.generator_credential_id is None or row.generator_model is None:
+    if body.golden_only:
         return NOTHING
+    if row.generator_credential_id is None or row.generator_model is None:
+        raise Conflict(NO_GENERATOR)
     draft = await datasets.find_draft(project_id)
     existing = await datasets.items(draft.id) if draft else []
     items = [item for item in existing if item.source is not ItemSource.GENERATED]
