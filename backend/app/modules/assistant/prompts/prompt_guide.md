@@ -190,7 +190,7 @@ Split a big task into small prompts, for example extract, then decide, then form
 
 ### Meta-prompting
 
-Ask a model to write or rewrite a prompt for you, given the task, a few good examples and a few failures. It is a good source of candidates, but the result is only a guess until it is scored. This is what the Improve step does for you, then it proves the winner on cases held back.
+Ask a model to write or rewrite a prompt for you, given the task, a few good examples and a few failures. It is a good source of candidates, but the result is only a guess until it is scored. This is what the Improve step does for you; it then checks the best one on cases held back and calls it better only when the difference is clear.
 
 ### Automatic prompt search
 

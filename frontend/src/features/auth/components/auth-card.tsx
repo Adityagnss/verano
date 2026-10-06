@@ -10,7 +10,7 @@ import { Logo } from "@/components/common/logo"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 const TAGLINE =
-  "Test your prompt on the models you choose, see quality, cost and speed side by side, and get a better prompt proven on unseen cases."
+  "Test your prompt on the models you choose, see quality, cost and speed side by side, and get better prompts, called better only when proven on unseen cases."
 
 const POINTS = [
   {

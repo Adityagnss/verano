@@ -2,22 +2,21 @@
 
 **Give it your API keys, a prompt and a few examples. Verano builds the evaluation,
 benchmarks the models you choose, shows the quality / cost / speed tradeoffs, explains why
-your prompt fails, and gives you a better prompt that is proven on data it has never seen.**
+your prompt fails, and suggests better prompts, calling one better only when that is proven on
+data it has never seen.**
 
 Open source · Self-hostable · Apache 2.0
 
-> **Status (2026-10-07):** the **whole loop is built** (keys → prompt → your data → test
-> cases → run → results → improve) and was tested end to end in the browser on the mock
-> provider. Since then the **pre-V1 plan** added three things: generation safety (stop button,
-> budget cap, cost confirmation), **reproducibility** (settings, a configuration fingerprint,
-> re-runs, stability, the model version a provider reports) and the **`verano` command-line
-> tool** that sets a project up from existing code. Then the **credibility items**: the judge
-> is chosen on purpose and shown, answers it could not score never count as passed, and "clear
-> difference" is claimed only by one statistical rule. Next: the checks that need a real model or a
-> person. See the
-> [plan](docs/DEVELOPMENT.md) (Part H), the [backlog](docs/BACKLOG.md) and the
-> [pending checks](docs/PENDING_CHECKS.md); progress per step is in the
-> [checkpoints](docs/checkpoints/).
+> **Status (2026-10-06):** the **whole loop is built** (keys → prompt → your data → test
+> cases → run → results → improve), with the pre-V1 additions: generation safety,
+> reproducibility, the **`verano` command-line tool**, the credibility items (a chosen and
+> readable judge, unscored answers never passing, one statistical rule for "clear difference")
+> and a workspace **Activity** page. Every feature is tested on a mock provider and in the browser.
+> **Real-model checks are partly done**, at $0: a local model (Ollama), free models on OpenRouter
+> and Gemini's free tier. Paid providers (OpenAI, Anthropic and others), the judge against a
+> person and Improve on a real model are **not checked yet**. The evidence is in
+> [real-model-checks](docs/checkpoints/real-model-checks.md); what is open is in the
+> [pending checks](docs/PENDING_CHECKS.md) and the [backlog](docs/BACKLOG.md).
 
 ## Why it's different
 
@@ -38,9 +37,9 @@ Open source · Self-hostable · Apache 2.0
   reports. A fixed seed is shown as a setting, never as a guarantee.
 - **Safe to run.** Every model call is shown with its cost first; generation and runs have a
   budget cap and a stop button; nothing paid starts without your say-so.
-- **From your codebase.** The `verano` command-line tool finds the prompts in your code,
-  sets the project up, and can fail a pull request when quality drops.
-- **Free to try.** The whole loop runs on local models, with no account and no API key.
+- **From your codebase.** The `verano` command-line tool looks for the prompts in your code
+  (and says how sure it is), sets the project up, and can fail a pull request when quality drops.
+- **Free to try.** Runs on local models through Ollama, with no provider account and no API key.
 
 ## Quick start
 
@@ -96,8 +95,10 @@ everything the command line does; use whichever you prefer.
 ## The loop, step by step
 
 1. **Keys** — add a key per provider (OpenAI, Anthropic, Gemini, Groq, xAI, Mistral,
-   Together, OpenRouter, or local Ollama). Verano checks it with a free model listing and
-   shows the chat models with prices; tick the ones to compare.
+   Together, OpenRouter, or local Ollama). Verano checks it with a free request before saving
+   it and shows the chat models with prices; tick the ones to compare. Checked against the live
+   APIs so far: Gemini, OpenRouter and Ollama; the others follow their documentation and recorded
+   responses.
 2. **Prompt** — a system prompt, a user prompt with `{{ variables }}`, or both. A live check
    shows what each test case needs and whether it fits each model.
 3. **Your data** (optional) — a golden set (inputs with answers), input files (inputs
@@ -114,8 +115,8 @@ everything the command line does; use whichever you prefer.
    panel shows what you set, what Verano locked and recorded, and what the provider
    controls, with a "same configuration" badge, **Re-run with same settings**, and a warning
    when the provider changed the model behind a name.
-7. **Improve** — why cases fail, 3 better prompts tested on the "improve" part, the best one
-   checked on the held-back part, and "Accept as new version" when it really is better.
+7. **Improve** — why cases fail, 3 candidate prompts tested on the "improve" part, the best one
+   checked on the held-back part, and "Accept as new version" only when it is proven better.
 
 Alongside the steps: a **Dashboard** (the latest run, pass rate across prompt versions, where
 the money went), a **Logbook** (every answer and every model call, filterable, with CSV
@@ -195,8 +196,10 @@ worked through in order:
    **done**, not yet published to PyPI
 4. Credibility items: judge model choice, editable and readable judge criteria, "clear
    difference" labels, visible judge failures — **done** ([ADR 0016](docs/adr/0016-judge-unscored-cases-and-significance.md))
-5. The [pending checks](docs/PENDING_CHECKS.md) with real models — **next** (planned in
-   [H5](docs/DEVELOPMENT.md))
+5. The [pending checks](docs/PENDING_CHECKS.md) with real models — **in progress**: the free and
+   local parts are done ([record](docs/checkpoints/real-model-checks.md)); paid providers and the
+   checks that need people are open, and the task-type, judge and Improve checks are left to
+   users after release (decision 70)
 
 After V1: connecting an application that runs outside Verano (RAG, agents, tools), email
 verification at sign-up, hosted CI. See the [plan](docs/DEVELOPMENT.md).

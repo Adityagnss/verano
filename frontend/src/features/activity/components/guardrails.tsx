@@ -30,7 +30,7 @@ const PROTECTIONS = [
   {
     icon: KeyRound,
     name: "Keys checked when added",
-    what: "A key the provider refuses is never saved, so a wrong key can't fail halfway through a run.",
+    what: "A key the provider refuses is never saved, so a mistyped key is caught before any run.",
   },
   {
     icon: ShieldCheck,

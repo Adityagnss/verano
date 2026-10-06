@@ -28,7 +28,7 @@ export const RUN_COPY = {
   fields: {
     seed: {
       label: "Seed",
-      hint: "Makes repeats more likely to match, but providers don't guarantee it. With several runs, run 2 uses seed + 1, run 3 seed + 2, and so on, so repeating the experiment reproduces every run.",
+      hint: "Makes repeats more likely to match, but providers don't guarantee it. With several runs, run 2 uses seed + 1, run 3 seed + 2, and so on, so repeating the experiment sends every run the same seed again.",
     },
     top_p: {
       label: "Top P",
