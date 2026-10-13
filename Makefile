@@ -90,13 +90,14 @@ e2e: env base-images ## Browser tests (Chromium, WebKit, Firefox) against the st
 	@$(MAKE) --no-print-directory clean
 	$(FRONTEND) npx playwright test
 
-ci: base-images ## The "CI green" gate: locked installs, lint, types, full tests (incl. migrations), builds, images (a running stack is moved onto the new images)
+ci: base-images ## The "CI green" gate: locked installs, lint, types, full tests (incl. migrations and the frontend's), builds, images (a running stack is moved onto the new images)
 	$(BACKEND) uv sync --frozen
 	$(CLI) uv sync --frozen
 	$(FRONTEND) npm ci --prefer-offline --no-audit --no-fund
 	$(MAKE) lint
 	$(BACKEND) uv run pytest -q
 	$(CLI) uv run pytest -q
+	$(FRONTEND) npm test
 	$(FRONTEND) npm run build
 	$(COMPOSE_BUILD) build
 	@if [ -n "$$($(COMPOSE) ps -q)" ]; then $(COMPOSE) up -d --wait --no-build; fi

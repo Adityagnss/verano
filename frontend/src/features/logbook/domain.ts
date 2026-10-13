@@ -4,7 +4,7 @@
  * plain-language findings shown on the Analysis tab. No React here.
  */
 import type { AnalysisOut, GroupStats } from "@/lib/api/types"
-import { versionName } from "@/lib/format"
+import { compareVersions, versionName } from "@/lib/format"
 
 export type AnswerFilters = {
   experiment_ids: string[]
@@ -144,7 +144,7 @@ export function grid(groups: GroupStats[]): {
   models: string[]
   cells: Map<string, Cell>
 } {
-  const versions = [...new Set(groups.map((g) => g.prompt_version))].sort((a, b) => a - b)
+  const versions = [...new Set(groups.map((g) => g.prompt_version))].sort(compareVersions)
   const models = [...new Set(groups.map((g) => g.model))].sort()
   const cells = new Map<string, Cell>()
   for (const g of groups)
@@ -159,6 +159,12 @@ export function grid(groups: GroupStats[]): {
 
 const pct = (v: number) => `${Math.round(v * 100)}%`
 
+/** The versions a trend is drawn over: saved versions only, oldest to newest. Improve's candidates were never
+ * saved as versions, so they are not part of "is the prompt getting better". */
+export function trendVersions(groups: GroupStats[]): number[] {
+  return [...new Set(groups.map((g) => g.prompt_version))].filter((v) => v > 0).sort(compareVersions)
+}
+
 /** Plain sentences about the filtered answers, most useful first. */
 export function findings(analysis: AnalysisOut): string[] {
   const out: string[] = []
@@ -170,7 +176,7 @@ export function findings(analysis: AnalysisOut): string[] {
     out.push(
       `Highest pass rate: ${best.model} on ${versionName(best.prompt_version)}, ${pct(best.pass_rate ?? 0)} of ${best.answers} answers.`,
     )
-  const versions = [...new Set(rated.map((g) => g.prompt_version))].sort((a, b) => a - b)
+  const versions = trendVersions(rated)
   if (versions.length >= 2) {
     const mean = (v: number) => {
       const rows = rated.filter((g) => g.prompt_version === v)
@@ -178,9 +184,8 @@ export function findings(analysis: AnalysisOut): string[] {
     }
     const first = versions[0]
     const last = versions[versions.length - 1]
-    const change = Math.round((mean(last) - mean(first)) * 100)
     out.push(
-      `Average pass rate across models went from ${pct(mean(first))} on ${versionName(first)} to ${pct(mean(last))} on ${versionName(last)} (${change >= 0 ? "+" : ""}${change} points).`,
+      `Average pass rate across models: ${pct(mean(first))} on ${versionName(first)}, ${pct(mean(last))} on ${versionName(last)}. Whether that difference is real is checked on the Dashboard, under Prompt versions.`,
     )
   }
   if (checks[0]) out.push(`Most common failed check: “${checks[0].check}”, ${checks[0].failures} failures.`)

@@ -2,7 +2,7 @@
  * Pure calculations behind the dashboard: which experiments count, how models trend across
  * prompt versions, where the money went, and the plain-language findings. No React here.
  */
-import type { CostSummary, ExperimentOut, ResultsOut } from "@/lib/api/types"
+import type { CostSummary, ExperimentOut, ResultsOut, VersionComparisonOut } from "@/lib/api/types"
 
 export type Finished = { experiment: ExperimentOut; results: ResultsOut; label: string }
 export type Point = { index: number; label: string; date: string; value: number | null }
@@ -42,6 +42,29 @@ export function finishedExperiments(
     }))
 }
 
+/** Only runs you started yourself: Improve's candidate tests run on part of the cases and are not prompt versions
+ * you saved, so they stay out of the dashboard's headline, trend and findings. */
+export function yourRuns(finished: Finished[]): Finished[] {
+  return finished.filter((f) => f.experiment.origin === "manual")
+}
+
+function versionNumber(label: string): number {
+  return Number(label.replace(/^v/, "")) || 0
+}
+
+/** The newest finished run of each prompt version, oldest version first. */
+export function latestPerVersion(finished: Finished[]): Finished[] {
+  const by = new Map<string, Finished>()
+  for (const f of finished) by.set(f.label, f) // `finished` is oldest first, so the last one wins
+  return [...by.values()].sort((a, b) => versionNumber(a.label) - versionNumber(b.label))
+}
+
+/** The best pass rate any model reached in a run (null when none could be judged). */
+function bestRate(f: Finished): number | null {
+  const rates = f.results.models.map((m) => m.pass_rate).filter((r): r is number => r !== null)
+  return rates.length ? Math.max(...rates) : null
+}
+
 /** One line per model: its pass rate in each finished experiment (null when it was not in it). */
 export function trends(finished: Finished[]): Trend[] {
   const models = [...new Set(finished.flatMap((f) => f.results.models.map((m) => m.model)))].sort()
@@ -74,7 +97,11 @@ export function usd(value: number): string {
 }
 
 /** Plain sentences about the newest experiment and the trend, most useful first. */
-export function insights(finished: Finished[], cost: CostSummary | undefined): string[] {
+export function insights(
+  finished: Finished[],
+  cost: CostSummary | undefined,
+  proof: VersionComparisonOut | null = null,
+): string[] {
   const out: string[] = []
   const latest = finished.at(-1)
   if (latest) {
@@ -112,17 +139,30 @@ export function insights(finished: Finished[], cost: CostSummary | undefined): s
     for (const m of unsteady)
       out.push(`${m.model} is not consistent (${pct(m.consistency ?? 0)} same result across runs).`)
   }
-  if (finished.length >= 2) {
-    const bestOf = (f: Finished) =>
-      Math.max(...f.results.models.map((m) => m.pass_rate).filter((r): r is number => r !== null))
-    const first = finished[0]
-    const last = finished[finished.length - 1]
-    const change = Math.round((bestOf(last) - bestOf(first)) * 100)
-    out.push(
-      change === 0
-        ? `The best pass rate has not moved since ${first.label} (${pct(bestOf(first))}).`
-        : `The best pass rate went from ${pct(bestOf(first))} (${first.label}) to ${pct(bestOf(last))} (${last.label}): ${change > 0 ? "+" : ""}${change} points.`,
-    )
+  // A change between two versions is only called an improvement (or a drop) for a model when the same comparison
+  // used on Prompt versions finds a clear difference for it; otherwise the numbers are shown as not proven.
+  const versions = latestPerVersion(finished)
+  if (versions.length >= 2 && proof && proof.models.length) {
+    const [older, newer] = versions.slice(-2)
+    const rate = (f: Finished, model: string) =>
+      f.results.models.find((m) => m.model === model)?.pass_rate ?? null
+    const clear = proof.models.filter((m) => m.comparison.label === "clear difference")
+    for (const m of clear) {
+      const was = rate(older, m.model)
+      const now = rate(newer, m.model)
+      if (was !== null && now !== null)
+        out.push(
+          `${m.model}: ${newer.label} is clearly ${m.comparison.first_better ? "better" : "worse"} than ${older.label} (pass rate ${pct(was)} to ${pct(now)}).`,
+        )
+    }
+    const was = bestRate(older)
+    const now = bestRate(newer)
+    if (!clear.length && was !== null && now !== null) {
+      const tooFew = proof.models.every((m) => m.comparison.label === "too few cases")
+      out.push(
+        `Best pass rate: ${pct(now)} on ${newer.label}, ${pct(was)} on ${older.label}. This is not a proven difference (${tooFew ? "too few test cases" : "no clear difference"}), so it is not counted as an improvement.`,
+      )
+    }
   }
   if ((cost?.calls_with_unknown_price ?? 0) > 0)
     out.push("Some calls used models whose price is unknown, so the total spent is a minimum.")

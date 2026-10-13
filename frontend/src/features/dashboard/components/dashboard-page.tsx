@@ -17,17 +17,33 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { formatMs } from "@/lib/format"
 
 import { useDashboardData } from "../hooks"
-import { finishedExperiments, insights, pct, spend, trends, usd, versionLabels } from "../domain"
+import {
+  finishedExperiments,
+  insights,
+  latestPerVersion,
+  pct,
+  spend,
+  trends,
+  usd,
+  versionLabels,
+  yourRuns,
+} from "../domain"
 import { ModelBars, SpendBar, TrendChart, colorOf } from "./charts"
-import { VersionsPanel } from "./versions-panel"
+import { VersionsPanel, useComparison } from "./versions-panel"
 
 export function DashboardPage({ projectId }: { projectId: string }) {
   const data = useDashboardData(projectId)
-  const finished = finishedExperiments(data.experiments, data.results, versionLabels(data.versions))
+  const finished = yourRuns(finishedExperiments(data.experiments, data.results, versionLabels(data.versions)))
+  const compared = latestPerVersion(finished).slice(-2)
+  const proof = useComparison(
+    projectId,
+    compared[1]?.experiment.id ?? null,
+    compared[0]?.experiment.id ?? null,
+  )
   const latest = finished.at(-1)
   const models = [...new Set(finished.flatMap((f) => f.results.models.map((m) => m.model)))]
   const parts = spend(data.cost)
-  const notes = insights(finished, data.cost)
+  const notes = insights(finished, data.cost, proof.data ?? null)
   const rates = (latest?.results.models ?? []).map((m) => m.pass_rate).filter((r): r is number => r !== null)
   const best = rates.length ? Math.max(...rates) : null
   const rows = (pick: (m: NonNullable<typeof latest>["results"]["models"][number]) => number | null) =>
@@ -57,12 +73,12 @@ export function DashboardPage({ projectId }: { projectId: string }) {
           detail={`${(data.cost?.calls ?? 0).toLocaleString()} model calls`}
         />
         <StatTile
-          label="Experiments finished"
+          label="Your experiments finished"
           value={finished.length}
           detail={latest ? `latest: ${latest.label}` : "none yet"}
         />
         <StatTile
-          label="Best pass rate (latest)"
+          label="Best pass rate (your latest run)"
           value={best === null ? "—" : pct(best)}
           detail={latest ? `${latest.results.models.length} models compared` : "run an experiment first"}
           winner={best !== null}

@@ -14,7 +14,7 @@ import { StatusBadge } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatParams } from "@/lib/config"
-import { formatCost, formatMs } from "@/lib/format"
+import { formatCost, formatMs, versionName } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 import { compareFields, prettyJson } from "../domain"
@@ -94,7 +94,7 @@ export function AnswerDrawer({
             </p>
             <h3 className="mt-0.5 flex flex-wrap items-center gap-2 text-lg font-semibold">
               {row?.model ?? "Loading…"}
-              {row ? <StatusBadge tone="brand">Prompt v{row.prompt_version}</StatusBadge> : null}
+              {row ? <StatusBadge tone="brand">Prompt {versionName(row.prompt_version)}</StatusBadge> : null}
               {row ? (
                 row.passed === null ? null : row.passed ? (
                   <StatusBadge tone="success">Passed</StatusBadge>

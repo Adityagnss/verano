@@ -19,20 +19,9 @@ import type { ComparisonOut } from "@/lib/api/types"
 import { cn } from "@/lib/utils"
 
 import type { Finished } from "../domain"
-import { pct } from "../domain"
+import { latestPerVersion, pct } from "../domain"
 
-function versionNumber(label: string): number {
-  return Number(label.replace(/^v/, "")) || 0
-}
-
-/** The newest finished run of each prompt version, oldest version first. */
-export function latestPerVersion(finished: Finished[]): Finished[] {
-  const by = new Map<string, Finished>()
-  for (const f of finished) by.set(f.label, f) // `finished` is oldest first, so the last one wins
-  return [...by.values()].sort((a, b) => versionNumber(a.label) - versionNumber(b.label))
-}
-
-function useComparison(projectId: string, newer: string | null, older: string | null) {
+export function useComparison(projectId: string, newer: string | null, older: string | null) {
   return useQuery({
     queryKey: ["projects", projectId, "compare", newer, older],
     enabled: Boolean(newer && older && newer !== older),

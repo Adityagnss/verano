@@ -28,7 +28,13 @@ export function formatPricePair(input: string | null, output: string | null): st
   return `${USD.format(Number(input))} / ${USD.format(Number(output))}`
 }
 
-/** A prompt version's short name: v3 for a saved version, "Improve candidate 1" for one Improve is testing. */
+/** A prompt version's short name: v3 for a saved version, "Candidate 1" for one Improve is testing. */
 export function versionName(version: number): string {
-  return version < 0 ? `Improve candidate ${-version}` : `v${version}`
+  return version < 0 ? `Candidate ${-version}` : `v${version}`
+}
+
+/** Saved versions oldest to newest (v1, v2, ...), then Improve's candidates in the order they were written. */
+export function compareVersions(a: number, b: number): number {
+  if (a > 0 !== b > 0) return a > 0 ? -1 : 1
+  return a > 0 ? a - b : b - a
 }

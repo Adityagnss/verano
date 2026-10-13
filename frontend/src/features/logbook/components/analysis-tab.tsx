@@ -17,7 +17,7 @@ import { usd } from "@/features/dashboard/domain"
 import type { AnalysisOut, GroupStats, LogOptions } from "@/lib/api/types"
 import { formatMs, versionName } from "@/lib/format"
 
-import { type AnswerFilters, findings, grid } from "../domain"
+import { type AnswerFilters, findings, grid, trendVersions } from "../domain"
 import { useAnalysis } from "../hooks"
 import { FilterBar } from "./filter-bar"
 
@@ -72,7 +72,7 @@ function Heat({ analysis }: { analysis: AnalysisOut }) {
             <th className="px-2 py-1 text-left font-medium">Model</th>
             {versions.map((v) => (
               <th key={v} className="px-2 py-1 text-center font-medium">
-                Prompt v{v}
+                {versionName(v)}
               </th>
             ))}
           </tr>
@@ -132,9 +132,7 @@ export function AnalysisTab({
   const analysis = query.data
   const models = analysis ? [...new Set(analysis.groups.map((g) => g.model))] : []
   const per = analysis ? perModel(analysis.groups) : []
-  const versions = analysis
-    ? [...new Set(analysis.groups.map((g) => g.prompt_version))].sort((a, b) => a - b)
-    : []
+  const versions = analysis ? trendVersions(analysis.groups) : []
   const rows = (pick: (m: PerModel) => number | null) =>
     per.map((m) => ({ model: m.model, color: colorOf(models, m.model), value: pick(m) }))
   const trend = models.map((model) => ({
