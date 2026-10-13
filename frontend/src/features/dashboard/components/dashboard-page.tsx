@@ -14,6 +14,7 @@ import { Section } from "@/components/common/section"
 import { StatTile } from "@/components/common/stat-tile"
 import { StatusBadge } from "@/components/common/status-badge"
 import { Skeleton } from "@/components/ui/skeleton"
+import { unfairReasons } from "@/lib/fairness"
 import { formatMs } from "@/lib/format"
 
 import { useDashboardData } from "../hooks"
@@ -81,7 +82,7 @@ export function DashboardPage({ projectId }: { projectId: string }) {
           label="Best pass rate (your latest run)"
           value={best === null ? "—" : pct(best)}
           detail={latest ? `${latest.results.models.length} models compared` : "run an experiment first"}
-          winner={best !== null}
+          winner={best !== null && !(latest && unfairReasons(latest.experiment).length)}
         />
         <StatTile label="Prompt versions" value={data.versions.length} detail="saved so far" />
       </div>

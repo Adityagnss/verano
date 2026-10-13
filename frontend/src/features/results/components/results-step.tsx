@@ -27,6 +27,8 @@ import { formatCost } from "@/lib/format"
 
 import { RESULTS_COPY } from "../copy"
 import { downloadCsv, scoringInProgress, useCases, useResults } from "../hooks"
+import { unfairReasons } from "@/lib/fairness"
+
 import { bestOn, brokenModels, isBest } from "../insights"
 import { CaseView } from "./case-view"
 import { ConfigPanel } from "./config-panel"
@@ -61,15 +63,17 @@ export function ResultsStep({ projectId, experimentId }: { projectId: string; ex
     )
   const metrics = results.data?.models ?? []
   const current = (experiments.data ?? []).find((e) => e.id === chosen)
+  const unfair = current ? unfairReasons(current) : []
+  const ranked = unfair.length === 0
   const tiles = [
     {
       label: RESULTS_COPY.tiles.quality,
-      model: bestOn(metrics, "quality"),
+      model: ranked ? bestOn(metrics, "quality") : null,
       show: (m: ModelMetricsOut) => percent(m.quality),
     },
     {
       label: RESULTS_COPY.tiles.passRate,
-      model: bestOn(metrics, "pass_rate"),
+      model: ranked ? bestOn(metrics, "pass_rate") : null,
       show: (m: ModelMetricsOut) => percent(m.pass_rate),
     },
     {
@@ -138,6 +142,18 @@ export function ResultsStep({ projectId, experimentId }: { projectId: string; ex
               />
             ))}
           </div>
+          {unfair.length ? (
+            <div className="bg-marigold-soft text-marigold-strong ring-marigold/30 flex items-start gap-2 rounded-xl p-4 text-sm ring-1">
+              <CircleAlert className="mt-0.5 size-4 shrink-0" />
+              <div>
+                <p className="font-semibold">{RESULTS_COPY.unfairTitle}</p>
+                {unfair.map((reason) => (
+                  <p key={reason}>{reason}</p>
+                ))}
+                <p>{RESULTS_COPY.unfairAdvice}</p>
+              </div>
+            </div>
+          ) : null}
           <UnjudgedBanner projectId={projectId} experiment={current} models={metrics} />
           {brokenModels(metrics).map((m) => (
             <div
@@ -150,7 +166,7 @@ export function ResultsStep({ projectId, experimentId }: { projectId: string; ex
           ))}
           <Section title={RESULTS_COPY.tableHeading} description={RESULTS_COPY.tableHint}>
             <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-              <TradeoffTable models={metrics} />
+              <TradeoffTable models={metrics} ranked={ranked} />
               <PassRateChart models={metrics} />
             </div>
           </Section>

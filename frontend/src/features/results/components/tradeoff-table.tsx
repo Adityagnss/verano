@@ -20,14 +20,16 @@ function Cell({
   models,
   model,
   column,
+  ranked = true,
   children,
 }: {
   models: ModelMetricsOut[]
   model: ModelMetricsOut
   column: Column
+  ranked?: boolean
   children: React.ReactNode
 }) {
-  const best = isBest(models, model, column)
+  const best = ranked && isBest(models, model, column)
   return (
     <TableCell className="tabular-nums">
       <span
@@ -42,7 +44,8 @@ function Cell({
   )
 }
 
-export function TradeoffTable({ models }: { models: ModelMetricsOut[] }) {
+/** `ranked` is false when the models were not run alike: no cell is then marked as the best answer quality. */
+export function TradeoffTable({ models, ranked = true }: { models: ModelMetricsOut[]; ranked?: boolean }) {
   const c = RESULTS_COPY.columns
   const compared = models.some((m) => m.vs_best)
   return (
@@ -66,7 +69,7 @@ export function TradeoffTable({ models }: { models: ModelMetricsOut[] }) {
           {models.map((m) => (
             <TableRow key={m.model_profile_id}>
               <TableCell className="font-medium">{m.model}</TableCell>
-              <Cell models={models} model={m} column="quality">
+              <Cell models={models} model={m} column="quality" ranked={ranked}>
                 {percent(m.quality)}
                 {m.unscored_cases > 0 ? (
                   <span className="text-warning-strong block text-xs font-normal">
@@ -74,7 +77,7 @@ export function TradeoffTable({ models }: { models: ModelMetricsOut[] }) {
                   </span>
                 ) : null}
               </Cell>
-              <Cell models={models} model={m} column="pass_rate">
+              <Cell models={models} model={m} column="pass_rate" ranked={ranked}>
                 {percent(m.pass_rate)}
               </Cell>
               {compared ? (
@@ -93,12 +96,12 @@ export function TradeoffTable({ models }: { models: ModelMetricsOut[] }) {
                     </span>
                   ) : (
                     <span className="text-text-muted">
-                      {isBest(models, m, "quality") ? RESULTS_COPY.bestOnQuality : "—"}
+                      {ranked && isBest(models, m, "quality") ? RESULTS_COPY.bestOnQuality : "—"}
                     </span>
                   )}
                 </TableCell>
               ) : null}
-              <Cell models={models} model={m} column="consistency">
+              <Cell models={models} model={m} column="consistency" ranked={ranked}>
                 {percent(m.consistency)}
               </Cell>
               <TableCell className="tabular-nums">

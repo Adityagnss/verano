@@ -2,6 +2,7 @@
  * Pure calculations behind the dashboard: which experiments count, how models trend across
  * prompt versions, where the money went, and the plain-language findings. No React here.
  */
+import { unfairReasons } from "@/lib/fairness"
 import type { CostSummary, ExperimentOut, ResultsOut, VersionComparisonOut } from "@/lib/api/types"
 
 export type Finished = { experiment: ExperimentOut; results: ResultsOut; label: string }
@@ -113,10 +114,13 @@ export function insights(
       )
     const judged = models.filter((m): m is typeof m & { pass_rate: number } => m.pass_rate !== null)
     if (judged.length === 0) return out
+    const unfair = unfairReasons(latest.experiment)
+    if (unfair.length) out.push(`The models were not run alike, so they are not ranked. ${unfair.join(" ")}`)
     const best = [...judged].sort((a, b) => b.pass_rate - a.pass_rate)[0]
-    out.push(`${best.model} passed the most test cases in the latest experiment: ${pct(best.pass_rate)}.`)
+    if (!unfair.length)
+      out.push(`${best.model} passed the most test cases in the latest experiment: ${pct(best.pass_rate)}.`)
     const priced = judged.filter((m) => m.cost_per_call !== null && Number(m.cost_per_call) > 0)
-    const close = priced
+    const close = (unfair.length ? [] : priced)
       .filter((m) => m.pass_rate >= best.pass_rate - 0.05)
       .sort((a, b) => Number(a.cost_per_call) - Number(b.cost_per_call))[0]
     if (

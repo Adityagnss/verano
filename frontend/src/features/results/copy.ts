@@ -16,6 +16,9 @@ export const RESULTS_COPY = {
   ],
   tiles: { quality: "Best quality", passRate: "Most passed", cost: "Cheapest per call", speed: "Fastest" },
   tileNone: "—",
+  unfairTitle: "Not a fair comparison, so no model is ranked on quality or pass rate.",
+  unfairAdvice:
+    "Run the models again with the same number of runs and the same randomness (Run step: pick Repeatable) to rank them.",
   broken: (model: string, failed: number, total: number) =>
     `${model}: ${failed} of ${total} calls failed, so its scores are not meaningful. Open a failed case below to see the error.`,
   tableHeading: "All models side by side",

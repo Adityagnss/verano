@@ -19,6 +19,19 @@ const compare = (label: string, firstBetter: boolean | null) =>
   ({ models: [{ model: "m", comparison: { label, first_better: firstBetter } }] }) as VersionComparisonOut
 
 describe("dashboard findings", () => {
+  it("does not rank models that were not run alike", () => {
+    const unfair = run("v1", "manual", 0.5)
+    ;(unfair.experiment as { config: unknown }).config = {
+      models: [
+        { display_name: "a", runs: 1, params: {} },
+        { display_name: "b", runs: 5, params: {} },
+      ],
+    }
+    const text = insights([unfair], undefined).join(" ")
+    expect(text).toContain("not run alike, so they are not ranked")
+    expect(text).not.toContain("passed the most")
+  })
+
   const runs = [run("v1", "manual", 0.5), run("v2", "manual", 0.8)]
 
   it("keeps Improve's candidate tests out of your numbers", () => {
