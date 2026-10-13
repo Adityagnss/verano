@@ -71,13 +71,13 @@ export const STEP_GUIDES: Record<StepKey, StepGuide> = {
         name: "Input files",
         put: "The files your prompt works on. Each file is one test case, sent whole to every model.",
         why: "Real inputs show real behaviour. Spreadsheets are summarised automatically (column types, counts, sample rows).",
-        example: "SEP_15_GL_extract.xlsx",
+        example: "customer-emails.csv",
       },
       {
         name: "Golden set",
         put: "The correct answer for each input file, in the same order. Upload it after the input files.",
         why: "It is how Verano scores the models: their answer is compared with yours. Without it you still see every answer, just not a score.",
-        example: "goldenset.json with the correct rule",
+        example: "expected-replies.json, one reply per input",
       },
       {
         name: "Reference documents",
@@ -96,7 +96,7 @@ export const STEP_GUIDES: Record<StepKey, StepGuide> = {
         name: "Describe the task",
         put: "Check the short card Verano writes: task type, answer format, goal, rules.",
         why: "It decides which checks score the answers (exact match, JSON checks, an AI judge). A wrong card means wrong scoring.",
-        example: "Extraction · JSON · “Draft an ordered-matching rule”",
+        example: "Support reply · plain text · “Answer from the policy only”",
       },
       {
         name: "How many test cases",
@@ -113,7 +113,7 @@ export const STEP_GUIDES: Record<StepKey, StepGuide> = {
         name: "How answers will be scored",
         put: "Read each card; edit an AI judge's criteria if you want.",
         why: "Rule checks are exact and free. AI judges cost a little and need criteria that say what a good answer looks like.",
-        example: "A good answer names every field in the golden rule",
+        example: "A good answer is polite and uses only facts from the policy",
       },
     ],
   },

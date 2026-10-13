@@ -232,7 +232,7 @@ export function TestsStep({ projectId }: { projectId: string }) {
           setDraftId(null)
         }}
         onConfirmed={() => undefined}
-        locked={frozen || running}
+        locked={frozen || running || version.isPending}
       />
       {!frozen ? (
         <Section
@@ -358,16 +358,18 @@ export function TestsStep({ projectId }: { projectId: string }) {
       {current && evaluators.data ? (
         <EvaluatorCard projectId={projectId} versionId={current.id} set={evaluators.data} frozen={frozen} />
       ) : null}
-      <PageActions
-        summary={
-          <div className="flex flex-col gap-1">
-            {total > 0 ? <span>{TESTS_COPY.summary(total, drafts)}</span> : null}
-            <ErrorMessage error={actions.approve.error} />
-          </div>
-        }
-      >
-        {primary}
-      </PageActions>
+      {version.isPending ? null : (
+        <PageActions
+          summary={
+            <div className="flex flex-col gap-1">
+              {total > 0 ? <span>{TESTS_COPY.summary(total, drafts)}</span> : null}
+              <ErrorMessage error={actions.approve.error} />
+            </div>
+          }
+        >
+          {primary}
+        </PageActions>
+      )}
     </div>
   )
 }

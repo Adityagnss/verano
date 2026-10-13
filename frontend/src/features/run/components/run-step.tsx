@@ -71,12 +71,12 @@ function AdvancedFields({
   return (
     <div className="flex flex-col gap-3">
       <p className="text-text-muted text-xs">{RUN_COPY.advancedHint}</p>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid items-start gap-x-6 gap-y-5 md:grid-cols-2">
         {shown.map((name) => {
           const id = `${model.id}-${name}`
           const { label, hint } = RUN_COPY.fields[name]
           return (
-            <div key={name} className="flex flex-col gap-1.5">
+            <div key={name} className="flex min-w-0 flex-col gap-1.5">
               <Label htmlFor={id}>{label}</Label>
               {name === "stop" ? (
                 <Textarea
@@ -105,6 +105,13 @@ function AdvancedFields({
       </div>
     </div>
   )
+}
+
+/** Whole-number share of the estimated cost that is scoring; null when a price is missing or the cost is nothing. */
+function scoringShare(generation: string | null, judge: string | null): number | null {
+  if (generation === null || judge === null) return null
+  const total = Number(generation) + Number(judge)
+  return total > 0 && Number(judge) > 0 ? Math.round((Number(judge) / total) * 100) : null
 }
 
 export function RunStep({ projectId }: { projectId: string }) {
@@ -383,6 +390,13 @@ export function RunStep({ projectId }: { projectId: string }) {
                   <p className="flex justify-between">
                     {RUN_COPY.judge(estimate.data.judge_calls)} <Money value={estimate.data.judge_cost} />
                   </p>
+                  {scoringShare(estimate.data.generation_cost, estimate.data.judge_cost) !== null ? (
+                    <p className="text-text-muted text-xs">
+                      {RUN_COPY.scoringShare(
+                        scoringShare(estimate.data.generation_cost, estimate.data.judge_cost)!,
+                      )}
+                    </p>
+                  ) : null}
                   <p className="border-border flex justify-between border-t pt-1.5 text-base font-semibold">
                     {RUN_COPY.total} <Money value={estimate.data.total_cost} />
                   </p>

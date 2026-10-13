@@ -1,7 +1,7 @@
 /**
  * "What to fill and why" under a step's title: every field or choice on the screen, what to
- * put in it, why Verano asks, and an example. Open the first time a step is seen, then it
- * stays as the user left it (remembered in this browser only). Always one click away.
+ * put in it, why Verano asks, and an example. Open the first time a step is seen, folded from
+ * then on, and it stays as the user left it (remembered in this browser only). Always one click away.
  */
 "use client"
 
@@ -31,6 +31,14 @@ export function UsageGuide({ step, projectId }: { step: StepKey; projectId?: str
     const saved = remembered(step)
     // eslint-disable-next-line react-hooks/set-state-in-effect -- read the saved choice after mount, so server and client render alike
     if (saved !== null) setOpen(saved)
+    else {
+      // first visit: shown now, folded away from the next visit on
+      try {
+        window.localStorage.setItem(KEY(step), "closed")
+      } catch {
+        /* private mode: it just stays open */
+      }
+    }
   }, [step])
   function toggle() {
     const next = !open

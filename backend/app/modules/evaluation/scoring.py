@@ -12,6 +12,7 @@ session that ran it is moved on.
 """
 
 import asyncio
+import json
 import logging
 import uuid
 from typing import Any
@@ -129,9 +130,12 @@ class ScoringService:
         target = await self._judge_target(experiment, version_id)
         await self._session.commit()
         limit = asyncio.Semaphore(self._settings.judge_concurrency)
+        shared: dict[str, asyncio.Future[Score | Unscored | None]] = {}
         batches = await asyncio.gather(
             *(
-                self._score_call(experiment, run.id, row, items[row.dataset_item_id], configs, spec, target, limit)
+                self._score_call(
+                    experiment, run.id, row, items[row.dataset_item_id], configs, spec, target, limit, shared
+                )
                 for row in rows
             )
         )
@@ -178,6 +182,7 @@ class ScoringService:
         spec: TaskSpec,
         target: CallTarget | None,
         limit: asyncio.Semaphore,
+        shared: dict[str, "asyncio.Future[Score | Unscored | None]"],
     ) -> list[dict[str, Any]]:
         base = {"experiment_id": experiment.id, "evaluation_run_id": run_id, "test_case_run_id": row.id, "extra": {}}
         if row.status is RunStatus.FAILED:
@@ -214,7 +219,7 @@ class ScoringService:
                 test_case_run_id=row.id,
                 labels={"evaluation_run_id": str(run_id), "evaluator": config.evaluator_name},
             )
-            result = await self._evaluate(config, case, target, context, limit)
+            result = await self._evaluate_once(config, case, target, context, limit, shared)
             if result is None:
                 continue
             if isinstance(result, Unscored):
@@ -237,6 +242,42 @@ class ScoringService:
                 }
             )
         return scored
+
+    async def _evaluate_once(
+        self,
+        config: EvaluatorConfig,
+        case: EvalCase,
+        target: CallTarget | None,
+        context: CallContext,
+        limit: asyncio.Semaphore,
+        shared: dict[str, "asyncio.Future[Score | Unscored | None]"],
+    ) -> Score | Unscored | None:
+        """Identical answers to identical inputs get one judge call per check in a scoring pass: the judge sees
+        exactly the same thing, so a second call would only repeat the cost. A failed call is never shared."""
+        if config.config.get("kind") != DEEPEVAL or target is None:
+            return await self._evaluate(config, case, target, context, limit)
+        key = json.dumps(
+            [
+                config.evaluator_name,
+                config.config,
+                config.threshold,
+                case.inputs,
+                case.output,
+                case.expected,
+                case.rubric,
+                case.context,
+            ],
+            sort_keys=True,
+            default=str,
+        )
+        task = shared.get(key)
+        if task is None:
+            task = shared[key] = asyncio.ensure_future(self._evaluate(config, case, target, context, limit))
+            return await task
+        result = await task
+        if isinstance(result, Unscored):
+            return await self._evaluate(config, case, target, context, limit)
+        return result
 
     async def _evaluate(
         self,

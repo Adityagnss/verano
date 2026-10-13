@@ -78,6 +78,8 @@ export const RUN_COPY = {
   generation: "Model calls",
   judge: (calls: number) => `Scoring (${calls} judge calls)`,
   judgeModel: (name: string) => `Judge: ${name}`,
+  scoringShare: (percent: number) =>
+    `Scoring is about ${percent}% of this run. Identical answers are judged only once.`,
   total: "Estimated total",
   unknown: "Price unknown",
   start: "Start experiment",

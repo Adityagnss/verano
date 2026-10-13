@@ -53,7 +53,7 @@ export function LinkButton({ children, onClick }: { children: ReactNode; onClick
 }
 
 export function ChangeLine({ change, period }: { change: Change; period: string }) {
-  if (change.kind === "none") return <span className="text-text-muted">Nothing in the {period} before</span>
+  if (change.kind === "none") return null
   if (change.kind === "new") {
     return (
       <span className="text-text-secondary inline-flex items-center gap-1">

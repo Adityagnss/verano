@@ -48,7 +48,7 @@ function verdict(c: ComparisonOut): { text: string; tone: "success" | "danger" |
 }
 
 function runLabel(f: Finished): string {
-  return `${f.label.toUpperCase()}, ${f.experiment.name}, ${new Date(f.experiment.created_at).toLocaleDateString()}`
+  return `${f.label.toUpperCase()}, ${f.experiment.name}, ${new Date(f.experiment.created_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`
 }
 
 export function VersionsPanel({ projectId, finished: all }: { projectId: string; finished: Finished[] }) {
