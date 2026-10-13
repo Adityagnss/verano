@@ -21,7 +21,7 @@ from app.core.errors import NotFound, ValidationFailed
 from app.core.pagination import Page, PageParams, to_page
 from app.core.security import Principal
 from app.modules.projects.schemas import ProjectOut
-from app.modules.prompts.domain import TemplateInfo, analyze, context_fits, missing_inputs, render
+from app.modules.prompts.domain import TemplateInfo, analyze, context_fits, missing_inputs, render, tool_warnings
 from app.modules.prompts.models import Prompt, PromptVersion
 from app.modules.prompts.repository import PromptRepository
 from app.modules.prompts.schemas import (
@@ -180,6 +180,7 @@ class PromptService:
             missing_inputs=missing,
             context=fits,
             ok=not missing and all(fit.fits is not False for fit in fits),
+            warnings=tool_warnings(templates.system_template, templates.user_template),
         )
 
     async def _save(

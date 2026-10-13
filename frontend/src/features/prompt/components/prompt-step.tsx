@@ -11,6 +11,7 @@ import { toast } from "sonner"
 import { ErrorMessage } from "@/components/common/error-message"
 import { PageActions } from "@/components/common/page-actions"
 import { Section } from "@/components/common/section"
+import { DiffView } from "@/components/common/diff-view"
 import { StatusBadge } from "@/components/common/status-badge"
 import { StepHeader } from "@/components/common/step-header"
 import { Button } from "@/components/ui/button"
@@ -20,6 +21,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useModels } from "@/features/keys/hooks"
 import { useFirstCase } from "@/features/tests/hooks"
 import type { PromptVersionOut } from "@/lib/api/types"
+import { diffCounts, lineDiff, promptText } from "@/lib/diff"
 import { useDebounced } from "@/lib/use-debounced"
 
 import { PROMPT_COPY } from "../copy"
@@ -191,33 +193,53 @@ export function PromptStep({ projectId }: { projectId: string }) {
               <ul className="border-border divide-border divide-y rounded-lg border">
                 {(versions.data ?? []).map((v) => {
                   const showing = (loaded ?? latestNumber) === v.version
+                  const all = versions.data ?? []
+                  const parent =
+                    all.find((x) => x.id === v.parent_version_id) ??
+                    all.find((x) => x.version === v.version - 1)
+                  const changes = parent ? lineDiff(promptText(parent), promptText(v)) : null
+                  const counts = changes ? diffCounts(changes) : null
                   return (
-                    <li key={v.id} className="flex items-center gap-3 px-3 py-2 text-sm">
-                      <span className="w-10 font-semibold tabular-nums">V{v.version}</span>
-                      <span className="text-text-secondary min-w-0 flex-1 truncate">
-                        {v.change_reason || PROMPT_COPY.noReason}
-                      </span>
-                      <span className="text-text-muted hidden text-xs sm:inline">
-                        {new Date(v.created_at).toLocaleString()}
-                      </span>
-                      {v.version === latestNumber ? (
-                        <StatusBadge tone="neutral">{PROMPT_COPY.latest}</StatusBadge>
+                    <li key={v.id} className="flex flex-col gap-2 px-3 py-2 text-sm">
+                      <div className="flex items-center gap-3">
+                        <span className="w-10 font-semibold tabular-nums">V{v.version}</span>
+                        <span className="text-text-secondary min-w-0 flex-1 truncate">
+                          {v.change_reason || PROMPT_COPY.noReason}
+                        </span>
+                        <span className="text-text-muted hidden text-xs sm:inline">
+                          {new Date(v.created_at).toLocaleString()}
+                        </span>
+                        {v.version === latestNumber ? (
+                          <StatusBadge tone="neutral">{PROMPT_COPY.latest}</StatusBadge>
+                        ) : null}
+                        {showing ? (
+                          <span className="text-text-muted w-28 text-right text-xs">
+                            {PROMPT_COPY.loaded}
+                          </span>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-28"
+                            onClick={() => {
+                              setDraft(fromVersion(current.data?.name ?? "", v))
+                              setLoaded(v.version)
+                            }}
+                          >
+                            {PROMPT_COPY.load}
+                          </Button>
+                        )}
+                      </div>
+                      {changes && counts ? (
+                        <details className="text-xs">
+                          <summary className="text-accent cursor-pointer">
+                            {PROMPT_COPY.whatChanged(parent?.version ?? 0, counts.added, counts.removed)}
+                          </summary>
+                          <div className="mt-2">
+                            <DiffView lines={changes} />
+                          </div>
+                        </details>
                       ) : null}
-                      {showing ? (
-                        <span className="text-text-muted w-28 text-right text-xs">{PROMPT_COPY.loaded}</span>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-28"
-                          onClick={() => {
-                            setDraft(fromVersion(current.data?.name ?? "", v))
-                            setLoaded(v.version)
-                          }}
-                        >
-                          {PROMPT_COPY.load}
-                        </Button>
-                      )}
                     </li>
                   )
                 })}

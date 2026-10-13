@@ -42,7 +42,7 @@ import { CaseTable } from "./case-table"
 import { EvaluatorCard } from "./evaluator-card"
 import { modelKey, TaskSpecCard } from "./task-spec-card"
 
-const DEFAULT_SIZE = 10
+const DEFAULT_SIZE = 30
 
 function Approved({ version }: { version: DatasetVersionOut }) {
   return (

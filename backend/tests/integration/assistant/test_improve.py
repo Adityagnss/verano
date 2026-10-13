@@ -275,3 +275,45 @@ async def test_a_job_error_ends_the_improvement_as_failed_with_the_reason(
     result = await improve(client, session, jobs, experiment["id"])
     assert result["stage"] == "failed"
     assert result["message"] == "Something went wrong: boom"
+
+
+async def test_history_lists_improvements_and_a_candidate_is_saved_and_tested_in_one_go(
+    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue
+) -> None:
+    base = f"/api/v1/projects/{session.project_id}"
+    models = await approved_project(client, session, jobs)
+    body = {"models": [{"model_profile_id": models["echo"], "runs": 1}]}
+    experiment = (await client.post(f"{base}/experiments", json=body, headers=session.headers)).json()
+    await jobs.drain()
+    result = await improve(client, session, jobs, experiment["id"])
+
+    history = (await client.get(f"{base}/improvements", headers=session.headers)).json()
+    assert [(h["id"], h["stage"], h["candidate_count"]) for h in history] == [(result["id"], "done", 3)]
+    assert history[0]["best_strategy"]
+
+    chosen = result["candidates"][0]
+    ref = (
+        await client.get(
+            f"{base}/improvements/candidate-for/{chosen['optimize_experiment_id']}", headers=session.headers
+        )
+    ).json()
+    assert (ref["session_id"], ref["candidate_id"]) == (result["id"], chosen["id"])
+    assert (
+        await client.get(f"{base}/improvements/candidate-for/{experiment['id']}", headers=session.headers)
+    ).json() is None
+
+    save = f"{base}/improvements/{result['id']}/candidates/{chosen['id']}/save"
+    first = await client.post(save, params={"run": "true"}, headers=session.headers)
+    assert first.status_code == 200, first.text
+    started = (
+        await client.get(f"{base}/experiments/{first.json()['started_experiment_id']}", headers=session.headers)
+    ).json()
+    assert started["origin"] == "manual"  # a test of your own now, on all the test cases
+    assert started["split_scope"] == experiment["split_scope"]
+    prompt = (await client.get(f"{base}/prompts", headers=session.headers)).json()["items"][0]
+    assert started["prompt_version_id"] == prompt["latest_version"]["id"]
+
+    again = await client.post(save, headers=session.headers)  # pressing it twice does not make a second version
+    assert again.status_code == 200
+    versions = (await client.get(f"{base}/prompts/{prompt['id']}/versions", headers=session.headers)).json()["items"]
+    assert len(versions) == 2

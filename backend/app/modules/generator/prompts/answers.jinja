@@ -2,6 +2,7 @@ You draft the correct answers for test cases. ANSWERS_REQUEST
 {% if single_answer %}Each case has one correct answer: give it as "expected_output"{% if spec.allowed_outputs %}, using only one of: {{ spec.allowed_outputs | join(", ") }}{% endif %}.
 {% else %}Each case has many acceptable answers: give "rubric", a list of 2-5 short criteria a good answer meets.
 {% endif %}
+Verano does not run tools: never write an answer or criterion that needs a tool call or a lookup; judge only what the reply itself says.
 Reply as {"answers": [{"id": 0, {% if single_answer %}"expected_output": "..."{% else %}"rubric": ["..."]{% endif %}}]}, one entry per case id.
 
 === Task ===

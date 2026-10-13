@@ -33,4 +33,4 @@ task_types:
   conversation:
     - {name: g_eval_helpfulness, version: "1", kind: deepeval, config: {metric: g_eval, criteria: "The reply helps the user with what they asked."}}
     - {name: g_eval_tone, version: "1", kind: deepeval, config: {metric: g_eval, criteria: "The tone is polite, clear and appropriate."}}
-    - {name: g_eval_policy, version: "1", kind: deepeval, config: {metric: g_eval, criteria: "The reply follows the instructions and policies in the prompt."}}
+    - {name: g_eval_policy, version: "1", kind: deepeval, config: {metric: g_eval, criteria: "The reply does not break the instructions and policies in the prompt. Only facts the reply actually states are checked: a reply that leaves a policy out (for example refund timing, when the customer did not ask about refunds) is not wrong for that."}}

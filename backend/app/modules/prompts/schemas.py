@@ -111,6 +111,7 @@ class PromptCheck(BaseModel):
     missing_inputs: list[str]
     context: list[ContextFit]
     ok: bool
+    warnings: list[str] = []
 
 
 class InspectRequest(PromptTemplates):

@@ -5,7 +5,7 @@ task_type is one of: {{ task_types | join(", ") }}.
 output_format is one of: {{ output_formats | join(", ") }}.
 input_variables must be exactly: {{ input_variables | join(", ") }}.
 For classification, list every allowed label in allowed_outputs.
-constraints are short, checkable rules on the output (length, language, format, forbidden words).
+constraints are short, checkable rules on the output (length, language, format, forbidden words). Verano does not run tools, so never write a rule that needs a tool call or a lookup.
 risk_areas are the kinds of input most likely to make the prompt fail.
 
 === System prompt ===

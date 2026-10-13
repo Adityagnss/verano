@@ -40,7 +40,7 @@ export function CandidateCard({
 }: {
   candidate: CandidateOut
   baseline: number | null
-  onSave: () => Promise<unknown>
+  onSave: (run: boolean) => Promise<unknown>
   saving: boolean
 }) {
   return (
@@ -88,17 +88,30 @@ export function CandidateCard({
             ) : null}
           </div>
         </details>
-        <Button
-          variant="outline"
-          disabled={saving}
-          onClick={() =>
-            void onSave()
-              .then(() => toast.success(IMPROVE_COPY.saved))
-              .catch(() => undefined)
-          }
-        >
-          {IMPROVE_COPY.save}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            disabled={saving}
+            onClick={() =>
+              void onSave(true)
+                .then(() => toast.success(IMPROVE_COPY.savedAndTesting))
+                .catch(() => undefined)
+            }
+          >
+            {IMPROVE_COPY.saveAndTest}
+          </Button>
+          <Button
+            variant="ghost"
+            disabled={saving}
+            onClick={() =>
+              void onSave(false)
+                .then(() => toast.success(IMPROVE_COPY.saved))
+                .catch(() => undefined)
+            }
+          >
+            {IMPROVE_COPY.save}
+          </Button>
+        </div>
         <pre className="bg-card ring-border max-h-72 overflow-auto rounded-lg p-2 font-mono text-xs whitespace-pre-wrap ring-1">
           {candidate.diff.split("\n").map((line, index) => (
             <DiffLine key={index} line={line} />

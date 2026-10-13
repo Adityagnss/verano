@@ -45,16 +45,57 @@ export function useStartImprove(projectId: string) {
   })
 }
 
+/** Accept a proven candidate as the new version and test it on all test cases right away. */
 export function useAccept(projectId: string) {
   const invalidate = useInvalidate(projectId)
   return useMutation({
     mutationFn: ({ sessionId, candidateId }: { sessionId: string; candidateId: string }) =>
       call(() =>
         api.POST("/api/v1/projects/{project_id}/improvements/{session_id}/candidates/{candidate_id}/accept", {
-          params: { path: { project_id: projectId, session_id: sessionId, candidate_id: candidateId } },
+          params: {
+            path: { project_id: projectId, session_id: sessionId, candidate_id: candidateId },
+            query: { run: true },
+          },
         }),
       ),
     onSettled: invalidate,
+  })
+}
+
+/** Earlier improvements of the project, newest first. */
+export function useImprovementHistory(projectId: string) {
+  return useQuery({
+    queryKey: ["projects", projectId, "improvement-history"],
+    queryFn: () =>
+      call(() => api.GET("/api/v1/projects/{project_id}/improvements", { params: path(projectId) })),
+  })
+}
+
+/** One improvement session, opened from the history. */
+export function useImprovement(projectId: string, sessionId: string | null) {
+  return useQuery({
+    queryKey: ["projects", projectId, "improvement", sessionId],
+    enabled: sessionId !== null,
+    queryFn: () =>
+      call(() =>
+        api.GET("/api/v1/projects/{project_id}/improvements/{session_id}", {
+          params: { path: { project_id: projectId, session_id: sessionId ?? "" } },
+        }),
+      ),
+  })
+}
+
+/** The candidate an experiment was testing, if it was one of Improve's tests. */
+export function useCandidateFor(projectId: string, experimentId: string | null) {
+  return useQuery({
+    queryKey: ["projects", projectId, "candidate-for", experimentId],
+    enabled: experimentId !== null,
+    queryFn: () =>
+      call(() =>
+        api.GET("/api/v1/projects/{project_id}/improvements/candidate-for/{experiment_id}", {
+          params: { path: { project_id: projectId, experiment_id: experimentId ?? "" } },
+        }),
+      ),
   })
 }
 
@@ -77,14 +118,18 @@ export const useStopImprove = (projectId: string) => useSessionAction(projectId,
 /** Carry on from where a stopped or failed improvement left off. */
 export const useContinueImprove = (projectId: string) => useSessionAction(projectId, "continue")
 
-/** Save any candidate as a normal prompt version, so it shows on the Prompt and Run steps. */
+/** Save any candidate as a normal prompt version (so it shows on the Prompt and Run steps); with `run`, test it on
+ * all test cases right away. */
 export function useSaveCandidate(projectId: string) {
   const invalidate = useInvalidate(projectId)
   return useMutation({
-    mutationFn: ({ sessionId, candidateId }: { sessionId: string; candidateId: string }) =>
+    mutationFn: ({ sessionId, candidateId, run }: { sessionId: string; candidateId: string; run: boolean }) =>
       call(() =>
         api.POST("/api/v1/projects/{project_id}/improvements/{session_id}/candidates/{candidate_id}/save", {
-          params: { path: { project_id: projectId, session_id: sessionId, candidate_id: candidateId } },
+          params: {
+            path: { project_id: projectId, session_id: sessionId, candidate_id: candidateId },
+            query: { run },
+          },
         }),
       ),
     onSettled: invalidate,

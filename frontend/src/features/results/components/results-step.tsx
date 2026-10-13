@@ -27,6 +27,7 @@ import { formatCost } from "@/lib/format"
 
 import { RESULTS_COPY } from "../copy"
 import { downloadCsv, scoringInProgress, useCases, useResults } from "../hooks"
+import { useCandidateFor, useSaveCandidate } from "@/features/improve/hooks"
 import { unfairReasons } from "@/lib/fairness"
 
 import { bestOn, brokenModels, isBest } from "../insights"
@@ -48,6 +49,9 @@ export function ResultsStep({ projectId, experimentId }: { projectId: string; ex
   const [failedOnly, setFailedOnly] = useState(false)
   const cases = useCases(projectId, chosen, failedOnly, scored, results.data?.evaluation_run?.id ?? null)
   const [exportError, setExportError] = useState<unknown>(null)
+  const optimizing = (experiments.data ?? []).find((e) => e.id === chosen)?.origin === "optimization"
+  const candidate = useCandidateFor(projectId, optimizing ? chosen : null)
+  const saveCandidate = useSaveCandidate(projectId)
 
   if (experiments.data && finished.length === 0)
     return (
@@ -142,6 +146,31 @@ export function ResultsStep({ projectId, experimentId }: { projectId: string; ex
               />
             ))}
           </div>
+          {candidate.data ? (
+            <div className="bg-subtle ring-border flex flex-wrap items-center gap-3 rounded-xl p-4 text-sm ring-1">
+              <p className="min-w-0 flex-1">
+                {RESULTS_COPY.candidateTest(candidate.data.strategy)} {RESULTS_COPY.candidateUse}
+              </p>
+              <Button
+                disabled={saveCandidate.isPending}
+                onClick={() =>
+                  void saveCandidate
+                    .mutateAsync({
+                      sessionId: candidate.data?.session_id ?? "",
+                      candidateId: candidate.data?.candidate_id ?? "",
+                      run: true,
+                    })
+                    .then((done) => {
+                      if (done.started_experiment_id)
+                        router.push(`/projects/${projectId}/results?experiment=${done.started_experiment_id}`)
+                    })
+                    .catch(() => undefined)
+                }
+              >
+                {RESULTS_COPY.candidateButton}
+              </Button>
+            </div>
+          ) : null}
           {unfair.length ? (
             <div className="bg-marigold-soft text-marigold-strong ring-marigold/30 flex items-start gap-2 rounded-xl p-4 text-sm ring-1">
               <CircleAlert className="mt-0.5 size-4 shrink-0" />

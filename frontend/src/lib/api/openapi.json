@@ -1270,6 +1270,31 @@
         "title": "CandidateOutcome",
         "type": "string"
       },
+      "CandidateRef": {
+        "description": "The improvement and candidate an experiment was made to test.",
+        "properties": {
+          "candidate_id": {
+            "format": "uuid",
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "outcome": {
+            "$ref": "#/components/schemas/CandidateOutcome"
+          },
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "strategy": {
+            "title": "Strategy",
+            "type": "string"
+          }
+        },
+        "required": ["session_id", "candidate_id", "strategy", "outcome"],
+        "title": "CandidateRef",
+        "type": "object"
+      },
       "CaseAgreement": {
         "description": "One model's repeated answers to one test case: `same` of `runs` match.",
         "properties": {
@@ -3417,6 +3442,18 @@
           "stage": {
             "$ref": "#/components/schemas/SessionStage"
           },
+          "started_experiment_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started Experiment Id"
+          },
           "status": {
             "$ref": "#/components/schemas/OptimizationStatus"
           },
@@ -3446,6 +3483,84 @@
           "created_at"
         ],
         "title": "ImprovementOut",
+        "type": "object"
+      },
+      "ImprovementSummary": {
+        "description": "One earlier improvement in the history list: how it ended and which candidate did best.",
+        "properties": {
+          "baseline_experiment_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Experiment Id"
+          },
+          "best_outcome": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CandidateOutcome"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "best_strategy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Best Strategy"
+          },
+          "candidate_count": {
+            "title": "Candidate Count",
+            "type": "integer"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "stage": {
+            "$ref": "#/components/schemas/SessionStage"
+          }
+        },
+        "required": [
+          "id",
+          "stage",
+          "message",
+          "baseline_experiment_id",
+          "created_at",
+          "candidate_count",
+          "best_strategy",
+          "best_outcome"
+        ],
+        "title": "ImprovementSummary",
         "type": "object"
       },
       "InputFileKind": {
@@ -5376,6 +5491,14 @@
               "type": "string"
             },
             "title": "Variables",
+            "type": "array"
+          },
+          "warnings": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
             "type": "array"
           }
         },
@@ -10499,6 +10622,55 @@
       }
     },
     "/api/v1/projects/{project_id}/improvements": {
+      "get": {
+        "description": "Earlier improvements of this project, newest first.",
+        "operationId": "improvement_history_api_v1_projects__project_id__improvements_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ImprovementSummary"
+                  },
+                  "title": "Response Improvement History Api V1 Projects  Project Id  Improvements Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Improvement History",
+        "tags": ["improve"]
+      },
       "post": {
         "operationId": "start_improvement_api_v1_projects__project_id__improvements_post",
         "parameters": [
@@ -10551,6 +10723,71 @@
           }
         ],
         "summary": "Start Improvement",
+        "tags": ["improve"]
+      }
+    },
+    "/api/v1/projects/{project_id}/improvements/candidate-for/{experiment_id}": {
+      "get": {
+        "description": "The candidate an experiment was testing, if it was one of Improve's tests.",
+        "operationId": "candidate_for_experiment_api_v1_projects__project_id__improvements_candidate_for__experiment_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/CandidateRef"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Candidate For Experiment Api V1 Projects  Project Id  Improvements Candidate For  Experiment Id  Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Candidate For Experiment",
         "tags": ["improve"]
       }
     },
@@ -10676,6 +10913,7 @@
     },
     "/api/v1/projects/{project_id}/improvements/{session_id}/candidates/{candidate_id}/accept": {
       "post": {
+        "description": "Accept a proven candidate as the new version; with `run`, test it on all test cases right away.",
         "operationId": "accept_candidate_api_v1_projects__project_id__improvements__session_id__candidates__candidate_id__accept_post",
         "parameters": [
           {
@@ -10706,6 +10944,16 @@
               "format": "uuid",
               "title": "Project Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "run",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Run",
+              "type": "boolean"
             }
           }
         ],
@@ -10742,7 +10990,7 @@
     },
     "/api/v1/projects/{project_id}/improvements/{session_id}/candidates/{candidate_id}/save": {
       "post": {
-        "description": "Save a candidate as a normal prompt version to test it, whether or not it was proven better.",
+        "description": "Save a candidate as a normal prompt version to test it, whether or not it was proven better; with `run`,\ntest it on all test cases right away.",
         "operationId": "save_candidate_api_v1_projects__project_id__improvements__session_id__candidates__candidate_id__save_post",
         "parameters": [
           {
@@ -10773,6 +11021,16 @@
               "format": "uuid",
               "title": "Project Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "run",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Run",
+              "type": "boolean"
             }
           }
         ],

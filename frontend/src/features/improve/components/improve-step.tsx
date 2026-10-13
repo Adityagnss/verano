@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/common/empty-state"
 import { ErrorMessage } from "@/components/common/error-message"
 import { ComparisonDetail } from "@/features/results/components/comparison-detail"
 import { PageActions } from "@/components/common/page-actions"
+import { DatasetWarnings } from "@/components/common/dataset-warnings"
 import { Section } from "@/components/common/section"
 import { StatTile } from "@/components/common/stat-tile"
 import { StatusBadge } from "@/components/common/status-badge"
@@ -30,11 +31,13 @@ import { IMPROVE_COPY } from "../copy"
 import {
   useAccept,
   useContinueImprove,
+  useImprovement,
   useLatestSession,
   useSaveCandidate,
   useStartImprove,
   useStopImprove,
 } from "../hooks"
+import { History } from "./history"
 import { CandidateCard, percent } from "./candidate-card"
 import { StageTracker } from "./stage-tracker"
 
@@ -43,7 +46,10 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
   const experiments = useExperiments(projectId)
   const finished = (experiments.data ?? []).filter((e) => e.origin === "manual" && e.status === "completed")
   const chosen = experimentId ?? finished[0]?.id ?? null
-  const session = useLatestSession(projectId, chosen)
+  const latest = useLatestSession(projectId, chosen)
+  const [viewId, setViewId] = useState<string | null>(null)
+  const opened = useImprovement(projectId, viewId)
+  const session = viewId ? opened : latest
   const start = useStartImprove(projectId)
   const accept = useAccept(projectId)
   const stop = useStopImprove(projectId)
@@ -72,8 +78,10 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
 
   async function acceptWinner() {
     if (!data || !winner) return
-    await accept.mutateAsync({ sessionId: data.id, candidateId: winner.id })
+    const done = await accept.mutateAsync({ sessionId: data.id, candidateId: winner.id })
     toast.success(IMPROVE_COPY.accepted)
+    if (done.started_experiment_id)
+      router.push(`/projects/${projectId}/results?experiment=${done.started_experiment_id}`)
   }
 
   // The first try uses the experiment's judge unless another model is picked; a retry uses the pick
@@ -160,6 +168,17 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
           save.error
         }
       />
+      {!data || stopped ? <DatasetWarnings projectId={projectId} /> : null}
+      {viewId ? (
+        <div className="bg-subtle ring-border flex items-center justify-between rounded-lg p-3 text-sm ring-1">
+          <span>
+            {IMPROVE_COPY.viewing}: {data ? new Date(data.created_at).toLocaleString() : ""}
+          </span>
+          <Button variant="ghost" size="sm" onClick={() => setViewId(null)}>
+            ×
+          </Button>
+        </div>
+      ) : null}
       {data ? <StageTracker stage={data.stage} /> : null}
       {data && (data.message || running) ? (
         <div
@@ -232,7 +251,11 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
                 candidate={candidate}
                 baseline={data.baseline_optimize_quality}
                 saving={save.isPending}
-                onSave={() => save.mutateAsync({ sessionId: data.id, candidateId: candidate.id })}
+                onSave={async (run) => {
+                  const done = await save.mutateAsync({ sessionId: data.id, candidateId: candidate.id, run })
+                  if (done.started_experiment_id)
+                    router.push(`/projects/${projectId}/results?experiment=${done.started_experiment_id}`)
+                }}
               />
             ))}
           </div>
@@ -264,6 +287,7 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
           ) : null}
         </Section>
       ) : null}
+      <History projectId={projectId} openId={viewId ?? data?.id ?? null} onOpen={setViewId} />
       <PageActions
         summary={
           data && !winner && data.stage === "done"

@@ -43,6 +43,15 @@ class AssistantRepository:
         result = await self._session.execute(query.values(**values))
         return bool(getattr(result, "rowcount", 0))
 
+    async def sessions(self, project_id: uuid.UUID, limit: int) -> list[OptimizationSession]:
+        query = (
+            select(OptimizationSession)
+            .where(OptimizationSession.project_id == project_id)
+            .order_by(OptimizationSession.id.desc())
+            .limit(limit)
+        )
+        return list((await self._session.scalars(query)).all())
+
     async def candidates(self, session_id: uuid.UUID) -> list[PromptCandidate]:
         query = select(PromptCandidate).where(PromptCandidate.session_id == session_id).order_by(PromptCandidate.id)
         return list((await self._session.scalars(query.execution_options(populate_existing=True))).all())

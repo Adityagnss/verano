@@ -106,6 +106,30 @@ class ImprovementOut(BaseModel):
     clusters: list[ClusterOut]
     candidates: list[CandidateOut]
     created_at: datetime
+    # set when a candidate was saved and tested in one go
+    started_experiment_id: uuid.UUID | None = None
+
+
+class ImprovementSummary(BaseModel):
+    """One earlier improvement in the history list: how it ended and which candidate did best."""
+
+    id: uuid.UUID
+    stage: SessionStage
+    message: str | None
+    baseline_experiment_id: uuid.UUID | None
+    created_at: datetime
+    candidate_count: int
+    best_strategy: str | None
+    best_outcome: CandidateOutcome | None
+
+
+class CandidateRef(BaseModel):
+    """The improvement and candidate an experiment was made to test."""
+
+    session_id: uuid.UUID
+    candidate_id: uuid.UUID
+    strategy: str
+    outcome: CandidateOutcome
 
 
 # What the improvement model must return (validated by the gateway's complete_json).

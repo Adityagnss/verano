@@ -12,6 +12,7 @@ Pure Prompt Studio logic: prompt shape, variables, rendering and the pre-run che
 No I/O: the service supplies templates, inputs and model profiles.
 """
 
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -58,6 +59,24 @@ def analyze(system_template: str | None, user_template: str | None) -> TemplateI
     variables = sorted(_variables("system", system_template) | _variables("user", user_template))
     required = sorted({*variables, *EXTRA_INPUTS.get(shape, ())})
     return TemplateInfo(shape=shape, variables=variables, required_inputs=required)
+
+
+TOOL_MENTION = re.compile(
+    r"\b(?:tools?|function[ -]call(?:s|ing)?|lookup_[a-z_]+|[a-z]+_(?:order|lookup|search|api)"
+    r"|call(?:s|ing)? (?:the )?[`'\"]?[a-z_]+[`'\"]? (?:tool|function|api))\b",
+    re.I,
+)
+TOOLS_WARNING = (
+    "Your prompt mentions tools. Verano does not run tools yet, so the model can only describe what it would do. "
+    "Test cases and checks should not depend on a tool call; add the tool's result to the test case, or take tool "
+    "rules out of scoring."
+)
+
+
+def tool_warnings(system_template: str | None, user_template: str | None) -> list[str]:
+    """A warning when the prompt talks about tools, which a test here cannot run."""
+    text = f"{system_template or ''}\n{user_template or ''}"
+    return [TOOLS_WARNING] if TOOL_MENTION.search(text) else []
 
 
 def missing_inputs(required: list[str], available: list[str]) -> list[str]:

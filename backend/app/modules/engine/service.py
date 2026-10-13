@@ -154,9 +154,16 @@ class ExperimentService:
             self._jobs.enqueue(RUN_CHUNK_JOB, experiment_id=str(experiment.id), run_ids=[str(i) for i in ids])
         return await self.get(project_id, experiment.id)
 
-    async def rerun(self, project: ProjectOut, principal: Principal | None, experiment_id: uuid.UUID) -> ExperimentOut:
+    async def rerun(
+        self,
+        project: ProjectOut,
+        principal: Principal | None,
+        experiment_id: uuid.UUID,
+        prompt_version_id: uuid.UUID | None = None,
+    ) -> ExperimentOut:
         """A new experiment with the same configuration: the same prompt, test cases, models,
-        settings, runs and budget. Its fingerprint matches the original's."""
+        settings, runs and budget. Its fingerprint matches the original's. With `prompt_version_id` it is the same
+        test of another version of the prompt."""
         row = await self._experiment(project.id, experiment_id)
         if row.status not in FINISHED:
             raise Conflict(NOT_FINISHED)
@@ -171,7 +178,9 @@ class ExperimentService:
             ],
             budget_cap=row.budget_cap,
         )
-        return await self.start(project.id, principal, body, ExperimentOrigin.MANUAL, row.prompt_version_id)
+        return await self.start(
+            project.id, principal, body, ExperimentOrigin.MANUAL, prompt_version_id or row.prompt_version_id
+        )
 
     async def cancel(self, project: ProjectOut, experiment_id: uuid.UUID) -> ExperimentOut:
         experiment = await self._experiment(project.id, experiment_id)

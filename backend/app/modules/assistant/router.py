@@ -13,7 +13,7 @@ from pydantic import BaseModel
 
 from app.core.security import CurrentPrincipal
 from app.modules.assistant.dependencies import ImprovementServiceDep
-from app.modules.assistant.schemas import ImprovementOut, ImproveRequest
+from app.modules.assistant.schemas import CandidateRef, ImprovementOut, ImprovementSummary, ImproveRequest
 from app.modules.projects.dependencies import ProjectScope
 
 router = APIRouter(prefix="/projects/{project_id}/improvements", tags=["improve"])
@@ -36,6 +36,20 @@ async def start_improvement(
     body: ImproveRequest, project: ProjectScope, service: ImprovementServiceDep
 ) -> ImprovementOut:
     return await service.start(project, body.experiment_id, body.writer)
+
+
+@router.get("")
+async def improvement_history(project: ProjectScope, service: ImprovementServiceDep) -> list[ImprovementSummary]:
+    """Earlier improvements of this project, newest first."""
+    return await service.history(project)
+
+
+@router.get("/candidate-for/{experiment_id}")
+async def candidate_for_experiment(
+    experiment_id: uuid.UUID, project: ProjectScope, service: ImprovementServiceDep
+) -> CandidateRef | None:
+    """The candidate an experiment was testing, if it was one of Improve's tests."""
+    return await service.candidate_for(project, experiment_id)
 
 
 @router.get("/latest")
@@ -75,8 +89,10 @@ async def accept_candidate(
     project: ProjectScope,
     principal: CurrentPrincipal,
     service: ImprovementServiceDep,
+    run: Annotated[bool, Query()] = False,
 ) -> ImprovementOut:
-    return await service.accept(project, principal, session_id, candidate_id)
+    """Accept a proven candidate as the new version; with `run`, test it on all test cases right away."""
+    return await service.accept(project, principal, session_id, candidate_id, run)
 
 
 @router.post("/{session_id}/candidates/{candidate_id}/save")
@@ -86,6 +102,8 @@ async def save_candidate(
     project: ProjectScope,
     principal: CurrentPrincipal,
     service: ImprovementServiceDep,
+    run: Annotated[bool, Query()] = False,
 ) -> ImprovementOut:
-    """Save a candidate as a normal prompt version to test it, whether or not it was proven better."""
-    return await service.save_candidate(project, principal, session_id, candidate_id)
+    """Save a candidate as a normal prompt version to test it, whether or not it was proven better; with `run`,
+    test it on all test cases right away."""
+    return await service.save_candidate(project, principal, session_id, candidate_id, run)

@@ -7,7 +7,7 @@ import pytest
 
 from app.core.errors import ValidationFailed
 from app.modules.gateway.schemas import Message
-from app.modules.prompts.domain import analyze, context_fits, render
+from app.modules.prompts.domain import analyze, context_fits, render, tool_warnings
 from app.modules.prompts.schemas import USER_MESSAGE_INPUT, PromptShape
 from app.modules.registry.schemas import ModelProfileOut, PriceSource
 
@@ -91,3 +91,10 @@ def test_an_attached_file_becomes_the_user_message_fills_its_variable_or_is_appe
     assert render("sys", None, file) == [Message(role="system", content="sys"), Message(role="user", content="TABLE")]
     assert render("sys", "Rule for {{ attachment }}", file)[-1].content == "Rule for TABLE"
     assert render("sys", "Draft the rule.", file)[-1].content == "Draft the rule.\n\nTABLE"
+
+
+def test_a_prompt_that_mentions_tools_is_warned_about() -> None:
+    assert tool_warnings("When an order is mentioned call `lookup_order` first.", None)
+    assert tool_warnings("You can use the refund tool.", None)
+    assert not tool_warnings("Be kind. Use the toolbar wording customers know.", None)
+    assert not tool_warnings("Answer billing questions briefly.", "{{ user_message }}")

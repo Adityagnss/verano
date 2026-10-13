@@ -768,10 +768,34 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Improvement History
+         * @description Earlier improvements of this project, newest first.
+         */
+        get: operations["improvement_history_api_v1_projects__project_id__improvements_get"];
         put?: never;
         /** Start Improvement */
         post: operations["start_improvement_api_v1_projects__project_id__improvements_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/improvements/candidate-for/{experiment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Candidate For Experiment
+         * @description The candidate an experiment was testing, if it was one of Improve's tests.
+         */
+        get: operations["candidate_for_experiment_api_v1_projects__project_id__improvements_candidate_for__experiment_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -821,7 +845,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Accept Candidate */
+        /**
+         * Accept Candidate
+         * @description Accept a proven candidate as the new version; with `run`, test it on all test cases right away.
+         */
         post: operations["accept_candidate_api_v1_projects__project_id__improvements__session_id__candidates__candidate_id__accept_post"];
         delete?: never;
         options?: never;
@@ -840,7 +867,8 @@ export interface paths {
         put?: never;
         /**
          * Save Candidate
-         * @description Save a candidate as a normal prompt version to test it, whether or not it was proven better.
+         * @description Save a candidate as a normal prompt version to test it, whether or not it was proven better; with `run`,
+         *     test it on all test cases right away.
          */
         post: operations["save_candidate_api_v1_projects__project_id__improvements__session_id__candidates__candidate_id__save_post"];
         delete?: never;
@@ -1874,6 +1902,25 @@ export interface components {
          */
         CandidateOutcome: "pending" | "better" | "not_better" | "accepted" | "rejected";
         /**
+         * CandidateRef
+         * @description The improvement and candidate an experiment was made to test.
+         */
+        CandidateRef: {
+            /**
+             * Candidate Id
+             * Format: uuid
+             */
+            candidate_id: string;
+            outcome: components["schemas"]["CandidateOutcome"];
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Strategy */
+            strategy: string;
+        };
+        /**
          * CaseAgreement
          * @description One model's repeated answers to one test case: `same` of `runs` match.
          */
@@ -2650,9 +2697,37 @@ export interface components {
              */
             root_prompt_version_id: string;
             stage: components["schemas"]["SessionStage"];
+            /** Started Experiment Id */
+            started_experiment_id?: string | null;
             status: components["schemas"]["OptimizationStatus"];
             /** Writer Model */
             writer_model?: string | null;
+        };
+        /**
+         * ImprovementSummary
+         * @description One earlier improvement in the history list: how it ended and which candidate did best.
+         */
+        ImprovementSummary: {
+            /** Baseline Experiment Id */
+            baseline_experiment_id: string | null;
+            best_outcome: components["schemas"]["CandidateOutcome"] | null;
+            /** Best Strategy */
+            best_strategy: string | null;
+            /** Candidate Count */
+            candidate_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Message */
+            message: string | null;
+            stage: components["schemas"]["SessionStage"];
         };
         /**
          * InputFileKind
@@ -3354,6 +3429,11 @@ export interface components {
             shape: components["schemas"]["PromptShape"];
             /** Variables */
             variables: string[];
+            /**
+             * Warnings
+             * @default []
+             */
+            warnings: string[];
         };
         /** PromptCreate */
         PromptCreate: {
@@ -5900,6 +5980,37 @@ export interface operations {
             };
         };
     };
+    improvement_history_api_v1_projects__project_id__improvements_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImprovementSummary"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     start_improvement_api_v1_projects__project_id__improvements_post: {
         parameters: {
             query?: never;
@@ -5922,6 +6033,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImprovementOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    candidate_for_experiment_api_v1_projects__project_id__improvements_candidate_for__experiment_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                experiment_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateRef"] | null;
                 };
             };
             /** @description Validation Error */
@@ -6002,7 +6145,9 @@ export interface operations {
     };
     accept_candidate_api_v1_projects__project_id__improvements__session_id__candidates__candidate_id__accept_post: {
         parameters: {
-            query?: never;
+            query?: {
+                run?: boolean;
+            };
             header?: never;
             path: {
                 session_id: string;
@@ -6035,7 +6180,9 @@ export interface operations {
     };
     save_candidate_api_v1_projects__project_id__improvements__session_id__candidates__candidate_id__save_post: {
         parameters: {
-            query?: never;
+            query?: {
+                run?: boolean;
+            };
             header?: never;
             path: {
                 session_id: string;

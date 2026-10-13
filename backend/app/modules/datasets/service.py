@@ -52,6 +52,11 @@ EMPTY = "There are no test cases to approve."
 UNREVIEWED = "{count} draft case(s) still need review. Approve them (per category is fine) or edit them."
 NO_ANSWER = "{count} case(s) have neither an expected output nor a rubric. Add one or delete the case."
 NO_EVALUATORS = "No evaluator set yet. Confirm the Task Spec and run the generator (or 'Use only my golden set')."
+MIN_OPTIMIZE = 5
+SMALL_OPTIMIZE = (
+    "Only {optimize} test cases are used to write improvements. Improve needs at least {minimum} to suggest "
+    "anything useful; generate more cases."
+)
 SMALL_HOLDOUT = (
     "The holdout will have {holdout} cases. Fewer than {minimum} can't show a clear difference when "
     "improving the prompt; generate more cases."
@@ -130,6 +135,9 @@ class DatasetService:
         warnings = []
         if items and holdout < self._settings.dataset_min_holdout:
             warnings.append(SMALL_HOLDOUT.format(holdout=holdout, minimum=self._settings.dataset_min_holdout))
+        optimize = by_split.get("optimize", len(items) - holdout)
+        if items and optimize < MIN_OPTIMIZE:
+            warnings.append(SMALL_OPTIMIZE.format(optimize=optimize, minimum=MIN_OPTIMIZE))
         return DatasetVersionOut(
             id=version.id,
             dataset_id=version.dataset_id,

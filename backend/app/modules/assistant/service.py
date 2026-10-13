@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.container import Container
 from app.core.errors import Conflict, NotFound, ValidationFailed
 from app.core.jobs import JobQueue
+from app.core.pagination import PageParams
 from app.core.security import Principal
 from app.modules.assistant.models import OptimizationSession, PromptCandidate
 from app.modules.assistant.quality import quality
@@ -22,8 +23,10 @@ from app.modules.assistant.repository import AssistantRepository
 from app.modules.assistant.schemas import (
     CandidateOut,
     CandidateOutcome,
+    CandidateRef,
     ClusterOut,
     ImprovementOut,
+    ImprovementSummary,
     OptimizationStatus,
     SessionStage,
     VerdictOut,
@@ -39,10 +42,11 @@ from app.modules.evaluation.repository import ScoreRepository
 from app.modules.evaluation.results import ResultsService
 from app.modules.evaluation.schemas import JudgeChoice
 from app.modules.projects.schemas import ProjectOut
-from app.modules.prompts.schemas import PromptSource, PromptVersionCreate
+from app.modules.prompts.schemas import PromptSource, PromptVersionCreate, PromptVersionOut
 from app.modules.prompts.service import PromptService
 from app.modules.registry.service import RegistryService
 
+HISTORY_LIMIT = 30
 IMPROVE_JOB = "assistant.improve"
 RESUME_JOB = "assistant.resume"
 WORKING = {SessionStage.ANALYZING, SessionStage.TESTING, SessionStage.CONFIRMING}
@@ -56,6 +60,14 @@ NEEDS_BOTH_SPLITS = "Improve needs an experiment that ran on all test cases (bot
 NOT_MANUAL = "Start Improve from one of your own experiments, not from a candidate test."
 NOT_BETTER = "Only a candidate that beat the current prompt on the holdout cases can be accepted."
 ACCEPTED = "Accepted improvement: {strategy}"
+TO_TEST = "Improvement to test: {strategy}"
+OUTCOME_RANK = {
+    CandidateOutcome.ACCEPTED: 0,
+    CandidateOutcome.BETTER: 1,
+    CandidateOutcome.NOT_BETTER: 2,
+    CandidateOutcome.PENDING: 3,
+    CandidateOutcome.REJECTED: 4,
+}
 
 
 class ImprovementService:
@@ -153,8 +165,48 @@ class ImprovementService:
         self._jobs.enqueue(RESUME_JOB if started else IMPROVE_JOB, session_id=str(row.id))
         return await self.get(project.id, row.id)
 
+    async def history(self, project: ProjectOut) -> list[ImprovementSummary]:
+        """The project's earlier improvements, newest first, each with its best candidate."""
+        out = []
+        for row in await self._repo.sessions(project.id, HISTORY_LIMIT):
+            candidates = await self._repo.candidates(row.id)
+            best = min(candidates, key=lambda c: OUTCOME_RANK[CandidateOutcome(c.outcome)], default=None)
+            out.append(
+                ImprovementSummary(
+                    id=row.id,
+                    stage=SessionStage(row.stage),
+                    message=row.message,
+                    baseline_experiment_id=row.baseline_experiment_id,
+                    created_at=row.created_at,
+                    candidate_count=len(candidates),
+                    best_strategy=best.strategy if best else None,
+                    best_outcome=CandidateOutcome(best.outcome) if best else None,
+                )
+            )
+        return out
+
+    async def candidate_for(self, project: ProjectOut, experiment_id: uuid.UUID) -> CandidateRef | None:
+        """The candidate a finished experiment was testing (an Improve test), or None for your own runs."""
+        candidate = await self._repo.candidate_for_experiment(experiment_id)
+        if candidate is None:
+            return None
+        row = await self._repo.session(candidate.session_id, project.id)
+        if row is None:
+            return None
+        return CandidateRef(
+            session_id=row.id,
+            candidate_id=candidate.id,
+            strategy=candidate.strategy,
+            outcome=CandidateOutcome(candidate.outcome),
+        )
+
     async def accept(
-        self, project: ProjectOut, principal: Principal, session_id: uuid.UUID, candidate_id: uuid.UUID
+        self,
+        project: ProjectOut,
+        principal: Principal,
+        session_id: uuid.UUID,
+        candidate_id: uuid.UUID,
+        run: bool = False,
     ) -> ImprovementOut:
         row = await self._session_row(project.id, session_id)
         candidate = next((c for c in await self._repo.candidates(row.id) if c.id == candidate_id), None)
@@ -162,34 +214,68 @@ class ImprovementService:
             raise NotFound(SESSION_NOT_FOUND)
         if candidate.outcome is not CandidateOutcome.BETTER:
             raise Conflict(NOT_BETTER)
-        await self._save_version(project, principal, candidate)
+        version = await self._save_version(project, principal, candidate, ACCEPTED)
         await self._repo.update_candidate(candidate.id, {"outcome": CandidateOutcome.ACCEPTED})
         await self._repo.update_session(row.id, {"status": OptimizationStatus.CLOSED})
-        return await self.get(project.id, row.id)
+        return await self._done(project, principal, row, version.id if run else None)
 
     async def save_candidate(
-        self, project: ProjectOut, principal: Principal, session_id: uuid.UUID, candidate_id: uuid.UUID
+        self,
+        project: ProjectOut,
+        principal: Principal,
+        session_id: uuid.UUID,
+        candidate_id: uuid.UUID,
+        run: bool = False,
     ) -> ImprovementOut:
         """Save any candidate as a normal prompt version so it can be tested on the Run step, proven better or
-        not. The session and the candidate's result are left as they are."""
+        not (with `run`, test it on all test cases right away). The session and the candidate's result are left
+        as they are."""
         row = await self._session_row(project.id, session_id)
         candidate = next((c for c in await self._repo.candidates(row.id) if c.id == candidate_id), None)
         if candidate is None:
             raise NotFound(SESSION_NOT_FOUND)
-        await self._save_version(project, principal, candidate)
-        return await self.get(project.id, row.id)
+        version = await self._save_version(project, principal, candidate, TO_TEST)
+        return await self._done(project, principal, row, version.id if run else None)
 
-    async def _save_version(self, project: ProjectOut, principal: Principal, candidate: PromptCandidate) -> None:
+    async def _done(
+        self, project: ProjectOut, principal: Principal, row: OptimizationSession, test_version: uuid.UUID | None
+    ) -> ImprovementOut:
+        """The improvement as it now stands; when a version is given, the baseline's test is run again on it (all
+        test cases, the same models and settings) and the new experiment's id is returned."""
+        started = None
+        if test_version is not None and row.baseline_experiment_id is not None:
+            started = (await self._experiments.rerun(project, principal, row.baseline_experiment_id, test_version)).id
+        out = await self.get(project.id, row.id)
+        return out.model_copy(update={"started_experiment_id": started})
+
+    async def _save_version(
+        self, project: ProjectOut, principal: Principal, candidate: PromptCandidate, reason: str
+    ) -> PromptVersionOut:
+        """The candidate as a saved version. If a saved version already has exactly its prompt, that one is used, so
+        pressing the button twice does not make two versions."""
         proposed = await self._prompts.get_version(project.id, candidate.prompt_version_id)
         base = await self._prompts.get_version(project.id, candidate.base_prompt_version_id)
+        saved = await self._prompts.list_versions(project, base.prompt_id, PageParams(limit=200, cursor=None))
+        same = next(
+            (
+                v
+                for v in saved.items
+                if v.system_template == proposed.system_template and v.user_template == proposed.user_template
+            ),
+            None,
+        )
+        if same is not None:
+            return same
         body = PromptVersionCreate(
             system_template=proposed.system_template,
             user_template=proposed.user_template,
             default_params=base.default_params,
-            change_reason=ACCEPTED.format(strategy=candidate.strategy),
+            change_reason=reason.format(strategy=candidate.strategy),
             parent_version_id=base.id,
         )
-        await self._prompts.save_version(project.id, principal, base.prompt_id, body, source=PromptSource.ASSISTANT)
+        return await self._prompts.save_version(
+            project.id, principal, base.prompt_id, body, source=PromptSource.ASSISTANT
+        )
 
     async def _candidate_out(self, project_id: uuid.UUID, c: PromptCandidate) -> CandidateOut:
         optimize = await self._engine.experiment(c.optimize_experiment_id) if c.optimize_experiment_id else None

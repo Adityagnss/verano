@@ -68,6 +68,11 @@ export function PromptCheck({ result, error }: { result: InspectOut | undefined;
         {check.required_inputs.length ? (
           <Line tone="ok">{PROMPT_COPY.inputsNeeded(check.required_inputs)}</Line>
         ) : null}
+        {check.warnings.map((warning) => (
+          <Line key={warning} tone="unknown">
+            {warning}
+          </Line>
+        ))}
         {check.context.length === 0 ? <Line tone="unknown">{PROMPT_COPY.noModels}</Line> : null}
         {allFit ? (
           <Line tone="ok">

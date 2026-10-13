@@ -16,6 +16,10 @@ export const RESULTS_COPY = {
   ],
   tiles: { quality: "Best quality", passRate: "Most passed", cost: "Cheapest per call", speed: "Fastest" },
   tileNone: "—",
+  candidateTest: (strategy: string) =>
+    `This is Improve's test of the candidate “${strategy}”, on part of your test cases.`,
+  candidateUse: "To use that prompt, save it as a version and test it on all test cases.",
+  candidateButton: "Save and test on all cases",
   unfairTitle: "Not a fair comparison, so no model is ranked on quality or pass rate.",
   unfairAdvice:
     "Run the models again with the same number of runs and the same randomness (Run step: pick Repeatable) to rank them.",

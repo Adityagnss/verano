@@ -17,6 +17,8 @@ export const PROMPT_COPY = {
   latest: "Latest",
   load: "Load into editor",
   loaded: "In the editor",
+  whatChanged: (from: number, added: number, removed: number) =>
+    `What changed since V${from}: +${added} −${removed} lines`,
   noReason: "No note",
   startedFrom: (n: number, next: number) =>
     `The editor shows version ${n}. Change it and save to make version ${next}, or save it as it is to make it the latest again.`,

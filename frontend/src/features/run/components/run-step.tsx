@@ -23,6 +23,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useModels } from "@/features/keys/hooks"
 import { useCurrentPrompt, usePromptVersions } from "@/features/prompt/hooks"
 import { JudgePicker, useChosenJudge } from "@/features/results/components/judge-picker"
+import { DatasetWarnings } from "@/components/common/dataset-warnings"
 import { useCurrentVersion } from "@/features/tests/hooks"
 import type { ModelProfileOut } from "@/lib/api/types"
 import { formatCost } from "@/lib/format"
@@ -163,6 +164,7 @@ export function RunStep({ projectId }: { projectId: string }) {
         howItWorks={RUN_COPY.howItWorks}
       />
       <ErrorMessage error={models.error ?? version.error ?? experiments.error} />
+      <DatasetWarnings projectId={projectId} />
       <Section
         number={1}
         title={RUN_COPY.modelsHeading}
