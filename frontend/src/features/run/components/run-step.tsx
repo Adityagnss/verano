@@ -325,7 +325,7 @@ export function RunStep({ projectId }: { projectId: string }) {
                         </TableRow>
                         {open[m.id] ? (
                           <TableRow>
-                            <TableCell colSpan={6} className="bg-subtle">
+                            <TableCell colSpan={6} className="bg-subtle whitespace-normal">
                               <AdvancedFields
                                 model={m}
                                 row={row}
