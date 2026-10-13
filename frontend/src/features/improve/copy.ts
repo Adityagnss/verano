@@ -21,6 +21,9 @@ export const IMPROVE_COPY = {
   start: "Find what's failing and suggest fixes",
   startHint: "Costs a few model calls plus the candidate test runs, on the same models you tested.",
   retry: "Try again",
+  stop: "Stop",
+  continue: "Continue where it stopped",
+  working: (done: number, total: number) => `${done} of ${total} candidate tests finished`,
   writerLabel: "Model that writes the improvements",
   writerHint: (model: string | null | undefined) =>
     model
@@ -32,6 +35,7 @@ export const IMPROVE_COPY = {
     confirming: "Checking the best candidate on held-back cases…",
     done: "Done",
     failed: "Stopped",
+    stopped: "Stopped by you",
   } as Record<string, string>,
   clustersHeading: "Why cases fail",
   cases: (n: number) => `${n} ${n === 1 ? "case" : "cases"}`,
@@ -49,6 +53,11 @@ export const IMPROVE_COPY = {
   holdoutHeading: "Check on held-back cases",
   holdout: (current: string, candidate: string) => `Current prompt ${current} → best candidate ${candidate}`,
   accept: "Accept as new version",
+  save: "Save as a prompt version to test",
+  saved: "Saved. Find it on the Prompt step, and test it on the Run step.",
+  fullPrompt: "Show the full prompt",
+  systemPrompt: "System prompt",
+  userPrompt: "User message",
   accepted: "Saved as a new prompt version.",
   nothingToAccept: "Nothing to accept yet.",
   acceptOff:

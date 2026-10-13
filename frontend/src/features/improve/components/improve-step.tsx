@@ -27,7 +27,14 @@ import { useExperiments } from "@/features/run/hooks"
 import { cn } from "@/lib/utils"
 
 import { IMPROVE_COPY } from "../copy"
-import { useAccept, useLatestSession, useStartImprove } from "../hooks"
+import {
+  useAccept,
+  useContinueImprove,
+  useLatestSession,
+  useSaveCandidate,
+  useStartImprove,
+  useStopImprove,
+} from "../hooks"
 import { CandidateCard, percent } from "./candidate-card"
 import { StageTracker } from "./stage-tracker"
 
@@ -39,10 +46,14 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
   const session = useLatestSession(projectId, chosen)
   const start = useStartImprove(projectId)
   const accept = useAccept(projectId)
+  const stop = useStopImprove(projectId)
+  const save = useSaveCandidate(projectId)
+  const resume = useContinueImprove(projectId)
   const data = session.data ?? null
   const winner = data?.candidates.find((c) => c.outcome === "better") ?? null
   const confirmed = data?.candidates.find((c) => c.holdout_experiment_id) ?? null
-  const stopped = data?.stage === "failed"
+  const stopped = data?.stage === "failed" || data?.stage === "stopped"
+  const running = data?.stage === "analyzing" || data?.stage === "testing" || data?.stage === "confirming"
   const [writerKey, setWriterKey] = useState("")
   const writer = useChosenJudge(projectId, writerKey)
 
@@ -138,9 +149,19 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
           </div>
         }
       />
-      <ErrorMessage error={experiments.error ?? session.error ?? start.error ?? accept.error} />
+      <ErrorMessage
+        error={
+          experiments.error ??
+          session.error ??
+          start.error ??
+          accept.error ??
+          stop.error ??
+          resume.error ??
+          save.error
+        }
+      />
       {data ? <StageTracker stage={data.stage} /> : null}
-      {data?.message ? (
+      {data && (data.message || running) ? (
         <div
           className={cn(
             "flex items-start gap-3 rounded-xl p-4 text-sm ring-1",
@@ -156,10 +177,28 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
           ) : (
             <Info className="text-text-muted mt-0.5 size-5 shrink-0" />
           )}
-          <div>
+          <div className="flex-1">
             <p className="font-semibold">{IMPROVE_COPY.stages[data.stage]}</p>
-            <p>{data.message}</p>
+            {data.message ? <p>{data.message}</p> : null}
+            {data.stage === "testing" && data.candidates.length ? (
+              <p className="text-text-muted">
+                {IMPROVE_COPY.working(
+                  data.candidates.filter((c) => c.optimize_quality !== null).length,
+                  data.candidates.filter((c) => c.outcome !== "rejected").length,
+                )}
+              </p>
+            ) : null}
           </div>
+          {running ? (
+            <Button variant="outline" disabled={stop.isPending} onClick={() => stop.mutate(data.id)}>
+              {IMPROVE_COPY.stop}
+            </Button>
+          ) : null}
+          {stopped ? (
+            <Button disabled={resume.isPending} onClick={() => resume.mutate(data.id)}>
+              {IMPROVE_COPY.continue}
+            </Button>
+          ) : null}
         </div>
       ) : null}
       {data?.clusters.length ? (
@@ -192,6 +231,8 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
                 key={candidate.id}
                 candidate={candidate}
                 baseline={data.baseline_optimize_quality}
+                saving={save.isPending}
+                onSave={() => save.mutateAsync({ sessionId: data.id, candidateId: candidate.id })}
               />
             ))}
           </div>

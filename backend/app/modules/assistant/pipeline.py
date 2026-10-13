@@ -15,7 +15,9 @@ improvement is proven.
 Both calls use the model chosen when the session was started, else the baseline experiment's judge.
 """
 
+import logging
 import uuid
+from collections.abc import Coroutine
 from pathlib import Path
 from typing import Any
 
@@ -54,9 +56,11 @@ from app.modules.prompts.schemas import PromptVersionOut
 from app.modules.prompts.service import PromptService
 from app.modules.registry.service import RegistryService
 
+logger = logging.getLogger(__name__)
 PROMPTS_DIR = Path(__file__).parent / "prompts"
 MAX_EXAMPLES = 8
 TERMINAL = {"completed", "cancelled", "failed"}
+WORKING = {SessionStage.ANALYZING, SessionStage.TESTING, SessionStage.CONFIRMING}
 NO_FAILURES = "Every optimize case passed, so there is nothing to learn from. The current prompt is doing well."
 NO_MODEL = "No model is available to write improvements. Check the key used to write the test cases."
 NO_CANDIDATES = "The model's suggestions changed the prompt's inputs, so none could be tested. Try again."
@@ -83,11 +87,17 @@ class ImprovementPipeline:
             return
         baseline = await self._engine.experiment(row.baseline_experiment_id)
         assert baseline is not None
-        try:
-            await self._improve(row, baseline)
-        except AppError as exc:
-            await self._session.rollback()
-            await self._finish(row.id, SessionStage.FAILED, exc.message)
+        await self._guarded(session_id, self._improve(row, baseline))
+
+    async def resume(self, session_id: uuid.UUID) -> None:
+        """Carry on after Stop or a failure: start the tests that never started (or were cut short), then move on.
+        Everything already written or scored is kept."""
+        row = await self._repo.session(session_id)
+        if row is None or row.stage != SessionStage.TESTING or row.baseline_experiment_id is None:
+            return
+        baseline = await self._engine.experiment(row.baseline_experiment_id)
+        assert baseline is not None
+        await self._guarded(session_id, self._resume(row, baseline))
 
     async def advance(self, experiment_id: uuid.UUID) -> None:
         candidate = await self._repo.candidate_for_experiment(experiment_id)
@@ -95,14 +105,50 @@ class ImprovementPipeline:
             return
         row = await self._repo.session(candidate.session_id)
         assert row is not None
+        session_id = row.id
         if candidate.holdout_experiment_id == experiment_id:
-            await self._conclude(row, candidate)
+            if row.stage == SessionStage.CONFIRMING:
+                await self._guarded(session_id, self._conclude(row, candidate))
         elif row.stage == SessionStage.TESTING:
-            await self._confirm_best(row)
+            await self._guarded(session_id, self._confirm_best(row))
+
+    async def fail(self, session_id: uuid.UUID, message: str) -> None:
+        """Record why a session could not go on; a session that was stopped or finished is left as it is."""
+        row = await self._repo.session(session_id)
+        if row is not None and row.stage in WORKING:
+            await self._finish(session_id, SessionStage.FAILED, message)
+
+    async def fail_for_experiment(self, experiment_id: uuid.UUID, message: str) -> None:
+        candidate = await self._repo.candidate_for_experiment(experiment_id)
+        if candidate is not None:
+            await self.fail(candidate.session_id, message)
+
+    async def _guarded(self, session_id: uuid.UUID, work: Coroutine[Any, Any, None]) -> None:
+        """Any error ends the session as failed, with the reason shown on the Improve page, never as a silent hang.
+        The id is taken first: after a rollback the row's own attributes can no longer be read."""
+        try:
+            await work
+        except Exception as exc:
+            await self._session.rollback()
+            message = exc.message if isinstance(exc, AppError) else f"Something went wrong: {exc}"
+            await self.fail(session_id, message)
+            if not isinstance(exc, AppError):
+                logger.exception("improvement session %s failed", session_id)
+
+    async def _note(self, session_id: uuid.UUID, message: str) -> None:
+        """What the session is doing right now, shown on the Improve page."""
+        await self._repo.update_session(session_id, {"message": message})
+        await self._session.commit()
+
+    async def _working(self, session_id: uuid.UUID, stage: SessionStage) -> bool:
+        row = await self._repo.session(session_id)
+        return row is not None and row.stage == stage
 
     async def _improve(self, row: OptimizationSession, baseline: Experiment) -> None:
+        session_id = row.id
         run = next((r for r in await self._scores.runs(baseline.id) if r.status.value == "completed"), None)
         assert run is not None
+        await self._note(session_id, "Reading the failed cases…")
         cases = await self._results.cases(baseline.project_id, baseline.id, run.id, failed_only=True)
         failures = failures_of([c for c in cases if c.split == Split.OPTIMIZE.value])
         if not failures:
@@ -110,10 +156,15 @@ class ImprovementPipeline:
             return
         prompt = await self._prompts.get_version(baseline.project_id, baseline.prompt_version_id)
         spec = await self._spec(baseline)
+        await self._note(session_id, f"Grouping {len(failures)} failures by reason…")
         groups = await self._ask(
             baseline, row.writer, "failures.jinja", FailureGroups, "failure_groups", prompt, spec, cases=failures
         )
         clusters = await store_clusters(self._repo, baseline, run.id, groups, failures)
+        await self._session.commit()
+        if not await self._working(session_id, SessionStage.ANALYZING):
+            return
+        await self._note(session_id, "Writing 3 better prompts…")
         drafts = await self._ask(
             baseline,
             row.writer,
@@ -126,22 +177,69 @@ class ImprovementPipeline:
             groups=[{"name": c.name, "size": c.size, "hypothesis": c.hypothesis} for c in clusters],
             examples=failures[:MAX_EXAMPLES],
         )
+        if not await self._working(session_id, SessionStage.ANALYZING):
+            return
         created = await store_candidates(self._repo, self._prompts, row, baseline, prompt, drafts, clusters)
         if not created:
-            await self._finish(row.id, SessionStage.FAILED, NO_CANDIDATES)
+            await self._finish(session_id, SessionStage.FAILED, NO_CANDIDATES)
             return
-        await self._repo.update_session(row.id, {"stage": SessionStage.TESTING})
+        await self._repo.update_session(session_id, {"stage": SessionStage.TESTING})
         await self._session.commit()
-        for candidate in created:
-            experiment = await self._experiments.start(
-                baseline.project_id,
-                None,
-                await self._rerun(baseline, SplitScope.OPTIMIZE, candidate.strategy),
-                ExperimentOrigin.OPTIMIZATION,
-                candidate.prompt_version_id,
+        await self._start_tests(session_id, baseline, created)
+
+    async def _resume(self, row: OptimizationSession, baseline: Experiment) -> None:
+        session_id = row.id
+        candidates = await self._repo.candidates(session_id)
+        proven = next((c for c in candidates if c.holdout_experiment_id), None)
+        holdout_id = proven.holdout_experiment_id if proven else None
+        holdout = await self._engine.experiment(holdout_id) if holdout_id else None
+        if proven and holdout and holdout.status.value == "completed":
+            await self._repo.update_session(session_id, {"stage": SessionStage.CONFIRMING})
+            await self._conclude(row, proven)
+            return
+        waiting = []
+        for candidate in candidates:
+            test = (
+                await self._engine.experiment(candidate.optimize_experiment_id)
+                if candidate.optimize_experiment_id
+                else None
             )
+            if test is None or test.status.value in ("cancelled", "failed"):
+                waiting.append(candidate)
+        await self._start_tests(session_id, baseline, waiting)
+        if await self._working(session_id, SessionStage.TESTING):
+            await self._confirm_best(row)
+
+    async def _start_tests(
+        self, session_id: uuid.UUID, baseline: Experiment, candidates: list[PromptCandidate]
+    ) -> None:
+        """Test each candidate on the optimize split. A candidate that cannot be tested is set aside with the reason;
+        if none can be, the session fails and says why (the candidates stay on the page)."""
+        problems: list[str] = []
+        for candidate in candidates:
+            if not await self._working(session_id, SessionStage.TESTING):
+                return  # stopped meanwhile
+            await self._note(session_id, f"Starting the test for “{candidate.strategy}”…")
+            try:
+                experiment = await self._experiments.start(
+                    baseline.project_id,
+                    None,
+                    await self._rerun(baseline, SplitScope.OPTIMIZE, candidate.strategy),
+                    ExperimentOrigin.OPTIMIZATION,
+                    candidate.prompt_version_id,
+                )
+            except AppError as exc:
+                await self._session.rollback()
+                await self._repo.update_candidate(candidate.id, {"outcome": CandidateOutcome.REJECTED})
+                await self._session.commit()
+                problems.append(f"“{candidate.strategy}”: {exc.message}")
+                continue
             await self._repo.update_candidate(candidate.id, {"optimize_experiment_id": experiment.id})
             await self._session.commit()
+        if problems and not [c for c in await self._repo.candidates(session_id) if c.optimize_experiment_id]:
+            await self._finish(session_id, SessionStage.FAILED, "No candidate could be tested. " + " ".join(problems))
+        elif await self._working(session_id, SessionStage.TESTING):
+            await self._note(session_id, " ".join(problems))
 
     async def _ask(
         self,
@@ -174,14 +272,17 @@ class ImprovementPipeline:
         return await self._gateway.complete_json_target(target, messages, schema, CallPurpose.ASSISTANT, context)
 
     async def _confirm_best(self, row: OptimizationSession) -> None:
-        candidates = await self._repo.candidates(row.id)
+        # Candidates that could not be tested were set aside (rejected) and are not waited for.
+        candidates = [c for c in await self._repo.candidates(row.id) if c.outcome != CandidateOutcome.REJECTED]
         experiments = {
             c.id: await self._engine.experiment(c.optimize_experiment_id)
             for c in candidates
             if c.optimize_experiment_id
         }
-        if len(experiments) < len(candidates) or any(
-            e is None or e.status.value not in TERMINAL for e in experiments.values()
+        if (
+            not candidates
+            or len(experiments) < len(candidates)
+            or any(e is None or e.status.value not in TERMINAL for e in experiments.values())
         ):
             return
         if not await self._repo.update_session(

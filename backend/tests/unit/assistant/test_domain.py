@@ -3,8 +3,10 @@
 import pytest
 
 from app.modules.assistant.domain import best, prompt_diff, rule_tag, verdict
+from app.modules.assistant.proposals import keeps_inputs
 from app.modules.assistant.schemas import Reason
 from app.modules.evaluation.significance import CaseResult, compare
+from app.modules.prompts.domain import analyze
 
 pytestmark = pytest.mark.unit
 
@@ -59,3 +61,14 @@ def test_a_clearly_worse_candidate_and_no_comparable_cases_are_named() -> None:
     nothing = verdict(compare({}, cases([0.8] * 40), seed=4), 30)
     assert nothing[0] is Reason.TOO_FEW_CASES
     assert "only 0 held-back cases" in nothing[1]
+
+
+def test_a_candidate_must_keep_the_prompts_inputs_and_shape() -> None:
+    system_only = analyze("You are Aria. Help the customer.", None)
+    with_vars = analyze("Reply about {{ topic }}.", "{{ user_message }}")
+    assert keeps_inputs(system_only, "You are Aria. Be brief.", None)
+    # a user message added to a system-only prompt: same required inputs, but the case's attachment can't fill it
+    assert not keeps_inputs(system_only, "You are Aria.", "{{ user_message }}")
+    assert not keeps_inputs(with_vars, "Reply about {{ topic }}.", None)  # shape changed
+    assert not keeps_inputs(with_vars, "Reply about {{ other }}.", "{{ user_message }}")  # inputs changed
+    assert not keeps_inputs(system_only, None, None)

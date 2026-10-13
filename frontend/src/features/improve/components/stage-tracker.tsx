@@ -8,7 +8,7 @@ import { IMPROVE_COPY } from "../copy"
 const ORDER = ["analyzing", "testing", "confirming", "done"]
 
 export function StageTracker({ stage }: { stage: string }) {
-  const failed = stage === "failed"
+  const failed = stage === "failed" || stage === "stopped"
   const current = failed ? -1 : ORDER.indexOf(stage)
   return (
     <ol className="grid gap-2 sm:grid-cols-4">

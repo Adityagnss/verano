@@ -1,7 +1,7 @@
 """
 Improve HTTP routes: start an improvement session from a scored experiment, the latest
 session for an experiment, one session (clusters, candidates, holdout verdict), and
-accepting the winning candidate as the prompt's new version.
+stopping or continuing one, and accepting the winning candidate as the prompt's new version.
 """
 
 import uuid
@@ -52,6 +52,22 @@ async def get_improvement(
     return await service.get(project.id, session_id)
 
 
+@router.post("/{session_id}/stop")
+async def stop_improvement(
+    session_id: uuid.UUID, project: ProjectScope, service: ImprovementServiceDep
+) -> ImprovementOut:
+    """Stop a running improvement where it is; nothing is deleted."""
+    return await service.stop(project, session_id)
+
+
+@router.post("/{session_id}/continue", status_code=status.HTTP_202_ACCEPTED)
+async def continue_improvement(
+    session_id: uuid.UUID, project: ProjectScope, service: ImprovementServiceDep
+) -> ImprovementOut:
+    """Carry on from where a stopped or failed improvement left off."""
+    return await service.resume(project, session_id)
+
+
 @router.post("/{session_id}/candidates/{candidate_id}/accept")
 async def accept_candidate(
     session_id: uuid.UUID,
@@ -61,3 +77,15 @@ async def accept_candidate(
     service: ImprovementServiceDep,
 ) -> ImprovementOut:
     return await service.accept(project, principal, session_id, candidate_id)
+
+
+@router.post("/{session_id}/candidates/{candidate_id}/save")
+async def save_candidate(
+    session_id: uuid.UUID,
+    candidate_id: uuid.UUID,
+    project: ProjectScope,
+    principal: CurrentPrincipal,
+    service: ImprovementServiceDep,
+) -> ImprovementOut:
+    """Save a candidate as a normal prompt version to test it, whether or not it was proven better."""
+    return await service.save_candidate(project, principal, session_id, candidate_id)

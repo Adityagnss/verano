@@ -1,5 +1,8 @@
 /** One candidate prompt: its strategy, why each change was made, the diff, and its score. */
+import { toast } from "sonner"
+
 import { StatusBadge } from "@/components/common/status-badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { CandidateOut } from "@/lib/api/types"
 
@@ -18,7 +21,28 @@ function DiffLine({ line }: { line: string }) {
   return <div className={tone}>{line || " "}</div>
 }
 
-export function CandidateCard({ candidate, baseline }: { candidate: CandidateOut; baseline: number | null }) {
+function PromptText({ label, text }: { label: string; text: string }) {
+  return (
+    <div>
+      <p className="text-muted-foreground text-xs font-medium">{label}</p>
+      <pre className="bg-card ring-border max-h-72 overflow-auto rounded-lg p-2 font-mono text-xs whitespace-pre-wrap ring-1">
+        {text}
+      </pre>
+    </div>
+  )
+}
+
+export function CandidateCard({
+  candidate,
+  baseline,
+  onSave,
+  saving,
+}: {
+  candidate: CandidateOut
+  baseline: number | null
+  onSave: () => Promise<unknown>
+  saving: boolean
+}) {
   return (
     <Card size="sm" className="shadow-none">
       <CardHeader>
@@ -53,6 +77,28 @@ export function CandidateCard({ candidate, baseline }: { candidate: CandidateOut
             <li key={index}>{String(reason)}</li>
           ))}
         </ul>
+        <details className="text-sm">
+          <summary className="text-accent cursor-pointer">{IMPROVE_COPY.fullPrompt}</summary>
+          <div className="mt-2 flex flex-col gap-2">
+            {candidate.system_template ? (
+              <PromptText label={IMPROVE_COPY.systemPrompt} text={candidate.system_template} />
+            ) : null}
+            {candidate.user_template ? (
+              <PromptText label={IMPROVE_COPY.userPrompt} text={candidate.user_template} />
+            ) : null}
+          </div>
+        </details>
+        <Button
+          variant="outline"
+          disabled={saving}
+          onClick={() =>
+            void onSave()
+              .then(() => toast.success(IMPROVE_COPY.saved))
+              .catch(() => undefined)
+          }
+        >
+          {IMPROVE_COPY.save}
+        </Button>
         <pre className="bg-card ring-border max-h-72 overflow-auto rounded-lg p-2 font-mono text-xs whitespace-pre-wrap ring-1">
           {candidate.diff.split("\n").map((line, index) => (
             <DiffLine key={index} line={line} />

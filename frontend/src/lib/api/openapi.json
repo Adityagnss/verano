@@ -1211,10 +1211,32 @@
             "title": "Strategy",
             "type": "string"
           },
+          "system_template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System Template"
+          },
           "target_cluster_ids": {
             "items": {},
             "title": "Target Cluster Ids",
             "type": "array"
+          },
+          "user_template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Template"
           },
           "verdict": {
             "anyOf": [
@@ -6290,7 +6312,7 @@
         "type": "object"
       },
       "SessionStage": {
-        "enum": ["analyzing", "testing", "confirming", "done", "failed"],
+        "enum": ["analyzing", "testing", "confirming", "done", "failed", "stopped"],
         "title": "SessionStage",
         "type": "string"
       },
@@ -10715,6 +10737,187 @@
           }
         ],
         "summary": "Accept Candidate",
+        "tags": ["improve"]
+      }
+    },
+    "/api/v1/projects/{project_id}/improvements/{session_id}/candidates/{candidate_id}/save": {
+      "post": {
+        "description": "Save a candidate as a normal prompt version to test it, whether or not it was proven better.",
+        "operationId": "save_candidate_api_v1_projects__project_id__improvements__session_id__candidates__candidate_id__save_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "candidate_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Candidate Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImprovementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Save Candidate",
+        "tags": ["improve"]
+      }
+    },
+    "/api/v1/projects/{project_id}/improvements/{session_id}/continue": {
+      "post": {
+        "description": "Carry on from where a stopped or failed improvement left off.",
+        "operationId": "continue_improvement_api_v1_projects__project_id__improvements__session_id__continue_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImprovementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Continue Improvement",
+        "tags": ["improve"]
+      }
+    },
+    "/api/v1/projects/{project_id}/improvements/{session_id}/stop": {
+      "post": {
+        "description": "Stop a running improvement where it is; nothing is deleted.",
+        "operationId": "stop_improvement_api_v1_projects__project_id__improvements__session_id__stop_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImprovementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Stop Improvement",
         "tags": ["improve"]
       }
     },

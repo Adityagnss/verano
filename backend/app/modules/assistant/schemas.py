@@ -34,6 +34,7 @@ class SessionStage(StrEnum):
     CONFIRMING = "confirming"
     DONE = "done"
     FAILED = "failed"
+    STOPPED = "stopped"
 
 
 class Reason(StrEnum):
@@ -80,6 +81,8 @@ class CandidateOut(BaseModel):
     prompt_version_id: uuid.UUID
     strategy: str
     diff: str
+    system_template: str | None = None
+    user_template: str | None = None
     change_reasons: list[Any]
     target_cluster_ids: list[Any]
     outcome: CandidateOutcome

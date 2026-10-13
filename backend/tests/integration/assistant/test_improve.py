@@ -15,7 +15,8 @@ from sqlalchemy import select
 
 from app.core.container import Container
 from app.core.jobs import InlineJobQueue
-from app.modules.assistant.models import PromptCandidate
+from app.modules.assistant.models import OptimizationSession, PromptCandidate
+from app.modules.assistant.pipeline import ImprovementPipeline
 from app.modules.assistant.schemas import CandidateOutcome
 from app.modules.gateway.models import LLMCall
 from tests.helpers import Session, approved_project, approved_project_with_cases
@@ -179,3 +180,98 @@ async def test_improve_can_start_again_with_a_chosen_writer_model(
     ).json()
     assert latest["id"] != first["id"]
     assert latest["writer_model"] == judge["model"]
+
+
+async def test_any_candidate_can_be_saved_as_a_prompt_version_to_test(
+    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue
+) -> None:
+    base = f"/api/v1/projects/{session.project_id}"
+    models = await approved_project(client, session, jobs)
+    body = {"models": [{"model_profile_id": models["echo"], "runs": 1}]}
+    experiment = (await client.post(f"{base}/experiments", json=body, headers=session.headers)).json()
+    await jobs.drain()
+    before = (await client.get(f"{base}/prompts", headers=session.headers)).json()["items"][0]["latest_version"]
+    result = await improve(client, session, jobs, experiment["id"])
+    chosen = result["candidates"][0]
+    assert chosen["outcome"] != "better"  # not proven, and still saveable
+    assert chosen["system_template"] or chosen["user_template"]  # the page can show the full prompt
+
+    saved = await client.post(
+        f"{base}/improvements/{result['id']}/candidates/{chosen['id']}/save", headers=session.headers
+    )
+    assert saved.status_code == 200, saved.text
+    latest = (await client.get(f"{base}/prompts", headers=session.headers)).json()["items"][0]["latest_version"]
+    assert latest["id"] != before["id"]
+    assert latest["version"] == before["version"] + 1
+    assert latest["system_template"] == chosen["system_template"]
+    # the candidate's own result is untouched, and it can be tested like any saved version
+    again = (await client.get(f"{base}/improvements/{result['id']}", headers=session.headers)).json()
+    assert next(c for c in again["candidates"] if c["id"] == chosen["id"])["outcome"] == chosen["outcome"]
+    rerun = {**body, "prompt_version_id": latest["id"]}
+    assert (await client.post(f"{base}/experiments", json=rerun, headers=session.headers)).status_code in (
+        200,
+        201,
+        202,
+    )
+
+
+async def test_a_stopped_improvement_keeps_everything_and_continues_where_it_left_off(
+    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue, container: Container
+) -> None:
+    base = f"/api/v1/projects/{session.project_id}"
+    models = await approved_project(client, session, jobs)
+    body = {"models": [{"model_profile_id": models["echo"], "runs": 1}]}
+    experiment = (await client.post(f"{base}/experiments", json=body, headers=session.headers)).json()
+    await jobs.drain()
+    result = await improve(client, session, jobs, experiment["id"])
+    assert result["stage"] == "done"
+    sid = result["id"]
+    assert (await client.post(f"{base}/improvements/{sid}/stop", headers=session.headers)).status_code == 409
+    assert (await client.post(f"{base}/improvements/{sid}/continue", headers=session.headers)).status_code == 409
+
+    # put the session back where a stop in the middle of testing leaves it: one candidate never tested
+    untested = result["candidates"][0]["id"]
+    async with container.database.sessions() as db:
+        row = await db.get(OptimizationSession, uuid.UUID(sid))
+        candidate = await db.get(PromptCandidate, uuid.UUID(untested))
+        assert row is not None
+        assert candidate is not None
+        row.stage = "testing"
+        candidate.optimize_experiment_id = None
+        for other in (await db.scalars(select(PromptCandidate).where(PromptCandidate.session_id == row.id))).all():
+            other.holdout_experiment_id = None  # no candidate has reached the holdout yet
+            other.outcome = CandidateOutcome.PENDING
+        await db.commit()
+    response = await client.post(f"{base}/improvements/{sid}/stop", headers=session.headers)
+    assert response.status_code == 200, response.text
+    stopped = response.json()
+    assert stopped["stage"] == "stopped"
+    assert len(stopped["candidates"]) == 3
+    assert len(stopped["clusters"]) == len(result["clusters"])
+
+    resumed = await client.post(f"{base}/improvements/{sid}/continue", headers=session.headers)
+    assert resumed.status_code == 202, resumed.text
+    await jobs.drain()
+    done = (await client.get(f"{base}/improvements/{sid}", headers=session.headers)).json()
+    assert done["stage"] == "done"
+    assert len(done["candidates"]) == 3
+    retried = next(c for c in done["candidates"] if c["id"] == untested)
+    assert retried["optimize_experiment_id"], (retried["outcome"], done["message"])
+
+
+async def test_a_job_error_ends_the_improvement_as_failed_with_the_reason(
+    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    base = f"/api/v1/projects/{session.project_id}"
+    models = await approved_project(client, session, jobs)
+    body = {"models": [{"model_profile_id": models["echo"], "runs": 1}]}
+    experiment = (await client.post(f"{base}/experiments", json=body, headers=session.headers)).json()
+    await jobs.drain()
+
+    async def boom(*args: object, **kwargs: object) -> None:
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(ImprovementPipeline, "_improve", boom)
+    result = await improve(client, session, jobs, experiment["id"])
+    assert result["stage"] == "failed"
+    assert result["message"] == "Something went wrong: boom"

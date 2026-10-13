@@ -30,9 +30,11 @@ from app.modules.assistant.schemas import (
 )
 from app.modules.datasets.schemas import Split
 from app.modules.datasets.service import DatasetService
+from app.modules.engine.domain import TERMINAL
 from app.modules.engine.models import Experiment
 from app.modules.engine.repository import EngineRepository
 from app.modules.engine.schemas import ExperimentOrigin, SplitScope
+from app.modules.engine.service import ExperimentService
 from app.modules.evaluation.repository import ScoreRepository
 from app.modules.evaluation.results import ResultsService
 from app.modules.evaluation.schemas import JudgeChoice
@@ -42,6 +44,11 @@ from app.modules.prompts.service import PromptService
 from app.modules.registry.service import RegistryService
 
 IMPROVE_JOB = "assistant.improve"
+RESUME_JOB = "assistant.resume"
+WORKING = {SessionStage.ANALYZING, SessionStage.TESTING, SessionStage.CONFIRMING}
+NOT_WORKING = "This improvement is not running."
+NOT_STOPPED = "Only an improvement that was stopped or failed can be continued."
+STOPPED = "Stopped. Everything done so far is kept; press Continue to carry on."
 SESSION_NOT_FOUND = "This improvement session doesn't exist in this project."
 EXPERIMENT_NOT_FOUND = "This experiment doesn't exist in this project."
 NOT_SCORED = "Wait until this experiment has been scored."
@@ -61,6 +68,7 @@ class ImprovementService:
         self._results = ResultsService.from_container(session, container)
         self._registry = RegistryService(session, container)
         self._prompts = PromptService(session, self._registry, container.settings)
+        self._experiments = ExperimentService.from_container(session, container)
         self._jobs: JobQueue = container.jobs
 
     async def start(
@@ -98,7 +106,7 @@ class ImprovementService:
         runs = await self._scores.runs(baseline.id) if baseline else []
         scored = next((r for r in runs if r.status.value == "completed"), None)
         clusters = await self._repo.clusters(scored.id) if scored else []
-        candidates = [await self._candidate_out(c) for c in await self._repo.candidates(row.id)]
+        candidates = [await self._candidate_out(row.project_id, c) for c in await self._repo.candidates(row.id)]
         return ImprovementOut(
             id=row.id,
             status=row.status,
@@ -116,6 +124,35 @@ class ImprovementService:
             created_at=row.created_at,
         )
 
+    async def stop(self, project: ProjectOut, session_id: uuid.UUID) -> ImprovementOut:
+        """Stop where it is: tests that are running are cancelled (their finished answers are kept) and the
+        session waits for Continue. Nothing is deleted."""
+        row = await self._session_row(project.id, session_id)
+        if SessionStage(row.stage) not in WORKING:
+            raise Conflict(NOT_WORKING)
+        await self._repo.update_session(row.id, {"stage": SessionStage.STOPPED, "message": STOPPED})
+        await self._session.commit()
+        for candidate in await self._repo.candidates(row.id):
+            for experiment_id in (candidate.optimize_experiment_id, candidate.holdout_experiment_id):
+                experiment = await self._engine.experiment(experiment_id) if experiment_id else None
+                if experiment is not None and experiment.status not in TERMINAL:  # finished ones keep their result
+                    await self._experiments.stop(experiment, "Stopped from Improve.")
+        return await self.get(project.id, row.id)
+
+    async def resume(self, project: ProjectOut, session_id: uuid.UUID) -> ImprovementOut:
+        """Carry on from where it stopped or failed: write the improvements again if none were written,
+        otherwise test the candidates that were never tested and go on from there."""
+        row = await self._session_row(project.id, session_id)
+        if SessionStage(row.stage) not in (SessionStage.STOPPED, SessionStage.FAILED):
+            raise Conflict(NOT_STOPPED)
+        started = bool(await self._repo.candidates(row.id))
+        stage = SessionStage.TESTING if started else SessionStage.ANALYZING
+        if not await self._repo.update_session(row.id, {"stage": stage, "message": None}, stage_was=row.stage):
+            raise Conflict(NOT_STOPPED)
+        await self._session.commit()
+        self._jobs.enqueue(RESUME_JOB if started else IMPROVE_JOB, session_id=str(row.id))
+        return await self.get(project.id, row.id)
+
     async def accept(
         self, project: ProjectOut, principal: Principal, session_id: uuid.UUID, candidate_id: uuid.UUID
     ) -> ImprovementOut:
@@ -125,6 +162,24 @@ class ImprovementService:
             raise NotFound(SESSION_NOT_FOUND)
         if candidate.outcome is not CandidateOutcome.BETTER:
             raise Conflict(NOT_BETTER)
+        await self._save_version(project, principal, candidate)
+        await self._repo.update_candidate(candidate.id, {"outcome": CandidateOutcome.ACCEPTED})
+        await self._repo.update_session(row.id, {"status": OptimizationStatus.CLOSED})
+        return await self.get(project.id, row.id)
+
+    async def save_candidate(
+        self, project: ProjectOut, principal: Principal, session_id: uuid.UUID, candidate_id: uuid.UUID
+    ) -> ImprovementOut:
+        """Save any candidate as a normal prompt version so it can be tested on the Run step, proven better or
+        not. The session and the candidate's result are left as they are."""
+        row = await self._session_row(project.id, session_id)
+        candidate = next((c for c in await self._repo.candidates(row.id) if c.id == candidate_id), None)
+        if candidate is None:
+            raise NotFound(SESSION_NOT_FOUND)
+        await self._save_version(project, principal, candidate)
+        return await self.get(project.id, row.id)
+
+    async def _save_version(self, project: ProjectOut, principal: Principal, candidate: PromptCandidate) -> None:
         proposed = await self._prompts.get_version(project.id, candidate.prompt_version_id)
         base = await self._prompts.get_version(project.id, candidate.base_prompt_version_id)
         body = PromptVersionCreate(
@@ -135,15 +190,15 @@ class ImprovementService:
             parent_version_id=base.id,
         )
         await self._prompts.save_version(project.id, principal, base.prompt_id, body, source=PromptSource.ASSISTANT)
-        await self._repo.update_candidate(candidate.id, {"outcome": CandidateOutcome.ACCEPTED})
-        await self._repo.update_session(row.id, {"status": OptimizationStatus.CLOSED})
-        return await self.get(project.id, row.id)
 
-    async def _candidate_out(self, c: PromptCandidate) -> CandidateOut:
+    async def _candidate_out(self, project_id: uuid.UUID, c: PromptCandidate) -> CandidateOut:
         optimize = await self._engine.experiment(c.optimize_experiment_id) if c.optimize_experiment_id else None
         holdout = await self._engine.experiment(c.holdout_experiment_id) if c.holdout_experiment_id else None
+        version = await self._prompts.get_version(project_id, c.prompt_version_id)
         return CandidateOut(
             **{name: getattr(c, name) for name in CandidateOut.model_fields if name != "verdict" and hasattr(c, name)},
+            system_template=version.system_template,
+            user_template=version.user_template,
             optimize_quality=await self._quality(optimize, Split.OPTIMIZE),
             holdout_quality=await self._quality(holdout, Split.HOLDOUT),
             verdict=VerdictOut.model_validate(c.verdict) if c.verdict else None,

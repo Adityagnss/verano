@@ -829,6 +829,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/improvements/{session_id}/candidates/{candidate_id}/save": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Save Candidate
+         * @description Save a candidate as a normal prompt version to test it, whether or not it was proven better.
+         */
+        post: operations["save_candidate_api_v1_projects__project_id__improvements__session_id__candidates__candidate_id__save_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/improvements/{session_id}/continue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Continue Improvement
+         * @description Carry on from where a stopped or failed improvement left off.
+         */
+        post: operations["continue_improvement_api_v1_projects__project_id__improvements__session_id__continue_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/improvements/{session_id}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop Improvement
+         * @description Stop a running improvement where it is; nothing is deleted.
+         */
+        post: operations["stop_improvement_api_v1_projects__project_id__improvements__session_id__stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/input-files": {
         parameters: {
             query?: never;
@@ -1800,8 +1860,12 @@ export interface components {
             prompt_version_id: string;
             /** Strategy */
             strategy: string;
+            /** System Template */
+            system_template?: string | null;
             /** Target Cluster Ids */
             target_cluster_ids: unknown[];
+            /** User Template */
+            user_template?: string | null;
             verdict?: components["schemas"]["VerdictOut"] | null;
         };
         /**
@@ -3688,7 +3752,7 @@ export interface components {
          * SessionStage
          * @enum {string}
          */
-        SessionStage: "analyzing" | "testing" | "confirming" | "done" | "failed";
+        SessionStage: "analyzing" | "testing" | "confirming" | "done" | "failed" | "stopped";
         /** SheetRequest */
         SheetRequest: {
             /** Sheet */
@@ -5943,6 +6007,103 @@ export interface operations {
             path: {
                 session_id: string;
                 candidate_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImprovementOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    save_candidate_api_v1_projects__project_id__improvements__session_id__candidates__candidate_id__save_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+                candidate_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImprovementOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    continue_improvement_api_v1_projects__project_id__improvements__session_id__continue_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImprovementOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stop_improvement_api_v1_projects__project_id__improvements__session_id__stop_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
                 project_id: string;
             };
             cookie?: never;

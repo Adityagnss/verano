@@ -16,7 +16,7 @@ from app.modules.assistant.repository import AssistantRepository
 from app.modules.assistant.schemas import CandidateDrafts, CandidateOutcome, FailureGroups
 from app.modules.engine.models import Experiment
 from app.modules.evaluation.schemas import CaseResultOut
-from app.modules.prompts.domain import analyze
+from app.modules.prompts.domain import TemplateInfo, analyze
 from app.modules.prompts.schemas import PromptSource, PromptVersionCreate, PromptVersionOut
 from app.modules.prompts.service import PromptService
 
@@ -74,6 +74,15 @@ async def store_clusters(
     return clusters
 
 
+def keeps_inputs(current: TemplateInfo, system: str | None, user: str | None) -> bool:
+    """A candidate can be tested only if it takes the same inputs in the same shape: a prompt that gains or loses its
+    user message stops mapping the cases' inputs (a real case's `attachment` fills a system-only prompt only)."""
+    if system is None and user is None:
+        return False
+    info = analyze(system, user)
+    return info.required_inputs == current.required_inputs and info.shape == current.shape
+
+
 async def store_candidates(
     repo: AssistantRepository,
     prompts: PromptService,
@@ -87,7 +96,7 @@ async def store_candidates(
     created = []
     for draft in drafts.candidates[:CANDIDATES]:
         system, user = draft.system_template or None, draft.user_template or None
-        if (system is None and user is None) or analyze(system, user).required_inputs != prompt.required_inputs:
+        if not keeps_inputs(analyze(prompt.system_template, prompt.user_template), system, user):
             continue
         body = PromptVersionCreate(
             system_template=system,
