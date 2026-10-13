@@ -32,6 +32,7 @@ from app.modules.datasets.domain import (
     ReportBuilder,
     TableSummary,
     as_text,
+    checks_warning,
     evaluate_row,
     row_input,
 )
@@ -67,6 +68,7 @@ FILE_NOT_FOUND = "This file no longer exists."
 NO_MAPPING = "This file has no confirmed column mapping yet."
 NO_ROWS = "This file has no rows with anything in them, so no test case was made. Row 1 should hold the column names."
 PROFILE_SAMPLE_ROWS = 5
+WARNING_SAMPLE_ROWS = 200
 SOURCE_FOR_KIND = {InputFileKind.GOLDEN_SET: ItemSource.GOLDEN, InputFileKind.RAW_INPUTS: ItemSource.INPUT_FILE}
 REVIEW_FOR_KIND = {InputFileKind.GOLDEN_SET: ReviewStatus.TRUSTED, InputFileKind.RAW_INPUTS: ReviewStatus.TRUSTED}
 
@@ -114,7 +116,7 @@ class FileProcessor:
         """An input file is one test case: its text (a table summary for table files) is the
         item's `attachment`, replacing any earlier import of this file."""
         row = await self._stage(file_id, InputFileStatus.IMPORTING, "import")
-        rows, text = await self._attachment_text(row)
+        rows, text, profile = await self._attachment_text(row)
         version = await self._datasets.ensure_draft(row.project_id)
         await self._repo.delete_file_items(version.id, row.id)
         item = ItemDraft(
@@ -134,6 +136,8 @@ class FileProcessor:
             "dataset_version_id": version.id,
             "row_count": rows,
         }
+        if profile is not None:
+            values["profile"] = profile.model_dump(mode="json")
         await self._finish(row, values, self._done("import", 1, 1))
 
     async def attach_rows(self, file_id: uuid.UUID) -> None:
@@ -153,7 +157,7 @@ class FileProcessor:
                 total = count
                 if source.values is None:
                     continue
-                if len(samples) < PROFILE_SAMPLE_ROWS:
+                if len(samples) < WARNING_SAMPLE_ROWS:
                     samples.append({name: as_text(value) for name, value in source.values.items()})
                 text = row_input(columns, source.values)
                 if text is not None:
@@ -176,7 +180,13 @@ class FileProcessor:
         await self._repo.insert_items(
             [self._item_values(row, version.id, draft, first + index) for index, draft in enumerate(drafts)]
         )
-        profile = FileProfile(format=row.format, columns=columns, row_count=total, sample_rows=samples)
+        profile = FileProfile(
+            format=row.format,
+            columns=columns,
+            row_count=total,
+            sample_rows=samples[:PROFILE_SAMPLE_ROWS],
+            warnings=checks_warning(columns, samples),
+        )
         values = {
             "status": InputFileStatus.IMPORTED,
             "imported_rows": len(drafts),
@@ -186,12 +196,12 @@ class FileProcessor:
         }
         await self._finish(row, values, self._done("import", len(drafts), total))
 
-    async def _attachment_text(self, row: InputFile) -> tuple[int | None, str]:
+    async def _attachment_text(self, row: InputFile) -> tuple[int | None, str, FileProfile | None]:
         settings = self._settings
         if row.format in (FileFormat.TXT, FileFormat.MD):
             async with self._storage.local_path(row.storage_key) as path:
                 text = path.read_text(encoding="utf-8", errors="replace")
-            return None, text[: settings.attachment_max_chars]
+            return None, text[: settings.attachment_max_chars], None
         ticker = self._ticker(row, "import")
         async with self._rows(row) as stream:
             summary = TableSummary(
@@ -201,13 +211,24 @@ class FileProcessor:
                 settings.attachment_max_distinct,
                 settings.attachment_example_values,
             )
+            sample: list[dict[str, Any]] = []
             for count, source in enumerate(stream.rows, start=1):
                 await ticker.tick(count)
                 if count > settings.upload_max_rows:
                     raise ValidationFailed(TOO_MANY_ROWS.format(limit=settings.upload_max_rows))
                 if source.values is not None:
                     summary.add(source.values)
-        return summary.count, summary.render()
+                    if len(sample) < WARNING_SAMPLE_ROWS:
+                        sample.append(source.values)
+            columns = list(stream.columns)
+        profile = FileProfile(
+            format=row.format,
+            columns=columns,
+            row_count=summary.count,
+            sample_rows=[{name: as_text(value) for name, value in v.items()} for v in sample[:PROFILE_SAMPLE_ROWS]],
+            warnings=checks_warning(columns, sample),
+        )
+        return summary.count, summary.render(), profile
 
     async def profile(self, file_id: uuid.UUID) -> None:
         row = await self._stage(file_id, InputFileStatus.PROFILING, "profile")

@@ -95,6 +95,26 @@ async def test_a_table_can_be_uploaded_so_that_every_row_is_its_own_test_case(
     ]
 
 
+async def test_a_file_of_checks_uploaded_as_inputs_is_flagged_not_blocked(
+    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue
+) -> None:
+    checks = [
+        {"type": "must_contain", "value": "refund policy"},
+        {"type": "max_word_count", "value": "40"},
+        {"type": "must_not_contain", "value": "% off"},
+    ]
+    for purpose in ("input", "input_rows"):
+        response = await upload(client, session, f"{purpose}.csv", rows_file(checks, "csv"), purpose=purpose)
+        await jobs.drain()
+        done = await get_file(client, session, response.json()["id"])
+        assert done["status"] == "imported"  # a warning, not a refusal: it is the owner's file
+        assert len(done["profile"]["warnings"]) == 1, purpose
+        assert "list of checks" in done["profile"]["warnings"][0]
+    ok = await upload(client, session, "ok.csv", rows_file([{"message": "Refund please"}], "csv"), purpose="input_rows")
+    await jobs.drain()
+    assert (await get_file(client, session, ok.json()["id"]))["profile"]["warnings"] == []
+
+
 async def test_a_table_with_nothing_in_its_rows_fails_with_a_clear_message(
     client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue, container: Container
 ) -> None:

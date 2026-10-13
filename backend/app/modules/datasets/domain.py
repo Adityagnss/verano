@@ -133,6 +133,28 @@ def row_input(columns: list[str], values: dict[str, Any]) -> str | None:
     return "\n".join(lines) or None
 
 
+CHECK_COLUMNS = {"type", "check", "rule", "assertion", "constraint", "criterion", "criteria"}
+CHECK_NAME = re.compile(r"^(must|should|never|always|max|min)_[a-z0-9_]+$")
+CHECKS_WARNING = (
+    "This looks like a list of checks (for example “{example}”), not messages your prompt will receive. "
+    "Checks are set on the Test Cases step. Remove this file if it is not a list of inputs."
+)
+
+
+def checks_warning(columns: list[str], rows: Iterable[dict[str, Any]]) -> list[str]:
+    """A warning when most of a column named like a check type holds check names (`must_contain`, `max_word_count`):
+    a file of checks was probably dropped where inputs go."""
+    sample = list(rows)
+    for column in columns:
+        if normalize(column) not in CHECK_COLUMNS:
+            continue
+        values = [as_text(row[column]).strip().lower() for row in sample if not is_blank(row.get(column))]
+        hits = [value for value in values if CHECK_NAME.match(value)]
+        if len(hits) >= 2 and len(hits) / len(values) >= 0.6:
+            return [CHECKS_WARNING.format(example=hits[0])]
+    return []
+
+
 def is_blank(value: Any) -> bool:
     return value is None or (isinstance(value, str) and not value.strip())
 
