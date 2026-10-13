@@ -25,6 +25,7 @@ import { diffCounts, lineDiff, promptText } from "@/lib/diff"
 import { useDebounced } from "@/lib/use-debounced"
 
 import { PROMPT_COPY } from "../copy"
+import { autoReason, promptName } from "../domain"
 import {
   type Draft,
   defaultParams,
@@ -94,7 +95,19 @@ export function PromptStep({ projectId }: { projectId: string }) {
   const unchanged = sameAsSaved(draft, saved) && (loaded === null || loaded === latestNumber)
 
   async function submit() {
-    const version = await save.mutateAsync(draft)
+    const latest = current.data?.latest_version
+    const version = await save.mutateAsync({
+      ...draft,
+      name: draft.name.trim() || promptName(draft.system_template, draft.user_template),
+      change_reason:
+        draft.change_reason.trim() ||
+        (latest
+          ? autoReason(latest, {
+              system_template: draft.system_template.trim() ? draft.system_template : null,
+              user_template: draft.user_template.trim() ? draft.user_template : null,
+            })
+          : ""),
+    })
     setLoaded(null)
     setDraft(null)
     toast.success(PROMPT_COPY.version(version.version))

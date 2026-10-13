@@ -242,3 +242,29 @@ async def test_mock_models_carry_their_fake_prices_for_real_cost_arithmetic(
         Decimal("0.5"),
         Decimal("1.5"),
     )
+
+
+async def test_a_key_added_in_another_project_can_be_used_here_without_typing_it_again(
+    client: httpx.AsyncClient, session: Session, providers: respx.MockRouter
+) -> None:
+    ROUTES["openai"](providers)
+    await add_credential(client, session, "openai", api_key=KEY)
+    other = await client.post("/api/v1/projects", json={"name": "Second"}, headers=session.headers)
+    second = f"/api/v1/projects/{other.json()['id']}"
+    first = f"/api/v1/projects/{session.project_id}"
+
+    offered = (await client.get(f"{second}/credentials/in-other-projects", headers=session.headers)).json()
+    assert [(o["provider"], o["key_last4"], o["project_name"]) for o in offered] == [
+        ("openai", "1234", "Support triage")
+    ]
+    assert KEY not in json.dumps(offered)
+    assert (await client.get(f"{first}/credentials/in-other-projects", headers=session.headers)).json() == []
+
+    copied = await client.post(
+        f"{second}/credentials/copy", json={"credential_id": offered[0]["id"]}, headers=session.headers
+    )
+    assert copied.status_code == 201, copied.text
+    assert copied.json()["key_last4"] == "1234"
+    assert copied.json()["model_count"] > 0  # checked and its models listed, like a key typed in
+    assert KEY not in copied.text
+    assert (await client.get(f"{second}/credentials/in-other-projects", headers=session.headers)).json() == []

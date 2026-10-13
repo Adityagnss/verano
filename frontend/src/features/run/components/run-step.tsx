@@ -34,6 +34,7 @@ import { useCancelExperiment, useExperimentEstimate, useExperiments, useStartExp
 import {
   ADVANCED,
   advancedCount,
+  DEFAULT_RUNS,
   defaultRow,
   problems,
   supports,
@@ -152,6 +153,12 @@ export function RunStep({ projectId }: { projectId: string }) {
   if (models.data && selected.length === 0)
     return <EmptyState title={RUN_COPY.title} description={RUN_COPY.noModels} />
 
+  const setAllRuns = (value: string) =>
+    setRows(
+      Object.fromEntries(selected.map((m) => [m.id, { ...(rows[m.id] ?? defaultRow(m)), runs: value }])),
+    )
+  const runsAll = selected.length ? (rows[selected[0].id] ?? defaultRow(selected[0])).runs : DEFAULT_RUNS
+  const anyWrong = selected.some((m) => Object.keys(problems(m, rows[m.id] ?? defaultRow(m))).length > 0)
   const set = (m: ModelProfileOut, field: keyof Row, value: string | boolean) =>
     setRows({ ...rows, [m.id]: { ...(rows[m.id] ?? defaultRow(m)), [field]: value } })
   return (
@@ -165,6 +172,20 @@ export function RunStep({ projectId }: { projectId: string }) {
       />
       <ErrorMessage error={models.error ?? version.error ?? experiments.error} />
       <DatasetWarnings projectId={projectId} />
+      <div className="bg-subtle ring-border rounded-xl p-4 text-sm ring-1">
+        <p className="font-semibold">{RUN_COPY.summaryHeading}</p>
+        <p>
+          {RUN_COPY.summary(
+            version.data?.item_count ?? 0,
+            selected.map((m) => m.display_name).join(", "),
+            versions.data?.find((v) => v.id === pickedVersion)
+              ? `V${versions.data?.find((v) => v.id === pickedVersion)?.version}`
+              : `V${versions.data?.[0]?.version ?? 1} (latest)`,
+            estimate.data?.judge_model ?? null,
+          )}{" "}
+          {estimate.data?.total_cost ? <Money value={estimate.data.total_cost} /> : null}
+        </p>
+      </div>
       <Section
         number={1}
         title={RUN_COPY.modelsHeading}
@@ -212,104 +233,121 @@ export function RunStep({ projectId }: { projectId: string }) {
             <p className="text-text-muted text-xs">{RUN_COPY.replicabilityHint}</p>
           </fieldset>
         </div>
-        <div className="border-border overflow-hidden rounded-lg border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-16">{RUN_COPY.include}</TableHead>
-                <TableHead>{RUN_COPY.columns.model}</TableHead>
-                <TableHead className="w-24">{RUN_COPY.columns.runs}</TableHead>
-                <TableHead className="w-32">{RUN_COPY.columns.temperature}</TableHead>
-                <TableHead className="w-36">{RUN_COPY.columns.maxTokens}</TableHead>
-                <TableHead className="w-44">{RUN_COPY.advanced}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {selected.map((m) => {
-                const row = rows[m.id] ?? defaultRow(m)
-                const wrong = problems(m, row)
-                const heads = warning(m, row)
-                const count = advancedCount(m, row)
-                return (
-                  <Fragment key={m.id}>
-                    <TableRow>
-                      <TableCell>
-                        <Checkbox
-                          checked={row.include}
-                          onCheckedChange={(checked) => set(m, "include", checked)}
-                          aria-label={m.display_name}
-                        />
-                      </TableCell>
-                      <TableCell>{m.display_name}</TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          min={1}
-                          max={MAX_RUNS}
-                          value={row.runs}
-                          aria-label={`${RUN_COPY.columns.runs} ${m.display_name}`}
-                          aria-invalid={wrong.runs ? true : undefined}
-                          title={wrong.runs}
-                          onChange={(e) => set(m, "runs", e.target.value)}
-                        />
-                      </TableCell>
-                      {(["temperature", "max_tokens"] as const).map((name) => (
-                        <TableCell key={name}>
-                          <Input
-                            type="number"
-                            step={name === "temperature" ? "0.1" : "1"}
-                            min={m.parameters?.[name]?.min ?? undefined}
-                            max={m.parameters?.[name]?.max ?? undefined}
-                            disabled={!supports(m, name)}
-                            title={supports(m, name) ? wrong[name] : RUN_COPY.unsupported}
-                            aria-label={`${RUN_COPY.columns[name === "temperature" ? "temperature" : "maxTokens"]} ${m.display_name}`}
-                            aria-invalid={wrong[name] ? true : undefined}
-                            value={row[name]}
-                            onChange={(e) => set(m, name, e.target.value)}
-                          />
-                        </TableCell>
-                      ))}
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          aria-expanded={open[m.id] ?? false}
-                          onClick={() => setOpen({ ...open, [m.id]: !open[m.id] })}
-                        >
-                          {RUN_COPY.advancedSet(count)} {open[m.id] ? "▴" : "▾"}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                    {open[m.id] ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="bg-subtle">
-                          <AdvancedFields
-                            model={m}
-                            row={row}
-                            wrong={wrong}
-                            onChange={(f, v) => set(m, f, v)}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ) : null}
-                    {Object.keys(wrong).length > 0 || heads ? (
-                      <TableRow>
-                        <TableCell colSpan={6} className="py-1 text-xs">
-                          {Object.entries(wrong).map(([field, message]) => (
-                            <p key={field} className="text-danger-strong">
-                              {m.display_name}: {field.replaceAll("_", " ")} — {message}
-                            </p>
-                          ))}
-                          {heads ? <p className="text-warning-strong">{heads}</p> : null}
-                        </TableCell>
-                      </TableRow>
-                    ) : null}
-                  </Fragment>
-                )
-              })}
-            </TableBody>
-          </Table>
+        <div className="flex max-w-xs flex-col gap-1.5">
+          <Label htmlFor="runs-all">{RUN_COPY.runsAll}</Label>
+          <Input
+            id="runs-all"
+            type="number"
+            min={1}
+            max={MAX_RUNS}
+            value={runsAll}
+            onChange={(e) => setAllRuns(e.target.value)}
+          />
+          <p className="text-text-muted text-xs">{RUN_COPY.runsAllHint}</p>
         </div>
+        <details open={anyWrong || undefined} className="group">
+          <summary className="text-accent cursor-pointer text-sm">{RUN_COPY.expert}</summary>
+          <div className="mt-3">
+            <div className="border-border overflow-hidden rounded-lg border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-16">{RUN_COPY.include}</TableHead>
+                    <TableHead>{RUN_COPY.columns.model}</TableHead>
+                    <TableHead className="w-24">{RUN_COPY.columns.runs}</TableHead>
+                    <TableHead className="w-32">{RUN_COPY.columns.temperature}</TableHead>
+                    <TableHead className="w-36">{RUN_COPY.columns.maxTokens}</TableHead>
+                    <TableHead className="w-44">{RUN_COPY.advanced}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selected.map((m) => {
+                    const row = rows[m.id] ?? defaultRow(m)
+                    const wrong = problems(m, row)
+                    const heads = warning(m, row)
+                    const count = advancedCount(m, row)
+                    return (
+                      <Fragment key={m.id}>
+                        <TableRow>
+                          <TableCell>
+                            <Checkbox
+                              checked={row.include}
+                              onCheckedChange={(checked) => set(m, "include", checked)}
+                              aria-label={m.display_name}
+                            />
+                          </TableCell>
+                          <TableCell>{m.display_name}</TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min={1}
+                              max={MAX_RUNS}
+                              value={row.runs}
+                              aria-label={`${RUN_COPY.columns.runs} ${m.display_name}`}
+                              aria-invalid={wrong.runs ? true : undefined}
+                              title={wrong.runs}
+                              onChange={(e) => set(m, "runs", e.target.value)}
+                            />
+                          </TableCell>
+                          {(["temperature", "max_tokens"] as const).map((name) => (
+                            <TableCell key={name}>
+                              <Input
+                                type="number"
+                                step={name === "temperature" ? "0.1" : "1"}
+                                min={m.parameters?.[name]?.min ?? undefined}
+                                max={m.parameters?.[name]?.max ?? undefined}
+                                disabled={!supports(m, name)}
+                                title={supports(m, name) ? wrong[name] : RUN_COPY.unsupported}
+                                aria-label={`${RUN_COPY.columns[name === "temperature" ? "temperature" : "maxTokens"]} ${m.display_name}`}
+                                aria-invalid={wrong[name] ? true : undefined}
+                                value={row[name]}
+                                onChange={(e) => set(m, name, e.target.value)}
+                              />
+                            </TableCell>
+                          ))}
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              aria-expanded={open[m.id] ?? false}
+                              onClick={() => setOpen({ ...open, [m.id]: !open[m.id] })}
+                            >
+                              {RUN_COPY.advancedSet(count)} {open[m.id] ? "▴" : "▾"}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                        {open[m.id] ? (
+                          <TableRow>
+                            <TableCell colSpan={6} className="bg-subtle">
+                              <AdvancedFields
+                                model={m}
+                                row={row}
+                                wrong={wrong}
+                                onChange={(f, v) => set(m, f, v)}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ) : null}
+                        {Object.keys(wrong).length > 0 || heads ? (
+                          <TableRow>
+                            <TableCell colSpan={6} className="py-1 text-xs">
+                              {Object.entries(wrong).map(([field, message]) => (
+                                <p key={field} className="text-danger-strong">
+                                  {m.display_name}: {field.replaceAll("_", " ")} — {message}
+                                </p>
+                              ))}
+                              {heads ? <p className="text-warning-strong">{heads}</p> : null}
+                            </TableCell>
+                          </TableRow>
+                        ) : null}
+                      </Fragment>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </details>
       </Section>
       <Section number={2} title={RUN_COPY.previewHeading} description={RUN_COPY.previewHint}>
         <div className="grid gap-6 md:grid-cols-2">

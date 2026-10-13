@@ -8,6 +8,7 @@
 import type { ExperimentCreate, ModelProfileOut } from "@/lib/api/types"
 
 export const MAX_RUNS = 5
+export const DEFAULT_RUNS = "3"
 export const MAX_SEED = 2 ** 31 - 1 - (MAX_RUNS - 1)
 export const MAX_STOP = 4
 export const MAX_STOP_CHARS = 100
@@ -52,7 +53,7 @@ function clamp(m: ModelProfileOut, name: string, value: number): string {
 export function defaultRow(m: ModelProfileOut): Row {
   return {
     include: true,
-    runs: "1",
+    runs: DEFAULT_RUNS,
     temperature: supports(m, "temperature") ? clamp(m, "temperature", 0) : "",
     max_tokens: "",
     top_p: "",

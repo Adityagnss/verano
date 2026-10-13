@@ -45,6 +45,7 @@ from app.modules.registry.schemas import (
     ProviderSpec,
     RateLimitHeaders,
     RawModel,
+    SharedCredentialOut,
 )
 
 load_plugins("app.modules.registry.plugins")
@@ -137,6 +138,48 @@ class RegistryService:
         )
         count = await self._store_profiles(credential, spec, raw_models)
         return credential_out(credential, count)
+
+    async def shared_credentials(self, project: ProjectOut) -> list[SharedCredentialOut]:
+        """Keys from the organization's other projects that this project does not have yet (same provider and
+        same last four characters), so a key is typed once."""
+        have = {(c.provider, c.key_last4) for c, _ in await self._repo.credentials_with_counts(project.id)}
+        seen: set[tuple[str, str | None]] = set(have)
+        out = []
+        for row, project_name in await self._repo.credentials_elsewhere(project.organization_id, project.id):
+            identity = (row.provider, row.key_last4)
+            if identity in seen:
+                continue
+            seen.add(identity)
+            out.append(
+                SharedCredentialOut(
+                    id=row.id,
+                    provider=row.provider,
+                    label=row.label,
+                    key_last4=row.key_last4,
+                    base_url=row.base_url,
+                    project_name=project_name,
+                )
+            )
+        return out
+
+    async def copy_credential(
+        self, project: ProjectOut, principal: Principal, credential_id: uuid.UUID
+    ) -> CredentialOut:
+        """Add a key from another project of the organization to this one: it is checked and its models listed like
+        a key typed in here."""
+        found = next((c for c in await self.shared_credentials(project) if c.id == credential_id), None)
+        source = await self._repo.credential_any(credential_id) if found else None
+        if source is None or found is None:
+            raise NotFound(CREDENTIAL_NOT_FOUND)
+        body = CredentialCreate(
+            provider=source.provider,
+            api_key=self._decrypted(source),
+            base_url=source.base_url,
+            label=source.label,
+            rpm_limit=source.rpm_limit,
+            tpm_limit=source.tpm_limit,
+        )
+        return await self.add_credential(project, principal, body)
 
     async def list_credentials(self, project: ProjectOut) -> list[CredentialOut]:
         return [credential_out(row, n) for row, n in await self._repo.credentials_with_counts(project.id)]

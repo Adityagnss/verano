@@ -5,6 +5,8 @@
  */
 "use client"
 
+import { useState } from "react"
+
 import { Label } from "@/components/ui/label"
 import { NativeSelect } from "@/components/ui/select"
 import { useModels } from "@/features/keys/hooks"
@@ -50,18 +52,36 @@ export function JudgePicker({
   )
   const self = chosen !== null && tested.has(judgeKey(chosen))
   const suggested = suggestion.data?.suggested
+  const [changing, setChanging] = useState(false)
+  // The suggested model is used without asking: the choice is shown as a line, and opens on "Change".
+  const compact = chosen !== null && picked === "" && !changing
   return (
     <div className="flex max-w-md flex-col gap-1.5">
       <Label htmlFor={id}>{label}</Label>
-      <NativeSelect id={id} value={chosen ? judgeKey(chosen) : ""} onChange={(e) => onPick(e.target.value)}>
-        {chosen === null ? <option value="">{RESULTS_COPY.judgeNone}</option> : null}
-        {candidates.map((c) => (
-          <option key={judgeKey(c)} value={judgeKey(c)}>
-            {name(c)}
-            {suggested && judgeKey(suggested) === judgeKey(c) ? ` (${RESULTS_COPY.judgeSuggested})` : ""}
-          </option>
-        ))}
-      </NativeSelect>
+      {compact ? (
+        <p className="text-sm">
+          <span className="font-medium">{name(chosen)}</span>{" "}
+          <span className="text-text-muted">({RESULTS_COPY.judgeSuggested})</span>{" "}
+          <button
+            type="button"
+            id={id}
+            className="text-accent text-xs font-medium hover:underline"
+            onClick={() => setChanging(true)}
+          >
+            {RESULTS_COPY.judgeChange}
+          </button>
+        </p>
+      ) : (
+        <NativeSelect id={id} value={chosen ? judgeKey(chosen) : ""} onChange={(e) => onPick(e.target.value)}>
+          {chosen === null ? <option value="">{RESULTS_COPY.judgeNone}</option> : null}
+          {candidates.map((c) => (
+            <option key={judgeKey(c)} value={judgeKey(c)}>
+              {name(c)}
+              {suggested && judgeKey(suggested) === judgeKey(c) ? ` (${RESULTS_COPY.judgeSuggested})` : ""}
+            </option>
+          ))}
+        </NativeSelect>
+      )}
       {forJudging ? (
         <p className="text-text-muted text-xs">{suggestion.data?.reason ?? RESULTS_COPY.judgeHint}</p>
       ) : null}

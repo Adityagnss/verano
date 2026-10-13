@@ -15,6 +15,15 @@ export const KEYS_COPY = {
   addKey: "Add key",
   connect: "Connect",
   free: "Free · local",
+  sharedHeading: "Use a key you already added in another project",
+  sharedUse: "Use here",
+  sharedFrom: (project: string) => `from ${project}`,
+  suggestedHeading: "Suggested for you",
+  suggestedHint:
+    "A cheap, a middle and a strong model from what your keys reach, so you can see what a better model buys.",
+  tier: { cheap: "Cheap", balanced: "Balanced", strong: "Strong" },
+  useSuggested: "Use these models",
+  suggestedPerMillion: (price: string) => `${price} per million tokens`,
   keysHeading: "Your keys",
   noKeysTitle: "No keys yet",
   noKeysDescription: "Add a key above. Local Ollama needs no key, only its address.",
@@ -36,6 +45,7 @@ export const KEYS_COPY = {
     sort: "Sort by",
     sorts: { name: "Name", cheapest: "Cheapest first", context: "Largest context first" },
     json: "Supports JSON mode",
+    showAll: "Show dated copies and non-chat models",
     selectedOnly: "Selected only",
     clear: "Clear filters",
     shown: (shown: number, total: number) =>

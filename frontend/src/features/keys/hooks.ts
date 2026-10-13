@@ -103,3 +103,28 @@ export function useSaveSelection(projectId: string) {
     onSuccess: invalidate,
   })
 }
+
+/** Keys already added in this organization's other projects (so a key is typed once). */
+export function useSharedKeys(projectId: string) {
+  return useQuery({
+    queryKey: [...keys.credentials(projectId), "in-other-projects"],
+    queryFn: () =>
+      call(() =>
+        api.GET("/api/v1/projects/{project_id}/credentials/in-other-projects", { params: path(projectId) }),
+      ),
+  })
+}
+
+export function useCopyKey(projectId: string) {
+  const invalidate = useInvalidateProject(projectId)
+  return useMutation({
+    mutationFn: (credentialId: string) =>
+      call(() =>
+        api.POST("/api/v1/projects/{project_id}/credentials/copy", {
+          params: path(projectId),
+          body: { credential_id: credentialId },
+        }),
+      ),
+    onSuccess: invalidate,
+  })
+}

@@ -15,12 +15,14 @@ from app.core.security import CurrentPrincipal
 from app.modules.projects.dependencies import ProjectScope
 from app.modules.registry.dependencies import RegistryServiceDep
 from app.modules.registry.schemas import (
+    CredentialCopy,
     CredentialCreate,
     CredentialOut,
     CredentialUpdate,
     ModelProfileOut,
     ModelSelection,
     ProviderOut,
+    SharedCredentialOut,
 )
 
 router = APIRouter(tags=["registry"])
@@ -37,6 +39,22 @@ async def add_credential(
     body: CredentialCreate, project: ProjectScope, principal: CurrentPrincipal, service: RegistryServiceDep
 ) -> CredentialOut:
     return await service.add_credential(project, principal, body)
+
+
+@router.get(f"{PROJECT}/credentials/in-other-projects")
+async def credentials_in_other_projects(
+    project: ProjectScope, service: RegistryServiceDep
+) -> list[SharedCredentialOut]:
+    """Keys already added in this organization's other projects."""
+    return await service.shared_credentials(project)
+
+
+@router.post(f"{PROJECT}/credentials/copy", status_code=status.HTTP_201_CREATED)
+async def copy_credential(
+    body: CredentialCopy, project: ProjectScope, principal: CurrentPrincipal, service: RegistryServiceDep
+) -> CredentialOut:
+    """Use a key from another project here, without typing it again."""
+    return await service.copy_credential(project, principal, body.credential_id)
 
 
 @router.get(f"{PROJECT}/credentials")

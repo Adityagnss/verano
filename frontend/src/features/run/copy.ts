@@ -40,6 +40,13 @@ export const RUN_COPY = {
     "Temperature 0 and a fixed seed are filled in where a model accepts them, so a run can be repeated. Clear a box to use the provider's own default.",
   include: "Include",
   advanced: "Advanced",
+  runsAll: "Answers per test case, for every model",
+  runsAllHint:
+    "Each model answers each case this many times, so the pass rate and how consistent it is can be compared fairly. 1 to 5.",
+  expert: "Expert settings: runs, temperature, maximum length and more, model by model",
+  summaryHeading: "What will run",
+  summary: (cases: number, models: string, version: string, judge: string | null) =>
+    `${cases} test cases on ${models}, with ${version}${judge ? `, judged by ${judge}` : ""}.`,
   advancedSet: (count: number) => (count === 0 ? "Advanced" : `Advanced (${count} set)`),
   advancedHint:
     "Only settings this model accepts are shown. Leave a box empty to use the provider's default.",

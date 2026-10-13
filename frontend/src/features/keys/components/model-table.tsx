@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import type { ModelProfileOut } from "@/lib/api/types"
+import { isNoiseModel } from "../domain"
 import { formatPricePair, formatTokens } from "@/lib/format"
 
 import { KEYS_COPY } from "../copy"
@@ -121,8 +122,14 @@ type Props = {
 export function ModelTable({ models, providerNames, selected, onToggle }: Props) {
   const [query, setQuery] = useState("")
   const [filters, setFilters] = useState<Filters>(NO_FILTERS)
+  const [showAll, setShowAll] = useState(false)
   const patch = (change: Partial<Filters>) => setFilters((current) => ({ ...current, ...change }))
-  const filtered = useMemo(() => applyFilters(models, filters, selected), [models, filters, selected])
+  // Dated copies and non-chat models are hidden unless they are ticked or "show everything" is on.
+  const visible = useMemo(
+    () => (showAll ? models : models.filter((model) => !isNoiseModel(model) || selected.has(model.id))),
+    [models, showAll, selected],
+  )
+  const filtered = useMemo(() => applyFilters(visible, filters, selected), [visible, filters, selected])
   const providers = useMemo(() => [...new Set(models.map((model) => model.provider))].sort(), [models])
   const filtering = JSON.stringify(filters) !== JSON.stringify(NO_FILTERS)
   const columns = useMemo(
@@ -270,6 +277,14 @@ export function ModelTable({ models, providerNames, selected, onToggle }: Props)
           </label>
           <label className="flex items-center gap-2">
             <Checkbox
+              checked={showAll}
+              aria-label={KEYS_COPY.filters.showAll}
+              onCheckedChange={(checked) => setShowAll(checked)}
+            />
+            {KEYS_COPY.filters.showAll}
+          </label>
+          <label className="flex items-center gap-2">
+            <Checkbox
               checked={filters.selectedOnly}
               aria-label={KEYS_COPY.filters.selectedOnly}
               onCheckedChange={(checked) => patch({ selectedOnly: checked })}
@@ -277,7 +292,7 @@ export function ModelTable({ models, providerNames, selected, onToggle }: Props)
             {KEYS_COPY.filters.selectedOnly}
           </label>
           <span className="text-text-secondary ml-auto" aria-live="polite">
-            {KEYS_COPY.filters.shown(rows.length, models.length)}
+            {KEYS_COPY.filters.shown(rows.length, visible.length)}
           </span>
           {filtering || query ? (
             <Button

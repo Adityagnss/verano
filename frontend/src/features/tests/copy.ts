@@ -44,6 +44,8 @@ export const TESTS_COPY = {
   confirm: "Confirm task",
   confirmed: "Task confirmed.",
   specConfirmed: "Confirmed",
+  changeWriter: "Change",
+  rulesCount: (n: number) => `${n} ${n === 1 ? "rule" : "rules"}`,
   editSpec: "Edit",
   generateHeading: "Generate test cases",
   generateHint: "Choose how many. Your own files count toward the total.",

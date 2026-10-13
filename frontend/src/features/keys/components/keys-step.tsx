@@ -23,6 +23,8 @@ import { AddKeyDialog } from "./add-key-dialog"
 import { CredentialList } from "./credential-list"
 import { ModelTable } from "./model-table"
 import { ProviderGrid } from "./provider-grid"
+import { SharedKeys } from "./shared-keys"
+import { SuggestedModels } from "./suggested-models"
 
 export function KeysStep({ projectId }: { projectId: string }) {
   const providers = useProviders()
@@ -50,6 +52,19 @@ export function KeysStep({ projectId }: { projectId: string }) {
     setChanges((previous) => new Map(previous).set(id, checked))
   }, [])
 
+  /** Tick exactly these models, unticking the rest. */
+  const useOnly = useCallback(
+    (ids: string[]) => {
+      const wanted = new Set(ids)
+      const next = new Map<string, boolean>()
+      ;(models.data ?? []).forEach((m) => {
+        if (wanted.has(m.id) !== saved.has(m.id)) next.set(m.id, wanted.has(m.id))
+      })
+      setChanges(next)
+    },
+    [models.data, saved],
+  )
+
   async function saveSelection() {
     await save.mutateAsync({
       selected: [...selected].filter((id) => !saved.has(id)),
@@ -72,6 +87,7 @@ export function KeysStep({ projectId }: { projectId: string }) {
       <ErrorMessage error={providers.error ?? credentials.error ?? models.error} />
       <Section number={1} title={KEYS_COPY.providersHeading} description={KEYS_COPY.providersDescription}>
         <ProviderGrid providers={providers.data ?? []} onAdd={setAdding} />
+        <SharedKeys projectId={projectId} providerNames={providerNames} />
       </Section>
       <Section
         number={2}
@@ -97,6 +113,9 @@ export function KeysStep({ projectId }: { projectId: string }) {
           selected.size ? <StatusBadge tone="brand">{KEYS_COPY.selected(selected.size)}</StatusBadge> : null
         }
       >
+        {models.data && models.data.length > 0 ? (
+          <SuggestedModels models={models.data} selected={selected} onUse={useOnly} />
+        ) : null}
         {models.data && models.data.length > 0 ? (
           <ModelTable
             models={models.data}

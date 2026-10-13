@@ -1893,6 +1893,18 @@
         "title": "CostSummary",
         "type": "object"
       },
+      "CredentialCopy": {
+        "properties": {
+          "credential_id": {
+            "format": "uuid",
+            "title": "Credential Id",
+            "type": "string"
+          }
+        },
+        "required": ["credential_id"],
+        "title": "CredentialCopy",
+        "type": "object"
+      },
       "CredentialCreate": {
         "properties": {
           "api_key": {
@@ -6439,6 +6451,60 @@
         "title": "SessionStage",
         "type": "string"
       },
+      "SharedCredentialOut": {
+        "description": "A key already added in another project of the same organization, which can be used here too.",
+        "properties": {
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key_last4": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key Last4"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "project_name": {
+            "title": "Project Name",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": ["id", "provider", "label", "key_last4", "base_url", "project_name"],
+        "title": "SharedCredentialOut",
+        "type": "object"
+      },
       "SheetRequest": {
         "properties": {
           "sheet": {
@@ -8188,6 +8254,114 @@
           }
         ],
         "summary": "Add Credential",
+        "tags": ["registry"]
+      }
+    },
+    "/api/v1/projects/{project_id}/credentials/copy": {
+      "post": {
+        "description": "Use a key from another project here, without typing it again.",
+        "operationId": "copy_credential_api_v1_projects__project_id__credentials_copy_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CredentialCopy"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CredentialOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Copy Credential",
+        "tags": ["registry"]
+      }
+    },
+    "/api/v1/projects/{project_id}/credentials/in-other-projects": {
+      "get": {
+        "description": "Keys already added in this organization's other projects.",
+        "operationId": "credentials_in_other_projects_api_v1_projects__project_id__credentials_in_other_projects_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SharedCredentialOut"
+                  },
+                  "title": "Response Credentials In Other Projects Api V1 Projects  Project Id  Credentials In Other Projects Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Credentials In Other Projects",
         "tags": ["registry"]
       }
     },

@@ -143,114 +143,123 @@ function PanelBody({
 
   return (
     <Section title={RESULTS_COPY.judgingHeading} description={RESULTS_COPY.judgingHint}>
-      <div className="flex flex-col gap-4">
-        <JudgePicker projectId={projectId} id="panel-judge" picked={picked || stored} onPick={setPicked} />
-        {judged.map((e) => {
-          const draft = drafts[e.evaluator_name]
-          const update = (patch: Partial<Draft>) =>
-            setDrafts({ ...drafts, [e.evaluator_name]: { ...draft, ...patch } })
-          return (
-            <div key={e.id} className="bg-subtle ring-border flex flex-col gap-1.5 rounded-lg p-3 ring-1">
-              <span className="text-sm font-medium capitalize">{e.evaluator_name.replaceAll("_", " ")}</span>
-              <Label htmlFor={`criteria-${e.id}`} className="text-xs">
-                {RESULTS_COPY.criteria}
-              </Label>
-              <Textarea
-                id={`criteria-${e.id}`}
-                rows={2}
-                value={draft.criteria}
-                onChange={(event) => update({ criteria: event.target.value })}
-              />
-              <p className="text-text-muted text-xs">{RESULTS_COPY.criteriaHint}</p>
-              <Label htmlFor={`steps-${e.id}`} className="text-xs">
-                {RESULTS_COPY.steps}
-              </Label>
-              <Textarea
-                id={`steps-${e.id}`}
-                rows={3}
-                value={draft.steps}
-                onChange={(event) => update({ steps: event.target.value })}
-              />
-              <p className="text-text-muted text-xs">{RESULTS_COPY.stepsHint}</p>
-            </div>
-          )
-        })}
-        {answers.length ? (
-          <div className="flex flex-col gap-2">
-            <h3 className="text-sm font-medium">{RESULTS_COPY.tryHeading}</h3>
-            <div className="grid gap-3 md:grid-cols-2">
-              {names.length > 1 ? (
-                <NativeSelect aria-label="Check" value={target} onChange={(e) => setTryName(e.target.value)}>
-                  {names.map((n) => (
-                    <option key={n} value={n}>
-                      {n.replaceAll("_", " ")}
+      <details className="group">
+        <summary className="text-accent cursor-pointer text-sm">{RESULTS_COPY.judgingOpen}</summary>
+        <div className="mt-3 flex flex-col gap-4">
+          <JudgePicker projectId={projectId} id="panel-judge" picked={picked || stored} onPick={setPicked} />
+          {judged.map((e) => {
+            const draft = drafts[e.evaluator_name]
+            const update = (patch: Partial<Draft>) =>
+              setDrafts({ ...drafts, [e.evaluator_name]: { ...draft, ...patch } })
+            return (
+              <div key={e.id} className="bg-subtle ring-border flex flex-col gap-1.5 rounded-lg p-3 ring-1">
+                <span className="text-sm font-medium capitalize">
+                  {e.evaluator_name.replaceAll("_", " ")}
+                </span>
+                <Label htmlFor={`criteria-${e.id}`} className="text-xs">
+                  {RESULTS_COPY.criteria}
+                </Label>
+                <Textarea
+                  id={`criteria-${e.id}`}
+                  rows={2}
+                  value={draft.criteria}
+                  onChange={(event) => update({ criteria: event.target.value })}
+                />
+                <p className="text-text-muted text-xs">{RESULTS_COPY.criteriaHint}</p>
+                <Label htmlFor={`steps-${e.id}`} className="text-xs">
+                  {RESULTS_COPY.steps}
+                </Label>
+                <Textarea
+                  id={`steps-${e.id}`}
+                  rows={3}
+                  value={draft.steps}
+                  onChange={(event) => update({ steps: event.target.value })}
+                />
+                <p className="text-text-muted text-xs">{RESULTS_COPY.stepsHint}</p>
+              </div>
+            )
+          })}
+          {answers.length ? (
+            <div className="flex flex-col gap-2">
+              <h3 className="text-sm font-medium">{RESULTS_COPY.tryHeading}</h3>
+              <div className="grid gap-3 md:grid-cols-2">
+                {names.length > 1 ? (
+                  <NativeSelect
+                    aria-label="Check"
+                    value={target}
+                    onChange={(e) => setTryName(e.target.value)}
+                  >
+                    {names.map((n) => (
+                      <option key={n} value={n}>
+                        {n.replaceAll("_", " ")}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                ) : null}
+                <NativeSelect
+                  aria-label={RESULTS_COPY.tryPick}
+                  value={tryAnswer}
+                  onChange={(e) => setAnswerId(e.target.value)}
+                >
+                  {answers.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.label}
                     </option>
                   ))}
                 </NativeSelect>
-              ) : null}
-              <NativeSelect
-                aria-label={RESULTS_COPY.tryPick}
-                value={tryAnswer}
-                onChange={(e) => setAnswerId(e.target.value)}
-              >
-                {answers.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.label}
-                  </option>
-                ))}
-              </NativeSelect>
-            </div>
-            <p className="text-text-muted text-xs">
-              {tryQuote.data
-                ? RESULTS_COPY.tryCost(tryQuote.data.judge_calls, tryQuote.data.judge_cost ?? null)
-                : null}
-            </p>
-            <ErrorMessage error={tryQuote.error ?? tryIt.error} />
-            <Button
-              size="sm"
-              variant="outline"
-              className="self-start"
-              disabled={!tryBody || !tryQuote.data || tryIt.isPending}
-              onClick={() => tryBody && tryIt.mutate(tryBody)}
-            >
-              {tryIt.isPending ? RESULTS_COPY.trying : RESULTS_COPY.tryRun}
-            </Button>
-            {tryIt.data ? (
-              <div className="flex flex-col gap-2">
-                <p className="text-sm">
-                  {tryIt.data.score.status === "unscored"
-                    ? tryIt.data.score.reason
-                    : `${RESULTS_COPY.tryResult(tryIt.data.score.value, tryIt.data.score.passed)} — ${tryIt.data.score.reason}`}
-                </p>
-                <JudgeCallList calls={tryIt.data.calls} />
               </div>
-            ) : null}
+              <p className="text-text-muted text-xs">
+                {tryQuote.data
+                  ? RESULTS_COPY.tryCost(tryQuote.data.judge_calls, tryQuote.data.judge_cost ?? null)
+                  : null}
+              </p>
+              <ErrorMessage error={tryQuote.error ?? tryIt.error} />
+              <Button
+                size="sm"
+                variant="outline"
+                className="self-start"
+                disabled={!tryBody || !tryQuote.data || tryIt.isPending}
+                onClick={() => tryBody && tryIt.mutate(tryBody)}
+              >
+                {tryIt.isPending ? RESULTS_COPY.trying : RESULTS_COPY.tryRun}
+              </Button>
+              {tryIt.data ? (
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm">
+                    {tryIt.data.score.status === "unscored"
+                      ? tryIt.data.score.reason
+                      : `${RESULTS_COPY.tryResult(tryIt.data.score.value, tryIt.data.score.passed)} — ${tryIt.data.score.reason}`}
+                  </p>
+                  <JudgeCallList calls={tryIt.data.calls} />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          <div className="flex flex-col gap-2">
+            {changedChecks || changedJudge ? (
+              <p className="text-text-secondary text-xs">
+                {RESULTS_COPY.scoreAgainCost(quote.data?.judge_calls ?? null, quote.data?.judge_cost ?? null)}
+              </p>
+            ) : (
+              <p className="text-text-muted text-xs">{RESULTS_COPY.nothingChanged}</p>
+            )}
+            <ErrorMessage error={quote.error ?? again.error} />
+            <Button
+              className="self-start"
+              disabled={!(changedChecks || changedJudge) || again.isPending}
+              onClick={() =>
+                again.mutate({
+                  experimentId,
+                  judge: changedJudge ? chosen : null,
+                  evaluators: changedChecks ? checks : null,
+                })
+              }
+            >
+              {again.isPending ? RESULTS_COPY.scoring : RESULTS_COPY.scoreWithChanges}
+            </Button>
           </div>
-        ) : null}
-        <div className="flex flex-col gap-2">
-          {changedChecks || changedJudge ? (
-            <p className="text-text-secondary text-xs">
-              {RESULTS_COPY.scoreAgainCost(quote.data?.judge_calls ?? null, quote.data?.judge_cost ?? null)}
-            </p>
-          ) : (
-            <p className="text-text-muted text-xs">{RESULTS_COPY.nothingChanged}</p>
-          )}
-          <ErrorMessage error={quote.error ?? again.error} />
-          <Button
-            className="self-start"
-            disabled={!(changedChecks || changedJudge) || again.isPending}
-            onClick={() =>
-              again.mutate({
-                experimentId,
-                judge: changedJudge ? chosen : null,
-                evaluators: changedChecks ? checks : null,
-              })
-            }
-          >
-            {again.isPending ? RESULTS_COPY.scoring : RESULTS_COPY.scoreWithChanges}
-          </Button>
         </div>
-      </div>
+      </details>
     </Section>
   )
 }

@@ -195,6 +195,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/credentials/copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Copy Credential
+         * @description Use a key from another project here, without typing it again.
+         */
+        post: operations["copy_credential_api_v1_projects__project_id__credentials_copy_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/credentials/in-other-projects": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Credentials In Other Projects
+         * @description Keys already added in this organization's other projects.
+         */
+        get: operations["credentials_in_other_projects_api_v1_projects__project_id__credentials_in_other_projects_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/credentials/{credential_id}": {
         parameters: {
             query?: never;
@@ -2122,6 +2162,14 @@ export interface components {
             /** Cost */
             cost: string;
         };
+        /** CredentialCopy */
+        CredentialCopy: {
+            /**
+             * Credential Id
+             * Format: uuid
+             */
+            credential_id: string;
+        };
         /** CredentialCreate */
         CredentialCreate: {
             /** Api Key */
@@ -3833,6 +3881,27 @@ export interface components {
          * @enum {string}
          */
         SessionStage: "analyzing" | "testing" | "confirming" | "done" | "failed" | "stopped";
+        /**
+         * SharedCredentialOut
+         * @description A key already added in another project of the same organization, which can be used here too.
+         */
+        SharedCredentialOut: {
+            /** Base Url */
+            base_url: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Key Last4 */
+            key_last4: string | null;
+            /** Label */
+            label: string | null;
+            /** Project Name */
+            project_name: string;
+            /** Provider */
+            provider: string;
+        };
         /** SheetRequest */
         SheetRequest: {
             /** Sheet */
@@ -4681,6 +4750,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CredentialOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    copy_credential_api_v1_projects__project_id__credentials_copy_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CredentialCopy"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    credentials_in_other_projects_api_v1_projects__project_id__credentials_in_other_projects_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SharedCredentialOut"][];
                 };
             };
             /** @description Validation Error */

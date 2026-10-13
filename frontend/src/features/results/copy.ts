@@ -16,6 +16,9 @@ export const RESULTS_COPY = {
   ],
   tiles: { quality: "Best quality", passRate: "Most passed", cost: "Cheapest per call", speed: "Fastest" },
   tileNone: "—",
+  judgingOpen:
+    "Change how answers are judged, try the judge on one answer, or score again (the same checks as on Test Cases)",
+  judgeChange: "Change",
   candidateTest: (strategy: string) =>
     `This is Improve's test of the candidate “${strategy}”, on part of your test cases.`,
   candidateUse: "To use that prompt, save it as a version and test it on all test cases.",

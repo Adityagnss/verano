@@ -17,6 +17,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.pagination import PageParams, keyset
+from app.modules.projects.models import Project
 from app.modules.registry.models import ModelProfile, ProviderCredential
 
 UPSERT_REFRESHED = (
@@ -63,6 +64,21 @@ class RegistryRepository:
             .order_by(ProviderCredential.id)
         )
         return [(row, int(n)) for row, n in (await self._session.execute(query)).all()]
+
+    async def credential_any(self, credential_id: uuid.UUID) -> ProviderCredential | None:
+        return await self._session.get(ProviderCredential, credential_id)
+
+    async def credentials_elsewhere(
+        self, organization_id: uuid.UUID, exclude_project_id: uuid.UUID
+    ) -> list[tuple[ProviderCredential, str]]:
+        """Keys added in the organization's other projects, with the project's name, newest first."""
+        query = (
+            select(ProviderCredential, Project.name)
+            .join(Project, Project.id == ProviderCredential.project_id)
+            .where(Project.organization_id == organization_id, Project.id != exclude_project_id)
+            .order_by(ProviderCredential.id.desc())
+        )
+        return [(row, name) for row, name in (await self._session.execute(query)).all()]
 
     async def model_count(self, credential_id: uuid.UUID) -> int:
         query = select(func.count()).where(ModelProfile.credential_id == credential_id)

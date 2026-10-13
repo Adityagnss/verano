@@ -25,8 +25,8 @@ export const PROMPT_COPY = {
   unchangedHint: (n: number, next: number) =>
     `This is version ${n}. Edit the text above to save version ${next}. To test a version, pick it on the Run step.`,
   reviewHint: "Updates as you type.",
-  name: "Prompt name",
-  namePlaceholder: "e.g. Ticket triage",
+  name: "Prompt name (optional)",
+  namePlaceholder: "Taken from the first line of the prompt if left empty",
   system: "System prompt",
   systemHint: "Instructions for the model. Optional if you write a user prompt.",
   user: "User prompt",
@@ -35,7 +35,7 @@ export const PROMPT_COPY = {
   parameters: "Default parameters",
   temperature: "Temperature",
   maxTokens: "Max reply tokens",
-  changeReason: "What changed (optional)",
+  changeReason: "What changed (optional, written for you if left empty)",
   review: "Prompt check",
   reviewEmpty: "Start writing and the checks appear here.",
   shape: {

@@ -193,6 +193,21 @@ class CredentialOut(BaseModel):
     created_at: datetime
 
 
+class SharedCredentialOut(BaseModel):
+    """A key already added in another project of the same organization, which can be used here too."""
+
+    id: uuid.UUID
+    provider: str
+    label: str | None
+    key_last4: str | None
+    base_url: str | None
+    project_name: str
+
+
+class CredentialCopy(BaseModel):
+    credential_id: uuid.UUID
+
+
 class ModelProfileOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
