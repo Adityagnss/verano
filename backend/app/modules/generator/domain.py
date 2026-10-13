@@ -27,6 +27,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from app.core.text import clip
+from app.modules.evaluation.constraints import split_rules
 from app.modules.generator.schemas import CaseCategory, OutputFormat, TaskSpec, TaskType
 from app.modules.registry.schemas import ModelProfileOut
 
@@ -144,23 +145,51 @@ def case_text(inputs: dict[str, Any]) -> str:
     return "\n".join(str(value) for _, value in sorted(clip(inputs).items()))
 
 
+RULES_JUDGE = "g_eval_rules"
+POLICY_JUDGE = "g_eval_policy"
+RULES_CRITERIA = "The reply obeys every one of these rules: {rules}."
+
+
 def select_evaluators(spec: TaskSpec, catalog: EvaluatorCatalog) -> list[EvaluatorChoice]:
+    """The task type's evaluators, plus the Task Spec's rules split by who can check them: a program checks what it
+    can read (its weight is the share of rules it covers, so it cannot lift the score as a whole check), and the
+    judges are given the rest, in the policy judge when the task has one, else in a judge of its own."""
+    checkable, unreadable = split_rules(spec.constraints)
     templates = list(catalog.task_types[spec.task_type])
-    if spec.constraints:
+    if checkable:
         templates.append(catalog.constraints)
+    defaults = catalog.defaults
     choices = []
     for template in templates:
         config = dict(template.config)
         for field in template.from_spec:
             config[field] = getattr(spec, field)
+        weight = template.weight if template.weight is not None else defaults["weight"]
+        if template is catalog.constraints:
+            weight *= len(checkable) / len(spec.constraints)
+        if unreadable and template.name == POLICY_JUDGE:
+            config["criteria"] = f"{config['criteria']} Also: {RULES_CRITERIA.format(rules='; '.join(unreadable))}"
+            unreadable = []
         choices.append(
             EvaluatorChoice(
                 name=template.name,
                 version=template.version,
                 config={"kind": template.kind, **config},
-                threshold=template.threshold if template.threshold is not None else catalog.defaults["threshold"],
-                weight=template.weight if template.weight is not None else catalog.defaults["weight"],
-                required=template.required if template.required is not None else catalog.defaults["required"],
+                threshold=template.threshold if template.threshold is not None else defaults["threshold"],
+                weight=weight,
+                required=template.required if template.required is not None else defaults["required"],
+            )
+        )
+    if unreadable:
+        criteria = RULES_CRITERIA.format(rules="; ".join(unreadable))
+        choices.append(
+            EvaluatorChoice(
+                name=RULES_JUDGE,
+                version="1",
+                config={"kind": "deepeval", "metric": "g_eval", "criteria": criteria},
+                threshold=defaults["threshold"],
+                weight=defaults["weight"],
+                required=defaults["required"],
             )
         )
     return choices

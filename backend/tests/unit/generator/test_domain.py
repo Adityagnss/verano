@@ -11,6 +11,7 @@ from app.modules.datasets.domain import SplitCandidate, assign_splits
 from app.modules.datasets.schemas import ItemSource, Split
 from app.modules.generator.domain import (
     EvaluatorCatalog,
+    EvaluatorChoice,
     GenerationCatalog,
     answer_label,
     missing_labels,
@@ -36,6 +37,32 @@ SPEC = TaskSpec(
     allowed_outputs=["billing", "shipping"],
     constraints=["one word"],
 )
+
+
+def test_rules_are_split_between_a_program_check_and_the_judges() -> None:
+    readable = "Never use more than one exclamation mark"
+    conditional = "Keep it under 80 words unless the customer asks for detailed steps"
+    meaning = "Never promise anything not stated in policy"
+
+    def chosen(task_type: str, rules: list[str]) -> dict[str, EvaluatorChoice]:
+        spec = SPEC.model_copy(update={"task_type": task_type, "constraints": rules})
+        return {c.name: c for c in select_evaluators(spec, EVALUATORS)}
+
+    mixed = chosen("conversation", [readable, conditional, meaning])
+    assert mixed["constraints"].weight == pytest.approx(1 / 3)  # it covers one rule of three, so it counts for a third
+    criteria = mixed["g_eval_policy"].config["criteria"]
+    assert conditional in criteria
+    assert meaning in criteria
+    assert readable not in criteria
+    assert "g_eval_rules" not in mixed  # the task already has a policy judge, so no extra judge call
+
+    other = chosen("classification", [meaning])
+    assert "constraints" not in other  # nothing a program can check
+    assert meaning in other["g_eval_rules"].config["criteria"]
+    assert other["g_eval_rules"].config["kind"] == "deepeval"
+
+    assert "g_eval_rules" not in chosen("classification", [readable])  # nothing left for a judge
+    assert chosen("classification", [readable])["constraints"].weight == 1.0
 
 
 def test_targets_fill_only_the_gaps() -> None:

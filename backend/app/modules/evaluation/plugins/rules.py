@@ -9,8 +9,9 @@ Our rule evaluators (DEVELOPMENT.md 2.3 Step E): deterministic, free checks on o
 - `field_match`: share of the expected JSON's top-level fields the output gets right.
 - `length`: a summary is shorter than what it summarizes.
 - `constraints`: the Task Spec rules that can be checked mechanically ("one word",
-  "lowercase", "at most N words / characters"); rules it can't read are listed as
-  unchecked in the reason, never guessed.
+  "lowercase", "at most N words / characters / exclamation marks", see `constraints.py`);
+  the reason says how many it checked, and the rules it can't read (anything conditional or
+  about meaning) are listed as unchecked, never guessed: the judges read those.
 An evaluator returns None when it doesn't apply to a case (for example no expected output),
 so it is left out of that case's score instead of counting as a failure.
 """
@@ -22,14 +23,13 @@ from typing import Any
 
 import jsonschema
 
+from app.modules.evaluation.constraints import check_for
 from app.modules.evaluation.domain import EvalCase, Score, score
 from app.modules.generator.domain import normalize_label
 
 Rule = Callable[[EvalCase, dict[str, Any], float], Score | None]
 RULES: dict[str, Rule] = {}
 FENCE = re.compile(r"^```(?:json)?\s*|\s*```$", re.IGNORECASE)
-WORD_LIMIT = re.compile(r"(?:at most|no more than|max(?:imum)?|under|fewer than)\s+(\d+)\s+words?", re.I)
-CHAR_LIMIT = re.compile(r"(?:at most|no more than|max(?:imum)?|under|fewer than)\s+(\d+)\s+(?:characters|chars)", re.I)
 
 
 def rule(name: str) -> Callable[[Rule], Rule]:
@@ -112,28 +112,18 @@ def length(case: EvalCase, config: dict[str, Any], threshold: float) -> Score:
     return score(1.0 if ok else 0.0, threshold, "Shorter than the input." if ok else "Not shorter than the input.")
 
 
-def _check(constraint: str, output: str) -> bool | None:
-    text = constraint.lower()
-    if "one word" in text or "single word" in text:
-        return len(output.split()) == 1
-    if "lowercase" in text or "lower case" in text:
-        return output == output.lower()
-    if match := WORD_LIMIT.search(constraint):
-        return len(output.split()) <= int(match.group(1))
-    if match := CHAR_LIMIT.search(constraint):
-        return len(output) <= int(match.group(1))
-    return None
-
-
 @rule("constraints")
 def constraints(case: EvalCase, config: dict[str, Any], threshold: float) -> Score | None:
-    results = {c: _check(c, case.output.strip()) for c in config.get("constraints") or case.task_spec.constraints}
-    checked = {c: ok for c, ok in results.items() if ok is not None}
+    rules = config.get("constraints") or case.task_spec.constraints
+    output = case.output.strip()
+    checks = {c: check_for(c) for c in rules}
+    checked = {c: check(output) for c, check in checks.items() if check is not None}
     if not checked:
         return None
     broken = [c for c, ok in checked.items() if not ok]
-    unchecked = [c for c, ok in results.items() if ok is None]
-    reason = f"Broke: {'; '.join(broken)}." if broken else "Follows every checkable rule."
+    unchecked = [c for c, check in checks.items() if check is None]
+    reason = f"Checked {len(checked)} of {len(rules)} rules. "
+    reason += f"Broke: {'; '.join(broken)}." if broken else "Follows every rule it could check."
     if unchecked:
-        reason += f" Not checked automatically: {'; '.join(unchecked)}."
+        reason += f" Not checked automatically (the judges read these): {'; '.join(unchecked)}."
     return score(sum(checked.values()) / len(checked), threshold, reason)

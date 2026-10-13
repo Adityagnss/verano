@@ -5,7 +5,7 @@ from decimal import Decimal
 
 import pytest
 
-from app.modules.evaluation.domain import EvalCase
+from app.modules.evaluation.domain import EvalCase, Score
 from app.modules.evaluation.metrics import CaseOutcome, model_metrics
 from app.modules.evaluation.plugins.rules import RULES
 from app.modules.generator.schemas import TaskSpec
@@ -38,7 +38,31 @@ def test_rules_normalize_and_skip_what_does_not_apply() -> None:
     result = RULES["constraints"](case("Billing please"), {}, 1.0)
     assert result is not None
     assert result.value == 0.0
-    assert "Not checked automatically: a friendly tone" in result.reason
+    assert "Checked 2 of 3 rules." in result.reason
+    assert "Not checked automatically (the judges read these): a friendly tone" in result.reason
+
+
+def test_constraints_check_only_what_a_program_can_read_and_say_how_much() -> None:
+    rules = [
+        "Response must be under 80 words unless the customer asks for detailed steps",
+        "Never use more than one exclamation mark",
+        "Never promise anything not stated in policy",
+    ]
+    spec = SPEC.model_copy(update={"constraints": rules})
+
+    def run(output: str) -> Score:
+        result = RULES["constraints"](EvalCase({}, output, None, None, spec), {}, 0.5)
+        assert result is not None
+        return result
+
+    loud = run("Great! Sure!")
+    assert loud.value == 0.0
+    assert loud.reason.startswith("Checked 1 of 3 rules. Broke: Never use more than one exclamation mark.")
+    assert "unless the customer asks" in loud.reason  # a conditional rule is left to the judges, not guessed
+    assert "Never promise anything not stated in policy" in loud.reason
+    assert run("Sure! Here you go.").value == 1.0
+    only_meaning = SPEC.model_copy(update={"constraints": [rules[2]]})
+    assert RULES["constraints"](EvalCase({}, "x", None, None, only_meaning), {}, 0.5) is None
 
 
 def test_metrics_per_model() -> None:
