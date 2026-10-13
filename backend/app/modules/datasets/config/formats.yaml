@@ -1,12 +1,12 @@
 # Upload formats: which cards accept them (input = an input file sent to the models as one
-# attachment, golden = expected outputs, document = reference documents), their extensions,
+# attachment, input_rows = a table whose every row is its own test case, golden = expected outputs, document = reference documents), their extensions,
 # a label for messages, and the leading bytes the file must start with (hex), checked before
 # any parser touches it.
 formats:
-  csv: {purposes: [input, golden], label: CSV, extensions: [.csv, .tsv]}
-  xlsx: {purposes: [input, golden], label: Excel, extensions: [.xlsx], signature: "504b0304"}
-  json: {purposes: [input, golden], label: JSON, extensions: [.json]}
-  jsonl: {purposes: [input, golden], label: JSON Lines, extensions: [.jsonl, .ndjson]}
+  csv: {purposes: [input, input_rows, golden], label: CSV, extensions: [.csv, .tsv]}
+  xlsx: {purposes: [input, input_rows, golden], label: Excel, extensions: [.xlsx], signature: "504b0304"}
+  json: {purposes: [input, input_rows, golden], label: JSON, extensions: [.json]}
+  jsonl: {purposes: [input, input_rows, golden], label: JSON Lines, extensions: [.jsonl, .ndjson]}
   pdf: {purposes: [document], label: PDF, extensions: [.pdf], signature: "255044462d"}
   docx: {purposes: [document], label: Word, extensions: [.docx], signature: "504b0304"}
   txt: {purposes: [input, document], label: text, extensions: [.txt]}

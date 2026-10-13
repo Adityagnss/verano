@@ -63,6 +63,49 @@ async def test_an_input_file_is_one_test_case_holding_its_table_summary(
     assert '"distinct_count": 2' in text
 
 
+async def test_a_table_can_be_uploaded_so_that_every_row_is_its_own_test_case(
+    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue, container: Container
+) -> None:
+    messages = [
+        {"message": "Refund please", "id": "7"},
+        {"message": "", "id": "8"},
+        {"message": "Parcel lost", "id": "9"},
+    ]
+    response = await upload(client, session, "messages.csv", rows_file(messages, "csv"), purpose="input_rows")
+    assert response.status_code == 201, response.text
+    await jobs.drain()
+    done = await get_file(client, session, response.json()["id"])
+    assert (done["kind"], done["status"], done["imported_rows"], done["row_count"]) == ("raw_inputs", "imported", 2, 3)
+    items = await cases(container)
+    assert [item.inputs for item in items] == [
+        {"attachment": "Refund please"},
+        {"attachment": "Parcel lost"},
+    ]  # the blank row is skipped
+    assert [item.source_row for item in items] == [2, 4]  # file row numbers, so a case can be found in the file
+    assert {(item.source, item.review_status) for item in items} == {("input_file", "trusted")}
+
+    # a table with no message column sends every filled column of the row
+    table = [{"name": "Ada", "issue": "charged twice"}, {"name": "Bo", "issue": ""}]
+    again = await upload(client, session, "orders.csv", rows_file(table, "csv"), purpose="input_rows")
+    await jobs.drain()
+    assert (await get_file(client, session, again.json()["id"]))["imported_rows"] == 2
+    assert [item.inputs["attachment"] for item in (await cases(container))[2:]] == [
+        "name: Ada\nissue: charged twice",
+        "name: Bo",
+    ]
+
+
+async def test_a_table_with_nothing_in_its_rows_fails_with_a_clear_message(
+    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue, container: Container
+) -> None:
+    response = await upload(client, session, "empty.csv", rows_file([{"message": ""}], "csv"), purpose="input_rows")
+    await jobs.drain()
+    done = await get_file(client, session, response.json()["id"])
+    assert done["status"] == "failed"
+    assert "no test case was made" in done["error_message"]
+    assert await cases(container) == []
+
+
 async def test_a_golden_set_pairs_with_input_files_identically_from_every_format(
     client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue, container: Container
 ) -> None:

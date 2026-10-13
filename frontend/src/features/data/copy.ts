@@ -16,7 +16,8 @@ export const DATA_COPY = {
   cards: {
     inputs: {
       title: "Input files",
-      description: "The files your prompt works on. Each one is sent to the models as it is.",
+      description:
+        "What your prompt works on: a list of messages, or files. Text files are sent as they are.",
     },
     golden: {
       title: "Golden set",
@@ -28,6 +29,17 @@ export const DATA_COPY = {
     },
   },
   inputFormats: "CSV, XLSX, JSON, JSONL, TXT or MD",
+  tableChoice: {
+    legend: "A table file (CSV, XLSX, JSON, JSONL) is…",
+    rows: {
+      label: "A list of inputs: each row is a test case",
+      hint: "Use this for a list of messages. A column named message, text or question is sent; otherwise every filled column is.",
+    },
+    whole: {
+      label: "One input: the whole file is a single test case",
+      hint: "Use this when the prompt should read the file as a whole, for example a spreadsheet to extract from.",
+    },
+  },
   goldenFormats: "JSON, JSONL, CSV or XLSX",
   documentFormats: "PDF, DOCX, TXT or MD",
   choose: "Choose file",

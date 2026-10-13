@@ -61,11 +61,13 @@ TERMINAL = {
 MAPPABLE = {InputFileStatus.READY, InputFileStatus.VALIDATED, InputFileStatus.IMPORTED, InputFileStatus.FAILED}
 JOB_FOR_PURPOSE = {
     UploadPurpose.INPUT: "datasets.attach_file",
+    UploadPurpose.INPUT_ROWS: "datasets.attach_rows",
     UploadPurpose.GOLDEN: "datasets.profile_file",
     UploadPurpose.DOCUMENT: "documents.extract",
 }
 KIND_FOR_PURPOSE = {
     UploadPurpose.INPUT: InputFileKind.RAW_INPUTS,
+    UploadPurpose.INPUT_ROWS: InputFileKind.RAW_INPUTS,
     UploadPurpose.GOLDEN: InputFileKind.GOLDEN_SET,
     UploadPurpose.DOCUMENT: InputFileKind.REFERENCE_DOCUMENT,
 }

@@ -6,7 +6,7 @@
 "use client"
 
 import { Upload } from "lucide-react"
-import { useRef } from "react"
+import { useRef, useState } from "react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import type { UploadPurpose } from "@/lib/api/types"
 
 import { DATA_COPY } from "../copy"
+import { inputPurpose } from "../domain"
 import { useUpload } from "../hooks"
 
 const GOLDEN_ACCEPT = ".csv,.tsv,.xlsx,.json,.jsonl,.ndjson"
@@ -33,9 +34,11 @@ const CARDS: {
 function UploadCard({ projectId, card }: { projectId: string; card: (typeof CARDS)[number] }) {
   const input = useRef<HTMLInputElement>(null)
   const upload = useUpload(projectId)
+  const [wholeFile, setWholeFile] = useState(false)
   async function send(files: FileList | null) {
     for (const file of Array.from(files ?? [])) {
-      await upload.mutateAsync({ file, purpose: card.purpose })
+      const purpose = card.purpose === "input" ? inputPurpose(file.name, wholeFile) : card.purpose
+      await upload.mutateAsync({ file, purpose })
       toast.success(DATA_COPY.uploaded(file.name))
     }
     if (input.current) input.current.value = ""
@@ -60,6 +63,29 @@ function UploadCard({ projectId, card }: { projectId: string; card: (typeof CARD
             void send(event.target.files).catch((error: Error) => toast.error(error.message))
           }
         />
+        {card.purpose === "input" ? (
+          <fieldset className="flex flex-col gap-1.5">
+            <legend className="mb-1 text-xs font-medium">{DATA_COPY.tableChoice.legend}</legend>
+            {([false, true] as const).map((whole) => {
+              const choice = whole ? DATA_COPY.tableChoice.whole : DATA_COPY.tableChoice.rows
+              return (
+                <label key={String(whole)} className="flex items-start gap-2 text-xs">
+                  <input
+                    type="radio"
+                    name="table-choice"
+                    className="accent-lagoon mt-0.5"
+                    checked={wholeFile === whole}
+                    onChange={() => setWholeFile(whole)}
+                  />
+                  <span>
+                    <span className="font-medium">{choice.label}</span>
+                    <span className="text-text-muted block">{choice.hint}</span>
+                  </span>
+                </label>
+              )
+            })}
+          </fieldset>
+        ) : null}
         <Button variant="outline" onClick={() => input.current?.click()} disabled={upload.isPending}>
           <Upload />
           {upload.isPending ? DATA_COPY.uploading : DATA_COPY.choose}

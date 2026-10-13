@@ -26,7 +26,15 @@ from app.core.ids import uuid7
 from app.core.progress import ProgressEvent, ProgressHub, ProgressStatus
 from app.core.registry import load_plugins
 from app.core.storage import Storage
-from app.modules.datasets.domain import ItemDraft, Pairing, ReportBuilder, TableSummary, evaluate_row
+from app.modules.datasets.domain import (
+    ItemDraft,
+    Pairing,
+    ReportBuilder,
+    TableSummary,
+    as_text,
+    evaluate_row,
+    row_input,
+)
 from app.modules.datasets.ingest import channel
 from app.modules.datasets.models import InputFile
 from app.modules.datasets.plugins.importers.base import (
@@ -57,6 +65,8 @@ load_plugins("app.modules.datasets.plugins.importers")
 
 FILE_NOT_FOUND = "This file no longer exists."
 NO_MAPPING = "This file has no confirmed column mapping yet."
+NO_ROWS = "This file has no rows with anything in them, so no test case was made. Row 1 should hold the column names."
+PROFILE_SAMPLE_ROWS = 5
 SOURCE_FOR_KIND = {InputFileKind.GOLDEN_SET: ItemSource.GOLDEN, InputFileKind.RAW_INPUTS: ItemSource.INPUT_FILE}
 REVIEW_FOR_KIND = {InputFileKind.GOLDEN_SET: ReviewStatus.TRUSTED, InputFileKind.RAW_INPUTS: ReviewStatus.TRUSTED}
 
@@ -125,6 +135,56 @@ class FileProcessor:
             "row_count": rows,
         }
         await self._finish(row, values, self._done("import", 1, 1))
+
+    async def attach_rows(self, file_id: uuid.UUID) -> None:
+        """A table of inputs where every row is its own test case: the row's message (or all its filled columns)
+        is the item's `attachment`. A blank row is skipped; the file's earlier import is replaced in one go."""
+        row = await self._stage(file_id, InputFileStatus.IMPORTING, "import")
+        ticker = self._ticker(row, "import")
+        drafts: list[ItemDraft] = []
+        samples: list[dict[str, Any]] = []
+        total = 0
+        async with self._rows(row) as stream:
+            columns = list(stream.columns)
+            for count, source in enumerate(stream.rows, start=1):
+                await ticker.tick(count)
+                if count > self._settings.upload_max_rows:
+                    raise ValidationFailed(TOO_MANY_ROWS.format(limit=self._settings.upload_max_rows))
+                total = count
+                if source.values is None:
+                    continue
+                if len(samples) < PROFILE_SAMPLE_ROWS:
+                    samples.append({name: as_text(value) for name, value in source.values.items()})
+                text = row_input(columns, source.values)
+                if text is not None:
+                    drafts.append(
+                        ItemDraft(
+                            inputs={ATTACHMENT_INPUT: text},
+                            expected_output=None,
+                            rubric=None,
+                            category=self._settings.dataset_default_category,
+                            tags=[],
+                            extra={"filename": row.filename, "row": source.number},
+                            source_row=source.number,
+                        )
+                    )
+        if not drafts:
+            raise ValidationFailed(NO_ROWS)
+        version = await self._datasets.ensure_draft(row.project_id)
+        await self._repo.delete_file_items(version.id, row.id)
+        first = await self._repo.next_position(version.id)
+        await self._repo.insert_items(
+            [self._item_values(row, version.id, draft, first + index) for index, draft in enumerate(drafts)]
+        )
+        profile = FileProfile(format=row.format, columns=columns, row_count=total, sample_rows=samples)
+        values = {
+            "status": InputFileStatus.IMPORTED,
+            "imported_rows": len(drafts),
+            "dataset_version_id": version.id,
+            "row_count": total,
+            "profile": profile.model_dump(mode="json"),
+        }
+        await self._finish(row, values, self._done("import", len(drafts), total))
 
     async def _attachment_text(self, row: InputFile) -> tuple[int | None, str]:
         settings = self._settings

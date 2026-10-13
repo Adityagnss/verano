@@ -110,6 +110,29 @@ def mapping_problems(mapping: ColumnMapping, columns: list[str]) -> list[str]:
     return problems
 
 
+MESSAGE_COLUMNS = {
+    "message", "user_message", "customer_message", "text", "input", "question", "prompt", "query", "content",
+    "utterance", "ticket", "body",
+}  # fmt: skip
+
+
+def message_column(columns: list[str]) -> str | None:
+    """The column that holds what the prompt receives: a column named like a message, else the only column."""
+    named = next((column for column in columns if normalize(column) in MESSAGE_COLUMNS), None)
+    return named or (columns[0] if len(columns) == 1 else None)
+
+
+def row_input(columns: list[str], values: dict[str, Any]) -> str | None:
+    """What one row sends to the prompt: its message column's text, else every filled column as `name: value`
+    lines. None for a row with nothing in it."""
+    column = message_column(columns)
+    if column is not None:
+        value = values.get(column)
+        return None if is_blank(value) else as_text(value).strip()
+    lines = [f"{name}: {as_text(value).strip()}" for name, value in values.items() if not is_blank(value)]
+    return "\n".join(lines) or None
+
+
 def is_blank(value: Any) -> bool:
     return value is None or (isinstance(value, str) and not value.strip())
 

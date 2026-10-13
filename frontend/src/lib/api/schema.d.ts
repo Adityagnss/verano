@@ -4061,7 +4061,7 @@ export interface components {
          * UploadPurpose
          * @enum {string}
          */
-        UploadPurpose: "input" | "golden" | "document";
+        UploadPurpose: "input" | "input_rows" | "golden" | "document";
         /** UserOut */
         UserOut: {
             /**

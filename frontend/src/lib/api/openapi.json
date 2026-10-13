@@ -7165,7 +7165,7 @@
         "type": "object"
       },
       "UploadPurpose": {
-        "enum": ["input", "golden", "document"],
+        "enum": ["input", "input_rows", "golden", "document"],
         "title": "UploadPurpose",
         "type": "string"
       },

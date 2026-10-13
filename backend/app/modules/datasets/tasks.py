@@ -1,5 +1,6 @@
 """
-Datasets background jobs: profile, validate and import an uploaded rows file. Each job is
+Datasets background jobs: profile, validate and import an uploaded rows file, and read an input file
+(one test case, or one per row). Each job is
 idempotent (running it twice gives the same result) and records a clear failure if it is
 killed, for example by the parse time limit.
 """
@@ -28,6 +29,13 @@ async def attach_file(container: Container, file_id: str) -> None:
     async with container.database.sessions() as session:
         processor = FileProcessor.from_container(session, container)
         await processor.run("import", uuid.UUID(file_id), processor.attach)
+
+
+@job("datasets.attach_rows", time_limit_setting="file_parse_timeout_s", on_failure=_failed)
+async def attach_rows(container: Container, file_id: str) -> None:
+    async with container.database.sessions() as session:
+        processor = FileProcessor.from_container(session, container)
+        await processor.run("import", uuid.UUID(file_id), processor.attach_rows)
 
 
 @job("datasets.validate_file", time_limit_setting="file_parse_timeout_s", on_failure=_failed)
