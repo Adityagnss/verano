@@ -12,6 +12,8 @@ def test_the_candidate_request_includes_the_technique_notes_and_keeps_its_marker
         system_template="Classify.",
         user_template=None,
         shape="system_only",
+        count=1,
+        angle="",
         groups=[],
         examples=[],
     )

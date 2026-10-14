@@ -144,6 +144,7 @@ export function RunStep({ projectId }: { projectId: string }) {
   }
   const estimate = useExperimentEstimate(projectId, body)
   const latest = experiments.data?.find((e) => e.origin === "manual")
+  const busy = Boolean(latest && ["planned", "running", "evaluating"].includes(latest.status))
 
   if (version.data !== undefined && !approved)
     return (
@@ -416,10 +417,17 @@ export function RunStep({ projectId }: { projectId: string }) {
           />
         </Section>
       ) : null}
-      <PageActions summary={<ErrorMessage error={start.error ?? cancel.error} />}>
+      <PageActions
+        summary={
+          <>
+            <ErrorMessage error={start.error ?? cancel.error} />
+            {busy ? <span>{RUN_COPY.busy}</span> : null}
+          </>
+        }
+      >
         <Button
           size="lg"
-          disabled={!body || start.isPending || !estimate.data}
+          disabled={!body || start.isPending || !estimate.data || busy}
           onClick={() => body && start.mutate(body)}
         >
           {start.isPending ? RUN_COPY.starting : RUN_COPY.start}

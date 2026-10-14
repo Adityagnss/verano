@@ -150,6 +150,19 @@ POLICY_JUDGE = "g_eval_policy"
 RULES_CRITERIA = "The reply obeys every one of these rules: {rules}."
 
 
+def policy_steps(rules: list[str]) -> list[str]:
+    """Written steps for the policy judge, so it does not invent its own: judged on what the reply states, never
+    on what it leaves out. With steps given, the judge also needs one call per answer instead of two."""
+    listed = "; ".join(rules) if rules else "the instructions the reply was given"
+    return [
+        "List every fact, number, promise or offer that the reply actually states.",
+        f"Compare each one with these rules: {listed}.",
+        "The reply fails only if something it states contradicts a rule or offers what a rule forbids.",
+        "A reply that leaves a rule or detail out is not wrong. Never fail it for what it did not say.",
+        "Score high when nothing the reply states breaks a rule, and low for each statement that does.",
+    ]
+
+
 def select_evaluators(spec: TaskSpec, catalog: EvaluatorCatalog) -> list[EvaluatorChoice]:
     """The task type's evaluators, plus the Task Spec's rules split by who can check them: a program checks what it
     can read (its weight is the share of rules it covers, so it cannot lift the score as a whole check), and the
@@ -170,6 +183,8 @@ def select_evaluators(spec: TaskSpec, catalog: EvaluatorCatalog) -> list[Evaluat
         if unreadable and template.name == POLICY_JUDGE:
             config["criteria"] = f"{config['criteria']} Also: {RULES_CRITERIA.format(rules='; '.join(unreadable))}"
             unreadable = []
+        if template.name == POLICY_JUDGE:
+            config["evaluation_steps"] = policy_steps(spec.constraints)
         choices.append(
             EvaluatorChoice(
                 name=template.name,

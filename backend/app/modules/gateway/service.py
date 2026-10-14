@@ -217,7 +217,12 @@ class GatewayService:
         await self._limiter.acquire(call.target, call.estimated_tokens)
         began = time.perf_counter()
         response = await self._client.acompletion(
-            call.target, call.messages, call.filtered.sent, self._settings.llm_timeout_s
+            call.target,
+            call.messages,
+            call.filtered.sent,
+            self._settings.assistant_timeout_s
+            if call.purpose is CallPurpose.ASSISTANT
+            else self._settings.llm_timeout_s,
         )
         return response, int((time.perf_counter() - began) * 1000)
 

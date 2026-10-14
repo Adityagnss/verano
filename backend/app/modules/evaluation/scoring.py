@@ -211,15 +211,24 @@ class ScoringService:
             task_spec=spec,
             context=[str(c) for c in item.context],
         )
-        scored = []
-        for config in configs:
-            context = CallContext(
+        contexts = [
+            CallContext(
                 project_id=experiment.project_id,
                 experiment_id=experiment.id,
                 test_case_run_id=row.id,
                 labels={"evaluation_run_id": str(run_id), "evaluator": config.evaluator_name},
             )
-            result = await self._evaluate_once(config, case, target, context, limit, shared)
+            for config in configs
+        ]
+        # the checks of one answer run side by side, so a slow judge does not hold up the others
+        results = await asyncio.gather(
+            *(
+                self._evaluate_once(config, case, target, context, limit, shared)
+                for config, context in zip(configs, contexts, strict=True)
+            )
+        )
+        scored = []
+        for config, result in zip(configs, results, strict=True):
             if result is None:
                 continue
             if isinstance(result, Unscored):

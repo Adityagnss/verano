@@ -82,6 +82,7 @@ export const RUN_COPY = {
     `Scoring is about ${percent}% of this run. Identical answers are judged only once.`,
   total: "Estimated total",
   unknown: "Price unknown",
+  busy: "An experiment is still running. Start another when it has finished.",
   start: "Start experiment",
   starting: "Starting…",
   runningHeading: "Latest experiment",

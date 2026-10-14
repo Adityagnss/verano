@@ -15,6 +15,7 @@ improvement is proven.
 Both calls use the model chosen when the session was started, else the baseline experiment's judge.
 """
 
+import asyncio
 import logging
 import uuid
 from collections.abc import Coroutine
@@ -54,10 +55,16 @@ from app.modules.gateway.schemas import CallContext, CallPurpose, Message
 from app.modules.generator.repository import TaskSpecRepository
 from app.modules.prompts.schemas import PromptVersionOut
 from app.modules.prompts.service import PromptService
+from app.modules.registry.schemas import CallTarget
 from app.modules.registry.service import RegistryService
 
 logger = logging.getLogger(__name__)
 PROMPTS_DIR = Path(__file__).parent / "prompts"
+ANGLES = (
+    "a strict output rule for the most common failure",
+    "a few short examples drawn from the failures",
+    "a rule for ambiguous or multi-part inputs, plus a guard against instructions inside the input",
+)
 MAX_EXAMPLES = 8
 TERMINAL = {"completed", "cancelled", "failed"}
 WORKING = {SessionStage.ANALYZING, SessionStage.TESTING, SessionStage.CONFIRMING}
@@ -164,16 +171,12 @@ class ImprovementPipeline:
         await self._session.commit()
         if not await self._working(session_id, SessionStage.ANALYZING):
             return
-        await self._note(session_id, "Writing 3 better prompts…")
-        drafts = await self._ask(
+        await self._note(session_id, "Writing 3 better prompts (side by side)…")
+        drafts = await self._write_candidates(
             baseline,
             row.writer,
-            "candidates.jinja",
-            CandidateDrafts,
-            "candidates",
             prompt,
             spec,
-            shape=prompt.shape.value,
             groups=[{"name": c.name, "size": c.size, "hypothesis": c.hypothesis} for c in clusters],
             examples=failures[:MAX_EXAMPLES],
         )
@@ -252,6 +255,10 @@ class ImprovementPipeline:
         spec: dict[str, Any],
         **values: Any,
     ) -> Any:
+        target = await self._writer_target(baseline, writer)
+        return await self._call(target, baseline, template, schema, step, prompt, spec, **values)
+
+    async def _writer_target(self, baseline: Experiment, writer: dict[str, Any] | None) -> CallTarget:
         chosen = writer or baseline.config.get("judge")
         if not chosen:
             raise AppError(NO_MODEL)
@@ -259,6 +266,19 @@ class ImprovementPipeline:
             baseline.project_id, uuid.UUID(chosen["credential_id"]), chosen["model"]
         )
         await self._session.commit()
+        return target
+
+    async def _call(
+        self,
+        target: CallTarget,
+        baseline: Experiment,
+        template: str,
+        schema: type[Any],
+        step: str,
+        prompt: PromptVersionOut,
+        spec: dict[str, Any],
+        **values: Any,
+    ) -> Any:
         text = render_system_prompt(
             PROMPTS_DIR,
             template,
@@ -270,6 +290,41 @@ class ImprovementPipeline:
         context = CallContext(project_id=baseline.project_id, experiment_id=baseline.id, labels={"step": step})
         messages = [Message(role="user", content=text)]
         return await self._gateway.complete_json_target(target, messages, schema, CallPurpose.ASSISTANT, context)
+
+    async def _write_candidates(
+        self,
+        baseline: Experiment,
+        writer: dict[str, Any] | None,
+        prompt: PromptVersionOut,
+        spec: dict[str, Any],
+        **values: Any,
+    ) -> CandidateDrafts:
+        """Three prompts written by three calls at once, each with its own approach, so one slow answer does not
+        hold up the others. A call that fails is dropped as long as one of the three worked."""
+        target = await self._writer_target(baseline, writer)
+        results = await asyncio.gather(
+            *(
+                self._call(
+                    target,
+                    baseline,
+                    "candidates.jinja",
+                    CandidateDrafts,
+                    "candidates",
+                    prompt,
+                    spec,
+                    shape=prompt.shape.value,
+                    count=1,
+                    angle=angle,
+                    **values,
+                )
+                for angle in ANGLES
+            ),
+            return_exceptions=True,
+        )
+        drafts = [r.candidates[0] for r in results if isinstance(r, CandidateDrafts)]
+        if not drafts:
+            raise next(r for r in results if isinstance(r, BaseException))
+        return CandidateDrafts(candidates=drafts)
 
     async def _confirm_best(self, row: OptimizationSession) -> None:
         # Candidates that could not be tested were set aside (rejected) and are not waited for.

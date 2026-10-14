@@ -74,6 +74,8 @@ class Settings(BaseSettings):
     provider_http_timeout_s: float = 15.0
 
     llm_timeout_s: float = 60.0
+    # long writing and grouping calls (Improve), which a reasoning model may need minutes for
+    assistant_timeout_s: float = 240.0
     llm_max_attempts: int = 3
     llm_backoff_base_s: float = 0.5
     llm_backoff_max_s: float = 30.0
@@ -120,9 +122,9 @@ class Settings(BaseSettings):
     embedding_cache_dir: Path = APP_DIR.parent / "data" / "models"
     dedupe_similarity: float = 0.92
     engine_chunk_size: int = 50
-    engine_provider_concurrency: int = 4
+    engine_provider_concurrency: int = 8
     engine_chunk_timeout_s: float = 1_800.0
-    judge_concurrency: int = 4
+    judge_concurrency: int = 24
     evaluation_timeout_s: float = 3_600.0
     document_max_chars: int = 5_000_000
     token_estimate_chars_per_token: int = 4
