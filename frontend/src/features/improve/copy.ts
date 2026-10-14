@@ -58,6 +58,16 @@ export const IMPROVE_COPY = {
   acceptAndTest: "Accept and test on all cases",
   saved: "Saved. Find it on the Prompt step, and test it on the Run step.",
   savedAndTesting: "Saved as a new version. Testing it on all test cases now.",
+  result: {
+    title: "A better prompt is ready",
+    summary: (strategy: string, before: string, after: string) =>
+      `“${strategy}” scored ${after} on the held-back cases, against ${before} for the current prompt. Save it to make it the new version, or reject it.`,
+    changes: "What changed and why",
+    save: "Save as new version",
+    saveAndTest: "Save and test it now",
+    reject: "Reject",
+    rejected: "Rejected. It stays under Candidates if you change your mind.",
+  },
   historyHeading: "Earlier improvements",
   historyHint: "Every time Improve ran on this project. Open one to see its candidates again.",
   open: "Open",

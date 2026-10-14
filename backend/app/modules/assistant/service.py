@@ -170,7 +170,13 @@ class ImprovementService:
         out = []
         for row in await self._repo.sessions(project.id, HISTORY_LIMIT):
             candidates = await self._repo.candidates(row.id)
-            best = min(candidates, key=lambda c: OUTCOME_RANK[CandidateOutcome(c.outcome)], default=None)
+            # among candidates with the same outcome, the one that scored highest (held-back score first)
+            ranked = []
+            for c in candidates:
+                shown = await self._candidate_out(project.id, c)
+                score = shown.holdout_quality if shown.holdout_quality is not None else shown.optimize_quality
+                ranked.append((OUTCOME_RANK[CandidateOutcome(c.outcome)], -(score or 0.0), c))
+            best = min(ranked, key=lambda r: r[:2], default=(0, 0.0, None))[2]
             out.append(
                 ImprovementSummary(
                     id=row.id,

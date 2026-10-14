@@ -39,6 +39,7 @@ import {
 } from "../hooks"
 import { History } from "./history"
 import { CandidateCard, percent } from "./candidate-card"
+import { ResultDialog } from "./result-dialog"
 import { StageTracker } from "./stage-tracker"
 
 export function ImproveStep({ projectId, experimentId }: { projectId: string; experimentId: string | null }) {
@@ -62,6 +63,24 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
   const running = data?.stage === "analyzing" || data?.stage === "testing" || data?.stage === "confirming"
   const [writerKey, setWriterKey] = useState("")
   const writer = useChosenJudge(projectId, writerKey)
+  const [decided, setDecided] = useState<string[]>(() => {
+    try {
+      return JSON.parse(window.localStorage.getItem("verano.improve.decided") ?? "[]") as string[]
+    } catch {
+      return []
+    }
+  })
+  const decide = (id: string) => {
+    setDecided((now) => {
+      const next = [...now, id].slice(-50)
+      try {
+        window.localStorage.setItem("verano.improve.decided", JSON.stringify(next))
+      } catch {
+        /* private mode: the pop-up may show again */
+      }
+      return next
+    })
+  }
 
   if (experiments.data && finished.length === 0)
     return (
@@ -111,6 +130,8 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
       {IMPROVE_COPY.accept}
     </Button>
   )
+  const popUp =
+    data?.stage === "done" && winner !== null && winner.outcome === "better" && !decided.includes(winner.id)
   const better = data?.stage === "done" && winner !== null
   const delta =
     confirmed?.holdout_quality !== null &&
@@ -286,6 +307,33 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
             </div>
           ) : null}
         </Section>
+      ) : null}
+      {popUp && winner && data ? (
+        <ResultDialog
+          open
+          candidate={winner}
+          before={data.baseline_holdout_quality}
+          after={winner.holdout_quality}
+          busy={save.isPending || accept.isPending}
+          onReject={() => {
+            decide(winner.id)
+            toast(IMPROVE_COPY.result.rejected)
+          }}
+          onSave={() =>
+            void save
+              .mutateAsync({ sessionId: data.id, candidateId: winner.id, run: false })
+              .then(() => {
+                decide(winner.id)
+                toast.success(IMPROVE_COPY.saved)
+              })
+              .catch(() => undefined)
+          }
+          onSaveAndTest={() =>
+            void acceptWinner()
+              .then(() => decide(winner.id))
+              .catch(() => undefined)
+          }
+        />
       ) : null}
       <History projectId={projectId} openId={viewId ?? data?.id ?? null} onOpen={setViewId} />
       <PageActions
