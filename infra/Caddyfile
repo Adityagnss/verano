@@ -18,7 +18,7 @@
 		respond "ok" 200
 	}
 
-	@backend path /api/* /docs /docs/* /openapi.json
+	@backend path /api/* /v1/traces /docs /docs/* /openapi.json
 	handle @backend {
 		reverse_proxy {$BACKEND_UPSTREAM:backend:8000} {
 			flush_interval -1
