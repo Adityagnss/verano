@@ -56,6 +56,7 @@ from app.modules.gateway.schemas import (
     Message,
     ProviderResponse,
 )
+from app.modules.gateway.spend import SpendGuard
 from app.modules.registry.schemas import CallTarget
 from app.modules.registry.service import RegistryService
 
@@ -88,7 +89,9 @@ class GatewayService:
         sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
         jitter: Callable[[], float] = random.random,
         clock: Callable[[], datetime] = utcnow,
+        spend: SpendGuard | None = None,
     ) -> None:
+        self._spend = spend or SpendGuard(sessions)
         self._registry = registry
         self._limiter = limiter
         self._sessions = sessions
@@ -184,6 +187,7 @@ class GatewayService:
         purpose: CallPurpose,
         context: CallContext,
     ) -> LLMResult:
+        await self._spend.check(context.project_id)
         call = PendingCall(
             target=target,
             messages=messages,

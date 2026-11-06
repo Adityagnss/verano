@@ -2,6 +2,7 @@
 "use client"
 
 import { LogOut } from "lucide-react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 import { COMMON_COPY } from "@/components/common/copy"
@@ -19,6 +20,9 @@ export function AccountMenu() {
     <div className="flex items-center gap-3 text-sm">
       <ThemeSwitch />
       <span className="text-muted-foreground hidden max-w-[16rem] truncate lg:inline">{user?.email}</span>
+      <Link href="/workspace" className="text-text-secondary hover:text-foreground">
+        Workspace
+      </Link>
       <Button
         variant="ghost"
         size="sm"

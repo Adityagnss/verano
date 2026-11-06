@@ -2,7 +2,7 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import type { FormEvent } from "react"
 
 import { ErrorMessage } from "@/components/common/error-message"
@@ -15,6 +15,8 @@ import { Field } from "./field"
 
 export function SignUpForm() {
   const router = useRouter()
+  const params = useSearchParams()
+  const invite = params.get("invite")
   const signUp = useSignUp()
   const config = useAuthConfig()
 
@@ -25,8 +27,9 @@ export function SignUpForm() {
       name: String(form.get("name")),
       email: String(form.get("email")),
       password: String(form.get("password")),
+      invite_token: invite,
     })
-    router.replace("/projects")
+    router.replace(invite ? "/workspace" : "/projects")
   }
 
   const closed = config.data?.signup_open === false
@@ -36,7 +39,15 @@ export function SignUpForm() {
       <form onSubmit={(event) => void submit(event).catch(() => undefined)} className="flex flex-col gap-4">
         {closed ? <ErrorMessage error={new Error(AUTH_COPY.signupClosed)} /> : null}
         <Field id="name" label={AUTH_COPY.name} autoComplete="name" required />
-        <Field id="email" label={AUTH_COPY.email} type="email" autoComplete="email" required />
+        <Field
+          id="email"
+          label={AUTH_COPY.email}
+          type="email"
+          autoComplete="email"
+          defaultValue={params.get("email") ?? undefined}
+          readOnly={Boolean(invite)}
+          required
+        />
         <Field
           id="password"
           label={AUTH_COPY.password}

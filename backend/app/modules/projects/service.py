@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import NotFound, PermissionDenied
 from app.core.pagination import Page, PageParams, to_page
+from app.core.permissions import Action, role_allows
 from app.core.security import Principal
 from app.modules.auth.service import AuthService
 from app.modules.projects.models import Project
@@ -28,8 +29,11 @@ class ProjectService:
 
     async def create(self, principal: Principal, request: ProjectCreate) -> ProjectOut:
         organization_id = request.organization_id or await self._auth.personal_organization_id(principal.user_id)
-        if organization_id not in await self._auth.organization_ids(principal.user_id):
+        role = await self._auth.role_in(principal.user_id, organization_id)
+        if role is None:
             raise PermissionDenied("You can only create projects in your own workspaces.")
+        if not role_allows(role, Action.WRITE):
+            raise PermissionDenied(f"Your role in this workspace ({role.value}) can't create projects.")
         project = Project(
             organization_id=organization_id,
             name=request.name,

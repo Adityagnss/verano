@@ -13,6 +13,7 @@ from fastapi import Depends
 from app.core.container import ContainerDep
 from app.core.database import SessionDep
 from app.core.throttle import FixedWindowLimiter
+from app.modules.auth.oidc import OidcService
 from app.modules.auth.service import AuthService
 
 
@@ -22,3 +23,10 @@ def get_auth_service(session: SessionDep, container: ContainerDep) -> AuthServic
 
 
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
+
+
+def get_oidc_service(session: SessionDep, container: ContainerDep, auth: AuthServiceDep) -> OidcService:
+    return OidcService(session, auth, container)
+
+
+OidcServiceDep = Annotated[OidcService, Depends(get_oidc_service)]

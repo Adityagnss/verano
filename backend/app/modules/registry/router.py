@@ -64,14 +64,20 @@ async def list_credentials(project: ProjectScope, service: RegistryServiceDep) -
 
 @router.patch(f"{PROJECT}/credentials/{{credential_id}}")
 async def update_credential(
-    credential_id: uuid.UUID, body: CredentialUpdate, project: ProjectScope, service: RegistryServiceDep
+    credential_id: uuid.UUID,
+    body: CredentialUpdate,
+    project: ProjectScope,
+    principal: CurrentPrincipal,
+    service: RegistryServiceDep,
 ) -> CredentialOut:
-    return await service.update_credential(project, credential_id, body)
+    return await service.update_credential(project, credential_id, body, principal)
 
 
 @router.delete(f"{PROJECT}/credentials/{{credential_id}}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_credential(credential_id: uuid.UUID, project: ProjectScope, service: RegistryServiceDep) -> None:
-    await service.delete_credential(project, credential_id)
+async def delete_credential(
+    credential_id: uuid.UUID, project: ProjectScope, principal: CurrentPrincipal, service: RegistryServiceDep
+) -> None:
+    await service.delete_credential(project, credential_id, principal)
 
 
 @router.post(f"{PROJECT}/credentials/{{credential_id}}/validate")

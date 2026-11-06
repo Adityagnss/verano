@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button"
 import { AUTH_COPY } from "../copy"
 import { useAuthConfig, useSignIn } from "../hooks"
 import { AuthCard } from "./auth-card"
+import { SignInProviders } from "@/features/teams/components/sign-in-providers"
+
 import { Field } from "./field"
 
 const DEFAULT_DESTINATION = "/projects"
@@ -24,7 +26,9 @@ function safeDestination(next: string | null): string {
 
 export function SignInForm() {
   const router = useRouter()
-  const next = useSearchParams().get("next")
+  const params = useSearchParams()
+  const next = params.get("next")
+  const returned = params.get("error")
   const signIn = useSignIn()
   const config = useAuthConfig()
 
@@ -38,6 +42,8 @@ export function SignInForm() {
   return (
     <AuthCard title={AUTH_COPY.signInTitle} subtitle={AUTH_COPY.signInSubtitle}>
       <form onSubmit={(event) => void submit(event).catch(() => undefined)} className="flex flex-col gap-4">
+        {returned ? <ErrorMessage error={new Error(returned)} /> : null}
+        <SignInProviders providers={config.data?.sign_in_providers ?? []} />
         <Field id="email" label={AUTH_COPY.email} type="email" autoComplete="email" required />
         <Field
           id="password"

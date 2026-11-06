@@ -7,6 +7,8 @@ visible. The cost summary is one grouped SQL aggregate, not a Python loop.
 """
 
 import uuid
+from datetime import datetime
+from decimal import Decimal
 from typing import Any
 
 from sqlalchemy import case, func, select
@@ -32,6 +34,15 @@ class LLMCallRepository:
         if purpose is not None:
             query = query.where(LLMCall.purpose == purpose)
         return list((await self._session.scalars(keyset(query, LLMCall.id, page))).all())
+
+    async def spent_since(self, project_ids: list[uuid.UUID], since: datetime) -> Decimal:
+        """Money spent by these projects' calls since a moment (unknown prices count as nothing)."""
+        if not project_ids:
+            return Decimal(0)
+        query = select(func.coalesce(func.sum(LLMCall.cost), 0)).where(
+            LLMCall.project_id.in_(project_ids), LLMCall.started_at >= since
+        )
+        return Decimal(await self._session.scalar(query) or 0)
 
     async def cost_by_purpose(self, project_id: uuid.UUID) -> list[tuple[CallPurpose, int, Any, int]]:
         unknown = func.sum(case((LLMCall.cost.is_(None) & (LLMCall.status == "succeeded"), 1), else_=0))

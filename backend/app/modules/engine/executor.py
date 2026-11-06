@@ -43,6 +43,7 @@ from app.modules.engine.service import ExperimentService
 from app.modules.gateway.dependencies import build_gateway
 from app.modules.gateway.schemas import CallContext, CallPurpose, Message
 from app.modules.gateway.service import GatewayService
+from app.modules.gateway.spend import SpendGuard
 from app.modules.prompts.domain import render
 from app.modules.prompts.schemas import PromptVersionOut
 from app.modules.prompts.service import PromptService
@@ -68,7 +69,9 @@ class ChunkExecutor:
         experiments: ExperimentService,
         jobs: JobQueue,
         apps: AppCaller | None = None,
+        spend: SpendGuard | None = None,
     ) -> None:
+        self._spend = spend
         self._session = session
         self._apps = apps
         self._settings = settings
@@ -95,6 +98,7 @@ class ChunkExecutor:
             ExperimentService.from_container(session, container),
             container.jobs,
             AppCaller(session, container),
+            SpendGuard(container.database.sessions),
         )
 
     async def run_chunk(self, experiment_id: uuid.UUID, run_ids: list[uuid.UUID]) -> None:
@@ -102,6 +106,8 @@ class ChunkExecutor:
         if experiment is None or experiment.status is not ExperimentStatus.RUNNING:
             return
         rows = [row for row in await self._repo.runs(experiment_id, run_ids) if row.status is RunStatus.PENDING]
+        if await self._stop_for_spend_limit(experiment):
+            return
         prompt = await self._prompts.get_version(experiment.project_id, experiment.prompt_version_id)
         items = await self._datasets.items(experiment.dataset_version_id, ids=[row.dataset_item_id for row in rows])
         inputs = {item.id: item.inputs for item in items}
@@ -294,11 +300,25 @@ class ChunkExecutor:
         return {"rendered_system_prompt": system, "rendered_user_prompt": user}
 
     async def _check_budget(self, experiment: Experiment) -> None:
-        if experiment.budget_cap is None or experiment.status is not ExperimentStatus.RUNNING:
+        if experiment.status is not ExperimentStatus.RUNNING:
             return
-        reached = await self._repo.spent(experiment.id) >= experiment.budget_cap
-        if reached and await self._experiments.stop(experiment, BUDGET_REACHED.format(cap=experiment.budget_cap)):
+        if experiment.budget_cap is not None:
+            reached = await self._repo.spent(experiment.id) >= experiment.budget_cap
+            if reached and await self._experiments.stop(experiment, BUDGET_REACHED.format(cap=experiment.budget_cap)):
+                self._jobs.enqueue(SCORE_JOB, experiment_id=str(experiment.id))
+                return
+        await self._stop_for_spend_limit(experiment)
+
+    async def _stop_for_spend_limit(self, experiment: Experiment) -> bool:
+        """Stop the run, keeping its results, when the workspace's monthly limit is reached; the calls already
+        in flight finish, the rest are skipped, and the run says why."""
+        if self._spend is None or experiment.status is not ExperimentStatus.RUNNING:
+            return False
+        why = await self._spend.reason(experiment.project_id)
+        if why and await self._experiments.stop(experiment, why):
             self._jobs.enqueue(SCORE_JOB, experiment_id=str(experiment.id))
+            return True
+        return False
 
     async def _finish_if_done(self, experiment: Experiment) -> None:
         fresh = await self._repo.experiment(experiment.id)

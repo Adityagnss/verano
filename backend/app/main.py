@@ -24,6 +24,7 @@ from app.core.jobs import JobQueue, load_all_jobs
 from app.core.logging import configure_logging
 from app.modules.auth.api_tokens import ApiTokenAuthenticator
 from app.modules.gateway.service import configure_llm_runtime
+from app.modules.projects.access import check_permission_coverage
 from app.workers.queue import CeleryJobQueue
 
 
@@ -50,6 +51,7 @@ def create_app(settings: Settings | None = None, jobs: JobQueue | None = None) -
         allow_headers=["*"],
     )
     app.include_router(api_router, prefix=settings.api_prefix)
+    app.state.permission_gaps = check_permission_coverage(app, settings.api_prefix)
 
     @app.get("/health", include_in_schema=False)
     async def health() -> dict[str, str]:
