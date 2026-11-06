@@ -16,7 +16,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import ForeignKey, Index, Numeric, String, Text
+from sqlalchemy import ForeignKey, Index, Numeric, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base, CreatedAtMixin, IdMixin, str_enum
@@ -64,6 +64,8 @@ class TestCaseRun(CreatedAtMixin, Base):
         Index(None, "experiment_id", "status"),
         Index(None, "experiment_id", "model_profile_id", "param_set_key"),
         Index(None, "experiment_id", "dataset_item_id"),
+        # the lease sweeper looks only at calls a worker holds (ADR 0037)
+        Index("ix_test_case_runs_running_lease", "lease_expires_at", postgresql_where=text("status = 'running'")),
     )
 
     experiment_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("experiments.id", ondelete="CASCADE"), primary_key=True)

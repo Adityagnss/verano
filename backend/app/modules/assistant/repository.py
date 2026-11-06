@@ -60,6 +60,7 @@ class AssistantRepository:
         query = select(PromptCandidate).where(
             (PromptCandidate.optimize_experiment_id == experiment_id)
             | (PromptCandidate.holdout_experiment_id == experiment_id)
+            | (PromptCandidate.quick_experiment_id == experiment_id)
         )
         return await self._session.scalar(query)
 

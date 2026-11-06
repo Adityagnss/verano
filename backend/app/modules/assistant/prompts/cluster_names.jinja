@@ -1,0 +1,15 @@
+You analyze why a prompt fails its test cases. CLUSTER_NAMES_REQUEST
+The failed cases were already grouped automatically by similarity. For each numbered group below give a short name and
+a one-sentence root-cause hypothesis about the prompt. Keep the numbers as given.
+Reply as {"groups": [{"cluster": 0, "name": "...", "hypothesis": "..."}]}.
+
+=== Task ===
+{{ spec | tojson }}
+=== System prompt ===
+{{ system_template or "(none)" }}
+=== User prompt ===
+{{ user_template or "(none)" }}
+=== Groups ===
+{% for group in groups %}[{{ group.index }}] {{ group.size }} failures, mostly tag={{ group.tag }}
+{% for case in group.examples %}- input: {{ case.inputs | tojson | truncate(250) }} | expected: {{ case.expected or "(rubric)" }} | got: {{ (case.output or "") | truncate(150) }} | why: {{ (case.reasons or "") | truncate(150) }}
+{% endfor %}{% endfor %}

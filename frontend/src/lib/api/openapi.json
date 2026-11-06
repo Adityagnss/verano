@@ -1629,6 +1629,49 @@
         "title": "AppTestRequest",
         "type": "object"
       },
+      "AttackFamilyOut": {
+        "properties": {
+          "built_in_cases": {
+            "title": "Built In Cases",
+            "type": "integer"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "needs_tools": {
+            "title": "Needs Tools",
+            "type": "boolean"
+          },
+          "owasp": {
+            "title": "Owasp",
+            "type": "string"
+          },
+          "safe_behaviour": {
+            "title": "Safe Behaviour",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "owasp",
+          "description",
+          "safe_behaviour",
+          "needs_tools",
+          "built_in_cases"
+        ],
+        "title": "AttackFamilyOut",
+        "type": "object"
+      },
       "AuthConfigOut": {
         "properties": {
           "password_min_length": {
@@ -1689,6 +1732,27 @@
           }
         },
         "title": "BulkApprove",
+        "type": "object"
+      },
+      "BulkReview": {
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CaseStatus",
+            "default": "approved"
+          }
+        },
+        "title": "BulkReview",
         "type": "object"
       },
       "CallDetail": {
@@ -1995,6 +2059,34 @@
             "title": "Id",
             "type": "string"
           },
+          "is_winner": {
+            "default": false,
+            "title": "Is Winner",
+            "type": "boolean"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "metrics": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metrics"
+          },
           "optimize_experiment_id": {
             "anyOf": [
               {
@@ -2021,10 +2113,68 @@
           "outcome": {
             "$ref": "#/components/schemas/CandidateOutcome"
           },
+          "parent_candidate_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Candidate Id"
+          },
           "prompt_version_id": {
-            "format": "uuid",
-            "title": "Prompt Version Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version Id"
+          },
+          "quick_experiment_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quick Experiment Id"
+          },
+          "quick_quality": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quick Quality"
+          },
+          "rejection_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Reason"
+          },
+          "round": {
+            "default": 1,
+            "title": "Round",
+            "type": "integer"
           },
           "strategy": {
             "title": "Strategy",
@@ -2139,6 +2289,47 @@
         "enum": ["happy_path", "edge_case", "tricky", "format_stress", "adversarial"],
         "title": "CaseCategory",
         "type": "string"
+      },
+      "CaseOut": {
+        "properties": {
+          "attack": {
+            "title": "Attack",
+            "type": "string"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "inputs": {
+            "additionalProperties": true,
+            "title": "Inputs",
+            "type": "object"
+          },
+          "pack_id": {
+            "format": "uuid",
+            "title": "Pack Id",
+            "type": "string"
+          },
+          "safe_behaviour": {
+            "title": "Safe Behaviour",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CaseStatus"
+          }
+        },
+        "required": ["id", "pack_id", "category", "attack", "inputs", "safe_behaviour", "source", "status"],
+        "title": "CaseOut",
+        "type": "object"
       },
       "CaseOutput": {
         "properties": {
@@ -2367,6 +2558,149 @@
           "agreement"
         ],
         "title": "CaseResultOut",
+        "type": "object"
+      },
+      "CaseStatus": {
+        "enum": ["draft", "approved", "rejected"],
+        "title": "CaseStatus",
+        "type": "string"
+      },
+      "CaseUpdate": {
+        "properties": {
+          "attack": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attack"
+          },
+          "safe_behaviour": {
+            "anyOf": [
+              {
+                "maxLength": 4000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safe Behaviour"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CaseStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "CaseUpdate",
+        "type": "object"
+      },
+      "CategoryCount": {
+        "properties": {
+          "approved": {
+            "title": "Approved",
+            "type": "integer"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "draft": {
+            "title": "Draft",
+            "type": "integer"
+          },
+          "owasp": {
+            "title": "Owasp",
+            "type": "string"
+          },
+          "rejected": {
+            "title": "Rejected",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": ["category", "title", "owasp", "draft", "approved", "rejected"],
+        "title": "CategoryCount",
+        "type": "object"
+      },
+      "CategoryResult": {
+        "properties": {
+          "answers": {
+            "title": "Answers",
+            "type": "integer"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "earlier_pass_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Earlier Pass Rate"
+          },
+          "failing_examples": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Failing Examples",
+            "type": "array"
+          },
+          "owasp": {
+            "title": "Owasp",
+            "type": "string"
+          },
+          "pass_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pass Rate"
+          },
+          "resisted": {
+            "title": "Resisted",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "category",
+          "title",
+          "owasp",
+          "answers",
+          "resisted",
+          "pass_rate",
+          "earlier_pass_rate",
+          "failing_examples"
+        ],
+        "title": "CategoryResult",
         "type": "object"
       },
       "CheckCount": {
@@ -3513,6 +3847,18 @@
             ],
             "title": "Prompt Version Id"
           },
+          "sample_size": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Size"
+          },
           "split_scope": {
             "$ref": "#/components/schemas/SplitScope",
             "default": "all"
@@ -3723,6 +4069,17 @@
               }
             ],
             "title": "Estimate"
+          },
+          "eta_seconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Eta Seconds"
           },
           "evaluator_set_version_id": {
             "format": "uuid",
@@ -4073,6 +4430,66 @@
         "title": "GalleryJudgeOut",
         "type": "object"
       },
+      "GateFailureOut": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": ["category", "message"],
+        "title": "GateFailureOut",
+        "type": "object"
+      },
+      "GateOut": {
+        "properties": {
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryResult"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "experiment_id": {
+            "format": "uuid",
+            "title": "Experiment Id",
+            "type": "string"
+          },
+          "failures": {
+            "items": {
+              "$ref": "#/components/schemas/GateFailureOut"
+            },
+            "title": "Failures",
+            "type": "array"
+          },
+          "max_drop": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Drop"
+          },
+          "min_pass_rate": {
+            "title": "Min Pass Rate",
+            "type": "number"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          }
+        },
+        "required": ["passed", "experiment_id", "min_pass_rate", "max_drop", "failures", "categories"],
+        "title": "GateOut",
+        "type": "object"
+      },
       "GenerationEstimate": {
         "properties": {
           "answers_to_draft": {
@@ -4184,6 +4601,22 @@
         },
         "required": ["task_spec_id"],
         "title": "GenerationRequest",
+        "type": "object"
+      },
+      "GeneratorChoice": {
+        "properties": {
+          "credential_id": {
+            "format": "uuid",
+            "title": "Credential Id",
+            "type": "string"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          }
+        },
+        "required": ["credential_id", "model"],
+        "title": "GeneratorChoice",
         "type": "object"
       },
       "GeneratorModel": {
@@ -4398,12 +4831,113 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
-      "ImproveRequest": {
+      "HardenRequest": {
         "properties": {
           "experiment_id": {
             "format": "uuid",
             "title": "Experiment Id",
             "type": "string"
+          },
+          "rounds": {
+            "anyOf": [
+              {
+                "maximum": 6.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rounds"
+          },
+          "writer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JudgeChoice"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["experiment_id"],
+        "title": "HardenRequest",
+        "type": "object"
+      },
+      "ImproveRequest": {
+        "properties": {
+          "budget_cap": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Cap"
+          },
+          "experiment_id": {
+            "format": "uuid",
+            "title": "Experiment Id",
+            "type": "string"
+          },
+          "population": {
+            "anyOf": [
+              {
+                "maximum": 8.0,
+                "minimum": 2.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Population"
+          },
+          "quick_check": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quick Check"
+          },
+          "rounds": {
+            "anyOf": [
+              {
+                "maximum": 6.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rounds"
+          },
+          "target_effect": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "maximum": 1.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Effect"
           },
           "writer": {
             "anyOf": [
@@ -4475,6 +5009,28 @@
             "title": "Created At",
             "type": "string"
           },
+          "current_round": {
+            "default": 1,
+            "title": "Current Round",
+            "type": "integer"
+          },
+          "final_candidate_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Candidate Id"
+          },
+          "focus": {
+            "default": "quality",
+            "title": "Focus",
+            "type": "string"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -4491,10 +5047,52 @@
             ],
             "title": "Message"
           },
+          "paused_experiment_ids": {
+            "default": [],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Paused Experiment Ids",
+            "type": "array"
+          },
+          "population": {
+            "default": 3,
+            "title": "Population",
+            "type": "integer"
+          },
+          "quick_check": {
+            "default": false,
+            "title": "Quick Check",
+            "type": "boolean"
+          },
           "root_prompt_version_id": {
             "format": "uuid",
             "title": "Root Prompt Version Id",
             "type": "string"
+          },
+          "round_limit": {
+            "default": 1,
+            "title": "Round Limit",
+            "type": "integer"
+          },
+          "rounds": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RoundOut"
+            },
+            "title": "Rounds",
+            "type": "array"
+          },
+          "sizing": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SizingOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "stage": {
             "$ref": "#/components/schemas/SessionStage"
@@ -4513,6 +5111,16 @@
           },
           "status": {
             "$ref": "#/components/schemas/OptimizationStatus"
+          },
+          "versus_first": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VerdictOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "writer_model": {
             "anyOf": [
@@ -6273,6 +6881,289 @@
         "title": "OutputFormat",
         "type": "string"
       },
+      "PackCreate": {
+        "properties": {
+          "canary": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 6,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canary"
+          },
+          "categories": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categories"
+          },
+          "generator": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GeneratorChoice"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "per_category": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Per Category"
+          },
+          "prompt_version_id": {
+            "format": "uuid",
+            "title": "Prompt Version Id",
+            "type": "string"
+          },
+          "tool_app": {
+            "default": false,
+            "title": "Tool App",
+            "type": "boolean"
+          }
+        },
+        "required": ["prompt_version_id"],
+        "title": "PackCreate",
+        "type": "object"
+      },
+      "PackDetail": {
+        "properties": {
+          "canary": {
+            "title": "Canary",
+            "type": "string"
+          },
+          "canary_in_prompt": {
+            "title": "Canary In Prompt",
+            "type": "boolean"
+          },
+          "cases": {
+            "items": {
+              "$ref": "#/components/schemas/CaseOut"
+            },
+            "title": "Cases",
+            "type": "array"
+          },
+          "categories": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "counts": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryCount"
+            },
+            "title": "Counts",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dataset_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Version Id"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "per_category": {
+            "title": "Per Category",
+            "type": "integer"
+          },
+          "prompt_version_id": {
+            "format": "uuid",
+            "title": "Prompt Version Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PackStatus"
+          },
+          "tool_app": {
+            "title": "Tool App",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "prompt_version_id",
+          "name",
+          "status",
+          "message",
+          "canary",
+          "categories",
+          "per_category",
+          "tool_app",
+          "dataset_version_id",
+          "counts",
+          "canary_in_prompt",
+          "created_at",
+          "cases"
+        ],
+        "title": "PackDetail",
+        "type": "object"
+      },
+      "PackOut": {
+        "properties": {
+          "canary": {
+            "title": "Canary",
+            "type": "string"
+          },
+          "canary_in_prompt": {
+            "title": "Canary In Prompt",
+            "type": "boolean"
+          },
+          "categories": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "counts": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryCount"
+            },
+            "title": "Counts",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dataset_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Version Id"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "per_category": {
+            "title": "Per Category",
+            "type": "integer"
+          },
+          "prompt_version_id": {
+            "format": "uuid",
+            "title": "Prompt Version Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PackStatus"
+          },
+          "tool_app": {
+            "title": "Tool App",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "prompt_version_id",
+          "name",
+          "status",
+          "message",
+          "canary",
+          "categories",
+          "per_category",
+          "tool_app",
+          "dataset_version_id",
+          "counts",
+          "canary_in_prompt",
+          "created_at"
+        ],
+        "title": "PackOut",
+        "type": "object"
+      },
+      "PackStatus": {
+        "enum": ["generating", "draft", "approved", "failed"],
+        "title": "PackStatus",
+        "type": "string"
+      },
       "Page_ExperimentOut_": {
         "properties": {
           "items": {
@@ -7048,6 +7939,38 @@
         "title": "PurposeCost",
         "type": "object"
       },
+      "ReadinessOut": {
+        "description": "Whether Improve can change what this experiment tests, said in plain words.",
+        "properties": {
+          "apps": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Apps",
+            "type": "array"
+          },
+          "apps_not_taking_the_prompt": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Apps Not Taking The Prompt",
+            "type": "array"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          }
+        },
+        "required": ["ready", "message"],
+        "title": "ReadinessOut",
+        "type": "object"
+      },
       "Reason": {
         "description": "Why a candidate is or is not proven better than the current prompt.",
         "enum": ["proven", "worse", "not_proven", "too_few_cases", "different_judge", "unjudged"],
@@ -7342,6 +8265,28 @@
         "title": "ResultsOut",
         "type": "object"
       },
+      "ResumeRequest": {
+        "properties": {
+          "budget_cap": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Cap"
+          }
+        },
+        "title": "ResumeRequest",
+        "type": "object"
+      },
       "ReturnedModelOut": {
         "description": "A model id the provider reported, and how many calls it answered (`id` is null when none was reported).",
         "properties": {
@@ -7369,6 +8314,37 @@
         "enum": ["trusted", "draft", "approved"],
         "title": "ReviewStatus",
         "type": "string"
+      },
+      "RoundOut": {
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "proven": {
+            "title": "Proven",
+            "type": "boolean"
+          },
+          "round": {
+            "title": "Round",
+            "type": "integer"
+          },
+          "winner_candidate_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Winner Candidate Id"
+          }
+        },
+        "required": ["round", "winner_candidate_id", "proven", "label"],
+        "title": "RoundOut",
+        "type": "object"
       },
       "RunConfiguration": {
         "description": "What an experiment was set up with. `hash` is the same for the same configuration.",
@@ -7661,6 +8637,118 @@
         "title": "SectionOut",
         "type": "object"
       },
+      "SecurityReport": {
+        "properties": {
+          "canary_in_prompt": {
+            "title": "Canary In Prompt",
+            "type": "boolean"
+          },
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryResult"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "experiment_id": {
+            "format": "uuid",
+            "title": "Experiment Id",
+            "type": "string"
+          },
+          "experiment_status": {
+            "title": "Experiment Status",
+            "type": "string"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "overall_pass_rate": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overall Pass Rate"
+          },
+          "pack_id": {
+            "format": "uuid",
+            "title": "Pack Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pack_id",
+          "experiment_id",
+          "experiment_status",
+          "canary_in_prompt",
+          "overall_pass_rate",
+          "categories",
+          "notes"
+        ],
+        "title": "SecurityReport",
+        "type": "object"
+      },
+      "SecurityRunRequest": {
+        "properties": {
+          "budget_cap": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Cap"
+          },
+          "judge": {
+            "$ref": "#/components/schemas/JudgeChoice"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/ModelRun"
+            },
+            "minItems": 1,
+            "title": "Models",
+            "type": "array"
+          },
+          "prompt_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Id"
+          },
+          "prompt_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version Id"
+          }
+        },
+        "required": ["models", "judge"],
+        "title": "SecurityRunRequest",
+        "type": "object"
+      },
       "SessionOut": {
         "properties": {
           "access_token": {
@@ -7685,7 +8773,7 @@
         "type": "object"
       },
       "SessionStage": {
-        "enum": ["analyzing", "testing", "confirming", "done", "failed", "stopped"],
+        "enum": ["analyzing", "testing", "quick", "confirming", "done", "failed", "stopped"],
         "title": "SessionStage",
         "type": "string"
       },
@@ -7871,6 +8959,56 @@
         },
         "required": ["email", "password", "name"],
         "title": "SignupRequest",
+        "type": "object"
+      },
+      "SizingOut": {
+        "properties": {
+          "enough": {
+            "title": "Enough",
+            "type": "boolean"
+          },
+          "holdout_cases": {
+            "title": "Holdout Cases",
+            "type": "integer"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "needed_cases": {
+            "title": "Needed Cases",
+            "type": "integer"
+          },
+          "quick_sample": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quick Sample"
+          },
+          "spread": {
+            "title": "Spread",
+            "type": "number"
+          },
+          "target_effect": {
+            "title": "Target Effect",
+            "type": "number"
+          }
+        },
+        "required": [
+          "target_effect",
+          "spread",
+          "needed_cases",
+          "holdout_cases",
+          "enough",
+          "quick_sample",
+          "message"
+        ],
+        "title": "SizingOut",
         "type": "object"
       },
       "SortOrder": {
@@ -12027,6 +13165,61 @@
         "tags": ["results"]
       }
     },
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/events": {
+      "get": {
+        "description": "Live progress as Server-Sent Events: one event whenever the run's numbers or state change, until it ends.",
+        "operationId": "experiment_events_api_v1_projects__project_id__experiments__experiment_id__events_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Experiment Events",
+        "tags": ["experiments"]
+      }
+    },
     "/api/v1/projects/{project_id}/experiments/{experiment_id}/export.csv": {
       "get": {
         "operationId": "export_csv_api_v1_projects__project_id__experiments__experiment_id__export_csv_get",
@@ -12288,6 +13481,63 @@
         ],
         "summary": "Get Labels",
         "tags": ["results"]
+      }
+    },
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/pause": {
+      "post": {
+        "description": "Stop starting new calls; pending calls stay pending until Resume.",
+        "operationId": "pause_experiment_api_v1_projects__project_id__experiments__experiment_id__pause_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Pause Experiment",
+        "tags": ["experiments"]
       }
     },
     "/api/v1/projects/{project_id}/experiments/{experiment_id}/replication": {
@@ -12615,6 +13865,137 @@
         ],
         "summary": "Get Results",
         "tags": ["results"]
+      }
+    },
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/resume": {
+      "post": {
+        "description": "Carry on exactly where a paused run stopped (optionally with a higher budget cap). No call is repeated.",
+        "operationId": "resume_experiment_api_v1_projects__project_id__experiments__experiment_id__resume_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ResumeRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Resume Experiment",
+        "tags": ["experiments"]
+      }
+    },
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/retry-failed": {
+      "post": {
+        "description": "Queue again the calls that failed because the provider was down or slow.",
+        "operationId": "retry_failed_api_v1_projects__project_id__experiments__experiment_id__retry_failed_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Retry Failed",
+        "tags": ["experiments"]
       }
     },
     "/api/v1/projects/{project_id}/experiments/{experiment_id}/runs/{run_id}": {
@@ -13072,6 +14453,63 @@
           }
         ],
         "summary": "Latest Improvement",
+        "tags": ["improve"]
+      }
+    },
+    "/api/v1/projects/{project_id}/improvements/readiness": {
+      "get": {
+        "description": "Whether Improve can change what this experiment tests (an app must take the prompt in its request).",
+        "operationId": "improvement_readiness_api_v1_projects__project_id__improvements_readiness_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Improvement Readiness",
         "tags": ["improve"]
       }
     },
@@ -16329,6 +17767,762 @@
         "tags": ["prompts"]
       }
     },
+    "/api/v1/projects/{project_id}/security/families": {
+      "get": {
+        "description": "The kinds of attack the pack can contain, with the OWASP LLM Top 10 entry each belongs to.",
+        "operationId": "attack_families_api_v1_projects__project_id__security_families_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AttackFamilyOut"
+                  },
+                  "title": "Response Attack Families Api V1 Projects  Project Id  Security Families Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Attack Families",
+        "tags": ["security"]
+      }
+    },
+    "/api/v1/projects/{project_id}/security/packs": {
+      "get": {
+        "operationId": "list_packs_api_v1_projects__project_id__security_packs_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PackOut"
+                  },
+                  "title": "Response List Packs Api V1 Projects  Project Id  Security Packs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Packs",
+        "tags": ["security"]
+      },
+      "post": {
+        "operationId": "create_pack_api_v1_projects__project_id__security_packs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PackCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Pack",
+        "tags": ["security"]
+      }
+    },
+    "/api/v1/projects/{project_id}/security/packs/{pack_id}": {
+      "delete": {
+        "operationId": "delete_pack_api_v1_projects__project_id__security_packs__pack_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pack_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Pack Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Pack",
+        "tags": ["security"]
+      },
+      "get": {
+        "operationId": "get_pack_api_v1_projects__project_id__security_packs__pack_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pack_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Pack Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Pack",
+        "tags": ["security"]
+      }
+    },
+    "/api/v1/projects/{project_id}/security/packs/{pack_id}/approve": {
+      "post": {
+        "description": "Freeze the approved cases into the security test set, ready to run.",
+        "operationId": "approve_pack_api_v1_projects__project_id__security_packs__pack_id__approve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pack_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Pack Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Approve Pack",
+        "tags": ["security"]
+      }
+    },
+    "/api/v1/projects/{project_id}/security/packs/{pack_id}/cases/{case_id}": {
+      "patch": {
+        "description": "Edit an attack, its expected safe behaviour, or approve or reject it. Editing counts as approving.",
+        "operationId": "update_case_api_v1_projects__project_id__security_packs__pack_id__cases__case_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pack_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Pack Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "case_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Case Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Case",
+        "tags": ["security"]
+      }
+    },
+    "/api/v1/projects/{project_id}/security/packs/{pack_id}/gate": {
+      "get": {
+        "description": "What `verano run --ci --security` reads: categories below the minimum, or down since the last run.",
+        "operationId": "gate_api_v1_projects__project_id__security_packs__pack_id__gate_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pack_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Pack Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "min_pass_rate",
+            "required": false,
+            "schema": {
+              "default": 0.8,
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Min Pass Rate",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "max_drop",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 1,
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": 0.05,
+              "title": "Max Drop"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Gate",
+        "tags": ["security"]
+      }
+    },
+    "/api/v1/projects/{project_id}/security/packs/{pack_id}/harden": {
+      "post": {
+        "description": "Improve proposes added instructions and re-tests them on held-back attack cases.",
+        "operationId": "harden_api_v1_projects__project_id__security_packs__pack_id__harden_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pack_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Pack Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HardenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImprovementOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Harden",
+        "tags": ["security"]
+      }
+    },
+    "/api/v1/projects/{project_id}/security/packs/{pack_id}/report": {
+      "get": {
+        "operationId": "report_api_v1_projects__project_id__security_packs__pack_id__report_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pack_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Pack Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecurityReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Report",
+        "tags": ["security"]
+      }
+    },
+    "/api/v1/projects/{project_id}/security/packs/{pack_id}/review": {
+      "post": {
+        "description": "Approve (or reject) every case that is still a draft, optionally only one category.",
+        "operationId": "review_all_api_v1_projects__project_id__security_packs__pack_id__review_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pack_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Pack Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkReview"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PackOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Review All",
+        "tags": ["security"]
+      }
+    },
+    "/api/v1/projects/{project_id}/security/packs/{pack_id}/runs": {
+      "post": {
+        "operationId": "run_pack_api_v1_projects__project_id__security_packs__pack_id__runs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "pack_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Pack Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SecurityRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExperimentOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Run Pack",
+        "tags": ["security"]
+      }
+    },
     "/api/v1/projects/{project_id}/task-specs": {
       "post": {
         "operationId": "draft_task_spec_api_v1_projects__project_id__task_specs_post",
@@ -16528,6 +18722,35 @@
         ],
         "summary": "Prompt Notes",
         "tags": ["improve"]
+      }
+    },
+    "/api/v1/provider-health": {
+      "get": {
+        "description": "Which providers are being paused because they keep failing: provider name to closed, open or half_open.",
+        "operationId": "provider_health_api_v1_provider_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Provider Health Api V1 Provider Health Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Provider Health",
+        "tags": ["gateway"]
       }
     },
     "/api/v1/providers": {

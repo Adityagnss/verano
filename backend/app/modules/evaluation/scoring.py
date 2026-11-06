@@ -14,6 +14,7 @@ session that ran it is moved on.
 import asyncio
 import logging
 import uuid
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,6 +24,7 @@ from app.core.errors import AppError, Conflict, NotFound, ValidationFailed
 from app.core.features import CODE_CHECKS, is_enabled
 from app.core.ids import uuid7
 from app.core.jobs import JobQueue
+from app.core.leases import Heartbeat, deadline
 from app.core.security import utcnow
 from app.modules.datasets.models import DatasetItem
 from app.modules.datasets.service import DatasetService
@@ -116,7 +118,7 @@ class ScoringService:
         if experiment is None:
             return None
         if evaluation_run_id is not None:
-            run = await self._scores.claim_run(evaluation_run_id)
+            run = await self._scores.claim_run(evaluation_run_id, self._lease())
             if run is None:
                 return None
             await self._session.commit()
@@ -128,10 +130,19 @@ class ScoringService:
                 evaluator_set_version_id=version_id,
                 status=EvaluationRunStatus.RUNNING,
                 trigger=trigger,
+                lease_expires_at=self._lease(),
             )
             await self._scores.add_run(run)
+        run_id = run.id
+
+        async def beat() -> None:
+            async with self._sessions() as own:
+                await ScoreRepository(own).extend_run_lease(run_id, self._lease())
+                await own.commit()
+
         try:
-            finished = await self._score_pass(experiment, run, version_id)
+            async with Heartbeat(beat, self._settings.lease_seconds / 3):
+                finished = await self._score_pass(experiment, run, version_id)
         except Exception:
             await self._session.rollback()
             await self._scores.finish_run(run.id, EvaluationRunStatus.FAILED, utcnow())
@@ -146,10 +157,14 @@ class ScoringService:
         await self._session.commit()
         return run.id
 
+    def _lease(self) -> datetime:
+        return deadline(utcnow(), self._settings.lease_seconds)
+
     async def _score_pass(self, experiment: Experiment, run: EvaluationRun, version_id: uuid.UUID) -> bool:
         """Scores every answer; False when the experiment was stopped meanwhile (the pass is then left unfinished)."""
         configs = await self._evaluators.configs(version_id)
-        rows = await self._engine.runs(experiment.id)
+        done = await self._scores.scored_call_ids(run.id)  # a pass given to another worker carries on, not restarts
+        rows = [r for r in await self._engine.runs(experiment.id) if r.id not in done]
         items = {
             i.id: i
             for i in await self._datasets.items(experiment.dataset_version_id, ids=[r.dataset_item_id for r in rows])

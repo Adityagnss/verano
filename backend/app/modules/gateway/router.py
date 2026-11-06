@@ -6,11 +6,14 @@ LLM call, which is what makes it a meaningful end-to-end check of a key and a mo
 
 from typing import Annotated
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 
+from app.core.config import Settings, get_settings
 from app.core.pagination import Page, PageDep
+from app.core.security import CurrentPrincipal
 from app.modules.gateway.dependencies import CallHistoryDep, GatewayDep
 from app.modules.gateway.schemas import CallContext, CallPurpose, CostSummary, LLMCallOut, LLMResult, TestCallRequest
+from app.modules.gateway.service import breaker_for
 from app.modules.projects.dependencies import ProjectScope
 
 router = APIRouter(prefix="/projects/{project_id}/llm-calls", tags=["gateway"])
@@ -37,3 +40,14 @@ async def list_calls(
 @router.get("/summary")
 async def cost_summary(project: ProjectScope, history: CallHistoryDep) -> CostSummary:
     return await history.cost_summary(project.id)
+
+
+health_router = APIRouter(prefix="/provider-health", tags=["gateway"])
+
+
+@health_router.get("")
+async def provider_health(
+    principal: CurrentPrincipal, settings: Annotated[Settings, Depends(get_settings)]
+) -> dict[str, str]:
+    """Which providers are being paused because they keep failing: provider name to closed, open or half_open."""
+    return {provider: state.value for provider, state in breaker_for(settings).snapshot().items()}

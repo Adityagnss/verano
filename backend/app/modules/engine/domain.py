@@ -103,3 +103,17 @@ def parse_output(text: str) -> dict[str, Any]:
     with contextlib.suppress(ValueError):
         parsed["json"] = json.loads(stripped)
     return parsed
+
+
+def eta_seconds(done: int, remaining: int, elapsed_s: float) -> int | None:
+    """Time left at the speed measured so far; None until something has finished (no speed to measure)."""
+    if done <= 0 or elapsed_s <= 0:
+        return None
+    return round(remaining / (done / elapsed_s))
+
+
+def sample_ids(ids: list[uuid.UUID], size: int) -> list[uuid.UUID]:
+    """A fixed pick of `size` ids: ordered by a hash of the id, so the same cases are chosen every time and an
+    earlier result can be filtered to exactly the same cases."""
+    ranked = sorted(ids, key=lambda i: hashlib.blake2b(i.bytes, digest_size=8).digest())
+    return ranked[:size]

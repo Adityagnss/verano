@@ -19,18 +19,21 @@ tokens, cost, latency, attempts, the gateway's call id and its trace ids.
 import asyncio
 import uuid
 from collections import defaultdict
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
 from app.core.container import Container
-from app.core.errors import AppError
+from app.core.errors import AppError, CircuitOpen
 from app.core.jobs import JobQueue
+from app.core.leases import Heartbeat, deadline
 from app.core.security import utcnow
 from app.core.text import bound
 from app.modules.apps.caller import AppCaller, PreparedApp
 from app.modules.apps.models import AppCall
+from app.modules.apps.prompt_vars import with_prompt
 from app.modules.apps.repository import AppRepository
 from app.modules.apps.schemas import AppMode
 from app.modules.apps.simulator import SimulatedUser
@@ -50,6 +53,9 @@ from app.modules.registry.schemas import CallTarget
 from app.modules.registry.service import RegistryService
 
 SCORE_JOB = "evaluation.score_experiment"
+CAP_PAUSED = (
+    "Paused: the budget cap of ${cap} was reached. Raise the cap and press Resume to carry on where it stopped."
+)
 BUDGET_REACHED = "Budget cap of ${cap} reached; the remaining calls were skipped."
 INTERNAL = "internal_error"
 APP_PROVIDER = "app"
@@ -132,14 +138,42 @@ class ChunkExecutor:
                     await self._fail_app(experiment, row, "This app no longer exists.")
                     return
                 async with app_limits[row.credential_id or uuid.UUID(int=0)]:
-                    await self._call_app(experiment, row, inputs[row.dataset_item_id], prepared, judge)
+                    given = with_prompt(
+                        prepared.spec.request_template,
+                        inputs[row.dataset_item_id],
+                        prompt.system_template,
+                        prompt.user_template,
+                    )
+                    await self._call_app(experiment, row, given, prepared, judge)
                 return
             async with limits[row.provider]:
                 target = targets[(row.credential_id or uuid.UUID(int=0), row.model)]
                 await self._call(experiment, prompt, row, inputs[row.dataset_item_id], target)
 
-        await asyncio.gather(*(one(row) for row in rows))
+        async def beat() -> None:
+            async with self._lock:
+                until = deadline(utcnow(), self._settings.lease_seconds)
+                await self._repo.extend_leases(experiment.id, [row.id for row in rows], until)
+                await self._session.commit()
+
+        async with Heartbeat(beat, self._settings.lease_seconds / 3):
+            await asyncio.gather(*(one(row) for row in rows))
         await self._finish_if_done(experiment)
+
+    def _lease(self) -> datetime:
+        return deadline(utcnow(), self._settings.lease_seconds)
+
+    async def _park(self, experiment: Experiment, row: TestCaseRun, error: CircuitOpen) -> None:
+        """The provider's circuit is open: this call was never made. Put it back to pending and pause the run, so
+        Resume (or the end of the pause) carries on with exactly the calls that did not happen."""
+        async with self._lock:
+            await self._repo.update_run(
+                experiment.id, row.id, {"status": RunStatus.PENDING, "started_at": None, "lease_expires_at": None}
+            )
+            await self._session.commit()
+            if experiment.status is ExperimentStatus.RUNNING:
+                await self._experiments.pause(experiment, error.message)
+                await self._session.commit()
 
     async def _judge_target(self, experiment: Experiment) -> CallTarget | None:
         """The model that plays the user in a conversation: the experiment's judge."""
@@ -154,7 +188,7 @@ class ChunkExecutor:
         async with self._lock:
             if experiment.status is not ExperimentStatus.RUNNING:
                 return False
-            if not await self._repo.claim(experiment.id, row.id, utcnow()):
+            if not await self._repo.claim(experiment.id, row.id, utcnow(), self._lease()):
                 return False
             await self._session.commit()
             return True
@@ -241,7 +275,7 @@ class ChunkExecutor:
         async with self._lock:
             if experiment.status is not ExperimentStatus.RUNNING:
                 return
-            if not await self._repo.claim(experiment.id, row.id, utcnow()):
+            if not await self._repo.claim(experiment.id, row.id, utcnow(), self._lease()):
                 return
             await self._session.commit()
         messages = render(prompt.system_template, prompt.user_template, inputs)
@@ -272,6 +306,9 @@ class ChunkExecutor:
                 "trace_id": result.trace_id,
                 "span_id": result.span_id,
             }
+        except CircuitOpen as error:
+            await self._park(experiment, row, error)
+            return
         except AppError as error:
             call_id = error.details.get("llm_call_id")
             values |= {
@@ -297,7 +334,11 @@ class ChunkExecutor:
         if experiment.budget_cap is None or experiment.status is not ExperimentStatus.RUNNING:
             return
         reached = await self._repo.spent(experiment.id) >= experiment.budget_cap
-        if reached and await self._experiments.stop(experiment, BUDGET_REACHED.format(cap=experiment.budget_cap)):
+        if not reached:
+            return
+        if self._settings.engine_pause_at_cap:
+            await self._experiments.pause(experiment, CAP_PAUSED.format(cap=experiment.budget_cap))
+        elif await self._experiments.stop(experiment, BUDGET_REACHED.format(cap=experiment.budget_cap)):
             self._jobs.enqueue(SCORE_JOB, experiment_id=str(experiment.id))
 
     async def _finish_if_done(self, experiment: Experiment) -> None:

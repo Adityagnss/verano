@@ -308,6 +308,7 @@ class GeneratorService:
         regenerate: CaseCategory | None,
         task_spec_id: uuid.UUID,
     ) -> DatasetVersionOut:
+        state.regenerate = regenerate.value if regenerate else None
         values = {"generation": state.model_dump(mode="json"), "task_spec_id": task_spec_id}
         await self._datasets.update_version(version_id, values)
         await self._session.commit()

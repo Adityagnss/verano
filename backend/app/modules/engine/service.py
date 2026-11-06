@@ -13,6 +13,7 @@ the state machine and are recorded as experiment events.
 
 import uuid
 from dataclasses import dataclass
+from decimal import Decimal
 from importlib.metadata import version as package_version
 from typing import Any
 
@@ -27,7 +28,7 @@ from app.core.security import Principal, utcnow
 from app.modules.datasets.models import DatasetVersion
 from app.modules.datasets.schemas import ItemFilter, Split
 from app.modules.datasets.service import DatasetService
-from app.modules.engine.domain import chunks, ensure_transition, plan_matrix
+from app.modules.engine.domain import chunks, ensure_transition, eta_seconds, plan_matrix, sample_ids
 from app.modules.engine.estimate import estimate_experiment
 from app.modules.engine.fingerprint import run_configuration
 from app.modules.engine.models import Experiment, ExperimentEvent
@@ -79,6 +80,21 @@ NO_JUDGE_CHOSEN = (
 RERUN_PREFIX = "Re-run: "
 FINISHED = {ExperimentStatus.COMPLETED, ExperimentStatus.CANCELLED, ExperimentStatus.FAILED}
 CANCELLED = "Cancelled by the user."
+PAUSED_BY_USER = "Paused by the user. Nothing that finished is lost; press Resume to carry on."
+RESUMED = "Resumed."
+NOT_RUNNING = "Only a run that is in progress can be paused."
+NOT_PAUSED = "Only a paused run can be resumed."
+CAP_TOO_LOW = "This run has already spent ${spent}. Raise the budget cap above that, then resume."
+RETRY_OPEN_ONLY = "Calls can be retried only in a run that is running or paused."
+NOTHING_TO_RETRY = "No call failed for a passing reason, so there is nothing to retry."
+RETRYABLE_ERRORS = [
+    "provider_unavailable",
+    "provider_timeout",
+    "rate_limited",
+    "provider_error",
+    "circuit_open",
+    "app_error",
+]
 LIBRARIES = ("litellm", "deepeval")
 
 
@@ -214,6 +230,56 @@ class ExperimentService:
         experiment.status = target
         return True
 
+    async def pause(self, experiment: Experiment, reason: str) -> bool:
+        """Stop starting new calls but keep every pending call pending, so Resume carries on exactly where this
+        stopped. Calls already in flight finish and are kept."""
+        return await self.transition(experiment, ExperimentStatus.PAUSED, reason)
+
+    async def pause_by_user(self, project: ProjectOut, experiment_id: uuid.UUID) -> ExperimentOut:
+        experiment = await self._experiment(project.id, experiment_id)
+        if experiment.status is not ExperimentStatus.RUNNING:
+            raise Conflict(NOT_RUNNING)
+        await self.pause(experiment, PAUSED_BY_USER)
+        await self._session.commit()
+        return await self.get(project.id, experiment_id)
+
+    async def resume(
+        self, project: ProjectOut, experiment_id: uuid.UUID, budget_cap: Decimal | None = None
+    ) -> ExperimentOut:
+        """Continue a paused run: every call that never started is queued once; nothing that finished is repeated.
+        If it paused at its spending cap the cap must be raised above what is already spent."""
+        experiment = await self._experiment(project.id, experiment_id)
+        if experiment.status is not ExperimentStatus.PAUSED:
+            raise Conflict(NOT_PAUSED)
+        cap = budget_cap if budget_cap is not None else experiment.budget_cap
+        spent = await self._repo.spent(experiment.id)
+        if cap is not None and spent >= cap:
+            raise ValidationFailed(CAP_TOO_LOW.format(spent=f"{spent:.4f}"))
+        values: dict[str, Any] = {"budget_cap": cap} if budget_cap is not None else {}
+        if not await self.transition(experiment, ExperimentStatus.RUNNING, RESUMED, values):
+            raise Conflict(NOT_PAUSED)
+        await self._session.commit()
+        self._enqueue_pending(experiment.id, await self._repo.run_ids(experiment.id, RunStatus.PENDING))
+        return await self.get(project.id, experiment_id)
+
+    async def retry_failed(self, project: ProjectOut, experiment_id: uuid.UUID) -> ExperimentOut:
+        """Put calls that failed for a passing reason (the provider was down or slow) back to pending, in a run that
+        is still open (running or paused). A call that failed for good (a bad request) is left alone."""
+        experiment = await self._experiment(project.id, experiment_id)
+        if experiment.status not in (ExperimentStatus.RUNNING, ExperimentStatus.PAUSED):
+            raise Conflict(RETRY_OPEN_ONLY)
+        count = await self._repo.requeue_failed(experiment.id, RETRYABLE_ERRORS)
+        if count == 0:
+            raise Conflict(NOTHING_TO_RETRY)
+        await self._session.commit()
+        if experiment.status is ExperimentStatus.RUNNING:
+            self._enqueue_pending(experiment.id, await self._repo.run_ids(experiment.id, RunStatus.PENDING))
+        return await self.get(project.id, experiment_id)
+
+    def _enqueue_pending(self, experiment_id: uuid.UUID, ids: list[uuid.UUID]) -> None:
+        for chunk in chunks(ids, self._settings.engine_chunk_size):
+            self._jobs.enqueue(RUN_CHUNK_JOB, experiment_id=str(experiment_id), run_ids=[str(i) for i in chunk])
+
     async def list_experiments(self, project: ProjectOut, page: PageParams) -> Page[ExperimentOut]:
         rows = await self._repo.experiments(project.id, page)
         numbers = await self._repo.prompt_numbers([row.prompt_version_id for row in rows])
@@ -242,6 +308,9 @@ class ExperimentService:
         version = await self._datasets.approved_version(project_id, version_id)
         split = {SplitScope.OPTIMIZE: Split.OPTIMIZE, SplitScope.HOLDOUT: Split.HOLDOUT}.get(body.split_scope)
         items = await self._datasets.items(version.id, ItemFilter(split=split))
+        if body.sample_size is not None and body.sample_size < len(items):
+            keep = set(sample_ids([item.id for item in items], body.sample_size))
+            items = [item for item in items if item.id in keep]
         if not items:
             raise ValidationFailed(NO_CASES)
         wanted = [model.model_profile_id for model in body.models]
@@ -361,6 +430,7 @@ class ExperimentService:
                 for model in body.models
             ],
             "judge": judge,
+            **({"sample_size": body.sample_size} if body.sample_size else {}),
         }
 
     @staticmethod
@@ -408,6 +478,11 @@ class ExperimentService:
             answered = sum(p.succeeded + p.failed for p in progress.values())
             scored = await ScoreRepository(self._session).answers_scored(row.id)
             scoring = ScoringProgress(done=min(scored, answered), total=answered)
+        eta = None
+        if row.status is ExperimentStatus.RUNNING and row.started_at is not None:
+            done = sum(p.succeeded + p.failed for p in progress.values())
+            left = sum(p.total - p.succeeded - p.failed - p.skipped for p in progress.values())
+            eta = eta_seconds(done, left, (utcnow() - row.started_at).total_seconds())
         named = (await self._repo.prompt_names([row.prompt_version_id])).get(row.prompt_version_id)
         return ExperimentOut(
             **{name: getattr(row, name) for name in ExperimentOut.model_fields if hasattr(row, name)},
@@ -416,6 +491,7 @@ class ExperimentService:
             stop_reason=await self._repo.last_reason(row.id),
             progress=list(progress.values()),
             scoring=scoring,
+            eta_seconds=eta,
             configuration=run_configuration(row, numbers.get(row.prompt_version_id)),
             model_versions=await self._model_versions(row),
         )

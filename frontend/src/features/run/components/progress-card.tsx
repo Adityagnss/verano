@@ -12,9 +12,12 @@ import { formatCost } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 import { RUN_COPY } from "../copy"
+import { useExperimentEvents } from "../use-experiment-events"
+import { RunControls } from "./run-controls"
 
 const TONE: Record<string, Tone> = {
   running: "info",
+  paused: "warning",
   planned: "info",
   evaluating: "info",
   completed: "success",
@@ -57,6 +60,11 @@ function ScoringBar({ done, total }: { done: number; total: number }) {
 }
 
 export function ProgressCard({ projectId, experiment, onCancel, cancelling }: Props) {
+  useExperimentEvents(
+    projectId,
+    experiment.id,
+    ["running", "paused", "evaluating", "planned"].includes(experiment.status),
+  )
   const scoring = experiment.status === "evaluating"
   const running = experiment.status === "running" || experiment.status === "planned" || scoring
   const finished = ["completed", "cancelled", "failed"].includes(experiment.status)
@@ -83,6 +91,7 @@ export function ProgressCard({ projectId, experiment, onCancel, cancelling }: Pr
         </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
+        <RunControls projectId={projectId} experiment={experiment} />
         {scoring && experiment.scoring ? (
           <ScoringBar done={experiment.scoring.done} total={experiment.scoring.total} />
         ) : null}

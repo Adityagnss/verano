@@ -13,7 +13,13 @@ from pydantic import BaseModel
 
 from app.core.security import CurrentPrincipal
 from app.modules.assistant.dependencies import ImprovementServiceDep
-from app.modules.assistant.schemas import CandidateRef, ImprovementOut, ImprovementSummary, ImproveRequest
+from app.modules.assistant.schemas import (
+    CandidateRef,
+    ImprovementOut,
+    ImprovementSummary,
+    ImproveRequest,
+    ReadinessOut,
+)
 from app.modules.projects.dependencies import ProjectScope
 
 router = APIRouter(prefix="/projects/{project_id}/improvements", tags=["improve"])
@@ -35,13 +41,30 @@ async def prompt_notes(principal: CurrentPrincipal) -> PromptNotes:
 async def start_improvement(
     body: ImproveRequest, project: ProjectScope, service: ImprovementServiceDep
 ) -> ImprovementOut:
-    return await service.start(project, body.experiment_id, body.writer)
+    return await service.start(
+        project,
+        body.experiment_id,
+        body.writer,
+        rounds=body.rounds,
+        population=body.population,
+        quick_check=body.quick_check,
+        budget_cap=body.budget_cap,
+        target_effect=body.target_effect,
+    )
 
 
 @router.get("")
 async def improvement_history(project: ProjectScope, service: ImprovementServiceDep) -> list[ImprovementSummary]:
     """Earlier improvements of this project, newest first."""
     return await service.history(project)
+
+
+@router.get("/readiness")
+async def improvement_readiness(
+    project: ProjectScope, service: ImprovementServiceDep, experiment_id: Annotated[uuid.UUID, Query()]
+) -> ReadinessOut:
+    """Whether Improve can change what this experiment tests (an app must take the prompt in its request)."""
+    return await service.readiness(project, experiment_id)
 
 
 @router.get("/candidate-for/{experiment_id}")

@@ -9,7 +9,7 @@ const ORDER = ["analyzing", "testing", "confirming", "done"]
 
 export function StageTracker({ stage }: { stage: string }) {
   const failed = stage === "failed" || stage === "stopped"
-  const current = failed ? -1 : ORDER.indexOf(stage)
+  const current = failed ? -1 : ORDER.indexOf(stage === "quick" ? "testing" : stage)
   return (
     <ol className="grid gap-2 sm:grid-cols-4">
       {IMPROVE_COPY.tracker.map((label, index) => {

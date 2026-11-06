@@ -20,15 +20,18 @@ failure is recorded on the version with a clear message.
 """
 
 import uuid
+from datetime import datetime
 from pathlib import Path
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.config import Settings
 from app.core.container import Container
 from app.core.datafiles import load_yaml
 from app.core.errors import AppError, ValidationFailed
+from app.core.leases import Heartbeat, deadline
 from app.core.progress import ProgressEvent, ProgressHub, ProgressStatus
+from app.core.security import utcnow
 from app.modules.datasets.service import DatasetService
 from app.modules.documents.service import DocumentService
 from app.modules.evaluation.schemas import EvaluatorConfigIn
@@ -72,6 +75,7 @@ class GenerationPipeline:
         evaluators: EvaluatorSetService,
         progress: ProgressHub,
         embedder: Embedder,
+        sessions: async_sessionmaker[AsyncSession] | None = None,
     ) -> None:
         self._session = session
         self._settings = settings
@@ -82,6 +86,7 @@ class GenerationPipeline:
         self._evaluators = evaluators
         self._progress = progress
         self._embedder = embedder
+        self._sessions = sessions
         self._specs = TaskSpecRepository(session)
         self._categories = load_yaml(CONFIG / "generation.yaml", GenerationCatalog)
         self._evaluator_catalog = load_yaml(EVALUATOR_CATALOG, EvaluatorCatalog)
@@ -100,13 +105,27 @@ class GenerationPipeline:
             EvaluatorSetService(session),
             container.progress,
             build_embedder(settings),
+            container.database.sessions,
         )
 
     async def run(self, project_id: uuid.UUID, version_id: uuid.UUID, regenerate: CaseCategory | None) -> None:
         version = await self._datasets.get_version(project_id, version_id)
         state = GenerationState.model_validate(version.generation)
+        await self._datasets.update_version(version_id, {"lease_expires_at": self._lease()})
+        await self._session.commit()
+
+        async def beat() -> None:
+            if self._sessions is None:
+                return
+            async with self._sessions() as own:
+                await DatasetService(own, self._settings).update_version(
+                    version_id, {"lease_expires_at": self._lease()}
+                )
+                await own.commit()
+
         try:
-            stopped = await self._run(project_id, version_id, state, regenerate)
+            async with Heartbeat(beat, self._settings.lease_seconds / 3):
+                stopped = await self._run(project_id, version_id, state, regenerate)
         except AppError as exc:
             await self.fail(project_id, version_id, exc.message)
             return
@@ -186,8 +205,14 @@ class GenerationPipeline:
         await self._datasets.update_version(version_id, {"evaluator_set_version_id": created.id})
         await self._session.commit()
 
+    def _lease(self) -> datetime:
+        return deadline(utcnow(), self._settings.lease_seconds)
+
     async def _save_state(self, version_id: uuid.UUID, state: GenerationState) -> None:
-        await self._datasets.update_version(version_id, {"generation": state.model_dump(mode="json")})
+        values: dict[str, object] = {"generation": state.model_dump(mode="json")}
+        if state.status is not GenerationStatus.RUNNING:
+            values["lease_expires_at"] = None
+        await self._datasets.update_version(version_id, values)
         await self._session.commit()
 
     async def _publish(

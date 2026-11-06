@@ -91,7 +91,7 @@ services:
 
   worker:
     <<: *backend
-    command: ["celery", "-A", "app.workers.celery_app", "worker", "--queues", "default,generation,evaluation", "--concurrency", "4", "--loglevel", "INFO"]
+    command: ["celery", "-A", "app.workers.celery_app", "worker", "--beat", "--queues", "default,generation,evaluation", "--concurrency", "4", "--loglevel", "INFO"]
     stop_signal: SIGTERM
     stop_grace_period: 120s
     healthcheck:

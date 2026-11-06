@@ -16,12 +16,14 @@ from app.modules.documents.router import router as documents_router
 from app.modules.engine.router import router as engine_router
 from app.modules.evaluation.router import project_router as evaluators_router
 from app.modules.evaluation.router import router as results_router
+from app.modules.gateway.router import health_router as provider_health_router
 from app.modules.gateway.router import router as gateway_router
 from app.modules.generator.router import router as generator_router
 from app.modules.logbook.router import router as logbook_router
 from app.modules.projects.router import router as projects_router
 from app.modules.prompts.router import router as prompts_router
 from app.modules.registry.router import router as registry_router
+from app.modules.security.router import router as security_router
 
 api_router = APIRouter()
 for module_router in (
@@ -30,6 +32,7 @@ for module_router in (
     registry_router,
     apps_router,
     gateway_router,
+    provider_health_router,
     activity_router,
     prompts_router,
     datasets_router,
@@ -42,5 +45,6 @@ for module_router in (
     improve_router,
     notes_router,
     logbook_router,
+    security_router,
 ):
     api_router.include_router(module_router)

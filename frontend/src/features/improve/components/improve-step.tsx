@@ -42,6 +42,7 @@ import { formatCost } from "@/lib/format"
 import { History } from "./history"
 import { CandidateCard, percent } from "./candidate-card"
 import { ResultDialog } from "./result-dialog"
+import { SessionTree } from "./session-tree"
 import { StageTracker } from "./stage-tracker"
 
 /** Improve tests 3 candidates on the 70% it improves on and re-checks the best on the 30% held back: about 2.4 runs. */
@@ -68,7 +69,11 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
   const winner = data?.candidates.find((c) => c.outcome === "better") ?? null
   const confirmed = data?.candidates.find((c) => c.holdout_experiment_id) ?? null
   const stopped = data?.stage === "failed" || data?.stage === "stopped"
-  const running = data?.stage === "analyzing" || data?.stage === "testing" || data?.stage === "confirming"
+  const running =
+    data?.stage === "analyzing" ||
+    data?.stage === "quick" ||
+    data?.stage === "testing" ||
+    data?.stage === "confirming"
   const [writerKey, setWriterKey] = useState("")
   const writer = useChosenJudge(projectId, writerKey)
   const [decided, setDecided] = useState<string[]>(() => {
@@ -209,6 +214,7 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
         </div>
       ) : null}
       {data ? <StageTracker stage={data.stage} /> : null}
+      {data ? <SessionTree projectId={projectId} session={data} /> : null}
       {data && (data.message || running) ? (
         <div
           className={cn(

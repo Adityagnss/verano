@@ -720,6 +720,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Experiment Events
+         * @description Live progress as Server-Sent Events: one event whenever the run's numbers or state change, until it ends.
+         */
+        get: operations["experiment_events_api_v1_projects__project_id__experiments__experiment_id__events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/experiments/{experiment_id}/export.csv": {
         parameters: {
             query?: never;
@@ -782,6 +802,26 @@ export interface paths {
         get: operations["get_labels_api_v1_projects__project_id__experiments__experiment_id__labels_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pause Experiment
+         * @description Stop starting new calls; pending calls stay pending until Resume.
+         */
+        post: operations["pause_experiment_api_v1_projects__project_id__experiments__experiment_id__pause_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -867,6 +907,46 @@ export interface paths {
         get: operations["get_results_api_v1_projects__project_id__experiments__experiment_id__results_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resume Experiment
+         * @description Carry on exactly where a paused run stopped (optionally with a higher budget cap). No call is repeated.
+         */
+        post: operations["resume_experiment_api_v1_projects__project_id__experiments__experiment_id__resume_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/experiments/{experiment_id}/retry-failed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retry Failed
+         * @description Queue again the calls that failed because the provider was down or slow.
+         */
+        post: operations["retry_failed_api_v1_projects__project_id__experiments__experiment_id__retry_failed_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -991,6 +1071,26 @@ export interface paths {
         };
         /** Latest Improvement */
         get: operations["latest_improvement_api_v1_projects__project_id__improvements_latest_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/improvements/readiness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Improvement Readiness
+         * @description Whether Improve can change what this experiment tests (an app must take the prompt in its request).
+         */
+        get: operations["improvement_readiness_api_v1_projects__project_id__improvements_readiness_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1616,6 +1716,196 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/security/families": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Attack Families
+         * @description The kinds of attack the pack can contain, with the OWASP LLM Top 10 entry each belongs to.
+         */
+        get: operations["attack_families_api_v1_projects__project_id__security_families_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/security/packs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Packs */
+        get: operations["list_packs_api_v1_projects__project_id__security_packs_get"];
+        put?: never;
+        /** Create Pack */
+        post: operations["create_pack_api_v1_projects__project_id__security_packs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/security/packs/{pack_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Pack */
+        get: operations["get_pack_api_v1_projects__project_id__security_packs__pack_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Pack */
+        delete: operations["delete_pack_api_v1_projects__project_id__security_packs__pack_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/security/packs/{pack_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve Pack
+         * @description Freeze the approved cases into the security test set, ready to run.
+         */
+        post: operations["approve_pack_api_v1_projects__project_id__security_packs__pack_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/security/packs/{pack_id}/cases/{case_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Case
+         * @description Edit an attack, its expected safe behaviour, or approve or reject it. Editing counts as approving.
+         */
+        patch: operations["update_case_api_v1_projects__project_id__security_packs__pack_id__cases__case_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/security/packs/{pack_id}/gate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Gate
+         * @description What `verano run --ci --security` reads: categories below the minimum, or down since the last run.
+         */
+        get: operations["gate_api_v1_projects__project_id__security_packs__pack_id__gate_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/security/packs/{pack_id}/harden": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Harden
+         * @description Improve proposes added instructions and re-tests them on held-back attack cases.
+         */
+        post: operations["harden_api_v1_projects__project_id__security_packs__pack_id__harden_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/security/packs/{pack_id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Report */
+        get: operations["report_api_v1_projects__project_id__security_packs__pack_id__report_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/security/packs/{pack_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Review All
+         * @description Approve (or reject) every case that is still a draft, optionally only one category.
+         */
+        post: operations["review_all_api_v1_projects__project_id__security_packs__pack_id__review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/security/packs/{pack_id}/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run Pack */
+        post: operations["run_pack_api_v1_projects__project_id__security_packs__pack_id__runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/task-specs": {
         parameters: {
             query?: never;
@@ -1663,6 +1953,26 @@ export interface paths {
          * @description The Prompt guide page: the full prompting reference (a superset of the notes Improve reads).
          */
         get: operations["prompt_notes_api_v1_prompt_notes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/provider-health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Provider Health
+         * @description Which providers are being paused because they keep failing: provider name to closed, open or half_open.
+         */
+        get: operations["provider_health_api_v1_provider_health_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2207,6 +2517,23 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /** AttackFamilyOut */
+        AttackFamilyOut: {
+            /** Built In Cases */
+            built_in_cases: number;
+            /** Description */
+            description: string;
+            /** Id */
+            id: string;
+            /** Needs Tools */
+            needs_tools: boolean;
+            /** Owasp */
+            owasp: string;
+            /** Safe Behaviour */
+            safe_behaviour: string;
+            /** Title */
+            title: string;
+        };
         /** AuthConfigOut */
         AuthConfigOut: {
             /** Password Min Length */
@@ -2230,6 +2557,13 @@ export interface components {
             /** Category */
             category?: string | null;
             source?: components["schemas"]["ItemSource"] | null;
+        };
+        /** BulkReview */
+        BulkReview: {
+            /** Category */
+            category?: string | null;
+            /** @default approved */
+            status: components["schemas"]["CaseStatus"];
         };
         /** CallDetail */
         CallDetail: {
@@ -2330,16 +2664,37 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            /**
+             * Is Winner
+             * @default false
+             */
+            is_winner: boolean;
+            /** Label */
+            label?: string | null;
+            /** Metrics */
+            metrics?: {
+                [key: string]: unknown;
+            } | null;
             /** Optimize Experiment Id */
             optimize_experiment_id: string | null;
             /** Optimize Quality */
             optimize_quality: number | null;
             outcome: components["schemas"]["CandidateOutcome"];
+            /** Parent Candidate Id */
+            parent_candidate_id?: string | null;
+            /** Prompt Version Id */
+            prompt_version_id: string | null;
+            /** Quick Experiment Id */
+            quick_experiment_id?: string | null;
+            /** Quick Quality */
+            quick_quality?: number | null;
+            /** Rejection Reason */
+            rejection_reason?: string | null;
             /**
-             * Prompt Version Id
-             * Format: uuid
+             * Round
+             * @default 1
              */
-            prompt_version_id: string;
+            round: number;
             /** Strategy */
             strategy: string;
             /** System Template */
@@ -2394,6 +2749,32 @@ export interface components {
          * @enum {string}
          */
         CaseCategory: "happy_path" | "edge_case" | "tricky" | "format_stress" | "adversarial";
+        /** CaseOut */
+        CaseOut: {
+            /** Attack */
+            attack: string;
+            /** Category */
+            category: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Inputs */
+            inputs: {
+                [key: string]: unknown;
+            };
+            /**
+             * Pack Id
+             * Format: uuid
+             */
+            pack_id: string;
+            /** Safe Behaviour */
+            safe_behaviour: string;
+            /** Source */
+            source: string;
+            status: components["schemas"]["CaseStatus"];
+        };
         /** CaseOutput */
         CaseOutput: {
             /** Cost */
@@ -2467,6 +2848,53 @@ export interface components {
             source: string;
             /** Split */
             split: string | null;
+        };
+        /**
+         * CaseStatus
+         * @enum {string}
+         */
+        CaseStatus: "draft" | "approved" | "rejected";
+        /** CaseUpdate */
+        CaseUpdate: {
+            /** Attack */
+            attack?: string | null;
+            /** Safe Behaviour */
+            safe_behaviour?: string | null;
+            status?: components["schemas"]["CaseStatus"] | null;
+        };
+        /** CategoryCount */
+        CategoryCount: {
+            /** Approved */
+            approved: number;
+            /** Category */
+            category: string;
+            /** Draft */
+            draft: number;
+            /** Owasp */
+            owasp: string;
+            /** Rejected */
+            rejected: number;
+            /** Title */
+            title: string;
+        };
+        /** CategoryResult */
+        CategoryResult: {
+            /** Answers */
+            answers: number;
+            /** Category */
+            category: string;
+            /** Earlier Pass Rate */
+            earlier_pass_rate: number | null;
+            /** Failing Examples */
+            failing_examples: string[];
+            /** Owasp */
+            owasp: string;
+            /** Pass Rate */
+            pass_rate: number | null;
+            /** Resisted */
+            resisted: number;
+            /** Title */
+            title: string;
         };
         /** CheckCount */
         CheckCount: {
@@ -2864,6 +3292,8 @@ export interface components {
             prompt_id?: string | null;
             /** Prompt Version Id */
             prompt_version_id?: string | null;
+            /** Sample Size */
+            sample_size?: number | null;
             /** @default all */
             split_scope: components["schemas"]["SplitScope"];
         };
@@ -2948,6 +3378,8 @@ export interface components {
             estimate: {
                 [key: string]: unknown;
             } | null;
+            /** Eta Seconds */
+            eta_seconds?: number | null;
             /**
              * Evaluator Set Version Id
              * Format: uuid
@@ -3071,6 +3503,31 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** GateFailureOut */
+        GateFailureOut: {
+            /** Category */
+            category: string;
+            /** Message */
+            message: string;
+        };
+        /** GateOut */
+        GateOut: {
+            /** Categories */
+            categories: components["schemas"]["CategoryResult"][];
+            /**
+             * Experiment Id
+             * Format: uuid
+             */
+            experiment_id: string;
+            /** Failures */
+            failures: components["schemas"]["GateFailureOut"][];
+            /** Max Drop */
+            max_drop: number | null;
+            /** Min Pass Rate */
+            min_pass_rate: number;
+            /** Passed */
+            passed: boolean;
+        };
         /** GenerationEstimate */
         GenerationEstimate: {
             /** Answers To Draft */
@@ -3119,6 +3576,16 @@ export interface components {
              * Format: uuid
              */
             task_spec_id: string;
+        };
+        /** GeneratorChoice */
+        GeneratorChoice: {
+            /**
+             * Credential Id
+             * Format: uuid
+             */
+            credential_id: string;
+            /** Model */
+            model: string;
         };
         /** GeneratorModel */
         GeneratorModel: {
@@ -3194,13 +3661,34 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
-        /** ImproveRequest */
-        ImproveRequest: {
+        /** HardenRequest */
+        HardenRequest: {
             /**
              * Experiment Id
              * Format: uuid
              */
             experiment_id: string;
+            /** Rounds */
+            rounds?: number | null;
+            writer?: components["schemas"]["JudgeChoice"] | null;
+        };
+        /** ImproveRequest */
+        ImproveRequest: {
+            /** Budget Cap */
+            budget_cap?: number | string | null;
+            /**
+             * Experiment Id
+             * Format: uuid
+             */
+            experiment_id: string;
+            /** Population */
+            population?: number | null;
+            /** Quick Check */
+            quick_check?: boolean | null;
+            /** Rounds */
+            rounds?: number | null;
+            /** Target Effect */
+            target_effect?: number | null;
             writer?: components["schemas"]["JudgeChoice"] | null;
         };
         /** ImprovementOut */
@@ -3221,6 +3709,18 @@ export interface components {
              */
             created_at: string;
             /**
+             * Current Round
+             * @default 1
+             */
+            current_round: number;
+            /** Final Candidate Id */
+            final_candidate_id?: string | null;
+            /**
+             * Focus
+             * @default quality
+             */
+            focus: string;
+            /**
              * Id
              * Format: uuid
              */
@@ -3228,14 +3728,41 @@ export interface components {
             /** Message */
             message: string | null;
             /**
+             * Paused Experiment Ids
+             * @default []
+             */
+            paused_experiment_ids: string[];
+            /**
+             * Population
+             * @default 3
+             */
+            population: number;
+            /**
+             * Quick Check
+             * @default false
+             */
+            quick_check: boolean;
+            /**
              * Root Prompt Version Id
              * Format: uuid
              */
             root_prompt_version_id: string;
+            /**
+             * Round Limit
+             * @default 1
+             */
+            round_limit: number;
+            /**
+             * Rounds
+             * @default []
+             */
+            rounds: components["schemas"]["RoundOut"][];
+            sizing?: components["schemas"]["SizingOut"] | null;
             stage: components["schemas"]["SessionStage"];
             /** Started Experiment Id */
             started_experiment_id?: string | null;
             status: components["schemas"]["OptimizationStatus"];
+            versus_first?: components["schemas"]["VerdictOut"] | null;
             /** Writer Model */
             writer_model?: string | null;
         };
@@ -3888,6 +4415,109 @@ export interface components {
          * @enum {string}
          */
         OutputFormat: "single_label" | "multi_label" | "json" | "free_text" | "list";
+        /** PackCreate */
+        PackCreate: {
+            /** Canary */
+            canary?: string | null;
+            /** Categories */
+            categories?: string[] | null;
+            generator?: components["schemas"]["GeneratorChoice"] | null;
+            /** Name */
+            name?: string | null;
+            /** Per Category */
+            per_category?: number | null;
+            /**
+             * Prompt Version Id
+             * Format: uuid
+             */
+            prompt_version_id: string;
+            /**
+             * Tool App
+             * @default false
+             */
+            tool_app: boolean;
+        };
+        /** PackDetail */
+        PackDetail: {
+            /** Canary */
+            canary: string;
+            /** Canary In Prompt */
+            canary_in_prompt: boolean;
+            /** Cases */
+            cases: components["schemas"]["CaseOut"][];
+            /** Categories */
+            categories: string[];
+            /** Counts */
+            counts: components["schemas"]["CategoryCount"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Dataset Version Id */
+            dataset_version_id: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Message */
+            message: string | null;
+            /** Name */
+            name: string;
+            /** Per Category */
+            per_category: number;
+            /**
+             * Prompt Version Id
+             * Format: uuid
+             */
+            prompt_version_id: string;
+            status: components["schemas"]["PackStatus"];
+            /** Tool App */
+            tool_app: boolean;
+        };
+        /** PackOut */
+        PackOut: {
+            /** Canary */
+            canary: string;
+            /** Canary In Prompt */
+            canary_in_prompt: boolean;
+            /** Categories */
+            categories: string[];
+            /** Counts */
+            counts: components["schemas"]["CategoryCount"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Dataset Version Id */
+            dataset_version_id: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Message */
+            message: string | null;
+            /** Name */
+            name: string;
+            /** Per Category */
+            per_category: number;
+            /**
+             * Prompt Version Id
+             * Format: uuid
+             */
+            prompt_version_id: string;
+            status: components["schemas"]["PackStatus"];
+            /** Tool App */
+            tool_app: boolean;
+        };
+        /**
+         * PackStatus
+         * @enum {string}
+         */
+        PackStatus: "generating" | "draft" | "approved" | "failed";
         /** Page[ExperimentOut] */
         Page_ExperimentOut_: {
             /** Items */
@@ -4178,6 +4808,26 @@ export interface components {
             cost: string;
         };
         /**
+         * ReadinessOut
+         * @description Whether Improve can change what this experiment tests, said in plain words.
+         */
+        ReadinessOut: {
+            /**
+             * Apps
+             * @default []
+             */
+            apps: string[];
+            /**
+             * Apps Not Taking The Prompt
+             * @default []
+             */
+            apps_not_taking_the_prompt: string[];
+            /** Message */
+            message: string;
+            /** Ready */
+            ready: boolean;
+        };
+        /**
          * Reason
          * @description Why a candidate is or is not proven better than the current prompt.
          * @enum {string}
@@ -4288,6 +4938,11 @@ export interface components {
             /** Models */
             models: components["schemas"]["ModelMetricsOut"][];
         };
+        /** ResumeRequest */
+        ResumeRequest: {
+            /** Budget Cap */
+            budget_cap?: number | string | null;
+        };
         /**
          * ReturnedModelOut
          * @description A model id the provider reported, and how many calls it answered (`id` is null when none was reported).
@@ -4303,6 +4958,17 @@ export interface components {
          * @enum {string}
          */
         ReviewStatus: "trusted" | "draft" | "approved";
+        /** RoundOut */
+        RoundOut: {
+            /** Label */
+            label: string;
+            /** Proven */
+            proven: boolean;
+            /** Round */
+            round: number;
+            /** Winner Candidate Id */
+            winner_candidate_id: string | null;
+        };
         /**
          * RunConfiguration
          * @description What an experiment was set up with. `hash` is the same for the same configuration.
@@ -4433,6 +5099,41 @@ export interface components {
             /** Title */
             title: string | null;
         };
+        /** SecurityReport */
+        SecurityReport: {
+            /** Canary In Prompt */
+            canary_in_prompt: boolean;
+            /** Categories */
+            categories: components["schemas"]["CategoryResult"][];
+            /**
+             * Experiment Id
+             * Format: uuid
+             */
+            experiment_id: string;
+            /** Experiment Status */
+            experiment_status: string;
+            /** Notes */
+            notes: string[];
+            /** Overall Pass Rate */
+            overall_pass_rate: number | null;
+            /**
+             * Pack Id
+             * Format: uuid
+             */
+            pack_id: string;
+        };
+        /** SecurityRunRequest */
+        SecurityRunRequest: {
+            /** Budget Cap */
+            budget_cap?: number | null;
+            judge: components["schemas"]["JudgeChoice"];
+            /** Models */
+            models: components["schemas"]["ModelRun"][];
+            /** Prompt Id */
+            prompt_id?: string | null;
+            /** Prompt Version Id */
+            prompt_version_id?: string | null;
+        };
         /** SessionOut */
         SessionOut: {
             /** Access Token */
@@ -4450,7 +5151,7 @@ export interface components {
          * SessionStage
          * @enum {string}
          */
-        SessionStage: "analyzing" | "testing" | "confirming" | "done" | "failed" | "stopped";
+        SessionStage: "analyzing" | "testing" | "quick" | "confirming" | "done" | "failed" | "stopped";
         /**
          * SharedCredentialOut
          * @description A key already added in another project of the same organization, which can be used here too.
@@ -4512,6 +5213,23 @@ export interface components {
             name: string;
             /** Password */
             password: string;
+        };
+        /** SizingOut */
+        SizingOut: {
+            /** Enough */
+            enough: boolean;
+            /** Holdout Cases */
+            holdout_cases: number;
+            /** Message */
+            message: string;
+            /** Needed Cases */
+            needed_cases: number;
+            /** Quick Sample */
+            quick_sample: number | null;
+            /** Spread */
+            spread: number;
+            /** Target Effect */
+            target_effect: number;
         };
         /**
          * SortOrder
@@ -6658,6 +7376,38 @@ export interface operations {
             };
         };
     };
+    experiment_events_api_v1_projects__project_id__experiments__experiment_id__events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                experiment_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     export_csv_api_v1_projects__project_id__experiments__experiment_id__export_csv_get: {
         parameters: {
             query?: {
@@ -6783,6 +7533,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LabelOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pause_experiment_api_v1_projects__project_id__experiments__experiment_id__pause_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                experiment_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperimentOut"];
                 };
             };
             /** @description Validation Error */
@@ -6955,6 +7737,74 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ResultsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resume_experiment_api_v1_projects__project_id__experiments__experiment_id__resume_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                experiment_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ResumeRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperimentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retry_failed_api_v1_projects__project_id__experiments__experiment_id__retry_failed_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                experiment_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperimentOut"];
                 };
             };
             /** @description Validation Error */
@@ -7220,6 +8070,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImprovementOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    improvement_readiness_api_v1_projects__project_id__improvements_readiness_get: {
+        parameters: {
+            query: {
+                experiment_id: string;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadinessOut"];
                 };
             };
             /** @description Validation Error */
@@ -8629,6 +9512,412 @@ export interface operations {
             };
         };
     };
+    attack_families_api_v1_projects__project_id__security_families_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttackFamilyOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_packs_api_v1_projects__project_id__security_packs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PackOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_pack_api_v1_projects__project_id__security_packs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PackCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PackOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_pack_api_v1_projects__project_id__security_packs__pack_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pack_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PackDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_pack_api_v1_projects__project_id__security_packs__pack_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pack_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_pack_api_v1_projects__project_id__security_packs__pack_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pack_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PackOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_case_api_v1_projects__project_id__security_packs__pack_id__cases__case_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pack_id: string;
+                case_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaseUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    gate_api_v1_projects__project_id__security_packs__pack_id__gate_get: {
+        parameters: {
+            query: {
+                experiment_id: string;
+                min_pass_rate?: number;
+                max_drop?: number | null;
+            };
+            header?: never;
+            path: {
+                pack_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GateOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    harden_api_v1_projects__project_id__security_packs__pack_id__harden_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pack_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HardenRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImprovementOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    report_api_v1_projects__project_id__security_packs__pack_id__report_get: {
+        parameters: {
+            query: {
+                experiment_id: string;
+            };
+            header?: never;
+            path: {
+                pack_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SecurityReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_all_api_v1_projects__project_id__security_packs__pack_id__review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pack_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkReview"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PackOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_pack_api_v1_projects__project_id__security_packs__pack_id__runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pack_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SecurityRunRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExperimentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     draft_task_spec_api_v1_projects__project_id__task_specs_post: {
         parameters: {
             query?: never;
@@ -8748,6 +10037,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PromptNotes"];
+                };
+            };
+        };
+    };
+    provider_health_api_v1_provider_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
                 };
             };
         };

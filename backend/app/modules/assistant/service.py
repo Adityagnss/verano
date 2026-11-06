@@ -9,7 +9,9 @@ version (source `assistant`) with the candidate's templates, and closes the sess
 """
 
 import uuid
+from decimal import Decimal
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.container import Container
@@ -17,6 +19,8 @@ from app.core.errors import Conflict, NotFound, ValidationFailed
 from app.core.jobs import JobQueue
 from app.core.pagination import PageParams
 from app.core.security import Principal
+from app.modules.apps.models import AppTarget
+from app.modules.apps.prompt_vars import NOT_ACCEPTED, accepts_prompt
 from app.modules.assistant.models import OptimizationSession, PromptCandidate
 from app.modules.assistant.quality import quality
 from app.modules.assistant.repository import AssistantRepository
@@ -28,9 +32,13 @@ from app.modules.assistant.schemas import (
     ImprovementOut,
     ImprovementSummary,
     OptimizationStatus,
+    ReadinessOut,
+    RoundOut,
     SessionStage,
+    SizingOut,
     VerdictOut,
 )
+from app.modules.assistant.search import round_label
 from app.modules.datasets.schemas import Split
 from app.modules.datasets.service import DatasetService
 from app.modules.engine.domain import TERMINAL
@@ -49,7 +57,7 @@ from app.modules.registry.service import RegistryService
 HISTORY_LIMIT = 30
 IMPROVE_JOB = "assistant.improve"
 RESUME_JOB = "assistant.resume"
-WORKING = {SessionStage.ANALYZING, SessionStage.TESTING, SessionStage.CONFIRMING}
+WORKING = {SessionStage.ANALYZING, SessionStage.QUICK, SessionStage.TESTING, SessionStage.CONFIRMING}
 NOT_WORKING = "This improvement is not running."
 NOT_STOPPED = "Only an improvement that was stopped or failed can be continued."
 STOPPED = "Stopped. Everything done so far is kept; press Continue to carry on."
@@ -58,6 +66,9 @@ EXPERIMENT_NOT_FOUND = "This experiment doesn't exist in this project."
 NOT_SCORED = "Wait until this experiment has been scored."
 NEEDS_BOTH_SPLITS = "Improve needs an experiment that ran on all test cases (both the optimize and holdout parts)."
 NOT_MANUAL = "Start Improve from one of your own experiments, not from a candidate test."
+NEVER_SAVED = (
+    "This draft could not be tested, so it was never saved as a prompt version. Its text is shown for reference."
+)
 NOT_BETTER = "Only a candidate that beat the current prompt on the holdout cases can be accepted."
 ACCEPTED = "Accepted improvement: {strategy}"
 TO_TEST = "Improvement to test: {strategy}"
@@ -82,11 +93,45 @@ class ImprovementService:
         self._prompts = PromptService(session, self._registry, container.settings)
         self._experiments = ExperimentService.from_container(session, container)
         self._jobs: JobQueue = container.jobs
+        self._settings = container.settings
+
+    async def readiness(self, project: ProjectOut, experiment_id: uuid.UUID) -> ReadinessOut:
+        """Can Improve change what this experiment tests? For a plain prompt, yes. For an app, only when the app's
+        request template takes the prompt (ADR 0036); otherwise it says so in plain words."""
+        experiment = await self._experiment(project.id, experiment_id)
+        ids = [uuid.UUID(m["model_profile_id"]) for m in experiment.config.get("models", [])]
+        targets = list(
+            (await self._session.scalars(select(AppTarget).where(AppTarget.model_profile_id.in_(ids)))).all()
+        )
+        refusing = [t.name for t in targets if not accepts_prompt(t.request_template)]
+        if refusing:
+            return ReadinessOut(
+                ready=False,
+                message=NOT_ACCEPTED.format(name=", ".join(refusing)),
+                apps=[t.name for t in targets],
+                apps_not_taking_the_prompt=refusing,
+            )
+        note = "Every app in this test takes the prompt, so its candidates will reach it." if targets else "Ready."
+        return ReadinessOut(ready=True, message=note, apps=[t.name for t in targets])
 
     async def start(
-        self, project: ProjectOut, experiment_id: uuid.UUID, writer: JudgeChoice | None = None
+        self,
+        project: ProjectOut,
+        experiment_id: uuid.UUID,
+        writer: JudgeChoice | None = None,
+        *,
+        rounds: int | None = None,
+        population: int | None = None,
+        quick_check: bool | None = None,
+        budget_cap: Decimal | None = None,
+        target_effect: float | None = None,
+        focus: str = "quality",
+        focus_ref: uuid.UUID | None = None,
     ) -> ImprovementOut:
         experiment = await self._experiment(project.id, experiment_id)
+        ready = await self.readiness(project, experiment_id)
+        if not ready.ready:
+            raise ValidationFailed(ready.message)
         if experiment.origin is not ExperimentOrigin.MANUAL:
             raise ValidationFailed(NOT_MANUAL)
         if experiment.split_scope is not SplitScope.ALL:
@@ -102,6 +147,17 @@ class ImprovementService:
             baseline_experiment_id=experiment.id,
             stage=SessionStage.ANALYZING,
             writer=writer.model_dump(mode="json") if writer else None,
+            focus=focus,
+            focus_ref=focus_ref,
+            round_limit=min(rounds or self._settings.improve_rounds, self._settings.improve_max_rounds),
+            current_round=1,
+            population=population or self._settings.improve_population,
+            quick_check=self._settings.improve_quick_check if quick_check is None else quick_check,
+            target_effect=target_effect,
+            budget_cap=budget_cap,
+            round_prompt_id=experiment.prompt_version_id,
+            round_opt_exp_id=experiment.id,
+            round_hold_exp_id=experiment.id,
         )
         await self._repo.add(row)
         await self._session.commit()
@@ -119,6 +175,7 @@ class ImprovementService:
         scored = next((r for r in runs if r.status.value == "completed"), None)
         clusters = await self._repo.clusters(scored.id) if scored else []
         candidates = [await self._candidate_out(row.project_id, c) for c in await self._repo.candidates(row.id)]
+        summary = row.summary or {}
         return ImprovementOut(
             id=row.id,
             status=row.status,
@@ -134,7 +191,38 @@ class ImprovementService:
             clusters=[ClusterOut.model_validate(c) for c in clusters],
             candidates=candidates,
             created_at=row.created_at,
+            focus=row.focus,
+            round_limit=row.round_limit,
+            current_round=row.current_round,
+            quick_check=row.quick_check,
+            population=row.population,
+            rounds=self._rounds(candidates),
+            sizing=SizingOut.model_validate(summary["sizing"]) if summary.get("sizing") else None,
+            final_candidate_id=uuid.UUID(summary["final_candidate_id"]) if summary.get("final_candidate_id") else None,
+            versus_first=VerdictOut.model_validate(summary["versus_first"]) if summary.get("versus_first") else None,
+            paused_experiment_ids=await self._paused(row.id),
         )
+
+    def _rounds(self, candidates: list[CandidateOut]) -> list[RoundOut]:
+        """One line per round that reached the held-back test: who won and whether it was proven."""
+        out = []
+        for c in sorted((c for c in candidates if c.is_winner), key=lambda c: c.round):
+            proven = c.verdict is not None and c.verdict.reason.value == "proven"
+            cases = c.verdict.comparison.cases if c.verdict and c.verdict.comparison else 0
+            minimum = c.verdict.minimum_cases if c.verdict else 0
+            label = round_label(proven, cases, minimum) if c.verdict else "Waiting for the held-back test"
+            out.append(RoundOut(round=c.round, winner_candidate_id=c.id, proven=proven, label=label))
+        return out
+
+    async def _paused(self, session_id: uuid.UUID) -> list[uuid.UUID]:
+        """Tests of this session that stopped at their spending cap and wait for Resume."""
+        found = []
+        for c in await self._repo.candidates(session_id):
+            for experiment_id in (c.quick_experiment_id, c.optimize_experiment_id, c.holdout_experiment_id):
+                experiment = await self._engine.experiment(experiment_id) if experiment_id else None
+                if experiment is not None and experiment.status.value == "paused":
+                    found.append(experiment.id)
+        return found
 
     async def stop(self, project: ProjectOut, session_id: uuid.UUID) -> ImprovementOut:
         """Stop where it is: tests that are running are cancelled (their finished answers are kept) and the
@@ -145,7 +233,11 @@ class ImprovementService:
         await self._repo.update_session(row.id, {"stage": SessionStage.STOPPED, "message": STOPPED})
         await self._session.commit()
         for candidate in await self._repo.candidates(row.id):
-            for experiment_id in (candidate.optimize_experiment_id, candidate.holdout_experiment_id):
+            for experiment_id in (
+                candidate.quick_experiment_id,
+                candidate.optimize_experiment_id,
+                candidate.holdout_experiment_id,
+            ):
                 experiment = await self._engine.experiment(experiment_id) if experiment_id else None
                 if experiment is not None and experiment.status not in TERMINAL:  # finished ones keep their result
                     await self._experiments.stop(experiment, "Stopped from Improve.")
@@ -157,7 +249,7 @@ class ImprovementService:
         row = await self._session_row(project.id, session_id)
         if SessionStage(row.stage) not in (SessionStage.STOPPED, SessionStage.FAILED):
             raise Conflict(NOT_STOPPED)
-        started = bool(await self._repo.candidates(row.id))
+        started = any(c.round == row.current_round for c in await self._repo.candidates(row.id))
         stage = SessionStage.TESTING if started else SessionStage.ANALYZING
         if not await self._repo.update_session(row.id, {"stage": stage, "message": None}, stage_was=row.stage):
             raise Conflict(NOT_STOPPED)
@@ -259,6 +351,8 @@ class ImprovementService:
     ) -> PromptVersionOut:
         """The candidate as a saved version. If a saved version already has exactly its prompt, that one is used, so
         pressing the button twice does not make two versions."""
+        if candidate.prompt_version_id is None:
+            raise Conflict(NEVER_SAVED)
         proposed = await self._prompts.get_version(project.id, candidate.prompt_version_id)
         base = await self._prompts.get_version(project.id, candidate.base_prompt_version_id)
         saved = await self._prompts.list_versions(project, base.prompt_id, PageParams(limit=200, cursor=None))
@@ -286,14 +380,24 @@ class ImprovementService:
     async def _candidate_out(self, project_id: uuid.UUID, c: PromptCandidate) -> CandidateOut:
         optimize = await self._engine.experiment(c.optimize_experiment_id) if c.optimize_experiment_id else None
         holdout = await self._engine.experiment(c.holdout_experiment_id) if c.holdout_experiment_id else None
-        version = await self._prompts.get_version(project_id, c.prompt_version_id)
+        quick = await self._engine.experiment(c.quick_experiment_id) if c.quick_experiment_id else None
+        version = await self._prompts.get_version(project_id, c.prompt_version_id) if c.prompt_version_id else None
+        draft = c.rejected_draft or {}
         return CandidateOut(
-            **{name: getattr(c, name) for name in CandidateOut.model_fields if name != "verdict" and hasattr(c, name)},
-            system_template=version.system_template,
-            user_template=version.user_template,
+            **{
+                name: getattr(c, name)
+                for name in CandidateOut.model_fields
+                if name not in ("verdict", "label") and hasattr(c, name)
+            },
+            system_template=version.system_template if version else draft.get("system_template"),
+            user_template=version.user_template if version else draft.get("user_template"),
             optimize_quality=await self._quality(optimize, Split.OPTIMIZE),
             holdout_quality=await self._quality(holdout, Split.HOLDOUT),
+            quick_quality=await self._quality(quick, Split.OPTIMIZE),
             verdict=VerdictOut.model_validate(c.verdict) if c.verdict else None,
+            label=("Proven on held-back cases" if c.verdict.get("reason") == "proven" else "Not proven")
+            if c.verdict and c.is_winner
+            else None,
         )
 
     async def _quality(self, experiment: Experiment | None, split: Split) -> float | None:

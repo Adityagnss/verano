@@ -158,6 +158,29 @@ class Settings(BaseSettings):
     rate_limit_acquire_timeout_s: float = 120.0
     rate_limit_state_ttl_s: int = 3600
 
+    # Phase 9: security pack, deeper Improve, spend control and hardening (ADRs 0035 to 0037)
+    security_default_per_category: int = 10
+    security_max_per_category: int = 36
+    improve_rounds: int = 3
+    improve_max_rounds: int = 6
+    improve_population: int = 4
+    improve_quick_check: bool = True
+    improve_survivors: int = 2
+    improve_target_effect: float = 0.1
+    improve_quick_min_cases: int = 8
+    improve_quick_max_cases: int = 40
+    cluster_max_clusters: int = 24
+    cluster_similarity: float = 0.6
+    cluster_batch_size: int = 200
+    cluster_examples_per_cluster: int = 5
+    engine_pause_at_cap: bool = True
+    lease_seconds: float = 300.0
+    lease_sweep_interval_s: float = 60.0
+    breaker_failure_threshold: int = 5
+    breaker_open_seconds: float = 30.0
+    sse_poll_s: float = 1.0
+    sse_idle_poll_s: float = 3.0
+
     @model_validator(mode="after")
     def _production_is_locked_down(self) -> "Settings":
         if self.environment != PRODUCTION:
