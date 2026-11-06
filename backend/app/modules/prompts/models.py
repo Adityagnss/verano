@@ -11,6 +11,7 @@ up the version numbers people see.
 """
 
 import uuid
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import CheckConstraint, ForeignKey, Index, String, Text
@@ -26,6 +27,7 @@ class Prompt(IdMixin, CreatedAtMixin, Base):
 
     project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"))
     name: Mapped[str] = mapped_column(String(200))
+    accept_moves_label: Mapped[str | None] = mapped_column(String(48))
 
 
 class PromptVersion(IdMixin, CreatedAtMixin, Base):
@@ -46,3 +48,29 @@ class PromptVersion(IdMixin, CreatedAtMixin, Base):
     change_reason: Mapped[str | None] = mapped_column(Text)
     is_candidate: Mapped[bool] = mapped_column(default=False, server_default="false")
     created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+
+
+class PromptLabel(IdMixin, CreatedAtMixin, Base):
+    """A movable name (`production`, `staging`, ...) pointing at one saved version of a prompt."""
+
+    __tablename__ = "prompt_labels"
+    __table_args__ = (Index(None, "prompt_id", "name", unique=True), Index(None, "prompt_version_id"))
+
+    prompt_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("prompts.id", ondelete="CASCADE"))
+    name: Mapped[str] = mapped_column(String(48))
+    prompt_version_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("prompt_versions.id", ondelete="CASCADE"))
+    moved_at: Mapped[datetime]
+
+
+class PromptLabelMove(IdMixin, CreatedAtMixin, Base):
+    """One entry of a label's history: where it pointed before, where it points now, who moved it and why."""
+
+    __tablename__ = "prompt_label_moves"
+    __table_args__ = (Index(None, "prompt_id", "id"),)
+
+    prompt_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("prompts.id", ondelete="CASCADE"))
+    label: Mapped[str] = mapped_column(String(48))
+    from_version_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("prompt_versions.id", ondelete="SET NULL"))
+    to_version_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("prompt_versions.id", ondelete="SET NULL"))
+    reason: Mapped[str] = mapped_column(String(16))
+    moved_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))

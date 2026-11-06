@@ -12,10 +12,11 @@ from typing import Annotated
 from fastapi import Depends
 
 from app.core.database import SessionDep
+from app.core.errors import NotFound
 from app.core.security import CurrentPrincipal
 from app.modules.auth.dependencies import AuthServiceDep
 from app.modules.projects.schemas import ProjectOut
-from app.modules.projects.service import ProjectService
+from app.modules.projects.service import PROJECT_NOT_FOUND, ProjectService
 
 
 def get_project_service(session: SessionDep, auth: AuthServiceDep) -> ProjectService:
@@ -26,6 +27,8 @@ ProjectServiceDep = Annotated[ProjectService, Depends(get_project_service)]
 
 
 async def project_scope(project_id: uuid.UUID, principal: CurrentPrincipal, service: ProjectServiceDep) -> ProjectOut:
+    if principal.project_id is not None and principal.project_id != project_id:
+        raise NotFound(PROJECT_NOT_FOUND)
     return await service.require_access(principal, project_id)
 
 

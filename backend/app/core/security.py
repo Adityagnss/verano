@@ -25,7 +25,7 @@ from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.core.config import Settings
-from app.core.errors import AppError, AuthenticationFailed
+from app.core.errors import AppError, AuthenticationFailed, PermissionDenied
 
 _bearer = HTTPBearer(auto_error=False)
 
@@ -35,12 +35,19 @@ class SecretDecryptionFailed(AppError):
 
 
 API_TOKEN_PREFIX = "vrn_"
+READ_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
+READ_ONLY_TOKEN = (
+    "This API token is read-only, so it can look at things but not change them. "
+    "Create a token with full access to do this."
+)
 
 
 @dataclass(frozen=True)
 class Principal:
     user_id: uuid.UUID
     via_api_token: bool = False
+    read_only: bool = False
+    project_id: uuid.UUID | None = None
 
 
 class ApiTokenVerifier(Protocol):
@@ -128,6 +135,8 @@ async def get_principal(
         if container.api_tokens is None:
             raise AuthenticationFailed("API tokens are not available.")
         principal: Principal = await container.api_tokens.verify(credentials.credentials)
+        if principal.read_only and request.method not in READ_METHODS:
+            raise PermissionDenied(READ_ONLY_TOKEN)
         return principal
     tokens: AccessTokens = container.access_tokens
     return tokens.verify(credentials.credentials)

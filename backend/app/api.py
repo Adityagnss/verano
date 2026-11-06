@@ -20,6 +20,7 @@ from app.modules.gateway.router import router as gateway_router
 from app.modules.generator.router import router as generator_router
 from app.modules.logbook.router import router as logbook_router
 from app.modules.projects.router import router as projects_router
+from app.modules.prompts.label_router import router as labels_router
 from app.modules.prompts.router import router as prompts_router
 from app.modules.registry.router import router as registry_router
 
@@ -32,6 +33,7 @@ for module_router in (
     gateway_router,
     activity_router,
     prompts_router,
+    labels_router,
     datasets_router,
     documents_router,
     generator_router,

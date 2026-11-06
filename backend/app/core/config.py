@@ -158,6 +158,10 @@ class Settings(BaseSettings):
     rate_limit_acquire_timeout_s: float = 120.0
     rate_limit_state_ttl_s: int = 3600
 
+    # Phase 8 (shipit): prompt labels, serving prompts to apps
+    prompt_labels_max: int = 20
+    prompt_label_history_depth: int = 200
+
     @model_validator(mode="after")
     def _production_is_locked_down(self) -> "Settings":
         if self.environment != PRODUCTION:
