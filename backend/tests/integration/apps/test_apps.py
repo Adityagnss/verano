@@ -180,6 +180,22 @@ async def test_an_app_runs_next_to_models_and_its_answers_chunks_and_tool_calls_
     assert ok[0]["tool_calls"] == [{"name": "lookup", "arguments": {"topic": ok[0]["output"]}}]
     assert all(o["judged"] and o["passed"] for o in ok)  # the labels match the golden answers
 
+    # the exchange with the app is kept per case and can be read back
+    experiment_id = started.json()["id"]
+    sent = (
+        await client.get(
+            f"{base(session)}/apps/calls/{experiment_id}/{ok[0]['test_case_run_id']}", headers=session.headers
+        )
+    ).json()
+    assert len(sent) == 1
+    assert sent[0]["status_code"] == 200
+    assert sent[0]["request_body"]
+    assert sent[0]["response_body"]
+    nothing = await client.get(
+        f"{base(session)}/apps/calls/{experiment_id}/{failed[0]['test_case_run_id']}", headers=session.headers
+    )
+    assert nothing.status_code == 200
+
     # scoring again re-reads the stored answers: it makes no call to the app (replay)
     calls_before = len(FakeApp.seen)
     again = await client.post(

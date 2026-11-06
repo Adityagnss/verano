@@ -918,6 +918,85 @@
         "title": "ApiTokenOut",
         "type": "object"
       },
+      "AppCallOut": {
+        "description": "One recorded call to an app for a test case (a conversation has one per turn).",
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          },
+          "request_body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Body"
+          },
+          "response_body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Response Body"
+          },
+          "status_code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Code"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          },
+          "turn": {
+            "title": "Turn",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "turn",
+          "request_body",
+          "status_code",
+          "response_body",
+          "truncated",
+          "latency_ms",
+          "error"
+        ],
+        "title": "AppCallOut",
+        "type": "object"
+      },
       "AppMode": {
         "enum": ["single", "conversation"],
         "title": "AppMode",
@@ -9451,6 +9530,76 @@
           }
         ],
         "summary": "Add App",
+        "tags": ["apps"]
+      }
+    },
+    "/api/v1/projects/{project_id}/apps/calls/{experiment_id}/{run_id}": {
+      "get": {
+        "operationId": "recorded_calls_api_v1_projects__project_id__apps_calls__experiment_id___run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AppCallOut"
+                  },
+                  "title": "Response Recorded Calls Api V1 Projects  Project Id  Apps Calls  Experiment Id   Run Id  Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Recorded Calls",
         "tags": ["apps"]
       }
     },

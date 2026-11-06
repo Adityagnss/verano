@@ -7,7 +7,14 @@ from fastapi import APIRouter, Depends, status
 from app.core.features import APPS, require_feature
 from app.core.security import CurrentPrincipal
 from app.modules.apps.dependencies import AppServiceDep
-from app.modules.apps.schemas import AppTargetCreate, AppTargetOut, AppTargetUpdate, AppTestOut, AppTestRequest
+from app.modules.apps.schemas import (
+    AppCallOut,
+    AppTargetCreate,
+    AppTargetOut,
+    AppTargetUpdate,
+    AppTestOut,
+    AppTestRequest,
+)
 from app.modules.projects.dependencies import ProjectScope
 
 router = APIRouter(prefix="/projects/{project_id}/apps", tags=["apps"], dependencies=[Depends(require_feature(APPS))])
@@ -23,6 +30,13 @@ async def add_app(
 @router.get("")
 async def list_apps(project: ProjectScope, service: AppServiceDep) -> list[AppTargetOut]:
     return await service.list(project.id)
+
+
+@router.get("/calls/{experiment_id}/{run_id}")
+async def recorded_calls(
+    experiment_id: uuid.UUID, run_id: uuid.UUID, project: ProjectScope, service: AppServiceDep
+) -> list[AppCallOut]:
+    return await service.calls(project.id, experiment_id, run_id)
 
 
 @router.get("/{app_id}")

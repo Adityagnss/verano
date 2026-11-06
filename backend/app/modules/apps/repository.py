@@ -56,3 +56,19 @@ class AppRepository:
             .order_by(AppCall.turn, AppCall.id)
         )
         return list((await self._session.scalars(query)).all())
+
+    async def calls_in_project(
+        self, project_id: uuid.UUID, experiment_id: uuid.UUID, test_case_run_id: uuid.UUID
+    ) -> list[AppCall]:
+        """The recorded calls of one case, only for apps that belong to this project."""
+        query = (
+            select(AppCall)
+            .join(AppTarget, AppTarget.id == AppCall.app_target_id)
+            .where(
+                AppTarget.project_id == project_id,
+                AppCall.experiment_id == experiment_id,
+                AppCall.test_case_run_id == test_case_run_id,
+            )
+            .order_by(AppCall.turn, AppCall.id)
+        )
+        return list((await self._session.scalars(query)).all())

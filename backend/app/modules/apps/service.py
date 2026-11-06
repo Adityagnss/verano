@@ -23,6 +23,7 @@ from app.modules.apps.models import AppTarget
 from app.modules.apps.repository import AppRepository
 from app.modules.apps.runner import AppCallResult, AppRunner, AppSpec
 from app.modules.apps.schemas import (
+    AppCallOut,
     AppMode,
     AppReplyOut,
     AppTargetCreate,
@@ -172,6 +173,11 @@ class AppService:
             )
         )
         return target_out(target)
+
+    async def calls(self, project_id: uuid.UUID, experiment_id: uuid.UUID, run_id: uuid.UUID) -> list[AppCallOut]:
+        """What was sent to the app and what came back for one test case, turn by turn."""
+        rows = await self._repo.calls_in_project(project_id, experiment_id, run_id)
+        return [AppCallOut.model_validate(row, from_attributes=True) for row in rows]
 
     async def list(self, project_id: uuid.UUID) -> list[AppTargetOut]:
         return [target_out(t) for t in await self._repo.targets(project_id)]

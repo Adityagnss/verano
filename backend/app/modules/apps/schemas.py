@@ -119,3 +119,15 @@ class AppTestOut(BaseModel):
     latency_ms: int | None
     reply: AppReplyOut | None
     error: str | None
+
+
+class AppCallOut(BaseModel):
+    """One recorded call to an app for a test case (a conversation has one per turn)."""
+
+    turn: int
+    request_body: str | None
+    status_code: int | None
+    response_body: str | None
+    truncated: bool
+    latency_ms: int | None
+    error: str | None

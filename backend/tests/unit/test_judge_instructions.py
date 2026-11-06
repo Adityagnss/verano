@@ -1,5 +1,7 @@
 """Unit tests for what the judge is asked: criteria or steps, the case's own rubric, and the size check."""
 
+from dataclasses import replace
+
 import pytest
 
 from app.core.errors import ValidationFailed
@@ -53,3 +55,12 @@ def test_instructions_that_would_fill_the_judges_window_are_refused_and_unknown_
     check_instructions_fit(long, 128_000)
     with pytest.raises(ValidationFailed, match="too long for this judge"):
         check_instructions_fit(long, 1_500)
+
+
+def test_a_judge_that_needs_context_and_an_expected_answer_is_left_out_when_either_is_missing() -> None:
+    config = {"criteria": "c", "requires": "context,expected"}
+    bare = case(None)
+    both = replace(bare, context=["text"], expected="answer")
+    assert instructions_for(config, both) == ("c", [])
+    assert instructions_for(config, replace(bare, context=["text"])) is None
+    assert instructions_for(config, replace(bare, expected="answer")) is None

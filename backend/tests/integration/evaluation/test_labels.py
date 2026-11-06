@@ -124,7 +124,7 @@ async def test_why_this_score_gives_the_reason_the_basis_and_what_the_check_cann
     assert "not yet measured" in judge["agreement_note"]
 
 
-async def test_the_judge_gallery_lists_eight_judges_and_says_their_agreement_is_not_measured(
+async def test_the_judge_gallery_lists_ten_judges_and_says_their_agreement_is_not_measured(
     client: httpx.AsyncClient, session: Session
 ) -> None:
     gallery = (await client.get(f"{base(session)}/judge-gallery", headers=session.headers)).json()
@@ -137,6 +137,8 @@ async def test_the_judge_gallery_lists_eight_judges_and_says_their_agreement_is_
         "toxicity",
         "completeness",
         "tool_use",
+        "context_precision",
+        "context_recall",
     }
     assert all(j["agreement"] is None and j["config"]["kind"] == "deepeval" and j["limits"] for j in gallery)
     assert next(j for j in gallery if j["id"] == "faithfulness")["config"]["requires"] == "context"

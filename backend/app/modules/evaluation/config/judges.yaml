@@ -73,3 +73,19 @@ judges:
     criteria: The tools the app called are the right ones for what the user asked, called with sensible arguments, and nothing was called that the request did not need. A tool the request clearly needed that was not called is a failure.
     limits: Reads the reported tool calls and their arguments; it does not run the tools or see what they returned.
     agreement: null
+  context_precision:
+    title: Context precision
+    description: The text the app retrieved is relevant to the question, with no filler.
+    requires: context
+    threshold: 0.5
+    criteria: Judge the given context (the text the app retrieved) against the user's question. Every passage should help answer it. Passages that are off topic, repeated or filler count against the score.
+    limits: Judges whether the retrieved text is on topic, not whether the answer used it or whether a better passage was missed.
+    agreement: null
+  context_recall:
+    title: Context recall
+    description: The retrieved text holds what is needed to give the expected answer.
+    requires: context,expected
+    threshold: 0.5
+    criteria: Compare the given context (the text the app retrieved) with the expected answer. Every fact in the expected answer should be found in the context. A fact of the expected answer that the context lacks is a failure.
+    limits: Needs a written expected answer for the case; it says nothing about the answer the app actually gave.
+    agreement: null

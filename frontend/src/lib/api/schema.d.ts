@@ -195,6 +195,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/apps/calls/{experiment_id}/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recorded Calls */
+        get: operations["recorded_calls_api_v1_projects__project_id__apps_calls__experiment_id___run_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/apps/{app_id}": {
         parameters: {
             query?: never;
@@ -1996,6 +2013,26 @@ export interface components {
             prefix: string;
             /** Revoked At */
             revoked_at: string | null;
+        };
+        /**
+         * AppCallOut
+         * @description One recorded call to an app for a test case (a conversation has one per turn).
+         */
+        AppCallOut: {
+            /** Error */
+            error: string | null;
+            /** Latency Ms */
+            latency_ms: number | null;
+            /** Request Body */
+            request_body: string | null;
+            /** Response Body */
+            response_body: string | null;
+            /** Status Code */
+            status_code: number | null;
+            /** Truncated */
+            truncated: boolean;
+            /** Turn */
+            turn: number;
         };
         /**
          * AppMode
@@ -5297,6 +5334,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AppTargetOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recorded_calls_api_v1_projects__project_id__apps_calls__experiment_id___run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                experiment_id: string;
+                run_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppCallOut"][];
                 };
             };
             /** @description Validation Error */

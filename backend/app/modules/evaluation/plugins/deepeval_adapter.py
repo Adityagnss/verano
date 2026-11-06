@@ -67,9 +67,12 @@ def instructions_for(config: dict[str, Any], case: EvalCase) -> tuple[str | None
     """What the judge is asked about this case: (criteria, steps), or None when the check does not apply
     (it uses the case's own rubric and the case has none). Steps, when given, replace the criteria, and a step
     that is exactly "{rubric}" stands for the case's rubric."""
-    if config.get("requires") == "context" and not case.context:
+    needs = {part.strip() for part in str(config.get("requires") or "").split(",")}
+    if "context" in needs and not case.context:
         return None
-    if config.get("requires") == "tool_calls" and not case.tool_calls:
+    if "tool_calls" in needs and not case.tool_calls:
+        return None
+    if "expected" in needs and not case.expected:
         return None
     steps = steps_of(config)
     if steps:
