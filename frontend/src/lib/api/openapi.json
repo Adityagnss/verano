@@ -776,6 +776,24 @@
             "minLength": 1,
             "title": "Name",
             "type": "string"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Limit the token to one project.",
+            "title": "Project Id"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/TokenScope",
+            "default": "full",
+            "description": "full can do everything you can; read can only look and fetch prompts, which is what CI needs."
           }
         },
         "required": ["name"],
@@ -827,6 +845,18 @@
             "title": "Prefix",
             "type": "string"
           },
+          "project_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
           "revoked_at": {
             "anyOf": [
               {
@@ -839,6 +869,9 @@
             ],
             "title": "Revoked At"
           },
+          "scope": {
+            "$ref": "#/components/schemas/TokenScope"
+          },
           "token": {
             "title": "Token",
             "type": "string"
@@ -848,6 +881,8 @@
           "id",
           "name",
           "prefix",
+          "scope",
+          "project_id",
           "created_at",
           "expires_at",
           "last_used_at",
@@ -901,6 +936,18 @@
             "title": "Prefix",
             "type": "string"
           },
+          "project_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
           "revoked_at": {
             "anyOf": [
               {
@@ -912,9 +959,22 @@
               }
             ],
             "title": "Revoked At"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/TokenScope"
           }
         },
-        "required": ["id", "name", "prefix", "created_at", "expires_at", "last_used_at", "revoked_at"],
+        "required": [
+          "id",
+          "name",
+          "prefix",
+          "scope",
+          "project_id",
+          "created_at",
+          "expires_at",
+          "last_used_at",
+          "revoked_at"
+        ],
         "title": "ApiTokenOut",
         "type": "object"
       },
@@ -2953,6 +3013,20 @@
       },
       "CredentialUpdate": {
         "properties": {
+          "api_key": {
+            "anyOf": [
+              {
+                "format": "password",
+                "type": "string",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A new key that replaces the stored one (rotation).",
+            "title": "Api Key"
+          },
           "label": {
             "anyOf": [
               {
@@ -3877,6 +3951,86 @@
         "title": "FailureCount",
         "type": "object"
       },
+      "FetchedPrompt": {
+        "properties": {
+          "default_params": {
+            "additionalProperties": true,
+            "title": "Default Params",
+            "type": "object"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "system_template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System Template"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "user_template": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Template"
+          },
+          "variables": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Variables",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "version_id": {
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "label",
+          "version",
+          "version_id",
+          "system_template",
+          "user_template",
+          "variables",
+          "default_params",
+          "updated_at"
+        ],
+        "title": "FetchedPrompt",
+        "type": "object"
+      },
       "FileFormat": {
         "enum": ["csv", "xlsx", "json", "jsonl", "pdf", "docx", "txt", "md"],
         "title": "FileFormat",
@@ -4490,6 +4644,17 @@
               }
             ],
             "title": "Message"
+          },
+          "moved_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Moved Label"
           },
           "root_prompt_version_id": {
             "format": "uuid",
@@ -5548,6 +5713,18 @@
         "title": "Label",
         "type": "string"
       },
+      "LabelAssign": {
+        "properties": {
+          "version_id": {
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          }
+        },
+        "required": ["version_id"],
+        "title": "LabelAssign",
+        "type": "object"
+      },
       "LabelIn": {
         "properties": {
           "note": {
@@ -5568,6 +5745,84 @@
         },
         "required": ["verdict"],
         "title": "LabelIn",
+        "type": "object"
+      },
+      "LabelMoveOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "from_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "From Version"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "moved_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Moved By"
+          },
+          "moved_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Moved By Name"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/MoveReason"
+          },
+          "to_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "To Version"
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "reason",
+          "from_version",
+          "to_version",
+          "moved_by",
+          "moved_by_name",
+          "created_at"
+        ],
+        "title": "LabelMoveOut",
         "type": "object"
       },
       "LabelOut": {
@@ -5604,6 +5859,24 @@
         },
         "required": ["test_case_run_id", "user_id", "verdict", "note", "updated_at"],
         "title": "LabelOut",
+        "type": "object"
+      },
+      "LabelSettingsUpdate": {
+        "properties": {
+          "accept_moves_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The label that Accept moves to the accepted version. Leave empty to never move a label.",
+            "title": "Accept Moves Label"
+          }
+        },
+        "title": "LabelSettingsUpdate",
         "type": "object"
       },
       "LabelSummary": {
@@ -5644,6 +5917,31 @@
         "enum": ["good", "bad", "unsure"],
         "title": "LabelVerdict",
         "type": "string"
+      },
+      "LabelsOut": {
+        "properties": {
+          "accept_moves_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accept Moves Label"
+          },
+          "labels": {
+            "items": {
+              "$ref": "#/components/schemas/PromptLabelOut"
+            },
+            "title": "Labels",
+            "type": "array"
+          }
+        },
+        "required": ["labels", "accept_moves_label"],
+        "title": "LabelsOut",
+        "type": "object"
       },
       "LogOptions": {
         "properties": {
@@ -6240,6 +6538,11 @@
         "title": "ModelVersions",
         "type": "object"
       },
+      "MoveReason": {
+        "enum": ["assign", "accept", "rollback", "remove"],
+        "title": "MoveReason",
+        "type": "string"
+      },
       "OptimizationStatus": {
         "enum": ["active", "closed"],
         "title": "OptimizationStatus",
@@ -6371,6 +6674,31 @@
         },
         "required": ["items", "next_cursor"],
         "title": "Page[LLMCallOut]",
+        "type": "object"
+      },
+      "Page_LabelMoveOut_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/LabelMoveOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": ["items", "next_cursor"],
+        "title": "Page[LabelMoveOut]",
         "type": "object"
       },
       "Page_ModelProfileOut_": {
@@ -6711,6 +7039,35 @@
         },
         "required": ["name"],
         "title": "PromptCreate",
+        "type": "object"
+      },
+      "PromptLabelOut": {
+        "properties": {
+          "can_roll_back": {
+            "title": "Can Roll Back",
+            "type": "boolean"
+          },
+          "moved_at": {
+            "format": "date-time",
+            "title": "Moved At",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "version_id": {
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          }
+        },
+        "required": ["name", "version_id", "version", "moved_at", "can_roll_back"],
+        "title": "PromptLabelOut",
         "type": "object"
       },
       "PromptNotes": {
@@ -8448,6 +8805,11 @@
         ],
         "title": "TestCaseRunOut",
         "type": "object"
+      },
+      "TokenScope": {
+        "enum": ["full", "read"],
+        "title": "TokenScope",
+        "type": "string"
       },
       "Totals": {
         "properties": {
@@ -15677,6 +16039,114 @@
         "tags": ["registry"]
       }
     },
+    "/api/v1/projects/{project_id}/prompt-by-name/{name}": {
+      "get": {
+        "description": "The prompt an app should use: the version a label points at (for example `production`), a given version\nnumber, or the latest saved version when neither is asked for.",
+        "operationId": "fetch_prompt_api_v1_projects__project_id__prompt_by_name__name__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "label",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Label"
+            }
+          },
+          {
+            "in": "query",
+            "name": "version",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Version"
+            }
+          },
+          {
+            "in": "header",
+            "name": "if-none-match",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-None-Match"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FetchedPrompt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "304": {
+            "description": "The prompt has not changed since the ETag you sent."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Fetch Prompt",
+        "tags": ["prompt labels"]
+      }
+    },
     "/api/v1/projects/{project_id}/prompt-versions/{version_id}": {
       "get": {
         "operationId": "get_version_api_v1_projects__project_id__prompt_versions__version_id__get",
@@ -16174,6 +16644,429 @@
         ],
         "summary": "Get Prompt",
         "tags": ["prompts"]
+      }
+    },
+    "/api/v1/projects/{project_id}/prompts/{prompt_id}/label-history": {
+      "get": {
+        "operationId": "label_history_api_v1_projects__project_id__prompts__prompt_id__label_history_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "prompt_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Prompt Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "label",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Label"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_LabelMoveOut_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Label History",
+        "tags": ["prompt labels"]
+      }
+    },
+    "/api/v1/projects/{project_id}/prompts/{prompt_id}/label-settings": {
+      "put": {
+        "operationId": "set_label_settings_api_v1_projects__project_id__prompts__prompt_id__label_settings_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "prompt_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Prompt Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LabelSettingsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabelsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set Label Settings",
+        "tags": ["prompt labels"]
+      }
+    },
+    "/api/v1/projects/{project_id}/prompts/{prompt_id}/labels": {
+      "get": {
+        "operationId": "list_labels_api_v1_projects__project_id__prompts__prompt_id__labels_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "prompt_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Prompt Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LabelsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Labels",
+        "tags": ["prompt labels"]
+      }
+    },
+    "/api/v1/projects/{project_id}/prompts/{prompt_id}/labels/{name}": {
+      "delete": {
+        "operationId": "remove_label_api_v1_projects__project_id__prompts__prompt_id__labels__name__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "prompt_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Prompt Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Remove Label",
+        "tags": ["prompt labels"]
+      },
+      "put": {
+        "operationId": "set_label_api_v1_projects__project_id__prompts__prompt_id__labels__name__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "prompt_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Prompt Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LabelAssign"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromptLabelOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Set Label",
+        "tags": ["prompt labels"]
+      }
+    },
+    "/api/v1/projects/{project_id}/prompts/{prompt_id}/labels/{name}/rollback": {
+      "post": {
+        "operationId": "roll_back_label_api_v1_projects__project_id__prompts__prompt_id__labels__name__rollback_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "prompt_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Prompt Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "schema": {
+              "title": "Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromptLabelOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Roll Back Label",
+        "tags": ["prompt labels"]
       }
     },
     "/api/v1/projects/{project_id}/prompts/{prompt_id}/versions": {

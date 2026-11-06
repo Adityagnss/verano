@@ -47,7 +47,7 @@ class LabelSettingsUpdate(BaseModel):
     )
 
 
-class LabelOut(BaseModel):
+class PromptLabelOut(BaseModel):
     name: str
     version_id: uuid.UUID
     version: int
@@ -67,7 +67,7 @@ class LabelMoveOut(BaseModel):
 
 
 class LabelsOut(BaseModel):
-    labels: list[LabelOut]
+    labels: list[PromptLabelOut]
     accept_moves_label: str | None
 
 

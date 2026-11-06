@@ -21,9 +21,9 @@ from app.modules.prompts.label_schemas import (
     LabelAssign,
     LabelMoveOut,
     LabelName,
-    LabelOut,
     LabelSettingsUpdate,
     LabelsOut,
+    PromptLabelOut,
 )
 
 router = APIRouter(
@@ -44,7 +44,7 @@ async def set_label(
     project: ProjectScope,
     principal: CurrentPrincipal,
     service: PromptServiceDep,
-) -> LabelOut:
+) -> PromptLabelOut:
     return await service.labels.assign(project.id, principal, prompt_id, name, body.version_id)
 
 
@@ -58,7 +58,7 @@ async def remove_label(
 @router.post("/prompts/{prompt_id}/labels/{name}/rollback")
 async def roll_back_label(
     prompt_id: uuid.UUID, name: LabelName, project: ProjectScope, principal: CurrentPrincipal, service: PromptServiceDep
-) -> LabelOut:
+) -> PromptLabelOut:
     return await service.labels.rollback(project.id, principal, prompt_id, name)
 
 

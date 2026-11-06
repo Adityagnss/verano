@@ -24,9 +24,9 @@ from app.modules.prompts.label_repository import LabelRepository
 from app.modules.prompts.label_schemas import (
     FetchedPrompt,
     LabelMoveOut,
-    LabelOut,
     LabelsOut,
     MoveReason,
+    PromptLabelOut,
 )
 from app.modules.prompts.models import Prompt, PromptLabel, PromptLabelMove, PromptVersion
 from app.modules.prompts.repository import PromptRepository
@@ -63,7 +63,7 @@ class LabelService:
         for label, number in rows:
             pairs = await self._repo.move_pairs(prompt.id, label.name, self._settings.prompt_label_history_depth)
             out.append(
-                LabelOut(
+                PromptLabelOut(
                     name=label.name,
                     version_id=label.prompt_version_id,
                     version=number,
@@ -81,7 +81,7 @@ class LabelService:
         name: str,
         version_id: uuid.UUID,
         reason: MoveReason = MoveReason.ASSIGN,
-    ) -> LabelOut:
+    ) -> PromptLabelOut:
         prompt = await self._prompt(project_id, prompt_id, lock=True)
         version = await self._version(prompt.id, version_id)
         existing = await self._repo.label(prompt.id, name, lock=True)
@@ -110,7 +110,7 @@ class LabelService:
 
     async def rollback(
         self, project_id: uuid.UUID, principal: Principal | None, prompt_id: uuid.UUID, name: str
-    ) -> LabelOut:
+    ) -> PromptLabelOut:
         prompt = await self._prompt(project_id, prompt_id, lock=True)
         label = await self._repo.label(prompt.id, name, lock=True)
         if label is None:
@@ -171,9 +171,9 @@ class LabelService:
         row, updated_at = found
         return _fetched(name, label, row, updated_at), etag_of(row.id)
 
-    async def _out(self, prompt_id: uuid.UUID, label: PromptLabel, number: int) -> LabelOut:
+    async def _out(self, prompt_id: uuid.UUID, label: PromptLabel, number: int) -> PromptLabelOut:
         pairs = await self._repo.move_pairs(prompt_id, label.name, self._settings.prompt_label_history_depth)
-        return LabelOut(
+        return PromptLabelOut(
             name=label.name,
             version_id=label.prompt_version_id,
             version=number,

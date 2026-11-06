@@ -2,6 +2,7 @@
 "use client"
 
 import { LogOut } from "lucide-react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 import { COMMON_COPY } from "@/components/common/copy"
@@ -17,6 +18,9 @@ export function AccountMenu() {
   const signOut = useSignOutAndLeave(() => router.replace("/login"))
   return (
     <div className="flex items-center gap-3 text-sm">
+      <Link href="/tokens" className="text-text-secondary hover:text-foreground">
+        API tokens
+      </Link>
       <ThemeSwitch />
       <span className="text-muted-foreground hidden max-w-[16rem] truncate lg:inline">{user?.email}</span>
       <Button
