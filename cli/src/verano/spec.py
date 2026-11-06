@@ -164,12 +164,47 @@ class Gate(Strict):
     min_quality: Annotated[Real, Field(ge=0, le=1)] | None = None
     min_pass_rate: Annotated[Real, Field(ge=0, le=1)] | None = None
     max_drop: Annotated[Real, Field(ge=0, le=1)] | None = None
+    # cost and speed: absolute limits per call, and growth against the baseline run (0.2 = 20% more)
+    max_cost_per_call: Annotated[Real, Field(ge=0)] | None = None
+    max_latency_ms: Annotated[Real, Field(gt=0)] | None = None
+    max_cost_increase: Annotated[Real, Field(ge=0)] | None = None
+    max_slowdown: Annotated[Real, Field(ge=0)] | None = None
+    # pin the baseline to one earlier run (its experiment id) instead of "the latest comparable run"
+    baseline: str | None = None
 
     @model_validator(mode="after")
     def _something_to_check(self) -> "Gate":
-        if self.min_quality is None and self.min_pass_rate is None and self.max_drop is None:
-            raise ValueError("set at least one of min_quality, min_pass_rate or max_drop")
+        checks = (
+            self.min_quality,
+            self.min_pass_rate,
+            self.max_drop,
+            self.max_cost_per_call,
+            self.max_latency_ms,
+            self.max_cost_increase,
+            self.max_slowdown,
+        )
+        if all(check is None for check in checks):
+            raise ValueError(
+                "set at least one of min_quality, min_pass_rate, max_drop, max_cost_per_call, "
+                "max_latency_ms, max_cost_increase or max_slowdown"
+            )
         return self
+
+
+class Retrieval(Strict):
+    """How the app finds documents for the prompt, written down so the file describes the whole app."""
+
+    top_k: Annotated[Whole, Field(ge=1)] | None = None
+    chunk_size: Annotated[Whole, Field(ge=1)] | None = None
+    chunk_overlap: Annotated[Whole, Field(ge=0)] | None = None
+    source: str | None = None
+
+
+class Tool(Strict):
+    """A tool the app gives the model."""
+
+    name: str = Field(min_length=1, max_length=100)
+    description: str | None = None
 
 
 class PromptEntry(Strict):
@@ -186,6 +221,8 @@ class PromptEntry(Strict):
     data: Data = Data()
     models: list[str] = Field(min_length=1)
     judge: str | None = None
+    retrieval: Retrieval | None = None
+    tools: list[Tool] = []
     runs: int = Field(default=1, ge=1, le=MAX_RUNS)
     budget: Decimal | None = Field(default=None, gt=0)
     gate: Gate | None = None

@@ -65,6 +65,8 @@ class ApiToken(IdMixin, CreatedAtMixin, Base):
     name: Mapped[str] = mapped_column(String(100))
     prefix: Mapped[str] = mapped_column(String(16))
     token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    scope: Mapped[str] = mapped_column(String(16), server_default="full")
+    project_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"))
     expires_at: Mapped[datetime | None]
     last_used_at: Mapped[datetime | None]
     revoked_at: Mapped[datetime | None]

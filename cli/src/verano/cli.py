@@ -107,9 +107,12 @@ def push_command(
     replace_draft: Annotated[
         bool, typer.Option("--replace-draft", help="Replace unapproved test cases made elsewhere with the file's.")
     ] = False,
+    label: Annotated[
+        str | None, typer.Option("--label", help="Point this label (for example staging) at the pushed version.")
+    ] = None,
 ) -> None:
     """Create or update the projects, keys, models, prompts and test cases described in verano.yaml."""
-    push.command(file, name, dry_run, not no_data, replace_draft)
+    push.command(file, name, dry_run, not no_data, replace_draft, label)
 
 
 @app.command("run")
@@ -128,9 +131,16 @@ def run_command(
         runner.TIMEOUT_S
     ),
     json_output: Annotated[bool, typer.Option("--json", help="Print the results as JSON on standard output.")] = False,
+    baseline: Annotated[
+        str | None,
+        typer.Option("--baseline", help="Compare with this earlier run (its id) instead of the latest comparable run."),
+    ] = None,
+    markdown_file: Annotated[
+        Path | None, typer.Option("--markdown-file", help="Also write the results table, as Markdown, to this file.")
+    ] = None,
 ) -> None:
     """Run each prompt on its test cases, print the results and a link."""
-    runner.command(file, name, ci, yes, max_cost, timeout, json_output)
+    runner.command(file, name, ci, yes, max_cost, timeout, json_output, baseline, markdown_file)
 
 
 @app.command("status")
@@ -162,9 +172,13 @@ def token_create(
     password_stdin: PasswordStdin = False,
     days: Days = 90,
     never_expires: Annotated[bool, typer.Option("--never-expires", help="The token does not expire.")] = False,
+    read_only: Annotated[
+        bool, typer.Option("--read-only", help="The token can look and fetch prompts but change nothing.")
+    ] = False,
+    project: Annotated[str | None, typer.Option("--project", "-p", help="Only for this project (its name).")] = None,
 ) -> None:
     """Create a token for CI. It is printed once; set it as VERANO_API_TOKEN."""
-    auth.create_token(name, url, email, password_stdin, None if never_expires else days)
+    auth.create_token(name, url, email, password_stdin, None if never_expires else days, read_only, project)
 
 
 @token_app.command("list")
@@ -225,6 +239,25 @@ def app_test(
 ) -> None:
     """Send one test case to an app and show what was sent, what came back and what Verano read."""
     apps.test_command(project, name, input)
+
+
+@app.command("mcp")
+def mcp_command(
+    allow_write: Annotated[
+        bool,
+        typer.Option(
+            "--allow-write", help="Let the agent create projects, start runs, accept improvements and move labels."
+        ),
+    ] = False,
+    max_cost: Annotated[
+        float | None,
+        typer.Option("--max-cost", min=0, help="The most a run started by the agent may cost, in dollars."),
+    ] = None,
+) -> None:
+    """Start a local MCP server (standard input and output) so an AI agent can use Verano with your token."""
+    from verano.mcp import serve
+
+    serve.command(allow_write, max_cost)
 
 
 def main() -> None:

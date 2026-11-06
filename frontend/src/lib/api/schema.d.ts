@@ -1538,6 +1538,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/prompt-by-name/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Fetch Prompt
+         * @description The prompt an app should use: the version a label points at (for example `production`), a given version
+         *     number, or the latest saved version when neither is asked for.
+         */
+        get: operations["fetch_prompt_api_v1_projects__project_id__prompt_by_name__name__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/prompt-versions/{version_id}": {
         parameters: {
             query?: never;
@@ -1652,6 +1673,92 @@ export interface paths {
         get: operations["get_prompt_api_v1_projects__project_id__prompts__prompt_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/prompts/{prompt_id}/label-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Label History */
+        get: operations["label_history_api_v1_projects__project_id__prompts__prompt_id__label_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/prompts/{prompt_id}/label-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Label Settings */
+        put: operations["set_label_settings_api_v1_projects__project_id__prompts__prompt_id__label_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/prompts/{prompt_id}/labels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Labels */
+        get: operations["list_labels_api_v1_projects__project_id__prompts__prompt_id__labels_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/prompts/{prompt_id}/labels/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Label */
+        put: operations["set_label_api_v1_projects__project_id__prompts__prompt_id__labels__name__put"];
+        post?: never;
+        /** Remove Label */
+        delete: operations["remove_label_api_v1_projects__project_id__prompts__prompt_id__labels__name__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/prompts/{prompt_id}/labels/{name}/rollback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Roll Back Label */
+        post: operations["roll_back_label_api_v1_projects__project_id__prompts__prompt_id__labels__name__rollback_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2042,6 +2149,16 @@ export interface components {
             expires_in_days: number | null;
             /** Name */
             name: string;
+            /**
+             * Project Id
+             * @description Limit the token to one project.
+             */
+            project_id?: string | null;
+            /**
+             * @description full can do everything you can; read can only look and fetch prompts, which is what CI needs.
+             * @default full
+             */
+            scope: components["schemas"]["TokenScope"];
         };
         /**
          * ApiTokenCreated
@@ -2066,8 +2183,11 @@ export interface components {
             name: string;
             /** Prefix */
             prefix: string;
+            /** Project Id */
+            project_id: string | null;
             /** Revoked At */
             revoked_at: string | null;
+            scope: components["schemas"]["TokenScope"];
             /** Token */
             token: string;
         };
@@ -2091,8 +2211,11 @@ export interface components {
             name: string;
             /** Prefix */
             prefix: string;
+            /** Project Id */
+            project_id: string | null;
             /** Revoked At */
             revoked_at: string | null;
+            scope: components["schemas"]["TokenScope"];
         };
         /**
          * AppCallOut
@@ -2786,6 +2909,11 @@ export interface components {
         CredentialStatus: "valid" | "invalid";
         /** CredentialUpdate */
         CredentialUpdate: {
+            /**
+             * Api Key
+             * @description A new key that replaces the stored one (rotation).
+             */
+            api_key?: string | null;
             /** Label */
             label?: string | null;
             /** Rpm Limit */
@@ -3149,6 +3277,35 @@ export interface components {
             /** Error Type */
             error_type: string;
         };
+        /** FetchedPrompt */
+        FetchedPrompt: {
+            /** Default Params */
+            default_params: {
+                [key: string]: unknown;
+            };
+            /** Label */
+            label: string | null;
+            /** Name */
+            name: string;
+            /** System Template */
+            system_template: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** User Template */
+            user_template: string | null;
+            /** Variables */
+            variables: string[];
+            /** Version */
+            version: number;
+            /**
+             * Version Id
+             * Format: uuid
+             */
+            version_id: string;
+        };
         /**
          * FileFormat
          * @enum {string}
@@ -3375,6 +3532,8 @@ export interface components {
             id: string;
             /** Message */
             message: string | null;
+            /** Moved Label */
+            moved_label?: string | null;
             /**
              * Root Prompt Version Id
              * Format: uuid
@@ -3708,11 +3867,43 @@ export interface components {
          * @enum {string}
          */
         Label: "clear difference" | "no clear difference" | "too few cases";
+        /** LabelAssign */
+        LabelAssign: {
+            /**
+             * Version Id
+             * Format: uuid
+             */
+            version_id: string;
+        };
         /** LabelIn */
         LabelIn: {
             /** Note */
             note?: string | null;
             verdict: components["schemas"]["LabelVerdict"];
+        };
+        /** LabelMoveOut */
+        LabelMoveOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** From Version */
+            from_version: number | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Label */
+            label: string;
+            /** Moved By */
+            moved_by: string | null;
+            /** Moved By Name */
+            moved_by_name: string | null;
+            reason: components["schemas"]["MoveReason"];
+            /** To Version */
+            to_version: number | null;
         };
         /** LabelOut */
         LabelOut: {
@@ -3735,6 +3926,14 @@ export interface components {
             user_id: string;
             verdict: components["schemas"]["LabelVerdict"];
         };
+        /** LabelSettingsUpdate */
+        LabelSettingsUpdate: {
+            /**
+             * Accept Moves Label
+             * @description The label that Accept moves to the accepted version. Leave empty to never move a label.
+             */
+            accept_moves_label?: string | null;
+        };
         /**
          * LabelSummary
          * @description What people said about one answer: the majority and the split, and this user's own label.
@@ -3755,6 +3954,13 @@ export interface components {
          * @enum {string}
          */
         LabelVerdict: "good" | "bad" | "unsure";
+        /** LabelsOut */
+        LabelsOut: {
+            /** Accept Moves Label */
+            accept_moves_label: string | null;
+            /** Labels */
+            labels: components["schemas"]["PromptLabelOut"][];
+        };
         /** LogOptions */
         LogOptions: {
             /** Categories */
@@ -4014,6 +4220,11 @@ export interface components {
             returned: components["schemas"]["ReturnedModelOut"][];
         };
         /**
+         * MoveReason
+         * @enum {string}
+         */
+        MoveReason: "assign" | "accept" | "rollback" | "remove";
+        /**
          * OptimizationStatus
          * @enum {string}
          */
@@ -4061,6 +4272,13 @@ export interface components {
         Page_LLMCallOut_: {
             /** Items */
             items: components["schemas"]["LLMCallOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
+        /** Page[LabelMoveOut] */
+        Page_LabelMoveOut_: {
+            /** Items */
+            items: components["schemas"]["LabelMoveOut"][];
             /** Next Cursor */
             next_cursor: string | null;
         };
@@ -4183,6 +4401,25 @@ export interface components {
             system_template?: string | null;
             /** User Template */
             user_template?: string | null;
+        };
+        /** PromptLabelOut */
+        PromptLabelOut: {
+            /** Can Roll Back */
+            can_roll_back: boolean;
+            /**
+             * Moved At
+             * Format: date-time
+             */
+            moved_at: string;
+            /** Name */
+            name: string;
+            /** Version */
+            version: number;
+            /**
+             * Version Id
+             * Format: uuid
+             */
+            version_id: string;
         };
         /** PromptNotes */
         PromptNotes: {
@@ -4887,6 +5124,11 @@ export interface components {
             /** Ttft Ms */
             ttft_ms: number | null;
         };
+        /**
+         * TokenScope
+         * @enum {string}
+         */
+        TokenScope: "full" | "read";
         /** Totals */
         Totals: {
             /** Answers */
@@ -8541,6 +8783,50 @@ export interface operations {
             };
         };
     };
+    fetch_prompt_api_v1_projects__project_id__prompt_by_name__name__get: {
+        parameters: {
+            query?: {
+                label?: string | null;
+                version?: number | null;
+            };
+            header?: {
+                "if-none-match"?: string | null;
+            };
+            path: {
+                name: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FetchedPrompt"];
+                };
+            };
+            /** @description The prompt has not changed since the ETag you sent. */
+            304: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_version_api_v1_projects__project_id__prompt_versions__version_id__get: {
         parameters: {
             query?: never;
@@ -8804,6 +9090,211 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PromptOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    label_history_api_v1_projects__project_id__prompts__prompt_id__label_history_get: {
+        parameters: {
+            query?: {
+                label?: string | null;
+                limit?: number | null;
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                prompt_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_LabelMoveOut_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_label_settings_api_v1_projects__project_id__prompts__prompt_id__label_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prompt_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LabelSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabelsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_labels_api_v1_projects__project_id__prompts__prompt_id__labels_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prompt_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabelsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_label_api_v1_projects__project_id__prompts__prompt_id__labels__name__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prompt_id: string;
+                name: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LabelAssign"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptLabelOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_label_api_v1_projects__project_id__prompts__prompt_id__labels__name__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prompt_id: string;
+                name: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    roll_back_label_api_v1_projects__project_id__prompts__prompt_id__labels__name__rollback_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                prompt_id: string;
+                name: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptLabelOut"];
                 };
             };
             /** @description Validation Error */

@@ -178,6 +178,9 @@ class Settings(BaseSettings):
     param_sets_max: int = 6
     conversation_cases_max: int = 20
     conversation_cases_default: int = 8
+    # Phase 8 (shipit): prompt labels, serving prompts to apps
+    prompt_labels_max: int = 20
+    prompt_label_history_depth: int = 200
 
     @model_validator(mode="after")
     def _production_is_locked_down(self) -> "Settings":

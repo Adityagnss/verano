@@ -1,0 +1,88 @@
+name: Verano prompt check
+description: Run your prompt tests in Verano on a pull request, post a results table as a comment, and fail the job if the quality, cost or speed gate fails.
+author: Verano
+branding:
+  icon: check-circle
+  color: green
+
+inputs:
+  server-url:
+    description: The address of your Verano server, for example https://verano.example.com
+    required: true
+  token:
+    description: A Verano API token, kept as a repository secret. A read-only token is not enough to start a run; use a full one limited to one project.
+    required: true
+  file:
+    description: The verano.yaml to use.
+    default: verano.yaml
+  prompt:
+    description: Run only this prompt (default is all of them).
+    default: ""
+  baseline:
+    description: The id of an earlier run to compare with, to pin the baseline (default is the latest comparable run).
+    default: ""
+  max-cost:
+    description: Refuse to start if the estimated cost is above this many dollars.
+    default: ""
+  timeout:
+    description: Seconds to wait for each run.
+    default: "1800"
+  comment:
+    description: Post (or update) the results table as a pull request comment. Needs `pull-requests write` permission.
+    default: "true"
+  cli-version:
+    description: The version of the verano CLI to install (for example 0.2.0). Empty means the latest.
+    default: ""
+
+outputs:
+  exit-code:
+    description: 0 when the gate passed, 2 when it failed, 1 for any other problem.
+    value: ${{ steps.run.outputs.exit-code }}
+  results-file:
+    description: The Markdown results table.
+    value: ${{ steps.run.outputs.results-file }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Install the verano CLI
+      shell: bash
+      env:
+        CLI_VERSION: ${{ inputs.cli-version }}
+      run: |
+        python -m pip install --quiet "verano${CLI_VERSION:+==$CLI_VERSION}"
+
+    - name: Run the prompt tests
+      id: run
+      shell: bash
+      env:
+        VERANO_URL: ${{ inputs.server-url }}
+        VERANO_API_TOKEN: ${{ inputs.token }}
+        VERANO_FILE: ${{ inputs.file }}
+        VERANO_PROMPT: ${{ inputs.prompt }}
+        VERANO_BASELINE: ${{ inputs.baseline }}
+        VERANO_MAX_COST: ${{ inputs.max-cost }}
+        VERANO_TIMEOUT: ${{ inputs.timeout }}
+        RESULTS_FILE: ${{ runner.temp }}/verano-results.md
+      run: bash "${{ github.action_path }}/run.sh"
+
+    - name: Post the results on the pull request
+      if: ${{ always() && inputs.comment == 'true' && github.event_name == 'pull_request' }}
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        RESULTS_FILE: ${{ runner.temp }}/verano-results.md
+        REPOSITORY: ${{ github.repository }}
+        PULL_NUMBER: ${{ github.event.pull_request.number }}
+      run: bash "${{ github.action_path }}/comment.sh"
+
+    - name: Fail the job when the gate failed
+      if: ${{ steps.run.outputs.exit-code != '0' }}
+      shell: bash
+      env:
+        CODE: ${{ steps.run.outputs.exit-code }}
+      run: exit "$CODE"

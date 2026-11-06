@@ -62,9 +62,19 @@ class MeOut(BaseModel):
     organizations: list[OrganizationOut]
 
 
+class TokenScope(StrEnum):
+    FULL = "full"
+    READ = "read"
+
+
 class ApiTokenCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     expires_in_days: int | None = Field(default=90, ge=1, le=365)
+    scope: TokenScope = Field(
+        default=TokenScope.FULL,
+        description="full can do everything you can; read can only look and fetch prompts, which is what CI needs.",
+    )
+    project_id: uuid.UUID | None = Field(default=None, description="Limit the token to one project.")
 
     @field_validator("name")
     @classmethod
@@ -81,6 +91,8 @@ class ApiTokenOut(BaseModel):
     id: uuid.UUID
     name: str
     prefix: str
+    scope: TokenScope
+    project_id: uuid.UUID | None
     created_at: datetime
     expires_at: datetime | None
     last_used_at: datetime | None

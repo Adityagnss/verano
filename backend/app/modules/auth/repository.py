@@ -78,9 +78,24 @@ class AuthRepository:
         )
 
     async def add_api_token(
-        self, user_id: uuid.UUID, name: str, prefix: str, token_hash: str, expires_at: datetime | None
+        self,
+        user_id: uuid.UUID,
+        name: str,
+        prefix: str,
+        token_hash: str,
+        expires_at: datetime | None,
+        scope: str = "full",
+        project_id: uuid.UUID | None = None,
     ) -> ApiToken:
-        token = ApiToken(user_id=user_id, name=name, prefix=prefix, token_hash=token_hash, expires_at=expires_at)
+        token = ApiToken(
+            user_id=user_id,
+            name=name,
+            prefix=prefix,
+            token_hash=token_hash,
+            expires_at=expires_at,
+            scope=scope,
+            project_id=project_id,
+        )
         self._session.add(token)
         await self._session.flush()
         return token

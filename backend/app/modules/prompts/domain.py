@@ -13,6 +13,7 @@ No I/O: the service supplies templates, inputs and model profiles.
 """
 
 import re
+import uuid
 from dataclasses import dataclass
 from typing import Any
 
@@ -120,3 +121,13 @@ def context_fits(
         )
         for profile in profiles
     ]
+
+
+def rollback_target(history: list[tuple[uuid.UUID | None, uuid.UUID | None]], current: uuid.UUID) -> uuid.UUID | None:
+    """Where a label should go back to. `history` is a label's moves, newest first, as (from, to) version ids.
+    The target is the version the newest move that arrived at `current` came from; None when there is nothing
+    to go back to (the label was only ever set once)."""
+    for before, after in history:
+        if after == current:
+            return before
+    return None

@@ -17,6 +17,7 @@ HEADER = """\
 """
 TASK_TYPES = "classification, extraction, summarization, question_answering, generation, transformation, conversation"
 PLACEHOLDER_MODEL = "TODO-model"
+OTHER_LIMIT = 20
 
 
 def scalar(text: str) -> str:
@@ -67,13 +68,19 @@ def entry_lines(entry: Entry) -> list[str]:
     return lines
 
 
-def render(project: str, chosen: list[Entry], skipped: list[Entry]) -> str:
+def render(project: str, chosen: list[Entry], skipped: list[Entry], other: list[str] | None = None) -> str:
     keys = sorted({e.finding.provider for e in chosen if e.finding.provider in PROVIDER_KEYS if e.finding.provider})
     out = [HEADER, "version: 1", f"project: {scalar(project)}"]
     if keys:
         out += ["keys:", *[f"  {p}: env:{PROVIDER_KEYS[p]}" for p in keys]]
     else:
         out.append("# keys:   # name the environment variable of each provider's key, e.g. openai: env:OPENAI_API_KEY")
+    if other:
+        out.append("# Also found in your code. A prompt alone can't test these; connect the app with `verano app add`")
+        out.append("# (or record them under a prompt with `retrieval:` and `tools:`):")
+        out += [f"#   {note}" for note in other[:OTHER_LIMIT]]
+        if len(other) > OTHER_LIMIT:
+            out.append(f"#   ... and {len(other) - OTHER_LIMIT} more")
     out.append("prompts:")
     for entry in chosen:
         for note in entry.comments:

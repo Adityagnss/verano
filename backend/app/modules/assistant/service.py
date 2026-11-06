@@ -223,7 +223,9 @@ class ImprovementService:
         version = await self._save_version(project, principal, candidate, ACCEPTED)
         await self._repo.update_candidate(candidate.id, {"outcome": CandidateOutcome.ACCEPTED})
         await self._repo.update_session(row.id, {"status": OptimizationStatus.CLOSED})
-        return await self._done(project, principal, row, version.id if run else None)
+        moved = await self._prompts.labels.move_on_accept(project.id, principal, version.prompt_id, version.id)
+        done = await self._done(project, principal, row, version.id if run else None)
+        return done.model_copy(update={"moved_label": moved})
 
     async def save_candidate(
         self,

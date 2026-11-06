@@ -13,6 +13,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 
 import click
@@ -21,10 +22,10 @@ import typer
 from verano import auth, ui
 from verano.client import ApiClient
 from verano.errors import CliError, GateFailed
-from verano.gate import Verdict, evaluate
+from verano.gate import Baseline, Verdict, evaluate
 from verano.loader import Loaded, ResolvedPrompt, find_file, load
 from verano.push import resolve_model
-from verano.report import money, results_table
+from verano.report import markdown_summary, money, results_table
 
 POLL_S = 2.0
 PROGRESS_S = 10.0
@@ -85,6 +86,7 @@ class Runner:
         max_cost: Decimal | None = None,
         interactive: bool | None = None,
         timeout_s: float = TIMEOUT_S,
+        baseline: str | None = None,
         sleep: Callable[[float], None] = time.sleep,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
@@ -96,6 +98,7 @@ class Runner:
         self.max_cost = max_cost
         self.interactive = sys.stdin.isatty() and sys.stderr.isatty() if interactive is None else interactive
         self.timeout_s = timeout_s
+        self.pinned_baseline = baseline
         self.sleep = sleep
         self.clock = clock
 
@@ -244,16 +247,47 @@ class Runner:
 
     def _baseline(self, project_id: str, finished: dict[str, Any]) -> dict[str, float] | None:
         """The quality per model in the latest earlier run with the same models and settings on the same cases."""
+        metrics = self._baseline_metrics(project_id, finished, None)
+        return None if metrics is None else {model: float(m["quality"] or 0) for model, m in metrics.items()}
+
+    def _baseline_metrics(self, project_id: str, finished: dict[str, Any], pinned: str | None) -> Baseline | None:
+        """Quality, cost per call and speed per model of the run to compare with: the pinned run when one is
+        named, otherwise the latest earlier run of the same models and settings on the same cases."""
+        if pinned is not None:
+            return self._scored_models(project_id, pinned, missing=True)
         wanted = _signature(finished)
         earlier = self.api.get(f"/projects/{project_id}/experiments", limit=50)["items"]
         for other in earlier:
             same = other["id"] != finished["id"] and other["status"] == "completed" and other["origin"] == "manual"
             same = same and other.get("prompt_id") in (None, finished.get("prompt_id"))
             if same and other["dataset_version_id"] == finished["dataset_version_id"] and _signature(other) == wanted:
-                scored = self.api.get(f"/projects/{project_id}/experiments/{other['id']}/results")
-                if scored["evaluation_run"] is not None:
-                    return {m["model"]: float(m["quality"]) for m in scored["models"]}
+                found = self._scored_models(project_id, other["id"], missing=False)
+                if found is not None:
+                    return found
         return None
+
+    def _scored_models(self, project_id: str, experiment_id: str, missing: bool) -> Baseline | None:
+        try:
+            scored = self.api.get(f"/projects/{project_id}/experiments/{experiment_id}/results")
+        except CliError as error:
+            if error.status == 404 and missing:
+                raise CliError(
+                    f"The baseline run {experiment_id} was not found in this project.",
+                    "Use the id from the link of a finished run, or remove the baseline setting.",
+                ) from error
+            raise
+        if scored["evaluation_run"] is None:
+            if missing:
+                raise CliError(f"The baseline run {experiment_id} has no scores yet.", "Pick a finished, scored run.")
+            return None
+        return {
+            m["model"]: {
+                "quality": None if m["quality"] is None else float(m["quality"]),
+                "cost_per_call": None if m.get("cost_per_call") is None else float(m["cost_per_call"]),
+                "latency_ms": None if m.get("latency_ms") is None else float(m["latency_ms"]),
+            }
+            for m in scored["models"]
+        }
 
     def _judge(self, entry: Any, finished: dict[str, Any], result: EntryResult, project_id: str) -> None:
         gate = entry.gate
@@ -261,9 +295,17 @@ class Runner:
             if self.ci:
                 ui.info("No `gate:` for this prompt, so there is nothing to enforce.")
             return
-        baseline = self._baseline(project_id, finished) if gate.max_drop is not None else None
+        compares = gate.max_drop is not None or gate.max_cost_increase is not None or gate.max_slowdown is not None
+        metrics = (
+            self._baseline_metrics(project_id, finished, self.pinned_baseline or gate.baseline) if compares else None
+        )
+        quality = (
+            None
+            if metrics is None
+            else {m: float(v["quality"] or 0) for m, v in metrics.items() if v["quality"] is not None}
+        )
         verdict = evaluate(
-            gate, result.models, finished["status"] == "completed", finished.get("stop_reason"), baseline
+            gate, result.models, finished["status"] == "completed", finished.get("stop_reason"), quality, metrics
         )
         result.verdict = verdict
         for note in verdict.notes:
@@ -353,14 +395,28 @@ def status(api: ApiClient, loaded: Loaded, base_url: str, only: str | None) -> N
 
 
 def command(
-    file: Any, only: str | None, ci: bool, yes: bool, max_cost: float | None, timeout: int, json_output: bool
+    file: Any,
+    only: str | None,
+    ci: bool,
+    yes: bool,
+    max_cost: float | None,
+    timeout: int,
+    json_output: bool,
+    baseline: str | None = None,
+    markdown_file: Path | None = None,
 ) -> None:
 
     loaded = load(file or find_file())
     credentials = auth.signed_in()
     api = ApiClient.from_credentials(credentials)
     cap = Decimal(str(max_cost)) if max_cost is not None else None
-    results = Runner(api, loaded, credentials.url, yes=yes, ci=ci, max_cost=cap, timeout_s=float(timeout)).run(only)
+    runner = Runner(
+        api, loaded, credentials.url, yes=yes, ci=ci, max_cost=cap, timeout_s=float(timeout), baseline=baseline
+    )
+    results = runner.run(only)
+    if markdown_file is not None:
+        markdown_file.write_text(markdown_summary(results), encoding="utf-8")
+        ui.info(f"Wrote the results table to {markdown_file}.")
     if json_output:
         typer.echo(as_json(results))
     exit_for(results, ci)

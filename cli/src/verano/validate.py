@@ -32,6 +32,16 @@ def describe(prompt: ResolvedPrompt, root: Path) -> list[str]:
             )
             if value is not None
         ]
+        if gate.max_cost_per_call is not None:
+            checks.append(f"max cost per call ${gate.max_cost_per_call:g}")
+        if gate.max_latency_ms is not None:
+            checks.append(f"max average time {gate.max_latency_ms / 1000:g}s")
+        if gate.max_cost_increase is not None:
+            checks.append(f"cost may grow {gate.max_cost_increase * 100:.0f}%")
+        if gate.max_slowdown is not None:
+            checks.append(f"time may grow {gate.max_slowdown * 100:.0f}%")
+        if gate.baseline:
+            checks.append(f"baseline run {gate.baseline}")
         lines.append(f"    gate:    {', '.join(checks)} (enforced by `verano run --ci`)")
     data = []
     if prompt.cases is not None:

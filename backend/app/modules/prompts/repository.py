@@ -77,3 +77,8 @@ class PromptRepository:
             .where(PromptVersion.id == version_id, Prompt.project_id == project_id)
         )
         return await self._session.scalar(query)
+
+    async def version_of(self, prompt_id: uuid.UUID, version_id: uuid.UUID) -> PromptVersion | None:
+        return await self._session.scalar(
+            select(PromptVersion).where(PromptVersion.id == version_id, PromptVersion.prompt_id == prompt_id)
+        )

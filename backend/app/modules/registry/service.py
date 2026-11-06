@@ -188,9 +188,28 @@ class RegistryService:
         self, project: ProjectOut, credential_id: uuid.UUID, body: CredentialUpdate
     ) -> CredentialOut:
         credential = await self._credential(project.id, credential_id)
-        await self._repo.update_credential(credential.id, body.model_dump(exclude_unset=True))
+        values = body.model_dump(exclude_unset=True, exclude={"api_key"})
+        if body.api_key is not None:
+            values |= await self._rotated_key(credential, body.api_key.get_secret_value().strip())
+        await self._repo.update_credential(credential.id, values)
         await self._session.refresh(credential)
         return credential_out(credential, await self._repo.model_count(credential.id))
+
+    async def _rotated_key(self, credential: ProviderCredential, api_key: str) -> dict[str, Any]:
+        """The columns that change when a key is replaced: the new key is checked with the provider first, so a
+        mistyped key never takes the place of a working one."""
+        spec = self._spec(credential.provider)
+        if not api_key:
+            raise ValidationFailed(KEY_REQUIRED.format(provider=spec.display_name))
+        if spec.key_check_path:
+            await self._client(spec).validate(api_key, credential.base_url or self._default_base_url(spec) or "")
+        return {
+            "encrypted_key": self._secrets.encrypt(api_key),
+            "key_last4": key_last4(api_key),
+            "status": CredentialStatus.VALID,
+            "status_message": None,
+            "last_validated_at": self._clock(),
+        }
 
     async def delete_credential(self, project: ProjectOut, credential_id: uuid.UUID) -> None:
         credential = await self._credential(project.id, credential_id)

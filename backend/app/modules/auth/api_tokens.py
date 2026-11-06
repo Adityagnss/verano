@@ -46,4 +46,9 @@ class ApiTokenAuthenticator:
                 .values(last_used_at=now)
             )
             await session.commit()
-            return Principal(user_id=token.user_id, via_api_token=True)
+            return Principal(
+                user_id=token.user_id,
+                via_api_token=True,
+                read_only=token.scope == "read",
+                project_id=token.project_id,
+            )

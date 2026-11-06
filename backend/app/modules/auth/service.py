@@ -189,7 +189,13 @@ class AuthService:
         raw = API_TOKEN_PREFIX + new_refresh_token()
         expires_at = now + timedelta(days=body.expires_in_days) if body.expires_in_days else None
         token = await self._repo.add_api_token(
-            principal.user_id, body.name, raw[:TOKEN_PREFIX_CHARS], digest_token(raw), expires_at
+            principal.user_id,
+            body.name,
+            raw[:TOKEN_PREFIX_CHARS],
+            digest_token(raw),
+            expires_at,
+            body.scope.value,
+            body.project_id,
         )
         return ApiTokenCreated(**ApiTokenOut.model_validate(token).model_dump(), token=raw)
 

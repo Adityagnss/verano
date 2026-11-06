@@ -22,6 +22,7 @@ from app.core.pagination import Page, PageParams, to_page
 from app.core.security import Principal
 from app.modules.projects.schemas import ProjectOut
 from app.modules.prompts.domain import TemplateInfo, analyze, context_fits, missing_inputs, render, tool_warnings
+from app.modules.prompts.label_service import LabelService
 from app.modules.prompts.models import Prompt, PromptVersion
 from app.modules.prompts.repository import PromptRepository
 from app.modules.prompts.schemas import (
@@ -60,6 +61,7 @@ def version_out(row: PromptVersion) -> PromptVersionOut:
 class PromptService:
     def __init__(self, session: AsyncSession, registry: RegistryService, settings: Settings) -> None:
         self._repo = PromptRepository(session)
+        self.labels = LabelService(session, settings)
         self._registry = registry
         self._settings = settings
 

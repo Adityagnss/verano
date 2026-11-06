@@ -138,16 +138,34 @@ def whoami() -> None:
         typer.echo(f"Workspace: {org['name']} ({org['role']})")
 
 
-def create_token(name: str, url: str | None, email: str | None, password_stdin: bool, days: int | None) -> None:
+def create_token(
+    name: str,
+    url: str | None,
+    email: str | None,
+    password_stdin: bool,
+    days: int | None,
+    read_only: bool = False,
+    project: str | None = None,
+) -> None:
     target = _target_url(url)
     ui.info(f"Signing in to {target} to create the token")
     anonymous, authed, _ = _session(target, email, password_stdin)
     try:
-        created = authed.post("/auth/tokens", {"name": name, "expires_in_days": days})
+        body: dict[str, Any] = {"name": name, "expires_in_days": days, "scope": "read" if read_only else "full"}
+        if project:
+            matches = [p for p in authed.pages("/projects") if p["name"] == project]
+            if len(matches) != 1:
+                raise CliError(
+                    f'There is no single project called "{project}".', "Check the name in the web app's project list."
+                )
+            body["project_id"] = matches[0]["id"]
+        created = authed.post("/auth/tokens", body)
     finally:
         _end_session(anonymous)
+    limits = ("read-only" if read_only else "full access") + (f", only for {project}" if project else "")
     ui.ok(
-        f"Token '{name}' created ({'never expires' if days is None else f'valid {days} days'}). It is shown only now:"
+        f"Token '{name}' created ({limits}; {'never expires' if days is None else f'valid {days} days'}). "
+        "It is shown only now:"
     )
     typer.echo(created["token"])
     ui.info("In CI, set it as VERANO_API_TOKEN (and VERANO_URL for your server).")
@@ -163,7 +181,8 @@ def list_tokens() -> None:
             "revoked" if t["revoked_at"] else f"expires {t['expires_at'][:10]}" if t["expires_at"] else "never expires"
         )
         used = f"last used {t['last_used_at'][:10]}" if t["last_used_at"] else "never used"
-        typer.echo(f"{t['id']}  {t['prefix']}…  {t['name']}  ({state}, {used})")
+        scope = "read-only" if t.get("scope") == "read" else "full access"
+        typer.echo(f"{t['id']}  {t['prefix']}…  {t['name']}  ({scope}, {state}, {used})")
 
 
 def revoke_token(token_id: str) -> None:

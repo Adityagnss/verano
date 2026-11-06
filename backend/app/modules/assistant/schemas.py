@@ -108,6 +108,8 @@ class ImprovementOut(BaseModel):
     created_at: datetime
     # set when a candidate was saved and tested in one go
     started_experiment_id: uuid.UUID | None = None
+    # the prompt label Accept moved to the accepted version, when the prompt is set to move one
+    moved_label: str | None = None
 
 
 class ImprovementSummary(BaseModel):
