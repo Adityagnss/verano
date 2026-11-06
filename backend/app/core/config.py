@@ -181,6 +181,32 @@ class Settings(BaseSettings):
     # Phase 8 (shipit): prompt labels, serving prompts to apps
     prompt_labels_max: int = 20
     prompt_label_history_depth: int = 200
+    # Phase 8: traffic, online scoring and alerts (ADR 0031, ADR 0032)
+    traffic_field_max_chars: int = 20_000
+    traffic_meta_max_chars: int = 8_000
+    traffic_import_max_bytes: int = 50_000_000
+    traffic_import_max_records: int = 20_000
+    traffic_problem_limit: int = 50
+    traffic_receiver_max_bytes: int = 4_000_000
+    traffic_receiver_max_spans: int = 2_000
+    traffic_spans_per_minute: int = 60_000
+    traffic_retention_days: int = 30
+    traffic_scrub_pii: bool = True
+    traffic_long_ms: int = 10_000
+    traffic_low_rating: float = 0.4
+    traffic_cases_max_select: int = 300
+    traffic_rule_sample_rate: float = 1.0
+    traffic_judge_sample_rate: float = 0.05
+    traffic_judge_monthly_limit: int = 500
+    traffic_score_batch: int = 200
+    traffic_process_interval_s: int = 60
+    traffic_alert_timeout_s: float = 10.0
+    traffic_smtp_host: str | None = None
+    traffic_smtp_port: int = 587
+    traffic_smtp_user: str | None = None
+    traffic_smtp_password: str | None = None
+    traffic_smtp_from: str | None = None
+    traffic_smtp_starttls: bool = True
 
     @model_validator(mode="after")
     def _production_is_locked_down(self) -> "Settings":

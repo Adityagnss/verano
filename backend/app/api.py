@@ -26,6 +26,8 @@ from app.modules.projects.router import router as projects_router
 from app.modules.prompts.label_router import router as labels_router
 from app.modules.prompts.router import router as prompts_router
 from app.modules.registry.router import router as registry_router
+from app.modules.traffic.router import otlp_router
+from app.modules.traffic.router import router as traffic_router
 
 api_router = APIRouter()
 for module_router in (
@@ -50,5 +52,7 @@ for module_router in (
     improve_router,
     notes_router,
     logbook_router,
+    traffic_router,
 ):
     api_router.include_router(module_router)
+api_router.include_router(otlp_router, prefix="/otlp")
