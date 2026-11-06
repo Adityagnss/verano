@@ -10,6 +10,8 @@ from fastapi import APIRouter, Query, status
 from fastapi.responses import Response
 
 from app.core.security import CurrentPrincipal
+from app.modules.audit.dependencies import AuditLogDep
+from app.modules.audit.schemas import AuditAction
 from app.modules.evaluation.dependencies import (
     EvidenceServiceDep,
     LabelServiceDep,
@@ -80,8 +82,20 @@ async def put_label(
     project: ProjectScope,
     principal: CurrentPrincipal,
     labels: LabelServiceDep,
+    audit: AuditLogDep,
 ) -> LabelOut:
-    return await labels.set_label(project.id, experiment_id, principal, test_case_run_id, body)
+    out = await labels.set_label(project.id, experiment_id, principal, test_case_run_id, body)
+    await audit.record(
+        organization_id=project.organization_id,
+        project_id=project.id,
+        actor_id=principal.user_id,
+        action=AuditAction.ANSWER_LABELLED,
+        summary=f"Labelled an answer {body.verdict.value} in {project.name}.",
+        target_type="answer",
+        target_id=test_case_run_id,
+        details={"experiment_id": str(experiment_id), "verdict": body.verdict.value},
+    )
+    return out
 
 
 @router.delete("/answers/{test_case_run_id}/label", status_code=status.HTTP_204_NO_CONTENT)
@@ -91,8 +105,19 @@ async def delete_label(
     project: ProjectScope,
     principal: CurrentPrincipal,
     labels: LabelServiceDep,
+    audit: AuditLogDep,
 ) -> None:
     await labels.remove_label(project.id, experiment_id, principal, test_case_run_id)
+    await audit.record(
+        organization_id=project.organization_id,
+        project_id=project.id,
+        actor_id=principal.user_id,
+        action=AuditAction.ANSWER_LABELLED,
+        summary=f"Removed their label from an answer in {project.name}.",
+        target_type="answer",
+        target_id=test_case_run_id,
+        details={"experiment_id": str(experiment_id), "verdict": None},
+    )
 
 
 @router.get("/answers/{test_case_run_id}/evidence")

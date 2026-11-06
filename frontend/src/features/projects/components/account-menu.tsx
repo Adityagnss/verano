@@ -23,6 +23,9 @@ export function AccountMenu() {
       </Link>
       <ThemeSwitch />
       <span className="text-muted-foreground hidden max-w-[16rem] truncate lg:inline">{user?.email}</span>
+      <Link href="/workspace" className="text-text-secondary hover:text-foreground">
+        Workspace
+      </Link>
       <Button
         variant="ghost"
         size="sm"

@@ -23,6 +23,8 @@ from app.core.errors import NotFound, ProviderAuthError, ValidationFailed
 from app.core.pagination import Page, PageParams, to_page
 from app.core.registry import load_plugins
 from app.core.security import Principal, SecretBox, utcnow
+from app.modules.audit.schemas import AuditAction
+from app.modules.audit.service import AuditLog
 from app.modules.projects.schemas import ProjectOut
 from app.modules.registry.domain import build_profile, is_chat_model, key_last4, litellm_model
 from app.modules.registry.models import ModelProfile, ProviderCredential
@@ -89,6 +91,7 @@ class RegistryService:
         self._repo = RegistryRepository(session)
         self._settings: Settings = container.settings
         self._secrets: SecretBox = container.secret_box
+        self._audit = AuditLog(session, container.settings)
         self._http = container.http
         self._metadata = metadata
         self._clock = clock
@@ -111,7 +114,30 @@ class RegistryService:
     def rate_limit_headers(self) -> RateLimitHeaders:
         return self.catalog.rate_limit_headers
 
-    async def add_credential(self, project: ProjectOut, principal: Principal, body: CredentialCreate) -> CredentialOut:
+    async def check_key(self, provider: str, api_key: str | None, base_url: str | None) -> None:
+        """Refuse a key the provider rejects, before anything is stored (spends no tokens)."""
+        spec = self._spec(provider)
+        if spec.requires_key and not api_key:
+            raise ValidationFailed(KEY_REQUIRED.format(provider=spec.display_name))
+        url = base_url or self._default_base_url(spec) or ""
+        client = self._client(spec)
+        if spec.key_check_path:
+            await client.validate(api_key, url)
+        await client.list_models(api_key, url)
+
+    def encrypt_key(self, api_key: str) -> bytes:
+        return self._secrets.encrypt(api_key)
+
+    def decrypt_key(self, encrypted: bytes) -> str:
+        return self._secrets.decrypt(encrypted)
+
+    async def add_credential(
+        self,
+        project: ProjectOut,
+        principal: Principal,
+        body: CredentialCreate,
+        organization_key_id: uuid.UUID | None = None,
+    ) -> CredentialOut:
         spec = self._spec(body.provider)
         api_key = body.api_key.get_secret_value().strip() if body.api_key else None
         if spec.requires_key and not api_key:
@@ -134,9 +160,20 @@ class RegistryService:
                 tpm_limit=body.tpm_limit,
                 last_validated_at=self._clock(),
                 created_by=principal.user_id,
+                organization_key_id=organization_key_id,
             )
         )
         count = await self._store_profiles(credential, spec, raw_models)
+        await self._audit.record(
+            organization_id=project.organization_id,
+            project_id=project.id,
+            actor_id=principal.user_id,
+            action=AuditAction.KEY_ATTACHED if organization_key_id else AuditAction.KEY_ADDED,
+            summary=f"Added a {spec.display_name} key (ending {credential.key_last4 or 'none'}) to {project.name}.",
+            target_type="credential",
+            target_id=credential.id,
+            details={"provider": body.provider, "key_last4": credential.key_last4},
+        )
         return credential_out(credential, count)
 
     async def shared_credentials(self, project: ProjectOut) -> list[SharedCredentialOut]:
@@ -185,14 +222,26 @@ class RegistryService:
         return [credential_out(row, n) for row, n in await self._repo.credentials_with_counts(project.id)]
 
     async def update_credential(
-        self, project: ProjectOut, credential_id: uuid.UUID, body: CredentialUpdate
+        self, project: ProjectOut, credential_id: uuid.UUID, body: CredentialUpdate, principal: Principal
     ) -> CredentialOut:
         credential = await self._credential(project.id, credential_id)
-        values = body.model_dump(exclude_unset=True, exclude={"api_key"})
+        changes = body.model_dump(exclude_unset=True, exclude={"api_key"})
+        values = dict(changes)
         if body.api_key is not None:
             values |= await self._rotated_key(credential, body.api_key.get_secret_value().strip())
+            changes["api_key"] = None
         await self._repo.update_credential(credential.id, values)
         await self._session.refresh(credential)
+        await self._audit.record(
+            organization_id=project.organization_id,
+            project_id=project.id,
+            actor_id=principal.user_id,
+            action=AuditAction.KEY_ADDED,
+            summary=f"Changed the settings of the {credential.provider} key ending {credential.key_last4 or 'none'}.",
+            target_type="credential",
+            target_id=credential.id,
+            details={"changed": sorted(changes)},
+        )
         return credential_out(credential, await self._repo.model_count(credential.id))
 
     async def _rotated_key(self, credential: ProviderCredential, api_key: str) -> dict[str, Any]:
@@ -211,9 +260,21 @@ class RegistryService:
             "last_validated_at": self._clock(),
         }
 
-    async def delete_credential(self, project: ProjectOut, credential_id: uuid.UUID) -> None:
+    async def delete_credential(self, project: ProjectOut, credential_id: uuid.UUID, principal: Principal) -> None:
         credential = await self._credential(project.id, credential_id)
         await self._repo.delete_credential(credential.id)
+        await self._audit.record(
+            organization_id=project.organization_id,
+            project_id=project.id,
+            actor_id=principal.user_id,
+            action=AuditAction.KEY_REMOVED,
+            summary=(
+                f"Removed the {credential.provider} key ending {credential.key_last4 or 'none'} from {project.name}."
+            ),
+            target_type="credential",
+            target_id=credential.id,
+            details={"provider": credential.provider, "key_last4": credential.key_last4},
+        )
 
     async def refresh_models(self, project: ProjectOut, credential_id: uuid.UUID) -> CredentialOut:
         credential = await self._credential(project.id, credential_id)

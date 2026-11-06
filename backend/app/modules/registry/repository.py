@@ -80,6 +80,49 @@ class RegistryRepository:
         )
         return [(row, name) for row, name in (await self._session.execute(query)).all()]
 
+    async def credentials_of_key(
+        self, organization_key_id: uuid.UUID
+    ) -> list[tuple[ProviderCredential, str, uuid.UUID]]:
+        """Project credentials that use an organization key, with the project's name and id."""
+        query = (
+            select(ProviderCredential, Project.name, Project.id)
+            .join(Project, Project.id == ProviderCredential.project_id)
+            .where(ProviderCredential.organization_key_id == organization_key_id)
+            .order_by(Project.name)
+        )
+        return [(c, n, i) for c, n, i in (await self._session.execute(query)).all()]
+
+    async def credentials_in_organization(self, organization_id: uuid.UUID) -> list[ProviderCredential]:
+        """Every provider key of the organization's projects that is not yet an organization key (apps excluded)."""
+        query = (
+            select(ProviderCredential)
+            .join(Project, Project.id == ProviderCredential.project_id)
+            .where(
+                Project.organization_id == organization_id,
+                ProviderCredential.provider != "app",
+                ProviderCredential.organization_key_id.is_(None),
+                ProviderCredential.encrypted_key.is_not(None),
+            )
+        )
+        return list((await self._session.scalars(query)).all())
+
+    async def rewrite_key_of(
+        self, organization_key_id: uuid.UUID, encrypted_key: bytes, last4: str | None, now: datetime
+    ) -> int:
+        """Replace the stored key of every credential that uses an organization key (rotation)."""
+        result = await self._session.execute(
+            update(ProviderCredential)
+            .where(ProviderCredential.organization_key_id == organization_key_id)
+            .values(
+                encrypted_key=encrypted_key,
+                key_last4=last4,
+                status="valid",
+                status_message=None,
+                last_validated_at=now,
+            )
+        )
+        return int(result.rowcount or 0)  # type: ignore[attr-defined]
+
     async def model_count(self, credential_id: uuid.UUID) -> int:
         query = select(func.count()).where(ModelProfile.credential_id == credential_id)
         return int(await self._session.scalar(query) or 0)

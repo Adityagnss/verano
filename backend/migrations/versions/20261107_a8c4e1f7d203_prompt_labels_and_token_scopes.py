@@ -1,4 +1,4 @@
-"""prompt labels, their history, and API token scopes
+"""prompt labels, their history, and API token project limit
 
 Revision ID: a8c4e1f7d203
 Revises: e1a5c7d93b20
@@ -11,14 +11,13 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "a8c4e1f7d203"
-down_revision: str | None = "e1a5c7d93b20"
+down_revision: str | None = "7b3e9c1d4a58"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
     op.add_column("prompts", sa.Column("accept_moves_label", sa.String(length=48), nullable=True))
-    op.add_column("api_tokens", sa.Column("scope", sa.String(length=16), server_default="full", nullable=False))
     op.add_column("api_tokens", sa.Column("project_id", sa.Uuid(), nullable=True))
     op.create_foreign_key(
         "fk_api_tokens_project_id_projects", "api_tokens", "projects", ["project_id"], ["id"], ondelete="CASCADE"
@@ -63,5 +62,4 @@ def downgrade() -> None:
     op.drop_table("prompt_labels")
     op.drop_constraint("fk_api_tokens_project_id_projects", "api_tokens", type_="foreignkey")
     op.drop_column("api_tokens", "project_id")
-    op.drop_column("api_tokens", "scope")
     op.drop_column("prompts", "accept_moves_label")

@@ -31,6 +31,8 @@ from app.modules.assistant.schemas import (
     SessionStage,
     VerdictOut,
 )
+from app.modules.audit.schemas import AuditAction
+from app.modules.audit.service import AuditLog
 from app.modules.datasets.schemas import Split
 from app.modules.datasets.service import DatasetService
 from app.modules.engine.domain import TERMINAL
@@ -223,6 +225,16 @@ class ImprovementService:
         version = await self._save_version(project, principal, candidate, ACCEPTED)
         await self._repo.update_candidate(candidate.id, {"outcome": CandidateOutcome.ACCEPTED})
         await self._repo.update_session(row.id, {"status": OptimizationStatus.CLOSED})
+        await AuditLog(self._session).record(
+            organization_id=project.organization_id,
+            project_id=project.id,
+            actor_id=principal.user_id,
+            action=AuditAction.VERSION_ACCEPTED,
+            summary=f"Accepted an improved prompt version in {project.name}.",
+            target_type="prompt_version",
+            target_id=version.id,
+            details={"candidate_id": str(candidate.id), "session_id": str(session_id)},
+        )
         moved = await self._prompts.labels.move_on_accept(project.id, principal, version.prompt_id, version.id)
         done = await self._done(project, principal, row, version.id if run else None)
         return done.model_copy(update={"moved_label": moved})

@@ -25,7 +25,8 @@ from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.core.config import Settings
-from app.core.errors import AppError, AuthenticationFailed, PermissionDenied
+from app.core.errors import AppError, AuthenticationFailed
+from app.core.permissions import TokenScope
 
 _bearer = HTTPBearer(auto_error=False)
 
@@ -35,18 +36,13 @@ class SecretDecryptionFailed(AppError):
 
 
 API_TOKEN_PREFIX = "vrn_"
-READ_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
-READ_ONLY_TOKEN = (
-    "This API token is read-only, so it can look at things but not change them. "
-    "Create a token with full access to do this."
-)
 
 
 @dataclass(frozen=True)
 class Principal:
     user_id: uuid.UUID
     via_api_token: bool = False
-    read_only: bool = False
+    scope: TokenScope = TokenScope.WRITE
     project_id: uuid.UUID | None = None
 
 
@@ -128,6 +124,9 @@ async def get_principal(
     request: Request,
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_bearer)],
 ) -> Principal:
+    cached: Principal | None = getattr(request.state, "principal", None)
+    if cached is not None:  # the permission check at the router level already signed this request in
+        return cached
     if credentials is None:
         raise AuthenticationFailed("Please sign in to continue.")
     container = request.app.state.container
@@ -135,11 +134,11 @@ async def get_principal(
         if container.api_tokens is None:
             raise AuthenticationFailed("API tokens are not available.")
         principal: Principal = await container.api_tokens.verify(credentials.credentials)
-        if principal.read_only and request.method not in READ_METHODS:
-            raise PermissionDenied(READ_ONLY_TOKEN)
-        return principal
-    tokens: AccessTokens = container.access_tokens
-    return tokens.verify(credentials.credentials)
+    else:
+        tokens: AccessTokens = container.access_tokens
+        principal = tokens.verify(credentials.credentials)
+    request.state.principal = principal
+    return principal
 
 
 CurrentPrincipal = Annotated[Principal, Depends(get_principal)]

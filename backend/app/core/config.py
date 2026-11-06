@@ -14,7 +14,7 @@ With VERANO_ENVIRONMENT=production, settings that only make sense for local deve
 from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import AliasChoices, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -207,6 +207,25 @@ class Settings(BaseSettings):
     traffic_smtp_password: str | None = None
     traffic_smtp_from: str | None = None
     traffic_smtp_starttls: bool = True
+    # Phase 8 (teams): invites, email, sign-in with an identity provider, audit log
+    public_url: str = "http://localhost:8080"
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: SecretStr = SecretStr("")
+    smtp_starttls: bool = True
+    smtp_from: str = "Verano <no-reply@verano.local>"
+    smtp_timeout_s: float = 10.0
+    invite_ttl_days: int = 7
+    email_verification_ttl_hours: int = 48
+    max_open_invites: int = 100
+    # JSON list of sign-in providers, each: {"name", "kind": "google"|"microsoft"|"oidc", "display_name", "client_id",
+    # "client_secret", "issuer" (generic OIDC; Microsoft: the tenant id), "scopes", "organization_id" (the workspace
+    # people join on first sign-in), "default_role", "roles_claim", "role_map", "allowed_domains"}
+    oidc_providers: list[dict[str, Any]] = []
+    oidc_state_ttl_s: int = 600
+    oidc_http_timeout_s: float = 10.0
+    audit_export_max_rows: int = 100_000
 
     @model_validator(mode="after")
     def _production_is_locked_down(self) -> "Settings":

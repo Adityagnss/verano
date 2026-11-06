@@ -32,6 +32,7 @@ from app.core.errors import (
     ValidationFailed,
 )
 from app.core.ids import uuid7
+from app.core.mail import Mailer
 from app.core.security import (
     API_TOKEN_PREFIX,
     AccessTokens,
@@ -43,7 +44,9 @@ from app.core.security import (
 )
 from app.core.throttle import FixedWindowLimiter
 from app.modules.auth.domain import RefreshOutcome, RefreshTokenState, judge_refresh, normalize_email, password_problem
+from app.modules.auth.members import MemberService
 from app.modules.auth.models import User
+from app.modules.auth.oidc_domain import provider_list
 from app.modules.auth.repository import AuthRepository
 from app.modules.auth.schemas import (
     ApiTokenCreate,
@@ -86,6 +89,7 @@ class AuthService:
         settings: Settings,
         throttle: FixedWindowLimiter,
         clock: Callable[[], datetime] = utcnow,
+        mailer: Mailer | None = None,
     ) -> None:
         self._session = session
         self._repo = AuthRepository(session)
@@ -94,16 +98,35 @@ class AuthService:
         self._settings = settings
         self._throttle = throttle
         self._clock = clock
+        self._mailer = mailer or Mailer(settings)
+        self._members = MemberService(session, settings, self._mailer, clock)
+
+    @property
+    def members(self) -> MemberService:
+        return self._members
 
     async def config(self) -> AuthConfigOut:
         return AuthConfigOut(
             signup_open=self._settings.allow_signup or not await self._repo.has_users(),
             password_min_length=self._settings.password_min_length,
+            email_verification_required=self._mailer.enabled,
+            sign_in_providers=provider_list(self._settings),
         )
+
+    def unusable_password_hash(self) -> str:
+        """A hash nobody knows the password of, for people who only sign in through a provider."""
+        return self._passwords.hash(new_refresh_token())
+
+    async def issue_session(self, user: User) -> IssuedSession:
+        return await self._issue(user, family_id=uuid7())
 
     async def signup(self, request: SignupRequest, client_ip: str) -> IssuedSession:
         await self._check_throttle("signup", client_ip, request.email)
-        if not self._settings.allow_signup:
+        invited = False
+        if request.invite_token:
+            invite = await self._members.preview(request.invite_token)
+            invited = invite.status == "open" and invite.email == normalize_email(request.email)
+        if not self._settings.allow_signup and not invited:
             await self._repo.lock_signups()
             if await self._repo.has_users():
                 raise PermissionDenied(SIGNUP_CLOSED)
@@ -120,6 +143,10 @@ class AuthService:
             )
         except IntegrityError as exc:
             raise Conflict("An account with this email already exists. Sign in instead.") from exc
+        if request.invite_token and invited:
+            await self._members.accept(Principal(user_id=user.id), request.invite_token)
+            await self._session.refresh(user)
+        await self._members.send_verification(user)
         return await self._issue(user, family_id=uuid7())
 
     async def login(self, request: LoginRequest, client_ip: str) -> IssuedSession:
@@ -165,12 +192,15 @@ class AuthService:
             for org, role in await self._repo.memberships(user_id)
         ]
 
+    async def role_in(self, user_id: uuid.UUID, organization_id: uuid.UUID) -> MembershipRole | None:
+        return await self._repo.role_in(user_id, organization_id)
+
     async def organization_ids(self, user_id: uuid.UUID) -> list[uuid.UUID]:
         return [org.id for org in await self.organizations(user_id)]
 
     async def organization_members(self, organization_id: uuid.UUID) -> list[tuple[UserOut, MembershipRole]]:
         """The people in one organization and their roles. The caller has already been checked to belong to it."""
-        return [(UserOut.model_validate(user), role) for user, role in await self._repo.members(organization_id)]
+        return [(UserOut.model_validate(user), role) for user, role in await self._repo.member_users(organization_id)]
 
     async def personal_organization_id(self, user_id: uuid.UUID) -> uuid.UUID:
         personal = [org.id for org in await self.organizations(user_id) if org.is_personal]
@@ -194,7 +224,7 @@ class AuthService:
             raw[:TOKEN_PREFIX_CHARS],
             digest_token(raw),
             expires_at,
-            body.scope.value,
+            body.scope,
             body.project_id,
         )
         return ApiTokenCreated(**ApiTokenOut.model_validate(token).model_dump(), token=raw)

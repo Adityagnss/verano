@@ -14,6 +14,7 @@ from sqlalchemy import or_, select, update
 
 from app.core.database import Database
 from app.core.errors import AuthenticationFailed
+from app.core.permissions import TokenScope
 from app.core.security import Principal, digest_token, utcnow
 from app.modules.auth.models import ApiToken
 
@@ -47,8 +48,5 @@ class ApiTokenAuthenticator:
             )
             await session.commit()
             return Principal(
-                user_id=token.user_id,
-                via_api_token=True,
-                read_only=token.scope == "read",
-                project_id=token.project_id,
+                user_id=token.user_id, via_api_token=True, scope=TokenScope(token.scope), project_id=token.project_id
             )

@@ -6,6 +6,8 @@
 
 import { Ban, CircleStop, Gauge, KeyRound, ReceiptText, ShieldCheck } from "lucide-react"
 
+import Link from "next/link"
+
 import type { ActivityOut } from "@/lib/api/types"
 
 import { errorLabel } from "../domain"
@@ -59,7 +61,11 @@ export function Guardrails({ data }: { data: ActivityOut | undefined }) {
           ))}
         </ul>
         <p className="text-text-muted border-border border-t pt-3 text-xs">
-          A spending limit for the whole workspace isn&apos;t available yet. Put a budget cap on each run.
+          A monthly spending limit for the whole workspace can be set under{" "}
+          <Link href="/workspace" className="underline">
+            Workspace, Spending limit
+          </Link>
+          . Runs stop and say why when it is reached.
         </p>
       </Panel>
       <Panel title="Refused or failed in this period">

@@ -33,7 +33,7 @@ export function useSignIn() {
 export function useSignUp() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (body: Credentials & { name: string }) =>
+    mutationFn: (body: Credentials & { name: string; invite_token?: string | null }) =>
       call(() => api.POST("/api/v1/auth/signup", { body })),
     onSuccess: (session) => {
       queryClient.clear()

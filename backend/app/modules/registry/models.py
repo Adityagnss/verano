@@ -31,6 +31,9 @@ class ProviderCredential(IdMixin, CreatedAtMixin, Base):
     encrypted_key: Mapped[bytes | None] = mapped_column(LargeBinary)
     key_last4: Mapped[str | None] = mapped_column(String(4))
     base_url: Mapped[str | None] = mapped_column(String(500))
+    organization_key_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("organization_keys.id", ondelete="SET NULL"), index=True
+    )
     status: Mapped[CredentialStatus] = mapped_column(str_enum(CredentialStatus, "credential_status"))
     status_message: Mapped[str | None] = mapped_column(Text)
     rpm_limit: Mapped[int | None]
