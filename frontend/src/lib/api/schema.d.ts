@@ -231,6 +231,26 @@ export interface paths {
         patch: operations["change_app_api_v1_projects__project_id__apps__app_id__patch"];
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/apps/{app_id}/conversation-cases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Conversation Cases
+         * @description Write draft conversation cases (persona, goal, opening message, stopping condition) for an app that talks.
+         */
+        post: operations["generate_conversation_cases_api_v1_projects__project_id__apps__app_id__conversation_cases_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/apps/{app_id}/test": {
         parameters: {
             query?: never;
@@ -548,6 +568,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/evaluator-set-versions/{version_id}/default-update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preview Default Update
+         * @description What updating to the current default checks would add, change and (only if asked) remove. Changes nothing.
+         */
+        get: operations["preview_default_update_api_v1_projects__project_id__evaluator_set_versions__version_id__default_update_get"];
+        put?: never;
+        /**
+         * Apply Default Update
+         * @description Apply the update as a new evaluator-set version with a note. Older versions and their runs stay as they were.
+         */
+        post: operations["apply_default_update_api_v1_projects__project_id__evaluator_set_versions__version_id__default_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/experiments": {
         parameters: {
             query?: never;
@@ -577,6 +621,26 @@ export interface paths {
         put?: never;
         /** Estimate Experiment */
         post: operations["estimate_experiment_api_v1_projects__project_id__experiments_estimate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/experiments/run-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Run Options
+         * @description What each chosen model accepts: settings and ranges, reasoning effort, response formats.
+         */
+        get: operations["run_options_api_v1_projects__project_id__experiments_run_options_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1692,6 +1756,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * Action
+         * @enum {string}
+         */
+        Action: "add" | "change" | "same" | "keep" | "remove";
         /** ActivityKey */
         ActivityKey: {
             /** Id */
@@ -2475,6 +2544,18 @@ export interface components {
             /** Failures */
             failures: number;
         };
+        /** CheckLineOut */
+        CheckLineOut: {
+            action: components["schemas"]["Action"];
+            /** Differences */
+            differences: components["schemas"]["DifferenceOut"][];
+            /** Edited */
+            edited: boolean;
+            /** Name */
+            name: string;
+            /** Note */
+            note: string;
+        };
         /** CheckRequest */
         CheckRequest: {
             /** Columns */
@@ -2577,6 +2658,40 @@ export interface components {
              * Format: uuid
              */
             model_profile_id: string;
+        };
+        /** ConversationCasesOut */
+        ConversationCasesOut: {
+            /** Added */
+            added: number;
+            /**
+             * Dataset Version Id
+             * Format: uuid
+             */
+            dataset_version_id: string;
+            /** Dropped Duplicates */
+            dropped_duplicates: number;
+            /** Dropped Invalid */
+            dropped_invalid: number;
+            /** Generator Model */
+            generator_model: string;
+            /** Message */
+            message: string;
+        };
+        /** ConversationCasesRequest */
+        ConversationCasesRequest: {
+            /**
+             * Count
+             * @description How many cases; the default comes from settings.
+             */
+            count?: number | null;
+            /**
+             * Focus
+             * @description What the cases should concentrate on.
+             */
+            focus?: string | null;
+            generator?: components["schemas"]["GeneratorModel"] | null;
+            /** Prompt Version Id */
+            prompt_version_id?: string | null;
         };
         /** CostSummary */
         CostSummary: {
@@ -2709,6 +2824,56 @@ export interface components {
          * @enum {string}
          */
         DatasetVersionStatus: "draft" | "approved";
+        /** DefaultsApplied */
+        DefaultsApplied: {
+            /** Created */
+            created: boolean;
+            /** Note */
+            note: string;
+            version: components["schemas"]["EvaluatorSetVersionOut"];
+        };
+        /**
+         * DefaultsApply
+         * @description Apply the update. `skip` names changes or additions to leave out; `remove` names the checks to remove
+         *     (nothing is removed unless it is named here).
+         */
+        DefaultsApply: {
+            /**
+             * Remove
+             * @default []
+             */
+            remove: string[];
+            /**
+             * Skip
+             * @default []
+             */
+            skip: string[];
+        };
+        /** DefaultsPreviewOut */
+        DefaultsPreviewOut: {
+            /**
+             * Evaluator Set Version Id
+             * Format: uuid
+             */
+            evaluator_set_version_id: string;
+            /** Lines */
+            lines: components["schemas"]["CheckLineOut"][];
+            /** Summary */
+            summary: string;
+            /** Task Type */
+            task_type: string;
+            /** Up To Date */
+            up_to_date: boolean;
+        };
+        /** DifferenceOut */
+        DifferenceOut: {
+            /** After */
+            after: string | null;
+            /** Before */
+            before: string | null;
+            /** Field */
+            field: string;
+        };
         /** EvaluationRunOut */
         EvaluationRunOut: {
             /** Completed At */
@@ -2860,10 +3025,17 @@ export interface components {
             models: components["schemas"]["ModelRun"][];
             /** Name */
             name?: string | null;
+            /**
+             * Param Sets
+             * @default []
+             */
+            param_sets: components["schemas"]["ParamSet"][];
             /** Prompt Id */
             prompt_id?: string | null;
             /** Prompt Version Id */
             prompt_version_id?: string | null;
+            /** @default text */
+            response_format: components["schemas"]["ResponseFormatKind"];
             /** @default all */
             split_scope: components["schemas"]["SplitScope"];
         };
@@ -3801,6 +3973,15 @@ export interface components {
              */
             model_profile_id: string;
             /**
+             * Overrides
+             * @default {}
+             */
+            overrides: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /**
              * Params
              * @default {}
              */
@@ -3812,6 +3993,26 @@ export interface components {
              * @default 1
              */
             runs: number;
+        };
+        /** ModelRunOptions */
+        ModelRunOptions: {
+            /** Display Name */
+            display_name: string;
+            /**
+             * Model Profile Id
+             * Format: uuid
+             */
+            model_profile_id: string;
+            /** Parameters */
+            parameters: {
+                [key: string]: components["schemas"]["ParameterRange"];
+            };
+            /** Reasoning Efforts */
+            reasoning_efforts: string[];
+            /** Response Formats */
+            response_formats: components["schemas"]["ResponseFormatKind"][];
+            /** Seed */
+            seed: boolean;
         };
         /** ModelSelection */
         ModelSelection: {
@@ -3842,10 +4043,14 @@ export interface components {
              * Format: uuid
              */
             model_profile_id: string;
+            /** Param Set */
+            param_set?: string | null;
             /** Params */
             params: {
                 [key: string]: unknown;
             };
+            /** Profile Id */
+            profile_id?: string | null;
             /** Provider */
             provider: string;
             /** Runs */
@@ -3950,6 +4155,21 @@ export interface components {
             items: components["schemas"]["SectionOut"][];
             /** Next Cursor */
             next_cursor: string | null;
+        };
+        /**
+         * ParamSet
+         * @description A named group of settings (for example "creative" and "strict") applied to every model of the run.
+         */
+        ParamSet: {
+            /** Name */
+            name: string;
+            /**
+             * Params
+             * @default {}
+             */
+            params: {
+                [key: string]: unknown;
+            };
         };
         /** ParameterRange */
         ParameterRange: {
@@ -4275,6 +4495,12 @@ export interface components {
             evaluators?: components["schemas"]["EvaluatorConfigIn"][] | null;
             judge?: components["schemas"]["JudgeChoice"] | null;
         };
+        /**
+         * ResponseFormatKind
+         * @description How the answer is asked for: free text, any JSON object, or JSON that fits the task's output schema.
+         * @enum {string}
+         */
+        ResponseFormatKind: "text" | "json_object" | "json_schema";
         /** ResultsOut */
         ResultsOut: {
             evaluation_run: components["schemas"]["EvaluationRunOut"] | null;
@@ -4335,7 +4561,16 @@ export interface components {
              * Format: uuid
              */
             prompt_version_id: string;
+            /** @default text */
+            response_format: components["schemas"]["ResponseFormatKind"];
             split_scope: components["schemas"]["SplitScope"];
+        };
+        /** RunOptionsOut */
+        RunOptionsOut: {
+            /** Max Param Sets */
+            max_param_sets: number;
+            /** Models */
+            models: components["schemas"]["ModelRunOptions"][];
         };
         /**
          * RunStatus
@@ -5478,6 +5713,42 @@ export interface operations {
             };
         };
     };
+    generate_conversation_cases_api_v1_projects__project_id__apps__app_id__conversation_cases_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                app_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationCasesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationCasesOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     try_app_api_v1_projects__project_id__apps__app_id__test_post: {
         parameters: {
             query?: never;
@@ -6250,6 +6521,74 @@ export interface operations {
             };
         };
     };
+    preview_default_update_api_v1_projects__project_id__evaluator_set_versions__version_id__default_update_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DefaultsPreviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_default_update_api_v1_projects__project_id__evaluator_set_versions__version_id__default_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                version_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DefaultsApply"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DefaultsApplied"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_experiments_api_v1_projects__project_id__experiments_get: {
         parameters: {
             query?: {
@@ -6341,6 +6680,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExperimentEstimate"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_options_api_v1_projects__project_id__experiments_run_options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOptionsOut"];
                 };
             };
             /** @description Validation Error */

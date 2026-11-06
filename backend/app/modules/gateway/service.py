@@ -32,6 +32,7 @@ from app.core.security import utcnow
 from app.core.templates import render_system_prompt
 from app.core.tokens import estimate_tokens
 from app.modules.gateway.domain import (
+    PASSTHROUGH_PARAMETERS,
     AdaptivePolicy,
     FilteredParams,
     PendingCall,
@@ -56,7 +57,7 @@ from app.modules.gateway.schemas import (
     Message,
     ProviderResponse,
 )
-from app.modules.registry.schemas import CallTarget
+from app.modules.registry.schemas import CallTarget, ParameterRange
 from app.modules.registry.service import RegistryService
 
 M = TypeVar("M", bound=BaseModel)
@@ -120,7 +121,10 @@ class GatewayService:
     ) -> LLMResult:
         """`complete` for a target resolved beforehand, so no database transaction stays open during the call."""
         json_param = self._registry.catalog.json_mode_parameter
-        filtered = filter_params(params, allowed_parameters(target.profile, json_param))
+        allowed = allowed_parameters(target.profile, json_param)
+        # Settings checked when the experiment was set up (a reasoning effort) pass through, never dropped here.
+        allowed.update({name: ParameterRange() for name in params if name in PASSTHROUGH_PARAMETERS})
+        filtered = filter_params(params, allowed)
         return await self._run(target, messages, filtered, purpose, context)
 
     async def complete_json(

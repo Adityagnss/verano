@@ -75,6 +75,8 @@ class LiteLLMClient:
             "num_retries": 0,
             **params,
         }
+        if "reasoning_effort" in params:
+            kwargs["allowed_openai_params"] = ["reasoning_effort"]
         if target.api_key is not None:
             kwargs["api_key"] = target.api_key.get_secret_value()
         if target.api_base:

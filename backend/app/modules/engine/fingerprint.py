@@ -21,7 +21,8 @@ from pydantic import ValidationError
 
 from app.modules.engine.models import Experiment
 from app.modules.engine.sampling import normalize_params
-from app.modules.engine.schemas import ModelSetting, RunConfiguration
+from app.modules.engine.schemas import ModelSetting, ResponseFormatKind, RunConfiguration
+from app.modules.gateway.domain import PASSTHROUGH_PARAMETERS
 
 VERSION = 1
 SHORT = 8
@@ -33,7 +34,7 @@ def _profiles(snapshot: dict[str, Any]) -> dict[str, dict[str, Any]]:
 
 def _sent(params: dict[str, Any], profile: dict[str, Any] | None) -> dict[str, Any]:
     """The settings that reach the model, in their normal form."""
-    accepted = set(profile["parameters"]) if profile else set(params)
+    accepted = (set(profile["parameters"]) | PASSTHROUGH_PARAMETERS) if profile else set(params)
     kept = {name: value for name, value in params.items() if name in accepted}
     try:
         return normalize_params(kept)
@@ -45,7 +46,7 @@ def model_settings(row: Experiment) -> list[ModelSetting]:
     profiles = _profiles(row.snapshot)
     settings = []
     for entry in row.config.get("models", []):
-        profile = profiles.get(str(entry["model_profile_id"]))
+        profile = profiles.get(str(entry.get("profile_id") or entry["model_profile_id"]))
         params = entry.get("params", {})
         sent = _sent(params, profile)
         settings.append(
@@ -57,6 +58,8 @@ def model_settings(row: Experiment) -> list[ModelSetting]:
                 runs=entry["runs"],
                 params=sent,
                 ignored_params=sorted(set(params) - set(sent)),
+                profile_id=entry.get("profile_id"),
+                param_set=entry.get("param_set"),
             )
         )
     return settings
@@ -72,6 +75,7 @@ def config_hash(row: Experiment) -> str:
         key=_canonical,
     )
     judge = row.config.get("judge")
+    response_format = row.config.get("response_format") or ResponseFormatKind.TEXT.value
     payload = {
         "v": VERSION,
         "prompt": str(row.prompt_version_id),
@@ -81,6 +85,8 @@ def config_hash(row: Experiment) -> str:
         "models": models,
         "judge": judge["model"] if judge else None,
     }
+    if response_format != ResponseFormatKind.TEXT.value:
+        payload["response_format"] = response_format
     return hashlib.sha256(_canonical(payload).encode()).hexdigest()
 
 
@@ -94,6 +100,7 @@ def run_configuration(row: Experiment, prompt_version: int | None = None) -> Run
         evaluator_set_version_id=row.evaluator_set_version_id,
         split_scope=row.split_scope,
         judge_model=judge["model"] if judge else None,
+        response_format=ResponseFormatKind(row.config.get("response_format") or ResponseFormatKind.TEXT.value),
         models=model_settings(row),
         libraries=row.snapshot.get("libraries", {}),
     )

@@ -39,6 +39,7 @@ class SimulatedUser:
             persona=self._inputs.get("persona"),
             goal=self._inputs.get("goal") or NO_GOAL,
             scenario=self._inputs.get("scenario"),
+            stop_when=self._inputs.get("stop_when"),
             done=DONE,
         )
         shown = "\n".join(HISTORY_LINE.format(role=turn["role"], content=turn["content"]) for turn in history)

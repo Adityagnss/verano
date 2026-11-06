@@ -42,6 +42,10 @@ providers:
         unsupported_parameters: [temperature, top_p, presence_penalty, frequency_penalty]
         reason: OpenAI reasoning models accept only their default sampling
     rate_limits: {rpm: 500, tpm: 200000}
+    run_parameters:
+      reasoning_efforts: [minimal, low, medium, high]
+      reasoning_models: ['^(o\d|gpt-5)']
+      json_schema: true
 
   anthropic:
     display_name: Anthropic
@@ -55,6 +59,10 @@ providers:
     unsupported_parameters: [seed, presence_penalty, frequency_penalty]
     extra_parameters: [top_k]
     rate_limits: {rpm: 50, tpm: 40000}
+    run_parameters:
+      reasoning_efforts: [low, medium, high]
+      reasoning_models: ['claude-(3-7|sonnet-4|opus-4|haiku-4|fable|sonnet-5|opus-5)']
+      json_schema: true
 
   gemini:
     display_name: Google Gemini
@@ -68,6 +76,10 @@ providers:
     # music, robotics, transcription, research agents, computer use.
     exclude_id_patterns: [tts, image, nano-banana, lyria, robotics, transcribe, deep-research, computer-use, customtools, antigravity]
     rate_limits: {rpm: 15, tpm: 250000}
+    run_parameters:
+      reasoning_efforts: [low, medium, high]
+      reasoning_models: ['gemini-(2\.5|3)']
+      json_schema: true
 
   groq:
     display_name: Groq
@@ -148,6 +160,8 @@ providers:
     free: true
     extra_parameters: [top_k]
     rate_limits: {rpm: 600, tpm: 10000000}
+    run_parameters:
+      json_schema: true
 
   mock:
     display_name: Mock (development)
@@ -156,3 +170,7 @@ providers:
     requires_key: false
     enabled_setting: mock_provider_enabled
     rate_limits: {rpm: 100000, tpm: 1000000000}
+    run_parameters:
+      reasoning_efforts: [low, medium, high]
+      reasoning_models: ['^thinker']
+      json_schema: true

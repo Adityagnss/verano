@@ -172,8 +172,11 @@ export function toBody(
       model_profile_id: m.id,
       runs: Number(row.runs),
       params: toParams(m, row),
+      overrides: {},
     })),
     budget_cap: budget.trim() ? budget.trim() : null,
     split_scope: "all",
+    param_sets: [],
+    response_format: "text",
   }
 }

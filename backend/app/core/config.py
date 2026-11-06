@@ -158,6 +158,11 @@ class Settings(BaseSettings):
     rate_limit_acquire_timeout_s: float = 120.0
     rate_limit_state_ttl_s: int = 3600
 
+    # Run parameters and conversation cases (ADR 0039)
+    param_sets_max: int = 6
+    conversation_cases_max: int = 20
+    conversation_cases_default: int = 8
+
     @model_validator(mode="after")
     def _production_is_locked_down(self) -> "Settings":
         if self.environment != PRODUCTION:

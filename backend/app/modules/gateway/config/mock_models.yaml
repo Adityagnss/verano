@@ -39,3 +39,16 @@ models:
     latency_ms: 250
     input_price_per_mtok: 0.30
     output_price_per_mtok: 0.90
+  thinker:
+    behavior: echo
+    display_name: Mock Thinker (reasoning)
+    input_price_per_mtok: 0.80
+    output_price_per_mtok: 2.40
+    honour_response_format: true
+    supported_parameters: [max_tokens, seed, stop, response_format]
+  structured:
+    behavior: echo
+    display_name: Mock Structured (JSON mode)
+    input_price_per_mtok: 0.60
+    output_price_per_mtok: 1.80
+    honour_response_format: true

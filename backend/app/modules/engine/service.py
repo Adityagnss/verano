@@ -27,12 +27,15 @@ from app.core.security import Principal, utcnow
 from app.modules.datasets.models import DatasetVersion
 from app.modules.datasets.schemas import ItemFilter, Split
 from app.modules.datasets.service import DatasetService
+from app.modules.engine.columns import FORMAT_PARAM, Column, column_name, expand_columns, request_fields, with_format
 from app.modules.engine.domain import chunks, ensure_transition, plan_matrix
 from app.modules.engine.estimate import estimate_experiment
 from app.modules.engine.fingerprint import run_configuration
 from app.modules.engine.models import Experiment, ExperimentEvent
+from app.modules.engine.options import RunOptionsOut, model_options
 from app.modules.engine.provenance import changed_within, summarize
 from app.modules.engine.repository import EngineRepository
+from app.modules.engine.response_format import resolve_format
 from app.modules.engine.schemas import (
     ExperimentCreate,
     ExperimentEstimate,
@@ -40,7 +43,6 @@ from app.modules.engine.schemas import (
     ExperimentOut,
     ExperimentStatus,
     ModelProgress,
-    ModelRun,
     ModelVersions,
     ReturnedModelOut,
     RunStatus,
@@ -52,11 +54,12 @@ from app.modules.evaluation.domain import judge_calls_per_answer
 from app.modules.evaluation.repository import ScoreRepository
 from app.modules.evaluation.schemas import JudgeChoice
 from app.modules.evaluation.service import EvaluatorSetService
-from app.modules.gateway.domain import filter_params
+from app.modules.gateway.domain import PASSTHROUGH_PARAMETERS, filter_params
 from app.modules.generator.repository import TaskSpecRepository
 from app.modules.projects.schemas import ProjectOut
 from app.modules.prompts.schemas import PromptVersionOut
 from app.modules.prompts.service import PromptService
+from app.modules.registry.plugins.run_parameters import check_run_parameters
 from app.modules.registry.schemas import ModelProfileOut
 from app.modules.registry.service import RegistryService
 
@@ -80,6 +83,8 @@ RERUN_PREFIX = "Re-run: "
 FINISHED = {ExperimentStatus.COMPLETED, ExperimentStatus.CANCELLED, ExperimentStatus.FAILED}
 CANCELLED = "Cancelled by the user."
 LIBRARIES = ("litellm", "deepeval")
+APP_PROVIDER = "app"
+CANNOT_RUN_WITH = "Some models can't run with these settings: {problems}"
 
 
 def experiment_name(profiles: list[ModelProfileOut]) -> str:
@@ -113,6 +118,14 @@ class ExperimentService:
         prompts = PromptService(session, registry, settings)
         return cls(session, settings, registry, prompts, DatasetService(session, settings), container.jobs)
 
+    async def run_options(self, project: ProjectOut) -> RunOptionsOut:
+        """What each chosen model accepts, for the Run step's parameter sets and response format."""
+        catalog = self._registry.catalog
+        return RunOptionsOut(
+            max_param_sets=self._settings.param_sets_max,
+            models=[model_options(catalog, profile) for profile in await self._registry.profiles(project.id)],
+        )
+
     async def estimate(self, project: ProjectOut, body: ExperimentCreate) -> ExperimentEstimate:
         plan = await self._plan_inputs(project.id, body)
         return self._estimate(plan, body)
@@ -140,7 +153,7 @@ class ExperimentService:
             dataset_version_id=plan.version.id,
             evaluator_set_version_id=evaluator_set_version_id,
             split_scope=body.split_scope,
-            config=self._config(body, plan.profiles, plan.judge),
+            config=self._config(body, plan),
             snapshot=self._snapshot(plan.profiles),
             estimate=estimate.model_dump(mode="json"),
             budget_cap=body.budget_cap,
@@ -148,7 +161,7 @@ class ExperimentService:
             created_by=principal.user_id if principal else None,
         )
         await self._repo.add(experiment)
-        await self._plan(experiment, plan.items, plan.profiles, body)
+        await self._plan(experiment, plan.items, plan.profiles, plan.columns)
         await self.transition(experiment, ExperimentStatus.PLANNED)
         await self.transition(experiment, ExperimentStatus.RUNNING, values={"started_at": utcnow()})
         await self._session.commit()
@@ -174,11 +187,8 @@ class ExperimentService:
             dataset_version_id=row.dataset_version_id,
             evaluator_set_version_id=row.evaluator_set_version_id,
             split_scope=row.split_scope,
-            models=[
-                ModelRun(model_profile_id=entry["model_profile_id"], runs=entry["runs"], params=entry["params"])
-                for entry in row.config["models"]
-            ],
             budget_cap=row.budget_cap,
+            **request_fields(row.config),
         )
         return await self.start(
             project.id, principal, body, ExperimentOrigin.MANUAL, prompt_version_id or row.prompt_version_id
@@ -248,8 +258,14 @@ class ExperimentService:
         found = {profile.id: profile for profile in await self._registry.profiles(project_id, wanted)}
         if len(found) != len(set(wanted)):
             raise ValidationFailed(UNKNOWN_MODELS)
-        for model in body.models:
-            filter_params(model.params, found[model.model_profile_id].parameters)
+        columns = expand_columns(
+            body.models,
+            body.param_sets,
+            self._settings.param_sets_max,
+            {profile.id: profile.display_name for profile in found.values()},
+        )
+        for column in columns:
+            filter_params(column.params, found[column.profile_id].parameters)
         chosen = prompt_version_id or body.prompt_version_id or await self._latest_prompt(project_id, body.prompt_id)
         prompt = await self._prompts.get_version(project_id, chosen)
         spec = await self._specs.get(project_id, version.task_spec_id) if version.task_spec_id else None
@@ -262,6 +278,10 @@ class ExperimentService:
                     have=", ".join(cases_have) or "none",
                 )
             )
+        chosen_format = resolve_format(body.response_format, spec.spec.get("output_schema") if spec else None)
+        apps = {profile_id for profile_id, profile in found.items() if profile.provider == APP_PROVIDER}
+        columns = with_format(columns, chosen_format, apps)
+        self._refuse_unsupported(columns, found)
         base_version_id = body.evaluator_set_version_id or version.evaluator_set_version_id
         if base_version_id is None:
             raise ValidationFailed(NO_APPROVED)
@@ -285,6 +305,8 @@ class ExperimentService:
             version=version,
             items=[(item.id, item.inputs) for item in items],
             profiles=[found[m] for m in wanted],
+            columns=columns,
+            response_format=chosen_format,
             prompt=prompt,
             judge=judge,
             judge_profile=judge_profile,
@@ -293,9 +315,21 @@ class ExperimentService:
             stored_judge=evaluators.judge,
         )
 
+    def _refuse_unsupported(self, columns: list[Column], found: dict[uuid.UUID, ModelProfileOut]) -> None:
+        """Settings a model does not accept are refused here, with every reason at once, never dropped later."""
+        problems: list[str] = []
+        for column in columns:
+            for problem in check_run_parameters(self._registry.catalog, found[column.profile_id], column.params):
+                label = f" (set '{column.set_name}')" if column.set_name else ""
+                line = f"{problem}{label}"
+                if line not in problems:
+                    problems.append(line)
+        if problems:
+            raise ValidationFailed(CANNOT_RUN_WITH.format(problems=" ".join(problems)), {"problems": problems})
+
     def _estimate(self, plan: "_PlanInputs", body: ExperimentCreate) -> ExperimentEstimate:
         estimate = estimate_experiment(
-            self._settings, plan.prompt, plan.items, plan.profiles, body, plan.judge_profile, plan.judge_metrics
+            self._settings, plan.prompt, plan.items, plan.profiles, plan.columns, plan.judge_profile, plan.judge_metrics
         )
         judge = plan.judge if plan.judge_metrics else None
         return estimate.model_copy(
@@ -316,13 +350,14 @@ class ExperimentService:
         experiment: Experiment,
         items: list[tuple[uuid.UUID, dict[str, Any]]],
         profiles: list[ModelProfileOut],
-        body: ExperimentCreate,
+        columns: list[Column],
     ) -> None:
         by_id = {profile.id: profile for profile in profiles}
+        profile_of = {column.column_id: by_id[column.profile_id] for column in columns}
         planned = plan_matrix(
             experiment.id,
             [item_id for item_id, _ in items],
-            [(m.model_profile_id, m.runs, m.params) for m in body.models],
+            [(column.column_id, column.runs, column.params) for column in columns],
         )
         await self._repo.insert_runs(
             [
@@ -332,9 +367,9 @@ class ExperimentService:
                     "dataset_item_id": call.dataset_item_id,
                     "prompt_version_id": experiment.prompt_version_id,
                     "model_profile_id": call.model_profile_id,
-                    "credential_id": by_id[call.model_profile_id].credential_id,
-                    "provider": by_id[call.model_profile_id].provider,
-                    "model": by_id[call.model_profile_id].model_name,
+                    "credential_id": profile_of[call.model_profile_id].credential_id,
+                    "provider": profile_of[call.model_profile_id].provider,
+                    "model": profile_of[call.model_profile_id].model_name,
                     "param_set_key": call.param_set_key,
                     "params": call.params,
                     "run_number": call.run_number,
@@ -345,22 +380,34 @@ class ExperimentService:
         )
 
     @staticmethod
-    def _config(
-        body: ExperimentCreate, profiles: list[ModelProfileOut], judge: dict[str, Any] | None
-    ) -> dict[str, Any]:
-        by_id = {profile.id: profile for profile in profiles}
-        return {
-            "models": [
+    def _config(body: ExperimentCreate, plan: "_PlanInputs") -> dict[str, Any]:
+        """What the run was set up with. A column's `model_profile_id` is its column id (the model's own id unless the
+        run compares parameter sets); `profile_id` is always the model, `params` are the sampling settings that were
+        asked for (the response format is kept apart), `ignored_params` the ones the model does not take."""
+        by_id = {profile.id: profile for profile in plan.profiles}
+        entries = []
+        for column in plan.columns:
+            profile = by_id[column.profile_id]
+            params = {name: value for name, value in column.params.items() if name != FORMAT_PARAM}
+            accepted = set(profile.parameters) | PASSTHROUGH_PARAMETERS
+            entries.append(
                 {
-                    "model_profile_id": str(model.model_profile_id),
-                    "display_name": by_id[model.model_profile_id].display_name,
-                    "runs": model.runs,
-                    "params": model.params,
-                    "ignored_params": sorted(set(model.params) - set(by_id[model.model_profile_id].parameters)),
+                    "model_profile_id": str(column.column_id),
+                    "profile_id": str(column.profile_id),
+                    "display_name": column_name(profile.display_name, column.set_name),
+                    "param_set": column.set_name,
+                    "runs": column.runs,
+                    "params": params,
+                    "base_params": column.base_params,
+                    "overrides": column.overrides,
+                    "ignored_params": sorted(set(params) - accepted),
                 }
-                for model in body.models
-            ],
-            "judge": judge,
+            )
+        return {
+            "models": entries,
+            "param_sets": [{"name": s.name, "params": s.params} for s in body.param_sets],
+            "response_format": body.response_format.value,
+            "judge": plan.judge,
         }
 
     @staticmethod
@@ -426,6 +473,8 @@ class _PlanInputs:
     version: DatasetVersion
     items: list[tuple[uuid.UUID, dict[str, Any]]]
     profiles: list[ModelProfileOut]
+    columns: list[Column]
+    response_format: dict[str, Any] | None
     prompt: PromptVersionOut
     judge: dict[str, Any] | None
     judge_profile: ModelProfileOut | None

@@ -37,6 +37,11 @@ class FilteredParams:
     dropped: list[str]
 
 
+# Settings sent on as given although a model's profile does not list them: they were checked, with a plain message
+# when refused, as the experiment was set up (ADR 0039).
+PASSTHROUGH_PARAMETERS = frozenset({"reasoning_effort"})
+
+
 def allowed_parameters(profile: ModelProfileOut, json_mode_parameter: str) -> dict[str, ParameterRange]:
     allowed = dict(profile.parameters)
     if profile.supports_json_mode:

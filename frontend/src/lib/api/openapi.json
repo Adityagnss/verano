@@ -1,6 +1,11 @@
 {
   "components": {
     "schemas": {
+      "Action": {
+        "enum": ["add", "change", "same", "keep", "remove"],
+        "title": "Action",
+        "type": "string"
+      },
       "ActivityKey": {
         "properties": {
           "id": {
@@ -2384,6 +2389,35 @@
         "title": "CheckCount",
         "type": "object"
       },
+      "CheckLineOut": {
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/Action"
+          },
+          "differences": {
+            "items": {
+              "$ref": "#/components/schemas/DifferenceOut"
+            },
+            "title": "Differences",
+            "type": "array"
+          },
+          "edited": {
+            "title": "Edited",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": ["name", "action", "edited", "differences", "note"],
+        "title": "CheckLineOut",
+        "type": "object"
+      },
       "CheckRequest": {
         "properties": {
           "columns": {
@@ -2724,6 +2758,99 @@
         },
         "required": ["model_profile_id", "display_name", "context_window", "estimated_tokens", "fits"],
         "title": "ContextFit",
+        "type": "object"
+      },
+      "ConversationCasesOut": {
+        "properties": {
+          "added": {
+            "title": "Added",
+            "type": "integer"
+          },
+          "dataset_version_id": {
+            "format": "uuid",
+            "title": "Dataset Version Id",
+            "type": "string"
+          },
+          "dropped_duplicates": {
+            "title": "Dropped Duplicates",
+            "type": "integer"
+          },
+          "dropped_invalid": {
+            "title": "Dropped Invalid",
+            "type": "integer"
+          },
+          "generator_model": {
+            "title": "Generator Model",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dataset_version_id",
+          "added",
+          "dropped_duplicates",
+          "dropped_invalid",
+          "generator_model",
+          "message"
+        ],
+        "title": "ConversationCasesOut",
+        "type": "object"
+      },
+      "ConversationCasesRequest": {
+        "properties": {
+          "count": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How many cases; the default comes from settings.",
+            "title": "Count"
+          },
+          "focus": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What the cases should concentrate on.",
+            "title": "Focus"
+          },
+          "generator": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/GeneratorModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "prompt_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version Id"
+          }
+        },
+        "title": "ConversationCasesRequest",
         "type": "object"
       },
       "CostSummary": {
@@ -3140,6 +3267,113 @@
         "title": "DatasetVersionStatus",
         "type": "string"
       },
+      "DefaultsApplied": {
+        "properties": {
+          "created": {
+            "title": "Created",
+            "type": "boolean"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "version": {
+            "$ref": "#/components/schemas/EvaluatorSetVersionOut"
+          }
+        },
+        "required": ["version", "note", "created"],
+        "title": "DefaultsApplied",
+        "type": "object"
+      },
+      "DefaultsApply": {
+        "description": "Apply the update. `skip` names changes or additions to leave out; `remove` names the checks to remove\n(nothing is removed unless it is named here).",
+        "properties": {
+          "remove": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Remove",
+            "type": "array"
+          },
+          "skip": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Skip",
+            "type": "array"
+          }
+        },
+        "title": "DefaultsApply",
+        "type": "object"
+      },
+      "DefaultsPreviewOut": {
+        "properties": {
+          "evaluator_set_version_id": {
+            "format": "uuid",
+            "title": "Evaluator Set Version Id",
+            "type": "string"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/CheckLineOut"
+            },
+            "title": "Lines",
+            "type": "array"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "task_type": {
+            "title": "Task Type",
+            "type": "string"
+          },
+          "up_to_date": {
+            "title": "Up To Date",
+            "type": "boolean"
+          }
+        },
+        "required": ["evaluator_set_version_id", "task_type", "up_to_date", "summary", "lines"],
+        "title": "DefaultsPreviewOut",
+        "type": "object"
+      },
+      "DifferenceOut": {
+        "properties": {
+          "after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "After"
+          },
+          "before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before"
+          },
+          "field": {
+            "title": "Field",
+            "type": "string"
+          }
+        },
+        "required": ["field", "before", "after"],
+        "title": "DifferenceOut",
+        "type": "object"
+      },
       "EvaluationRunOut": {
         "properties": {
           "completed_at": {
@@ -3489,6 +3723,14 @@
             ],
             "title": "Name"
           },
+          "param_sets": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ParamSet"
+            },
+            "title": "Param Sets",
+            "type": "array"
+          },
           "prompt_id": {
             "anyOf": [
               {
@@ -3512,6 +3754,10 @@
               }
             ],
             "title": "Prompt Version Id"
+          },
+          "response_format": {
+            "$ref": "#/components/schemas/ResponseFormatKind",
+            "default": "text"
           },
           "split_scope": {
             "$ref": "#/components/schemas/SplitScope",
@@ -6122,6 +6368,15 @@
             "title": "Model Profile Id",
             "type": "string"
           },
+          "overrides": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "default": {},
+            "title": "Overrides",
+            "type": "object"
+          },
           "params": {
             "additionalProperties": true,
             "default": {},
@@ -6138,6 +6393,54 @@
         },
         "required": ["model_profile_id"],
         "title": "ModelRun",
+        "type": "object"
+      },
+      "ModelRunOptions": {
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "model_profile_id": {
+            "format": "uuid",
+            "title": "Model Profile Id",
+            "type": "string"
+          },
+          "parameters": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ParameterRange"
+            },
+            "title": "Parameters",
+            "type": "object"
+          },
+          "reasoning_efforts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasoning Efforts",
+            "type": "array"
+          },
+          "response_formats": {
+            "items": {
+              "$ref": "#/components/schemas/ResponseFormatKind"
+            },
+            "title": "Response Formats",
+            "type": "array"
+          },
+          "seed": {
+            "title": "Seed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "model_profile_id",
+          "display_name",
+          "parameters",
+          "seed",
+          "reasoning_efforts",
+          "response_formats"
+        ],
+        "title": "ModelRunOptions",
         "type": "object"
       },
       "ModelSelection": {
@@ -6187,10 +6490,33 @@
             "title": "Model Profile Id",
             "type": "string"
           },
+          "param_set": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Param Set"
+          },
           "params": {
             "additionalProperties": true,
             "title": "Params",
             "type": "object"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
           },
           "provider": {
             "title": "Provider",
@@ -6496,6 +6822,26 @@
         },
         "required": ["items", "next_cursor"],
         "title": "Page[SectionOut]",
+        "type": "object"
+      },
+      "ParamSet": {
+        "description": "A named group of settings (for example \"creative\" and \"strict\") applied to every model of the run.",
+        "properties": {
+          "name": {
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "params": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Params",
+            "type": "object"
+          }
+        },
+        "required": ["name"],
+        "title": "ParamSet",
         "type": "object"
       },
       "ParameterRange": {
@@ -7306,6 +7652,12 @@
         "title": "RescoreRequest",
         "type": "object"
       },
+      "ResponseFormatKind": {
+        "description": "How the answer is asked for: free text, any JSON object, or JSON that fits the task's output schema.",
+        "enum": ["text", "json_object", "json_schema"],
+        "title": "ResponseFormatKind",
+        "type": "string"
+      },
       "ResultsOut": {
         "properties": {
           "evaluation_run": {
@@ -7435,6 +7787,10 @@
             "title": "Prompt Version Id",
             "type": "string"
           },
+          "response_format": {
+            "$ref": "#/components/schemas/ResponseFormatKind",
+            "default": "text"
+          },
           "split_scope": {
             "$ref": "#/components/schemas/SplitScope"
           }
@@ -7451,6 +7807,24 @@
           "libraries"
         ],
         "title": "RunConfiguration",
+        "type": "object"
+      },
+      "RunOptionsOut": {
+        "properties": {
+          "max_param_sets": {
+            "title": "Max Param Sets",
+            "type": "integer"
+          },
+          "models": {
+            "items": {
+              "$ref": "#/components/schemas/ModelRunOptions"
+            },
+            "title": "Models",
+            "type": "array"
+          }
+        },
+        "required": ["max_param_sets", "models"],
+        "title": "RunOptionsOut",
         "type": "object"
       },
       "RunStatus": {
@@ -9770,6 +10144,73 @@
         "tags": ["apps"]
       }
     },
+    "/api/v1/projects/{project_id}/apps/{app_id}/conversation-cases": {
+      "post": {
+        "description": "Write draft conversation cases (persona, goal, opening message, stopping condition) for an app that talks.",
+        "operationId": "generate_conversation_cases_api_v1_projects__project_id__apps__app_id__conversation_cases_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "app_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "App Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationCasesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationCasesOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Generate Conversation Cases",
+        "tags": ["apps"]
+      }
+    },
     "/api/v1/projects/{project_id}/apps/{app_id}/test": {
       "post": {
         "operationId": "try_app_api_v1_projects__project_id__apps__app_id__test_post",
@@ -11200,6 +11641,128 @@
         "tags": ["evaluators"]
       }
     },
+    "/api/v1/projects/{project_id}/evaluator-set-versions/{version_id}/default-update": {
+      "get": {
+        "description": "What updating to the current default checks would add, change and (only if asked) remove. Changes nothing.",
+        "operationId": "preview_default_update_api_v1_projects__project_id__evaluator_set_versions__version_id__default_update_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultsPreviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Preview Default Update",
+        "tags": ["generator", "evaluators"]
+      },
+      "post": {
+        "description": "Apply the update as a new evaluator-set version with a note. Older versions and their runs stay as they were.",
+        "operationId": "apply_default_update_api_v1_projects__project_id__evaluator_set_versions__version_id__default_update_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DefaultsApply"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DefaultsApplied"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Apply Default Update",
+        "tags": ["generator", "evaluators"]
+      }
+    },
     "/api/v1/projects/{project_id}/experiments": {
       "get": {
         "operationId": "list_experiments_api_v1_projects__project_id__experiments_get",
@@ -11386,6 +11949,53 @@
           }
         ],
         "summary": "Estimate Experiment",
+        "tags": ["experiments"]
+      }
+    },
+    "/api/v1/projects/{project_id}/experiments/run-options": {
+      "get": {
+        "description": "What each chosen model accepts: settings and ranges, reasoning effort, response formats.",
+        "operationId": "run_options_api_v1_projects__project_id__experiments_run_options_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOptionsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Run Options",
         "tags": ["experiments"]
       }
     },
