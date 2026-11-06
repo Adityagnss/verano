@@ -201,8 +201,20 @@ worked through in order:
    checks that need people are open, and the task-type, judge and Improve checks are left to
    users after release (decision 70)
 
-After V1: connecting an application that runs outside Verano (RAG, agents, tools), email
-verification at sign-up, hosted CI. See the [plan](docs/DEVELOPMENT.md).
+**What is planned next** (nothing below is built yet; the full plan is in the
+[backlog](docs/BACKLOG.md) and [Part I](docs/DEVELOPMENT.md)): five phases.
+
+| Phase | Name | What it adds |
+|---|---|---|
+| 6 | Proof and trust | Improve shown lifting a weak prompt on a real model; people label answers and Verano shows how often the judge agrees with them; more checks and tested judges |
+| 7 | Real apps | Test your own application over HTTP (RAG, tools, conversations), with several inputs per test case |
+| 8 | The production loop | Serve the winning prompt to your app, a GitHub Action and the CLI on PyPI, real traffic as test cases, teams |
+| 9 | Security, depth and hardening | A small security pack, several Improve rounds that still prove the result, load and failure tests |
+| 10 | Open-source launch | Public repository, website and documentation on free GitHub services |
+
+The checks that need real models (Improve, the judge, the seven task types) are part of Phase 6;
+they replace the earlier plan to leave them to users after release. Other projects are read for
+ideas only and nothing is copied from them ([references](docs/REFERENCES.md)).
 
 ## License
 
