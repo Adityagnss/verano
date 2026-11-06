@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from verano.scan import broad_scan, walk
+from verano.scan import broad_scan, prompt_files, walk
 from verano.scan.findings import ScanResult
 from verano.scan.python_scan import read_python, scan_source
 from verano.scan.ts_scan import SUFFIXES as JS_SUFFIXES
@@ -70,5 +70,11 @@ def scan(root: Path, include_tests: bool = False) -> ScanResult:
         result.by_language[language] = result.by_language.get(language, 0) + 1
         result.findings += findings
         result.other += other
+    found, skipped, read = prompt_files.scan_prompt_files(root)
+    if read:
+        result.files_scanned += read
+        result.by_language["prompt files"] = read
+        result.findings += found
+    result.files_skipped += skipped
     result.data_files = find_data_files(root)
     return result

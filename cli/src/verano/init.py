@@ -108,7 +108,7 @@ def run(path: Path, output: Path | None, yes: bool, force: bool, print_only: boo
         ui.info("Nothing was ticked, so no file was written.")
         return
     skipped = [e for e in entries if e not in chosen]
-    text = render(re.sub(r"[^\w .-]+", "-", root.name).strip("-") or "project", chosen, skipped)
+    text = render(re.sub(r"[^\w .-]+", "-", root.name).strip("-") or "project", chosen, skipped, result.other)
     if print_only:
         typer.echo(text, nl=False)
         return

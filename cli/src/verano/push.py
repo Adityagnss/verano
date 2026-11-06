@@ -23,6 +23,7 @@ from verano.loader import Loaded, ResolvedPrompt, find_file, load, normalize_tex
 from verano.spec import ENV_REFERENCE
 
 MANAGED_BY = "verano push"
+KEY_TAIL = 4
 
 
 @dataclass
@@ -69,7 +70,9 @@ class Pusher:
         env: Mapping[str, str] | None = None,
         with_data: bool = True,
         replace_draft: bool = False,
+        label: str | None = None,
     ) -> None:
+        self.label = label
         self.api = api
         self.loaded = loaded
         self.dry = dry_run
@@ -117,6 +120,8 @@ class Pusher:
         self._keys(project_id, outcome)
         judge = self._models(project_id, prompt, outcome)
         version = self._prompt(project_id, prompt, outcome)
+        if self.label:
+            self._set_label(project_id, prompt, version, outcome)
         if self.with_data:
             sync = DataSync(
                 self.api,
@@ -162,7 +167,8 @@ class Pusher:
         keys = self.loaded.file.keys
         if not keys:
             return
-        existing = {c["provider"] for c in self.api.get(f"/projects/{project_id}/credentials")} if project_id else set()
+        stored = self.api.get(f"/projects/{project_id}/credentials") if project_id else []
+        existing = {c["provider"]: c for c in stored}
         for provider, reference in keys.items():
             if provider not in self._provider_names():
                 raise CliError(
@@ -170,7 +176,7 @@ class Pusher:
                     "Providers: " + ", ".join(sorted(self._provider_names())),
                 )
             if provider in existing:
-                self._say(outcome, f"{provider}: key already set")
+                self._rotate_if_changed(project_id, provider, reference, existing[provider], outcome)
                 continue
             if self.dry:
                 source = "(no key needed)" if reference == "none" else f"key from {reference}"
@@ -182,6 +188,48 @@ class Pusher:
             tail = f" (ends …{created['key_last4']})" if created.get("key_last4") else ""
             what = "key added" if secret else "added (no key needed)"
             self._say(outcome, f"{provider}: {what}{tail}, {created['model_count']} models found")
+
+    def _rotate_if_changed(
+        self, project_id: str | None, provider: str, reference: str, stored: dict[str, Any], outcome: Outcome
+    ) -> None:
+        """A key whose last four characters differ from the stored one has been rotated: replace it in place, so
+        the models and settings that use it carry on."""
+        match = ENV_REFERENCE.match(reference)
+        secret = self.env.get(match.group(1), "").strip() if match and match.group(1) else ""
+        if not secret or stored.get("key_last4") in (None, secret[-KEY_TAIL:]):
+            self._say(outcome, f"{provider}: key already set")
+            return
+        if self.dry:
+            self._say(outcome, "", would=f"replace the {provider} key (the key in {reference} is a new one)")
+            return
+        self.api.request("PATCH", f"/projects/{project_id}/credentials/{stored['id']}", json={"api_key": secret})
+        self._say(outcome, f"{provider}: key replaced (now ends …{secret[-KEY_TAIL:]}); models and settings kept")
+
+    def _set_label(
+        self, project_id: str | None, prompt: ResolvedPrompt, version: dict[str, Any] | None, outcome: Outcome
+    ) -> None:
+        """Points the label at the version that was just pushed, so an app fetching it gets this text."""
+        if self.dry or project_id is None or version is None:
+            self._say(outcome, "", would=f"point the label {self.label} at the pushed version")
+            return
+        found = next(
+            (p for p in self.api.pages(f"/projects/{project_id}/prompts") if p["name"] == prompt.entry.name), None
+        )
+        if found is None:
+            return
+        self.api.put(f"/projects/{project_id}/prompts/{found['id']}/labels/{self.label}", {"version_id": version["id"]})
+        self._say(outcome, f"label {self.label} now points at version {version['version']}")
+
+    def _report_removed(self, existing: list[dict[str, Any]], prompt: ResolvedPrompt, outcome: Outcome) -> None:
+        group = prompt.project_name
+        wanted = {p.entry.name for p in self.loaded.prompts if p.project_name == group}
+        gone = removed_prompts(existing, wanted)
+        if gone:
+            self._say(
+                outcome,
+                f"no longer in verano.yaml: {', '.join(gone)}. Verano keeps them (and their labels and history); "
+                "an app that still fetches them keeps working.",
+            )
 
     def _models(self, project_id: str | None, prompt: ResolvedPrompt, outcome: Outcome) -> dict[str, Any] | None:
         """Selects the listed models. Returns the judge's profile, if the entry names a judge."""
@@ -226,6 +274,7 @@ class Pusher:
         others = [p["name"] for p in existing if p["name"] != entry.name]
         if others and mine is None and not entry.group:
             ui.warn(f"This project also has prompts made elsewhere ({', '.join(others)}). Verano tests the newest one.")
+        self._report_removed(existing, prompt, outcome)
         if mine is None:
             if self.dry:
                 self._say(outcome, "", would="create the prompt (version 1)")
@@ -259,6 +308,15 @@ class Pusher:
         return result
 
 
+def removed_prompts(existing: list[dict[str, Any]], wanted: set[str]) -> list[str]:
+    """Prompts that an earlier push made in this project and the file no longer lists."""
+    return sorted(
+        p["name"]
+        for p in existing
+        if p["name"] not in wanted and str(p["latest_version"].get("change_reason") or "").startswith(MANAGED_BY)
+    )
+
+
 def summarize(outcomes: list[Outcome], dry_run: bool) -> None:
     failed = [o for o in outcomes if o.error]
     ui.info("")
@@ -273,7 +331,14 @@ def summarize(outcomes: list[Outcome], dry_run: bool) -> None:
     ui.ok(verb)
 
 
-def command(file: Path | None, only: str | None, dry_run: bool, with_data: bool, replace_draft: bool) -> None:
+def command(
+    file: Path | None,
+    only: str | None,
+    dry_run: bool,
+    with_data: bool,
+    replace_draft: bool,
+    label: str | None = None,
+) -> None:
     loaded = load(file or find_file())
-    pusher = Pusher(auth.client(), loaded, dry_run, with_data=with_data, replace_draft=replace_draft)
+    pusher = Pusher(auth.client(), loaded, dry_run, with_data=with_data, replace_draft=replace_draft, label=label)
     summarize(pusher.run(only), dry_run)

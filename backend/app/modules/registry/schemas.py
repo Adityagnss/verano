@@ -172,6 +172,7 @@ class CredentialCreate(BaseModel):
 
 
 class CredentialUpdate(BaseModel):
+    api_key: SecretStr | None = Field(default=None, description="A new key that replaces the stored one (rotation).")
     label: str | None = Field(default=None, max_length=120)
     rpm_limit: int | None = Field(default=None, gt=0)
     tpm_limit: int | None = Field(default=None, gt=0)

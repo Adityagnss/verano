@@ -15,6 +15,8 @@ from typing import Any
 
 from verano.spec import Gate
 
+Baseline = dict[str, dict[str, float | None]]  # per model: quality, cost_per_call, latency_ms
+
 
 @dataclass(frozen=True)
 class Verdict:
@@ -30,12 +32,17 @@ def percent(value: float) -> str:
     return f"{value * 100:.0f}%"
 
 
+def money(value: float) -> str:
+    return f"${value:.4f}" if value < 0.01 else f"${value:.2f}"
+
+
 def evaluate(
     gate: Gate,
     models: list[dict[str, Any]],
     finished: bool,
     stop_reason: str | None,
     baseline: dict[str, float] | None,
+    baseline_metrics: Baseline | None = None,
 ) -> Verdict:
     failures: list[str] = []
     notes: list[str] = []
@@ -66,4 +73,33 @@ def evaluate(
                     f"{name}: quality fell {points:.0f} points ({percent(before)} → {percent(quality)}); "
                     f"at most {gate.max_drop * 100:.0f} allowed."
                 )
+        _check_cost_and_speed(gate, model, baseline_metrics, failures, notes)
     return Verdict(failures, notes)
+
+
+def _check_cost_and_speed(
+    gate: Gate, model: dict[str, Any], baseline: Baseline | None, failures: list[str], notes: list[str]
+) -> None:
+    name = model["model"]
+    cost, latency = model.get("cost_per_call"), model.get("latency_ms")
+    earlier = (baseline or {}).get(name) or {}
+    if gate.max_cost_per_call is not None and cost is not None and float(cost) > gate.max_cost_per_call + 1e-12:
+        failures.append(f"{name}: costs {money(float(cost))} a call, above the limit {money(gate.max_cost_per_call)}.")
+    if gate.max_latency_ms is not None and latency is not None and float(latency) > gate.max_latency_ms:
+        failures.append(
+            f"{name}: answers take {float(latency) / 1000:.1f}s on average, above the limit "
+            f"{gate.max_latency_ms / 1000:.1f}s."
+        )
+    for limit, now, before, what in (
+        (gate.max_cost_increase, cost, earlier.get("cost_per_call"), "costs"),
+        (gate.max_slowdown, latency, earlier.get("latency_ms"), "takes"),
+    ):
+        if limit is None or now is None:
+            continue
+        if before is None or float(before) <= 0:
+            notes.append(f"{name}: no earlier run to compare with, so what it {what} was not checked.")
+        elif float(now) > float(before) * (1 + limit) + 1e-12:
+            grew = (float(now) / float(before) - 1) * 100
+            failures.append(
+                f"{name}: what it {what} grew {grew:.0f}% against the baseline; at most {limit * 100:.0f}% allowed."
+            )

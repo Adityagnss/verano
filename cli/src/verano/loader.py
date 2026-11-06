@@ -165,6 +165,8 @@ KNOWN_KEYS = {
     "allowed_outputs", "output_schema", "constraints", "risks", "golden", "columns", "inputs", "expected_output",
     "rubric", "category", "tags", "input_file", "ignored", "temperature", "top_p", "top_k", "max_tokens", "seed",
     "presence_penalty", "frequency_penalty", "stop", "gate", "min_quality", "min_pass_rate", "max_drop",
+    "retrieval", "tools", "chunk_size", "chunk_overlap", "description",
+    "max_cost_per_call", "max_latency_ms", "max_cost_increase", "max_slowdown", "baseline",
 }  # fmt: skip
 
 
