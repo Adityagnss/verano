@@ -66,7 +66,7 @@ async def test_an_experiment_runs_every_call_once_and_records_it(
     assert replay["id"] != experiment["id"]
 
 
-async def test_the_budget_cap_stops_the_run_and_keeps_finished_results(
+async def test_the_budget_cap_pauses_the_run_keeps_finished_results_and_resume_repeats_no_call(
     client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue
 ) -> None:
     models = await approved_project(client, session, jobs)
@@ -74,12 +74,24 @@ async def test_the_budget_cap_stops_the_run_and_keeps_finished_results(
     experiment = await start(client, session, body)
     await jobs.drain()
     done = (await client.get(url(session, f"/{experiment['id']}"), headers=session.headers)).json()
-    assert done["status"] == "cancelled"
-    assert "Budget cap" in done["stop_reason"]
+    assert done["status"] == "paused"
+    assert "budget cap of $0.0000001" in done["stop_reason"]
     progress = done["progress"][0]
     assert progress["succeeded"] >= 1
-    assert progress["skipped"] >= 1
-    assert progress["succeeded"] + progress["skipped"] + progress["failed"] == 15
+    assert progress["total"] - progress["succeeded"] - progress["failed"] >= 1  # the rest waits, none is skipped
+    assert progress["skipped"] == 0
+    finished = progress["succeeded"]
+
+    resumed = await client.post(
+        url(session, f"/{experiment['id']}/resume"), json={"budget_cap": "50"}, headers=session.headers
+    )
+    assert resumed.status_code == 200, resumed.text
+    await jobs.drain()
+    after = (await client.get(url(session, f"/{experiment['id']}"), headers=session.headers)).json()
+    assert after["status"] in {"evaluating", "completed", "scoring"} or after["status"] != "paused"
+    total = after["progress"][0]
+    assert total["succeeded"] + total["failed"] == 15
+    assert total["succeeded"] >= finished
 
 
 async def test_cancel_skips_pending_calls(client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue) -> None:

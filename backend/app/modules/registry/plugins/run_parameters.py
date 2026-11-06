@@ -1,7 +1,7 @@
 """
 Provider-specific run parameters (ADR 0039): which settings a model really accepts beyond plain sampling.
 
-Some settings only exist for some providers or models: a reasoning effort, a seed, top-k, a JSON response format.
+Some settings only exist for some providers or models: a reasoning effort, top-k, a JSON response format.
 Sending one to a model that does not take it would either fail late or be ignored without a word, so each is checked
 when the experiment is set up and refused with a plain message. Rules are plugins registered by the provider's
 `client` name (a new provider with its own quirks adds one class here and names it); what a provider accepts is data
@@ -20,11 +20,10 @@ JSON_OBJECT = "json_object"
 JSON_SCHEMA = "json_schema"
 # Settings checked here. Plain sampling settings (temperature, top_p, max_tokens, stop, penalties) keep their
 # older behaviour: a setting the model ignores is listed as ignored, with its range checked.
-PROVIDER_SPECIFIC = ("seed", "top_k", REASONING, FORMAT)
+PROVIDER_SPECIFIC = ("top_k", REASONING, FORMAT)
 # Settings that reach LiteLLM although a model's profile does not list them (the profile lists plain sampling).
 PASSTHROUGH = frozenset({REASONING})
 
-NO_SEED = "{model} does not accept a seed, so its answers cannot be repeated exactly. Remove the seed for this model."
 NO_TOP_K = "{model} does not accept top-k. Remove it for this model."
 NOT_REASONING = (
     "{model} is not a reasoning model, so it has no reasoning effort. "
@@ -58,8 +57,6 @@ class DefaultRules:
     def problems(self, profile: ModelProfileOut, spec: RunParameterSpec, params: dict[str, Any]) -> list[str]:
         found: list[str] = []
         model = profile.display_name
-        if params.get("seed") is not None and "seed" not in profile.parameters:
-            found.append(NO_SEED.format(model=model))
         if params.get("top_k") is not None and "top_k" not in profile.parameters:
             found.append(NO_TOP_K.format(model=model))
         if params.get(REASONING) is not None:

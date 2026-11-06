@@ -16,6 +16,8 @@ def test_the_candidate_request_includes_the_technique_notes_and_keeps_its_marker
         angle="",
         groups=[],
         examples=[],
+        focus="quality",
+        history=[],
     )
     assert "CANDIDATES_REQUEST" in text
     assert "The one habit: measure first" in text

@@ -40,7 +40,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
-        "ix_review_assignments_experiment_id_test_case_run_id_assignee_user_id",
+        "uq_review_assignments_run_assignee",
         "review_assignments",
         ["experiment_id", "test_case_run_id", "assignee_user_id"],
         unique=True,

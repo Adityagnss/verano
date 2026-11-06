@@ -191,7 +191,7 @@ def test_a_token_for_ci_is_printed_alone_on_standard_output(server: FakeVerano, 
     assert result.code == 0
     assert result.out == "vrn_secret1\n"
     assert "VERANO_API_TOKEN" in result.err
-    assert server.bodies[1] == {"name": "ci", "expires_in_days": None}
+    assert server.bodies[1] == {"name": "ci", "expires_in_days": None, "scope": "write"}
     assert not credentials_path().exists()
 
 
@@ -222,7 +222,7 @@ def test_listing_and_revoking_tokens(server: FakeVerano, run: Run) -> None:
     }
     listed = run("token", "list")
     assert listed.code == 0
-    assert "tok-9  vrn_zzzz…  ci  (expires 2027-01-01, never used)" in listed.out
+    assert "tok-9  vrn_zzzz…  ci  (full access, expires 2027-01-01, never used)" in listed.out
     assert run("token", "revoke", "tok-9").code == 0
     missing = run("token", "revoke", "tok-9")
     assert missing.code == 1

@@ -151,7 +151,7 @@ def create_token(
     ui.info(f"Signing in to {target} to create the token")
     anonymous, authed, _ = _session(target, email, password_stdin)
     try:
-        body: dict[str, Any] = {"name": name, "expires_in_days": days, "scope": "read" if read_only else "full"}
+        body: dict[str, Any] = {"name": name, "expires_in_days": days, "scope": "read" if read_only else "write"}
         if project:
             matches = [p for p in authed.pages("/projects") if p["name"] == project]
             if len(matches) != 1:

@@ -55,9 +55,9 @@ from app.modules.registry.service import RegistryService
 
 SCORE_JOB = "evaluation.score_experiment"
 CAP_PAUSED = (
-    "Paused: the budget cap of ${cap} was reached. Raise the cap and press Resume to carry on where it stopped."
+    "Paused: the budget cap of ${cap:f} was reached. Raise the cap and press Resume to carry on where it stopped."
 )
-BUDGET_REACHED = "Budget cap of ${cap} reached; the remaining calls were skipped."
+BUDGET_REACHED = "Budget cap of ${cap:f} reached; the remaining calls were skipped."
 INTERNAL = "internal_error"
 APP_PROVIDER = "app"
 NO_SIMULATOR = "This app holds conversations, so a judge model must be chosen to play the user."

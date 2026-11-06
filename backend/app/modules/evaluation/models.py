@@ -143,7 +143,9 @@ class ReviewAssignment(IdMixin, CreatedAtMixin, Base):
             ["test_case_runs.experiment_id", "test_case_runs.id"],
             ondelete="CASCADE",
         ),
-        Index(None, "experiment_id", "test_case_run_id", "assignee_user_id", unique=True),
+        Index(
+            "uq_review_assignments_run_assignee", "experiment_id", "test_case_run_id", "assignee_user_id", unique=True
+        ),
         Index(None, "project_id", "assignee_user_id", "id"),
         Index(None, "experiment_id", "id"),
     )

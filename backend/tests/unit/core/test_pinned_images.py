@@ -14,7 +14,7 @@ from tests.helpers import COMPOSE_FILE, ROOT, compose_image
 pytestmark = pytest.mark.unit
 
 CI_FILE = ROOT.parent / ".github/workflows/ci.yml"
-EXACT_VERSION = re.compile(r":\d+\.\d+\.\d+|:\d+\.\d+-")
+EXACT_VERSION = re.compile(r":v?\d+\.\d+\.\d+|:\d+\.\d+-")
 LOCALLY_BUILT = re.compile(r"^verano-[a-z]+:dev$")
 
 

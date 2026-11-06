@@ -76,6 +76,9 @@ def settings(infra: Infra, tmp_path_factory: pytest.TempPathFactory) -> Settings
         auth_rate_limit_per_ip=10,
         auth_rate_limit_per_email=4,
         app_allowed_hosts=["127.0.0.1"],  # the fake apps of the tests run on this machine
+        improve_rounds=1,  # the multi-round search has its own tests; the older ones expect one round of three
+        improve_population=3,
+        improve_quick_check=False,
     )
 
 

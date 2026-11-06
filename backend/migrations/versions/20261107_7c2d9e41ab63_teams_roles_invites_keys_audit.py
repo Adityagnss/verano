@@ -32,14 +32,14 @@ def _id_columns() -> list[sa.Column]:  # type: ignore[type-arg]
 
 def upgrade() -> None:
     # roles: owner and member become owner, admin, member and viewer
-    op.drop_constraint("ck_memberships_membership_role", "memberships", type_="check")
+    op.drop_constraint(op.f("ck_memberships_membership_role"), "memberships", type_="check")
     op.create_check_constraint(
-        "ck_memberships_membership_role", "memberships", "role IN ('owner', 'admin', 'member', 'viewer')"
+        op.f("ck_memberships_membership_role"), "memberships", "role IN ('owner', 'admin', 'member', 'viewer')"
     )
 
     op.add_column("users", sa.Column("email_verified_at", sa.DateTime(timezone=True), nullable=True))
     op.add_column("api_tokens", sa.Column("scope", sa.String(length=32), server_default="write", nullable=False))
-    op.create_check_constraint("ck_api_tokens_token_scope", "api_tokens", "scope IN ('read', 'write')")
+    op.create_check_constraint(op.f("ck_api_tokens_token_scope"), "api_tokens", "scope IN ('read', 'write')")
 
     op.create_table(
         "invites",
@@ -184,9 +184,9 @@ def downgrade() -> None:
     op.drop_table("external_identities")
     op.drop_table("email_verifications")
     op.drop_table("invites")
-    op.drop_constraint("ck_api_tokens_token_scope", "api_tokens", type_="check")
+    op.drop_constraint(op.f("ck_api_tokens_token_scope"), "api_tokens", type_="check")
     op.drop_column("api_tokens", "scope")
     op.drop_column("users", "email_verified_at")
     op.execute("UPDATE memberships SET role = 'member' WHERE role IN ('admin', 'viewer')")
-    op.drop_constraint("ck_memberships_membership_role", "memberships", type_="check")
-    op.create_check_constraint("ck_memberships_membership_role", "memberships", "role IN ('owner', 'member')")
+    op.drop_constraint(op.f("ck_memberships_membership_role"), "memberships", type_="check")
+    op.create_check_constraint(op.f("ck_memberships_membership_role"), "memberships", "role IN ('owner', 'member')")
