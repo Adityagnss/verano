@@ -99,6 +99,7 @@ ci: base-images ## The "CI green" gate: locked installs, lint, types, full tests
 	$(CLI) uv sync --frozen
 	$(FRONTEND) npm ci --prefer-offline --no-audit --no-fund
 	$(MAKE) lint
+	$(MAKE) api-compat
 	$(BACKEND) uv run pytest -q
 	$(CLI) uv run pytest -q
 	$(FRONTEND) npm test
@@ -133,3 +134,4 @@ hooks: ## Install the git pre-commit hook (ruff / prettier / eslint on staged fi
 bench: ## Measure performance targets (ENGINEERING_STANDARDS section 4)
 	$(BACKEND) uv run python -m benchmarks.gateway_overhead
 	$(BACKEND) uv run python -m benchmarks.phase6_budgets
+	$(BACKEND) uv run python -m benchmarks.phase7_budgets

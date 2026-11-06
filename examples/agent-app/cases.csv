@@ -5,8 +5,8 @@ Can you check order C3007 for me?,get_order_status,BlueLine
 When will A1002 arrive?,get_order_status,2026-11-12
 Please cancel order A1002,cancel_order,cancelled it
 Cancel B2041 please,cancel_order,cancelled it
-I want to cancel A1001,get_order_status,cannot cancel
-Cancel order B2040,get_order_status,delivered
+I want to cancel A1001,,cannot cancel
+Cancel order B2040,,delivered
 Is order Z9999 still coming?,get_order_status,could not find
 Where is my package?,,order number
 Can I cancel my order?,,order number

@@ -4,7 +4,9 @@ import asyncio
 from types import SimpleNamespace
 from typing import Any
 
+from app.core.config import Settings
 from app.modules.evaluation.domain import EvalCase, Score, Unscored
+from app.modules.evaluation.judge_cache import RecentResults
 from app.modules.evaluation.scoring import ScoringService
 from app.modules.generator.schemas import OutputFormat, TaskSpec, TaskType
 
@@ -27,10 +29,13 @@ def service(results: list[Score | Unscored]) -> tuple[ScoringService, list[str]]
         return results[min(len(calls), len(results)) - 1]
 
     scoring._evaluate = evaluate  # type: ignore[method-assign,assignment]
+    scoring._settings = Settings(_env_file=None, judge_cache_enabled=False)  # the stored cache has its own test
+    scoring._recent = RecentResults(8)
     return scoring, calls
 
 
 CONFIG = SimpleNamespace(evaluator_name="g_eval_x", config={"kind": "deepeval", "criteria": "c"}, threshold=0.5)
+TARGET = SimpleNamespace(profile=SimpleNamespace(litellm_model="mock/judge"))
 
 
 async def test_identical_answers_share_one_judge_call() -> None:
@@ -38,7 +43,7 @@ async def test_identical_answers_share_one_judge_call() -> None:
     shared: dict[str, Any] = {}
 
     async def run(text: str) -> Score | Unscored | None:
-        return await scoring._evaluate_once(CONFIG, case(text), object(), None, None, shared)  # type: ignore[arg-type]
+        return await scoring._evaluate_once(CONFIG, case(text), TARGET, None, None, shared)  # type: ignore[arg-type]
 
     results = await asyncio.gather(run("same"), run("same"), run("other"))
     assert calls == ["same", "other"]
@@ -50,7 +55,7 @@ async def test_a_failed_judge_call_is_not_shared() -> None:
     shared: dict[str, Any] = {}
 
     async def run() -> Score | Unscored | None:
-        return await scoring._evaluate_once(CONFIG, case("same"), object(), None, None, shared)  # type: ignore[arg-type]
+        return await scoring._evaluate_once(CONFIG, case("same"), TARGET, None, None, shared)  # type: ignore[arg-type]
 
     first, second = await asyncio.gather(run(), run())
     assert isinstance(first, Unscored)

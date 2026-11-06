@@ -16,9 +16,10 @@ from typing import Any, Final
 
 from jinja2 import TemplateSyntaxError, UndefinedError
 
-from app.core.templates import sandboxed_environment
+from app.core.templates import sandboxed_environment, template_variables
 
 CHUNK_TEXT_KEYS: Final[tuple[str, ...]] = ("text", "content", "chunk", "page_content")
+TEMPLATE_BUILTINS: Final[frozenset[str]] = frozenset({"range", "dict", "lipsum", "cycler", "joiner", "namespace"})
 BRACKET_PATTERN: Final[re.Pattern[str]] = re.compile(r"\[(\*|-?\d+|'[^']*'|\"[^\"]*\")\]")
 KEY_PATTERN: Final[re.Pattern[str]] = re.compile(r"\.([A-Za-z_][\w\-]*)")
 
@@ -113,9 +114,16 @@ def render_request(template: str, inputs: dict[str, Any]) -> str:
     environment = sandboxed_environment()
     environment.filters["tojson"] = lambda value: json.dumps(value, ensure_ascii=False)
     try:
-        return environment.from_string(template).render(**inputs)
+        missing = sorted(template_variables(template) - set(inputs) - TEMPLATE_BUILTINS)
     except TemplateSyntaxError as error:
         raise MappingError(f"The request template is not valid (line {error.lineno}): {error.message}") from error
+    if missing:
+        raise MappingError(
+            f"The request template uses {', '.join(missing)}, but this test case has no such input. "
+            "Use the same names as your prompt's variables."
+        )
+    try:
+        return environment.from_string(template).render(**inputs)
     except UndefinedError as error:
         raise MappingError(f"The request template uses a variable that has no value: {error.message}") from error
 

@@ -18,7 +18,8 @@ import { Textarea } from "@/components/ui/textarea"
 import type { AppTargetCreate, AppTargetOut } from "@/lib/api/types"
 
 import { APPS_COPY } from "../copy"
-import { parseInputs, useAddApp, useApps, useRemoveApp, useTryApp } from "../hooks"
+import { parseInputs } from "../domain"
+import { useAddApp, useApps, useRemoveApp, useTryApp } from "../hooks"
 
 const DEFAULT_TEMPLATE = '{"question": {{ question | tojson }}}'
 type AuthKind = "none" | "bearer" | "basic" | "headers"

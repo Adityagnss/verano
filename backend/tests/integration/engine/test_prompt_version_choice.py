@@ -80,3 +80,31 @@ async def test_two_prompt_versions_are_compared_per_model_on_the_same_cases(
         f"{base}/experiments/{new['id']}/compare", params={"against": new["id"]}, headers=session.headers
     )
     assert same.status_code == 409
+
+
+async def test_a_project_with_two_prompts_runs_the_named_one_and_the_experiment_says_which(
+    client: httpx.AsyncClient, session: Session, jobs: InlineJobQueue
+) -> None:
+    base = f"/api/v1/projects/{session.project_id}"
+    models = await approved_project(client, session, jobs)
+    first = (await client.get(f"{base}/prompts", headers=session.headers)).json()["items"][0]
+    other = await client.post(
+        f"{base}/prompts",
+        json={"name": "Second prompt", "system_template": "Label the ticket with one word."},
+        headers=session.headers,
+    )
+    assert other.status_code == 201, other.text
+    run = {"models": [{"model_profile_id": models["echo"], "runs": 1}]}
+
+    named = await client.post(
+        f"{base}/experiments", json={**run, "prompt_id": other.json()["id"]}, headers=session.headers
+    )
+    assert named.status_code in (200, 201, 202), named.text
+    assert named.json()["prompt_id"] == other.json()["id"]
+    assert named.json()["prompt_name"] == "Second prompt"
+    assert named.json()["prompt_version_id"] == other.json()["latest_version"]["id"]
+
+    earlier = await client.post(f"{base}/experiments", json={**run, "prompt_id": first["id"]}, headers=session.headers)
+    assert earlier.json()["prompt_id"] == first["id"]
+    assert earlier.json()["prompt_name"] == "Triage"  # either prompt of the project can be named
+    await jobs.drain()

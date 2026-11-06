@@ -24,7 +24,7 @@ Open source · Self-hostable · Apache 2.0
   generates the test cases, expected outputs and evaluators, and you approve them.
 - **Proven improvement.** A new prompt is built from one part of the data and confirmed on
   a held-back part it has never seen. If nothing beats your prompt, it says so.
-  "Better" needs a clear difference on at least 30 held-back cases; otherwise it says *not
+  "Better" needs a clear difference on at least 15 held-back cases (a setting); otherwise it says *not
   proven* and shows the numbers.
 - **A judge you choose, and can read.** The model that scores answers is picked on purpose (not
   the one that wrote the cases), its criteria are editable, every request it received can be read,
@@ -201,16 +201,18 @@ worked through in order:
    checks that need people are open, and the task-type, judge and Improve checks are left to
    users after release (decision 70)
 
-**What is planned next** (nothing below is built yet; the full plan is in the
-[backlog](docs/BACKLOG.md) and [Part I](docs/DEVELOPMENT.md)): five phases.
+**Phases 6 and 7 are built and tested on the mock provider and free models** (decision 91); the checks
+that need a paid model wait for a budget (decision 89), so nothing below is claimed as proven on a real model yet.
+The full plan is in the [backlog](docs/BACKLOG.md); what was built and what is left is in the
+[checkpoint](docs/checkpoints/phase-6-7.md).
 
-| Phase | Name | What it adds |
+| Phase | Name | State |
 |---|---|---|
-| 6 | Proof and trust | Improve shown lifting a weak prompt on a real model; people label answers and Verano shows how often the judge agrees with them; more checks and tested judges |
-| 7 | Real apps | Test your own application over HTTP (RAG, tools, conversations), with several inputs per test case |
-| 8 | The production loop | Serve the winning prompt to your app, a GitHub Action and the CLI on PyPI, real traffic as test cases, teams |
-| 9 | Security, depth and hardening | A small security pack, several Improve rounds that still prove the result, load and failure tests |
-| 10 | Open-source launch | Public repository, website and documentation on free GitHub services |
+| 6 | Proof and trust | **Built, real-model proof waiting for a budget.** People label answers and Verano shows how often the judge agrees with them; "Why this score"; 27 rule checks; Python custom checks in a sandbox; a judge gallery; a judge cache |
+| 7 | Real apps | **Built.** Connect your own app over HTTP (RAG, tool calls, conversations with a simulated user), several inputs per test case, several prompts per project, `verano app` |
+| 8 | The production loop | Planned: serve the winning prompt to your app, a GitHub Action and the CLI on PyPI, real traffic as test cases, teams |
+| 9 | Security, depth and hardening | Planned: a small security pack, several Improve rounds that still prove the result, load and failure tests |
+| 10 | Open-source launch | Planned: public repository, website and documentation on free GitHub services |
 
 The checks that need real models (Improve, the judge, the seven task types) are part of Phase 6;
 they replace the earlier plan to leave them to users after release. Other projects are read for
