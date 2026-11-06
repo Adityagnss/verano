@@ -70,6 +70,7 @@ class EvaluationRun(IdMixin, CreatedAtMixin, Base):
     status: Mapped[EvaluationRunStatus] = mapped_column(str_enum(EvaluationRunStatus, "evaluation_run_status"))
     trigger: Mapped[EvaluationTrigger] = mapped_column(str_enum(EvaluationTrigger, "evaluation_trigger"))
     completed_at: Mapped[datetime | None]
+    lease_expires_at: Mapped[datetime | None]  # a worker's claim on a running pass (ADR 0037)
 
 
 class Score(CreatedAtMixin, Base):

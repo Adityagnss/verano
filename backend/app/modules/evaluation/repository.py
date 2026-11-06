@@ -20,7 +20,7 @@ from app.modules.evaluation.models import (
     JudgeCacheEntry,
     Score,
 )
-from app.modules.evaluation.schemas import EvaluationRunStatus
+from app.modules.evaluation.schemas import EvaluationRunStatus, EvaluationTrigger
 from app.modules.gateway.models import LLMCall
 from app.modules.gateway.schemas import CallPurpose
 
@@ -89,19 +89,21 @@ class ScoreRepository:
         query = select(EvaluationRun).where(EvaluationRun.experiment_id == experiment_id)
         return list((await self._session.scalars(query.order_by(EvaluationRun.id.desc()))).all())
 
-    async def claim_run(self, run_id: uuid.UUID) -> EvaluationRun | None:
+    async def claim_run(self, run_id: uuid.UUID, lease_until: datetime | None = None) -> EvaluationRun | None:
         """Moves a pending pass to running; None when it was already claimed (a redelivered job)."""
         query = (
             update(EvaluationRun)
             .where(EvaluationRun.id == run_id, EvaluationRun.status == EvaluationRunStatus.PENDING)
-            .values(status=EvaluationRunStatus.RUNNING)
+            .values(status=EvaluationRunStatus.RUNNING, lease_expires_at=lease_until)
             .returning(EvaluationRun)
         )
         return await self._session.scalar(query)
 
     async def finish_run(self, run_id: uuid.UUID, status: EvaluationRunStatus, completed_at: datetime) -> None:
         await self._session.execute(
-            update(EvaluationRun).where(EvaluationRun.id == run_id).values(status=status, completed_at=completed_at)
+            update(EvaluationRun)
+            .where(EvaluationRun.id == run_id)
+            .values(status=status, completed_at=completed_at, lease_expires_at=None)
         )
 
     async def answers_scored(self, experiment_id: uuid.UUID) -> int:
@@ -135,6 +137,34 @@ class ScoreRepository:
             .order_by(LLMCall.started_at, LLMCall.id)
         )
         return list((await self._session.scalars(query)).all())
+
+    async def extend_run_lease(self, run_id: uuid.UUID, until: datetime) -> None:
+        await self._session.execute(
+            update(EvaluationRun)
+            .where(EvaluationRun.id == run_id, EvaluationRun.status == EvaluationRunStatus.RUNNING)
+            .values(lease_expires_at=until)
+        )
+
+    async def scored_call_ids(self, run_id: uuid.UUID) -> set[uuid.UUID]:
+        """Answers this pass has already scored, so a pass handed to another worker skips them."""
+        rows = await self._session.execute(
+            select(func.distinct(Score.test_case_run_id)).where(Score.evaluation_run_id == run_id)
+        )
+        return {row[0] for row in rows.all()}
+
+    async def release_expired_runs(self, now: datetime) -> list[tuple[uuid.UUID, uuid.UUID, str]]:
+        """Passes whose worker stopped renewing the claim go back to pending: (run id, experiment id, trigger)."""
+        result = await self._session.execute(
+            update(EvaluationRun)
+            .where(
+                EvaluationRun.status == EvaluationRunStatus.RUNNING,
+                EvaluationRun.lease_expires_at.is_not(None),
+                EvaluationRun.lease_expires_at <= now,
+            )
+            .values(status=EvaluationRunStatus.PENDING, lease_expires_at=None)
+            .returning(EvaluationRun.id, EvaluationRun.experiment_id, EvaluationRun.trigger)
+        )
+        return [(row[0], row[1], EvaluationTrigger(row[2]).value) for row in result.all()]
 
 
 class LabelRepository:

@@ -131,3 +131,4 @@ def constraints(case: EvalCase, config: dict[str, Any], threshold: float) -> Sco
 
 # the extra rules register themselves on import; imported last because they use `rule` defined above
 from app.modules.evaluation.plugins import rules_extra  # noqa: E402,F401
+from app.modules.security import checks as security_checks  # noqa: E402,F401

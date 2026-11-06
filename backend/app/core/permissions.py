@@ -112,6 +112,8 @@ RULES: tuple[Rule, ...] = (
     _rule("GET", "/auth/*", Action.ACCOUNT_READ),
     _rule(WRITE_METHODS | {"DELETE"}, "/auth/*", Action.ACCOUNT_WRITE),
     _rule("GET", "/providers", Action.ACCOUNT_READ),
+    _rule("GET", "/provider-health", Action.ACCOUNT_READ),
+    _rule("POST", "/otlp/v1/traces", None),  # called by the user's app with an ingest token, not by a person
     _rule("GET", "/prompt-notes", Action.ACCOUNT_READ),
     _rule("GET", "/activity", Action.ACCOUNT_READ),
     _rule("GET", "/projects", Action.ACCOUNT_READ),

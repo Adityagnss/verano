@@ -122,6 +122,13 @@ class ProviderTimeout(ProviderError):
     retryable = True
 
 
+class CircuitOpen(ProviderUnavailable):
+    """The provider has been failing, so calls to it are paused for a short while (never retried at once)."""
+
+    code = "circuit_open"
+    retryable = False
+
+
 class StructuredOutputError(AppError):
     status_code = 502
     code = "structured_output_error"

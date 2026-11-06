@@ -38,7 +38,6 @@ from app.modules.evaluation.review_schemas import (
     AssignOut,
     AssignRequest,
     DisputeOut,
-    MemberOut,
     PersonLabel,
     PersonProgress,
     ProgressOut,
@@ -48,6 +47,7 @@ from app.modules.evaluation.review_schemas import (
     ResolveRequest,
     ReviewItemOut,
     ReviewJudgeOut,
+    ReviewMemberOut,
 )
 from app.modules.evaluation.schemas import EvaluationRunStatus, LabelVerdict, ScoreOut, ScoreStatus
 from app.modules.projects.schemas import ProjectOut
@@ -101,10 +101,10 @@ class ReviewService:
 
     # -- people ---------------------------------------------------------------------------------------------
 
-    async def members(self, project: ProjectOut) -> list[MemberOut]:
+    async def members(self, project: ProjectOut) -> list[ReviewMemberOut]:
         """The people in this project's workspace, who can be given answers to label."""
         return [
-            MemberOut(user_id=user.id, name=user.name, email=user.email, is_owner=role is MembershipRole.OWNER)
+            ReviewMemberOut(user_id=user.id, name=user.name, email=user.email, is_owner=role is MembershipRole.OWNER)
             for user, role in await self._auth.organization_members(project.organization_id)
         ]
 

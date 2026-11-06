@@ -52,14 +52,23 @@ class DatasetRepository:
         query = (
             select(DatasetVersion)
             .join(Dataset, Dataset.id == DatasetVersion.dataset_id)
-            .where(Dataset.project_id == project_id, DatasetVersion.status == DatasetVersionStatus.DRAFT)
+            .where(
+                Dataset.project_id == project_id,
+                Dataset.kind == "quality",
+                DatasetVersion.status == DatasetVersionStatus.DRAFT,
+            )
             .order_by(DatasetVersion.version.desc())
             .limit(1)
         )
         return await self._session.scalar(query)
 
     async def latest_dataset(self, project_id: uuid.UUID) -> Dataset | None:
-        query = select(Dataset).where(Dataset.project_id == project_id).order_by(Dataset.id.desc()).limit(1)
+        query = (
+            select(Dataset)
+            .where(Dataset.project_id == project_id, Dataset.kind == "quality")
+            .order_by(Dataset.id.desc())
+            .limit(1)
+        )
         return await self._session.scalar(query)
 
     async def next_version_number(self, dataset_id: uuid.UUID) -> int:
@@ -114,7 +123,7 @@ class DatasetRepository:
         query = (
             select(DatasetVersion)
             .join(Dataset, Dataset.id == DatasetVersion.dataset_id)
-            .where(Dataset.project_id == project_id)
+            .where(Dataset.project_id == project_id, Dataset.kind == "quality")
             .order_by(DatasetVersion.id.desc())
             .limit(1)
         )

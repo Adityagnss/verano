@@ -17,12 +17,12 @@ from app.modules.evaluation.review_schemas import (
     AssignOut,
     AssignRequest,
     DisputeOut,
-    MemberOut,
     ProgressOut,
     QueueOut,
     QueueStatus,
     ResolutionOut,
     ResolveRequest,
+    ReviewMemberOut,
 )
 from app.modules.projects.dependencies import ProjectScope
 
@@ -35,7 +35,7 @@ ExperimentQuery = Annotated[uuid.UUID | None, Query()]
 
 
 @router.get("/members")
-async def get_members(project: ProjectScope, service: ReviewServiceDep) -> list[MemberOut]:
+async def get_members(project: ProjectScope, service: ReviewServiceDep) -> list[ReviewMemberOut]:
     """The people who can be given answers to label."""
     return await service.members(project)
 

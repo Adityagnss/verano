@@ -21,6 +21,7 @@ from app.modules.evaluation.judging_router import router as judging_router
 from app.modules.evaluation.queue_router import router as review_queue_router
 from app.modules.evaluation.router import project_router as evaluators_router
 from app.modules.evaluation.router import router as results_router
+from app.modules.gateway.router import health_router as provider_health_router
 from app.modules.gateway.router import router as gateway_router
 from app.modules.generator.router import router as generator_router
 from app.modules.logbook.router import router as logbook_router
@@ -30,6 +31,7 @@ from app.modules.projects.router import router as projects_router
 from app.modules.prompts.label_router import router as labels_router
 from app.modules.prompts.router import router as prompts_router
 from app.modules.registry.router import router as registry_router
+from app.modules.security.router import router as security_router
 from app.modules.traffic.router import otlp_router
 from app.modules.traffic.router import router as traffic_router
 
@@ -43,6 +45,7 @@ for module_router in (
     registry_router,
     apps_router,
     gateway_router,
+    provider_health_router,
     activity_router,
     prompts_router,
     labels_router,
@@ -60,6 +63,7 @@ for module_router in (
     notes_router,
     logbook_router,
     traffic_router,
+    security_router,
 ):
     # every route passes the one permission check (app/core/permissions.py) before its handler runs
     api_router.include_router(module_router, dependencies=[Depends(enforce_permissions)])

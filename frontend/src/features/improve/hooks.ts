@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { api, call } from "@/lib/api/client"
 import type { JudgeChoice } from "@/lib/api/types"
 
-const WORKING = new Set(["analyzing", "testing", "confirming"])
+const WORKING = new Set(["analyzing", "quick", "testing", "confirming"])
 
 function path(projectId: string) {
   return { path: { project_id: projectId } }

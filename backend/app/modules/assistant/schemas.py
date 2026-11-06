@@ -7,6 +7,7 @@ model must return for failure groups and candidate prompts.
 
 import uuid
 from datetime import datetime
+from decimal import Decimal
 from enum import StrEnum
 from typing import Any
 
@@ -31,6 +32,7 @@ class CandidateOutcome(StrEnum):
 class SessionStage(StrEnum):
     ANALYZING = "analyzing"
     TESTING = "testing"
+    QUICK = "quick"
     CONFIRMING = "confirming"
     DONE = "done"
     FAILED = "failed"
@@ -61,6 +63,25 @@ class ImproveRequest(BaseModel):
     experiment_id: uuid.UUID
     # The model that writes the improvements; left out, the experiment's judge does
     writer: JudgeChoice | None = None
+    # how many rounds to run in one session (left out: the server's setting, 3 by default)
+    rounds: int | None = Field(default=None, ge=1, le=6)
+    # candidates written per round
+    population: int | None = Field(default=None, ge=2, le=8)
+    # try every candidate on a small sample first and run the full test only on the best ones
+    quick_check: bool | None = None
+    # stop starting new calls in any test of this session at this many dollars (resume from the Run screen)
+    budget_cap: Decimal | None = Field(default=None, gt=0)
+    # the quality gain worth detecting (0.1 = 10 points); sizes the quick check and the held-back test
+    target_effect: float | None = Field(default=None, gt=0, le=1)
+
+
+class ReadinessOut(BaseModel):
+    """Whether Improve can change what this experiment tests, said in plain words."""
+
+    ready: bool
+    message: str
+    apps: list[str] = []
+    apps_not_taking_the_prompt: list[str] = []
 
 
 class ClusterOut(BaseModel):
@@ -78,7 +99,7 @@ class ClusterOut(BaseModel):
 
 class CandidateOut(BaseModel):
     id: uuid.UUID
-    prompt_version_id: uuid.UUID
+    prompt_version_id: uuid.UUID | None
     strategy: str
     diff: str
     system_template: str | None = None
@@ -91,6 +112,32 @@ class CandidateOut(BaseModel):
     optimize_quality: float | None
     holdout_quality: float | None
     verdict: VerdictOut | None = None
+    round: int = 1
+    parent_candidate_id: uuid.UUID | None = None
+    quick_experiment_id: uuid.UUID | None = None
+    quick_quality: float | None = None
+    is_winner: bool = False
+    metrics: dict[str, Any] | None = None
+    rejection_reason: str | None = None
+    # plain words for the tree: "Proven on held-back cases" or "Not proven ..."
+    label: str | None = None
+
+
+class RoundOut(BaseModel):
+    round: int
+    winner_candidate_id: uuid.UUID | None
+    proven: bool
+    label: str
+
+
+class SizingOut(BaseModel):
+    target_effect: float
+    spread: float
+    needed_cases: int
+    holdout_cases: int
+    enough: bool
+    quick_sample: int | None
+    message: str
 
 
 class ImprovementOut(BaseModel):
@@ -110,6 +157,17 @@ class ImprovementOut(BaseModel):
     started_experiment_id: uuid.UUID | None = None
     # the prompt label Accept moved to the accepted version, when the prompt is set to move one
     moved_label: str | None = None
+    focus: str = "quality"
+    round_limit: int = 1
+    current_round: int = 1
+    quick_check: bool = False
+    population: int = 3
+    rounds: list[RoundOut] = []
+    sizing: SizingOut | None = None
+    final_candidate_id: uuid.UUID | None = None
+    # the final winner against the very first prompt on the held-back cases (several rounds only)
+    versus_first: VerdictOut | None = None
+    paused_experiment_ids: list[uuid.UUID] = []
 
 
 class ImprovementSummary(BaseModel):
@@ -155,3 +213,13 @@ class CandidateDraft(BaseModel):
 
 class CandidateDrafts(BaseModel):
     candidates: list[CandidateDraft] = Field(min_length=1)
+
+
+class ClusterName(BaseModel):
+    cluster: int
+    name: str = Field(min_length=1, max_length=200)
+    hypothesis: str
+
+
+class ClusterNames(BaseModel):
+    groups: list[ClusterName] = Field(min_length=1)

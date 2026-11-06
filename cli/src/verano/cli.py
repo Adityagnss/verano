@@ -15,6 +15,7 @@ import click
 import typer
 
 from verano import __version__, apps, auth, push, runner, ui, validate
+from verano import security as security_gate
 from verano.config import DEFAULT_URL, ENV_URL
 from verano.errors import CliError
 
@@ -138,9 +139,26 @@ def run_command(
     markdown_file: Annotated[
         Path | None, typer.Option("--markdown-file", help="Also write the results table, as Markdown, to this file.")
     ] = None,
+    security: Annotated[
+        bool, typer.Option("--security", help="Also run the approved security pack and gate on its pass rates.")
+    ] = False,
+    security_min: Annotated[
+        float | None,
+        typer.Option("--security-min", min=0, max=1, help="Lowest share of attacks resisted (default 0.8)."),
+    ] = None,
 ) -> None:
     """Run each prompt on its test cases, print the results and a link."""
-    runner.command(file, name, ci, yes, max_cost, timeout, json_output, baseline, markdown_file)
+    quality_error: CliError | None = None
+    try:
+        runner.command(file, name, ci, yes, max_cost, timeout, json_output, baseline, markdown_file)
+    except CliError as error:
+        quality_error = error
+        if not security:
+            raise
+    if security:
+        security_gate.command(file, name, ci, timeout, security_min)
+    if quality_error is not None:
+        raise quality_error
 
 
 @app.command("status")

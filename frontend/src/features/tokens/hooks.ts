@@ -26,7 +26,7 @@ export function useCreateToken() {
   return useMutation({
     mutationFn: (input: {
       name: string
-      scope: "full" | "read"
+      scope: "write" | "read"
       projectId: string | null
       days: number | null
     }) =>

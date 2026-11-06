@@ -80,7 +80,9 @@ class EngineRepository:
         query = select(TestCaseRun).where(TestCaseRun.experiment_id == experiment_id, TestCaseRun.id == run_id)
         return await self._session.scalar(query)
 
-    async def claim(self, experiment_id: uuid.UUID, run_id: uuid.UUID, now: datetime) -> bool:
+    async def claim(
+        self, experiment_id: uuid.UUID, run_id: uuid.UUID, now: datetime, lease_until: datetime | None = None
+    ) -> bool:
         result = await self._session.execute(
             update(TestCaseRun)
             .where(
@@ -88,7 +90,7 @@ class EngineRepository:
                 TestCaseRun.id == run_id,
                 TestCaseRun.status == RunStatus.PENDING,
             )
-            .values(status=RunStatus.RUNNING, started_at=now)
+            .values(status=RunStatus.RUNNING, started_at=now, lease_expires_at=lease_until)
         )
         return bool(getattr(result, "rowcount", 0))
 
@@ -159,3 +161,58 @@ class EngineRepository:
             )
         )
         return int(count or 0)
+
+    async def extend_leases(self, experiment_id: uuid.UUID, run_ids: Sequence[uuid.UUID], until: datetime) -> None:
+        """The heartbeat: calls this worker is still making keep their claim."""
+        await self._session.execute(
+            update(TestCaseRun)
+            .where(
+                TestCaseRun.experiment_id == experiment_id,
+                TestCaseRun.id.in_(list(run_ids)),
+                TestCaseRun.status == RunStatus.RUNNING,
+            )
+            .values(lease_expires_at=until)
+        )
+
+    async def release_expired(self, now: datetime) -> list[uuid.UUID]:
+        """Calls whose worker stopped renewing the claim go back to pending. Returns the experiments they belong to."""
+        result = await self._session.execute(
+            update(TestCaseRun)
+            .where(
+                TestCaseRun.status == RunStatus.RUNNING,
+                TestCaseRun.lease_expires_at.is_not(None),
+                TestCaseRun.lease_expires_at <= now,
+            )
+            .values(status=RunStatus.PENDING, started_at=None, lease_expires_at=None)
+            .returning(TestCaseRun.experiment_id)
+        )
+        return sorted({row[0] for row in result.all()}, key=str)
+
+    async def requeue_failed(self, experiment_id: uuid.UUID, error_types: Sequence[str]) -> int:
+        result = await self._session.execute(
+            update(TestCaseRun)
+            .where(
+                TestCaseRun.experiment_id == experiment_id,
+                TestCaseRun.status == RunStatus.FAILED,
+                TestCaseRun.error_type.in_(list(error_types)),
+            )
+            .values(
+                status=RunStatus.PENDING,
+                error_type=None,
+                error_message=None,
+                started_at=None,
+                completed_at=None,
+                lease_expires_at=None,
+            )
+        )
+        return int(getattr(result, "rowcount", 0) or 0)
+
+    async def running_experiments(self, status: ExperimentStatus) -> list[uuid.UUID]:
+        rows = await self._session.scalars(select(Experiment.id).where(Experiment.status == status))
+        return list(rows.all())
+
+    async def mean_cost(self, experiment_id: uuid.UUID) -> Decimal | None:
+        value = await self._session.scalar(
+            select(func.avg(TestCaseRun.cost)).where(TestCaseRun.experiment_id == experiment_id)
+        )
+        return None if value is None else Decimal(value)

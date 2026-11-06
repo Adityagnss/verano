@@ -22,3 +22,8 @@ celery_app.conf.update(
     task_queues={"default": {}, "generation": {}, "evaluation": {}},
     broker_connection_retry_on_startup=True,
 )
+# The lease sweeper (ADR 0037): returns work held by dead workers to pending. Needs a beat process
+# (`celery -A app.workers.celery_app beat`, or a worker started with `-B` in a one-worker install).
+celery_app.conf.beat_schedule = {
+    "sweep-leases": {"task": "engine.sweep_leases", "schedule": settings.lease_sweep_interval_s},
+}

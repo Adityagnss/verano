@@ -111,7 +111,7 @@ class ProgressOut(BaseModel):
     resolved: int
 
 
-class MemberOut(BaseModel):
+class ReviewMemberOut(BaseModel):
     user_id: uuid.UUID
     name: str
     email: str

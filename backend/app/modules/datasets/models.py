@@ -63,6 +63,8 @@ class Dataset(IdMixin, CreatedAtMixin, Base):
 
     project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"))
     name: Mapped[str] = mapped_column(String(200))
+    # "quality" is the project's own test set; "security" holds an approved attack pack and never mixes with it
+    kind: Mapped[str] = mapped_column(String(16), default="quality", server_default="quality")
 
 
 class DatasetVersion(IdMixin, CreatedAtMixin, Base):
@@ -81,6 +83,7 @@ class DatasetVersion(IdMixin, CreatedAtMixin, Base):
     )
     approved_at: Mapped[datetime | None]
     approved_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    lease_expires_at: Mapped[datetime | None]  # a worker's claim on a running generation (ADR 0037)
 
 
 class DatasetItem(IdMixin, CreatedAtMixin, Base):

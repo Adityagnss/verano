@@ -105,6 +105,13 @@ class ExperimentCreate(BaseModel):
     # Which saved prompt version to test; left out, the latest version of `prompt_id`, else of the first prompt
     prompt_version_id: uuid.UUID | None = None
     prompt_id: uuid.UUID | None = None
+    # test only this many of the cases (the same ones every time); used by Improve's quick check
+    sample_size: int | None = Field(default=None, ge=1)
+
+
+class ResumeRequest(BaseModel):
+    # a new, higher budget cap for a run that paused at its cap; left out, the cap stays as it is
+    budget_cap: Decimal | None = Field(default=None, gt=0)
 
 
 class ModelEstimate(BaseModel):
@@ -216,6 +223,8 @@ class ExperimentOut(BaseModel):
     created_at: datetime
     started_at: datetime | None
     completed_at: datetime | None
+    # seconds left at the speed measured so far (only while running)
+    eta_seconds: int | None = None
 
 
 class TestCaseRunOut(BaseModel):

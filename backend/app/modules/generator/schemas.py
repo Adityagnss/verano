@@ -155,6 +155,8 @@ class GenerationState(BaseModel):
     dropped_duplicates: int = 0
     dropped_invalid: int = 0
     message: str | None = None
+    # the category being regenerated, kept so a job handed to another worker repeats the same work
+    regenerate: str | None = None
 
 
 # What the generator model must return (validated by the gateway's complete_json).

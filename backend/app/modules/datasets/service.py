@@ -263,6 +263,59 @@ class DatasetService:
     async def update_version(self, version_id: uuid.UUID, values: dict[str, Any]) -> None:
         await self._repo.update_version(version_id, values)
 
+    async def create_approved_set(
+        self,
+        project_id: uuid.UUID,
+        name: str,
+        kind: str,
+        rows: list[dict[str, Any]],
+        task_spec_id: uuid.UUID | None,
+        evaluator_set_version_id: uuid.UUID,
+        principal: Principal | None,
+    ) -> DatasetVersion:
+        """A separate, already-approved dataset (the security pack's cases) with its own split. It never becomes the
+        project's working draft: the quality test cases and this set do not mix (ADR 0035)."""
+        dataset = Dataset(project_id=project_id, name=name, kind=kind)
+        await self._repo.add(dataset)
+        seed = random.SystemRandom().randrange(2**31)
+        ratio = self._settings.dataset_holdout_ratio
+        version = DatasetVersion(
+            dataset_id=dataset.id,
+            version=1,
+            status=DatasetVersionStatus.APPROVED,
+            task_spec_id=task_spec_id,
+            holdout_ratio=ratio,
+            split_seed=seed,
+            evaluator_set_version_id=evaluator_set_version_id,
+            approved_at=utcnow(),
+            approved_by=principal.user_id if principal else None,
+        )
+        await self._repo.add(version)
+        ids = [uuid7() for _ in rows]
+        splits = assign_splits(
+            [SplitCandidate(i, row["category"], ItemSource.GENERATED) for i, row in zip(ids, rows, strict=True)],
+            ratio,
+            seed,
+        )
+        await self._repo.insert_items(
+            [
+                {
+                    "id": item_id,
+                    "dataset_version_id": version.id,
+                    "source": ItemSource.GENERATED,
+                    "review_status": ReviewStatus.APPROVED,
+                    "split": splits[item_id],
+                    "tags": [],
+                    "context": [],
+                    "extra": {},
+                    "position": position,
+                    **row,
+                }
+                for position, (item_id, row) in enumerate(zip(ids, rows, strict=True))
+            ]
+        )
+        return version
+
     async def _version(self, project_id: uuid.UUID, version_id: uuid.UUID, lock: bool = False) -> DatasetVersion:
         version = await self._repo.version(project_id, version_id, lock=lock)
         if version is None:

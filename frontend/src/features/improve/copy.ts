@@ -31,7 +31,8 @@ export const IMPROVE_COPY = {
       : "It reads your prompt and the failed cases, so pick one that can read all of them.",
   stages: {
     analyzing: "Looking at the failures…",
-    testing: "Testing 3 candidates on the improving cases…",
+    quick: "Quick check of every candidate on a small sample…",
+    testing: "Testing the candidates on the improving cases…",
     confirming: "Checking the best candidate on held-back cases…",
     done: "Done",
     failed: "Stopped",

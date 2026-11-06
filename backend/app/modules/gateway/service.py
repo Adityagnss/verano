@@ -27,10 +27,11 @@ from pydantic import BaseModel, ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.config import Settings
-from app.core.errors import AppError, ProviderError, RateLimited, StructuredOutputError
+from app.core.errors import AppError, CircuitOpen, ProviderError, RateLimited, StructuredOutputError
 from app.core.security import utcnow
 from app.core.templates import render_system_prompt
 from app.core.tokens import estimate_tokens
+from app.modules.gateway.breaker import CircuitBreaker
 from app.modules.gateway.domain import (
     PASSTHROUGH_PARAMETERS,
     AdaptivePolicy,
@@ -63,6 +64,19 @@ from app.modules.registry.service import RegistryService
 
 M = TypeVar("M", bound=BaseModel)
 PROMPTS_DIR = Path(__file__).parent / "prompts"
+CIRCUIT_OPEN = (
+    "{provider} has been failing, so calls to it are paused for about {seconds} seconds. "
+    "Other providers are not affected. Resume or retry once it answers again."
+)
+_BREAKER: CircuitBreaker | None = None
+
+
+def breaker_for(settings: Settings) -> CircuitBreaker:
+    """One circuit breaker per process (a gateway is built per request or job; the provider's health is not)."""
+    global _BREAKER
+    if _BREAKER is None:
+        _BREAKER = CircuitBreaker(settings.breaker_failure_threshold, settings.breaker_open_seconds)
+    return _BREAKER
 
 
 def configure_llm_runtime(settings: Settings) -> None:
@@ -91,6 +105,7 @@ class GatewayService:
         jitter: Callable[[], float] = random.random,
         clock: Callable[[], datetime] = utcnow,
         spend: SpendGuard | None = None,
+        breaker: CircuitBreaker | None = None,
     ) -> None:
         self._spend = spend or SpendGuard(sessions)
         self._registry = registry
@@ -101,6 +116,7 @@ class GatewayService:
         self._sleep = sleep
         self._jitter = jitter
         self._clock = clock
+        self._breaker = breaker or breaker_for(settings)
 
     async def complete(
         self,
@@ -224,16 +240,34 @@ class GatewayService:
         )
         while True:
             call.attempts += 1
+            provider = target.provider
+            if not self._breaker.allow(provider):
+                refused = CircuitOpen(
+                    CIRCUIT_OPEN.format(
+                        provider=target.provider_display_name, seconds=round(self._breaker.retry_after(provider)) or 1
+                    ),
+                    retry_after_s=self._breaker.retry_after(provider),
+                )
+                raise refused
             try:
                 response, latency_ms = await self._attempt(call)
             except ProviderError as error:
                 if isinstance(error, RateLimited):
                     await self._limiter.record_throttle(target, error.retry_after_s)
+                    self._breaker.release(provider)
+                elif error.retryable:
+                    self._breaker.failure(provider)
+                else:
+                    self._breaker.release(provider)
                 if not should_retry(error, call.attempts, self._settings.llm_max_attempts):
                     await self._record_failure(call, error)
                     raise
                 await self._sleep(self._backoff(call.attempts, error))
                 continue
+            except BaseException:
+                self._breaker.release(provider)
+                raise
+            self._breaker.success(provider)
             return await self._record_success(call, response, latency_ms)
 
     async def _attempt(self, call: PendingCall) -> tuple[ProviderResponse, int]:

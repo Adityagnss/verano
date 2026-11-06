@@ -29,7 +29,7 @@ export function TokensPage() {
   const create = useCreateToken()
   const revoke = useRevokeToken()
   const [name, setName] = useState("")
-  const [scope, setScope] = useState<"full" | "read">("read")
+  const [scope, setScope] = useState<"write" | "read">("read")
   const [projectId, setProjectId] = useState("")
   const [days, setDays] = useState(90)
   const [shown, setShown] = useState<string | null>(null)
@@ -96,10 +96,10 @@ export function TokensPage() {
             <select
               className={SELECT}
               value={scope}
-              onChange={(e) => setScope(e.target.value as "full" | "read")}
+              onChange={(e) => setScope(e.target.value as "write" | "read")}
             >
               <option value="read">Read only (look and fetch prompts)</option>
-              <option value="full">Everything I can do</option>
+              <option value="write">Everything I can do</option>
             </select>
           </label>
           <label className="flex flex-col gap-1 text-sm">
