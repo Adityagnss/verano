@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useModels } from "@/features/keys/hooks"
 import { useCurrentPrompt, usePromptVersions } from "@/features/prompt/hooks"
+import { PromptChooser } from "@/features/prompts-choice/prompt-chooser"
 import { JudgePicker, useChosenJudge } from "@/features/results/components/judge-picker"
 import { DatasetWarnings } from "@/components/common/dataset-warnings"
 import { useCurrentVersion } from "@/features/tests/hooks"
@@ -125,15 +126,23 @@ export function RunStep({ projectId }: { projectId: string }) {
   const [open, setOpen] = useState<Record<string, boolean>>({})
   const [pickedJudge, setPickedJudge] = useState("")
   const [pickedVersion, setPickedVersion] = useState("")
+  const [pickedPrompt, setPickedPrompt] = useState("")
   const prompt = useCurrentPrompt(projectId)
-  const versions = usePromptVersions(projectId, prompt.data?.id ?? null)
+  const versions = usePromptVersions(projectId, pickedPrompt || (prompt.data?.id ?? null))
   const judge = useChosenJudge(projectId, pickedJudge)
   const selected = useMemo(() => (models.data ?? []).filter((m) => m.is_selected), [models.data])
   const approved = version.data?.status === "approved"
   const plan = approved ? toBody(selected, rows, budget) : null
   const promptVersion = pickedVersion || null
   const body = useDebounced(
-    plan ? { ...plan, ...(judge ? { judge } : {}), prompt_version_id: promptVersion } : plan,
+    plan
+      ? {
+          ...plan,
+          ...(judge ? { judge } : {}),
+          prompt_version_id: promptVersion,
+          ...(pickedPrompt ? { prompt_id: pickedPrompt } : {}),
+        }
+      : plan,
     300,
   )
   const randomness = randomnessOf(selected, rows)
@@ -200,6 +209,14 @@ export function RunStep({ projectId }: { projectId: string }) {
         description={`${RUN_COPY.modelsHint} ${RUN_COPY.modelsHint2}`}
       >
         <div className="grid gap-5 md:grid-cols-2">
+          <PromptChooser
+            projectId={projectId}
+            value={pickedPrompt}
+            onChange={(id) => {
+              setPickedPrompt(id)
+              setPickedVersion("")
+            }}
+          />
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="prompt-version">{RUN_COPY.versionLabel}</Label>
             <NativeSelect

@@ -35,6 +35,9 @@ import { CaseView } from "./case-view"
 import { ConfigPanel } from "./config-panel"
 import { UnjudgedBanner } from "./unjudged-banner"
 import { AgreementPanel } from "./agreement-panel"
+import { BlindNotice, BlindToggle } from "./blind-toggle"
+import { ProofExplainer } from "./proof-explainer"
+import { promptTag } from "@/features/prompts-choice/domain"
 import { JudgingPanel } from "./judging-panel"
 import { PassRateChart, percent, TradeoffTable } from "./tradeoff-table"
 
@@ -48,7 +51,15 @@ export function ResultsStep({ projectId, experimentId }: { projectId: string; ex
   const results = useResults(projectId, chosen)
   const scored = Boolean(results.data?.evaluation_run)
   const [failedOnly, setFailedOnly] = useState(false)
-  const cases = useCases(projectId, chosen, failedOnly, scored, results.data?.evaluation_run?.id ?? null)
+  const [blind, setBlind] = useState(false)
+  const cases = useCases(
+    projectId,
+    chosen,
+    failedOnly,
+    scored,
+    results.data?.evaluation_run?.id ?? null,
+    blind,
+  )
   const [exportError, setExportError] = useState<unknown>(null)
   const optimizing = (experiments.data ?? []).find((e) => e.id === chosen)?.origin === "optimization"
   const candidate = useCandidateFor(projectId, optimizing ? chosen : null)
@@ -110,6 +121,7 @@ export function ResultsStep({ projectId, experimentId }: { projectId: string; ex
             >
               {finished.map((e) => (
                 <option key={e.id} value={e.id}>
+                  {promptTag(e, finished)}
                   {e.name} · {new Date(e.created_at).toLocaleString()}
                 </option>
               ))}
@@ -132,6 +144,7 @@ export function ResultsStep({ projectId, experimentId }: { projectId: string; ex
       ) : null}
       {metrics.length ? (
         <>
+          <ProofExplainer projectId={projectId} />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {tiles.map((tile) => (
               <StatTile
@@ -220,9 +233,14 @@ export function ResultsStep({ projectId, experimentId }: { projectId: string; ex
           action={
             <>
               <label className="flex items-center gap-2 text-sm">
-                <Checkbox checked={failedOnly} onCheckedChange={(checked) => setFailedOnly(checked)} />
+                <Checkbox
+                  checked={failedOnly && !blind}
+                  disabled={blind}
+                  onCheckedChange={(checked) => setFailedOnly(checked)}
+                />
                 {RESULTS_COPY.failedOnly}
               </label>
+              <BlindToggle blind={blind} onChange={setBlind} />
               <Button
                 variant="outline"
                 size="sm"
@@ -234,6 +252,7 @@ export function ResultsStep({ projectId, experimentId }: { projectId: string; ex
             </>
           }
         >
+          {blind ? <BlindNotice /> : null}
           {cases.isLoading ? (
             <div className="flex flex-col gap-3" aria-label={RESULTS_COPY.loadingCases}>
               <Skeleton className="h-24 w-full" />

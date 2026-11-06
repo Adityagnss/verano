@@ -17,7 +17,9 @@ import type { InputFileOut } from "@/lib/api/types"
 
 import { DATA_COPY } from "../copy"
 import { isBusy, useDeleteFile, useSelectSheet } from "../hooks"
+import { isTableInput } from "../variables"
 import { MappingPanel, Report } from "./mapping-panel"
+import { VariablesPanel } from "./variables-panel"
 
 const MAPPABLE = new Set(["ready", "validated", "imported"])
 const DONE = new Set(["imported", "extracted"])
@@ -43,7 +45,8 @@ function FileCard({ projectId, file }: { projectId: string; file: InputFileOut }
   const sheet = useSelectSheet(projectId)
   const sheets = file.profile?.sheets ?? []
   const rows = file.kind === "golden_set"
-  const warnings = rows ? [] : (file.profile?.warnings ?? [])
+  const table = isTableInput(file) && (MAPPABLE.has(file.status) || file.status === "importing")
+  const warnings = rows || table ? [] : (file.profile?.warnings ?? [])
   return (
     <Card size="sm">
       <CardHeader>
@@ -70,7 +73,10 @@ function FileCard({ projectId, file }: { projectId: string; file: InputFileOut }
           </Button>
         </CardAction>
       </CardHeader>
-      {file.error_message || warnings.length || (rows && (MAPPABLE.has(file.status) || sheets.length > 1)) ? (
+      {file.error_message ||
+      warnings.length ||
+      table ||
+      (rows && (MAPPABLE.has(file.status) || sheets.length > 1)) ? (
         <CardContent className="flex flex-col gap-4">
           {file.error_message ? <p className="text-danger-strong text-sm">{file.error_message}</p> : null}
           {warnings.map((warning) => (
@@ -100,6 +106,7 @@ function FileCard({ projectId, file }: { projectId: string; file: InputFileOut }
           {rows && (file.status === "ready" || file.status === "validated") ? (
             <MappingPanel projectId={projectId} file={file} />
           ) : null}
+          {table ? <VariablesPanel projectId={projectId} file={file} /> : null}
         </CardContent>
       ) : null}
     </Card>

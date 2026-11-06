@@ -81,14 +81,20 @@ export function EvaluatorCard({
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium capitalize">{e.evaluator_name.replaceAll("_", " ")}</span>
               <StatusBadge tone={(e.config as Config).kind === "deepeval" ? "violet" : "neutral"}>
-                {(e.config as Config).kind === "deepeval" ? TESTS_COPY.judgeKind : TESTS_COPY.ruleKind}
+                {(e.config as Config).kind === "deepeval"
+                  ? TESTS_COPY.judgeKind
+                  : (e.config as Config).kind === "code"
+                    ? "Your code"
+                    : TESTS_COPY.ruleKind}
               </StatusBadge>
               {e.required ? <StatusBadge tone="brand">{TESTS_COPY.requiredKind}</StatusBadge> : null}
             </div>
             <p className="text-text-secondary text-xs leading-relaxed">
               {(e.config as Config).kind === "deepeval"
                 ? TESTS_COPY.judgeInfo
-                : (TESTS_COPY.ruleInfo[e.evaluator_name] ?? "")}
+                : (e.config as Config).kind === "code"
+                  ? "A check you wrote in Python."
+                  : (TESTS_COPY.ruleInfo[e.evaluator_name] ?? "")}
             </p>
             {e.evaluator_name === "constraints" ? (
               <ConstraintList list={(e.config as Config).constraints} />

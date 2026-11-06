@@ -2490,6 +2490,147 @@
         "title": "ClusterOut",
         "type": "object"
       },
+      "CodeContractOut": {
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/CodeLimitsOut"
+          },
+          "max_code_chars": {
+            "title": "Max Code Chars",
+            "type": "integer"
+          }
+        },
+        "required": ["enabled", "limits", "max_code_chars"],
+        "title": "CodeContractOut",
+        "type": "object"
+      },
+      "CodeLimitsOut": {
+        "properties": {
+          "cpu_s": {
+            "title": "Cpu S",
+            "type": "integer"
+          },
+          "memory_mb": {
+            "title": "Memory Mb",
+            "type": "integer"
+          },
+          "output_chars": {
+            "title": "Output Chars",
+            "type": "integer"
+          },
+          "wall_s": {
+            "title": "Wall S",
+            "type": "number"
+          }
+        },
+        "required": ["wall_s", "cpu_s", "memory_mb", "output_chars"],
+        "title": "CodeLimitsOut",
+        "type": "object"
+      },
+      "CodeTryOut": {
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Score"
+          },
+          "timed_out": {
+            "title": "Timed Out",
+            "type": "boolean"
+          }
+        },
+        "required": ["ok", "score", "passed", "reason", "error", "timed_out"],
+        "title": "CodeTryOut",
+        "type": "object"
+      },
+      "CodeTryRequest": {
+        "properties": {
+          "code": {
+            "maxLength": 20000,
+            "title": "Code",
+            "type": "string"
+          },
+          "expected": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected"
+          },
+          "inputs": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Inputs",
+            "type": "object"
+          },
+          "output": {
+            "default": "",
+            "maxLength": 20000,
+            "title": "Output",
+            "type": "string"
+          },
+          "rubric": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric"
+          }
+        },
+        "required": ["code"],
+        "title": "CodeTryRequest",
+        "type": "object"
+      },
       "ColumnMapping": {
         "properties": {
           "category": {
@@ -3415,6 +3556,23 @@
         },
         "required": ["test_case_run_id", "evaluation_run_id", "scores"],
         "title": "EvidenceOut",
+        "type": "object"
+      },
+      "EvidenceThresholdsOut": {
+        "properties": {
+          "clearly_better_min_cases": {
+            "description": "Judged cases needed before two prompts can be called clearly different.",
+            "title": "Clearly Better Min Cases",
+            "type": "integer"
+          },
+          "proven_min_holdout": {
+            "description": "Held-back cases needed before an improvement can be called proven.",
+            "title": "Proven Min Holdout",
+            "type": "integer"
+          }
+        },
+        "required": ["clearly_better_min_cases", "proven_min_holdout"],
+        "title": "EvidenceThresholdsOut",
         "type": "object"
       },
       "ExperimentCreate": {
@@ -7370,6 +7528,30 @@
         "title": "ReviewStatus",
         "type": "string"
       },
+      "RuleInfoOut": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "settings": {
+            "description": "What can be set, as plain text, for example 'values (list), case_sensitive'.",
+            "title": "Settings",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": ["name", "title", "description", "settings"],
+        "title": "RuleInfoOut",
+        "type": "object"
+      },
       "RunConfiguration": {
         "description": "What an experiment was set up with. `hash` is the same for the same configuration.",
         "properties": {
@@ -9836,6 +10018,110 @@
         "tags": ["apps"]
       }
     },
+    "/api/v1/projects/{project_id}/code-checks/contract": {
+      "get": {
+        "description": "The limits a custom code check runs under, and whether this server allows custom code checks.",
+        "operationId": "code_check_contract_api_v1_projects__project_id__code_checks_contract_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodeContractOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Code Check Contract",
+        "tags": ["evaluators"]
+      }
+    },
+    "/api/v1/projects/{project_id}/code-checks/try": {
+      "post": {
+        "description": "Run a code check on one sample answer. Nothing is saved; a failing check is a result, not an error.",
+        "operationId": "try_code_check_api_v1_projects__project_id__code_checks_try_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodeTryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodeTryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Try Code Check",
+        "tags": ["evaluators"]
+      }
+    },
     "/api/v1/projects/{project_id}/credentials": {
       "get": {
         "operationId": "list_credentials_api_v1_projects__project_id__credentials_get",
@@ -11197,6 +11483,53 @@
           }
         ],
         "summary": "Get Evaluator Version",
+        "tags": ["evaluators"]
+      }
+    },
+    "/api/v1/projects/{project_id}/evidence-thresholds": {
+      "get": {
+        "description": "The two settings behind the words \"clearly better\" and \"proven\", so the screens can state them.",
+        "operationId": "evidence_thresholds_api_v1_projects__project_id__evidence_thresholds_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceThresholdsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Evidence Thresholds",
         "tags": ["evaluators"]
       }
     },
@@ -16327,6 +16660,57 @@
         ],
         "summary": "Save Version",
         "tags": ["prompts"]
+      }
+    },
+    "/api/v1/projects/{project_id}/rule-checks": {
+      "get": {
+        "description": "Every rule check that can be added to a project, with what it does and what it can be set to.",
+        "operationId": "list_rule_checks_api_v1_projects__project_id__rule_checks_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RuleInfoOut"
+                  },
+                  "title": "Response List Rule Checks Api V1 Projects  Project Id  Rule Checks Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Rule Checks",
+        "tags": ["evaluators"]
       }
     },
     "/api/v1/projects/{project_id}/task-specs": {

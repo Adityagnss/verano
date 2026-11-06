@@ -102,6 +102,31 @@ export function useSubmitMapping(projectId: string) {
   })
 }
 
+/** A table of inputs: which column fills each prompt variable. The file is read again, one test case per row. */
+export function useSetVariables(projectId: string) {
+  const invalidate = useInvalidate(projectId)
+  return useMutation({
+    mutationFn: ({
+      fileId,
+      variables,
+      expectedOutput,
+      category,
+    }: {
+      fileId: string
+      variables: Record<string, string>
+      expectedOutput: string | null
+      category: string | null
+    }) =>
+      call(() =>
+        api.PUT("/api/v1/projects/{project_id}/input-files/{file_id}/variables", {
+          params: fileParams(projectId, fileId),
+          body: { variables, expected_output: expectedOutput, category },
+        }),
+      ),
+    onSettled: invalidate,
+  })
+}
+
 export function useImport(projectId: string) {
   const invalidate = useInvalidate(projectId)
   return useMutation({

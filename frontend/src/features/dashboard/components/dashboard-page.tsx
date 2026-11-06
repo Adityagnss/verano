@@ -7,13 +7,17 @@
 
 import { Lightbulb } from "lucide-react"
 import Link from "next/link"
+import { useState } from "react"
 
 import { EmptyState } from "@/components/common/empty-state"
 import { ErrorMessage } from "@/components/common/error-message"
 import { Section } from "@/components/common/section"
 import { StatTile } from "@/components/common/stat-tile"
 import { StatusBadge } from "@/components/common/status-badge"
+import { Label } from "@/components/ui/label"
+import { NativeSelect } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
+import { defaultPrompt, forPrompt, promptsOf } from "@/features/prompts-choice/domain"
 import { unfairReasons } from "@/lib/fairness"
 import { formatMs } from "@/lib/format"
 
@@ -34,7 +38,13 @@ import { VersionsPanel, useComparison } from "./versions-panel"
 
 export function DashboardPage({ projectId }: { projectId: string }) {
   const data = useDashboardData(projectId)
-  const finished = yourRuns(finishedExperiments(data.experiments, data.results, versionLabels(data.versions)))
+  // Versions are compared within one prompt: with several prompts, one is chosen (the newest run's by default).
+  const [pickedPrompt, setPickedPrompt] = useState("")
+  const prompts = promptsOf(data.experiments)
+  const promptId = prompts.length < 2 ? null : pickedPrompt || defaultPrompt(data.experiments)
+  const finished = yourRuns(
+    finishedExperiments(forPrompt(data.experiments, promptId), data.results, versionLabels(data.versions)),
+  )
   const compared = latestPerVersion(finished).slice(-2)
   const proof = useComparison(
     projectId,
@@ -67,6 +77,25 @@ export function DashboardPage({ projectId }: { projectId: string }) {
         </p>
       </header>
       <ErrorMessage error={data.error} />
+      {prompts.length > 1 ? (
+        <div className="flex max-w-md flex-col gap-1.5">
+          <Label htmlFor="dashboard-prompt">Prompt</Label>
+          <NativeSelect
+            id="dashboard-prompt"
+            value={promptId ?? ""}
+            onChange={(e) => setPickedPrompt(e.target.value)}
+          >
+            {prompts.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </NativeSelect>
+          <p className="text-text-muted text-xs">
+            Versions and trends are only compared within one prompt. Pick another to see its own.
+          </p>
+        </div>
+      ) : null}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatTile
           label="Spent on models"

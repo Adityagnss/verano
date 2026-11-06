@@ -6,10 +6,13 @@
 import { ChevronRight, CircleAlert, CircleCheck, CircleX } from "lucide-react"
 
 import { StatusBadge } from "@/components/common/status-badge"
+import { useModels } from "@/features/keys/hooks"
 import type { CaseResultOut } from "@/lib/api/types"
 import { cn } from "@/lib/utils"
 
 import { LABEL_COPY, RESULTS_COPY } from "../copy"
+import { BLIND_COPY } from "../screens-copy"
+import { AppCalls } from "./app-calls"
 import { EvidencePanel } from "./evidence-panel"
 import { JudgeCalls } from "./judge-calls"
 import { LabelBar } from "./label-bar"
@@ -28,8 +31,11 @@ export function CaseView({
   projectId: string
   experimentId: string
 }) {
+  const models = useModels(projectId)
+  const fromApp = (id: string) => models.data?.find((m) => m.id === id)?.provider === "app"
   const failed = item.outputs.filter((o) => o.judged && !o.passed).length
-  const notJudged = item.outputs.filter((o) => !o.judged).length
+  const notJudged = item.outputs.filter((o) => !o.judged && !o.hidden).length
+  const blind = item.outputs.some((o) => o.hidden)
   return (
     <details className="group bg-card border-border open:ring-border-strong rounded-lg border open:ring-1">
       <summary className="hover:bg-subtle/60 flex cursor-pointer list-none items-center gap-3 rounded-lg px-4 py-3 [&::-webkit-details-marker]:hidden">
@@ -39,8 +45,8 @@ export function CaseView({
           {item.outputs.map((o) => (
             <StatusBadge
               key={o.test_case_run_id}
-              tone={!o.judged ? "warning" : o.passed ? "success" : "danger"}
-              icon={!o.judged ? <CircleAlert /> : o.passed ? <CircleCheck /> : <CircleX />}
+              tone={o.hidden ? "neutral" : !o.judged ? "warning" : o.passed ? "success" : "danger"}
+              icon={o.hidden ? null : !o.judged ? <CircleAlert /> : o.passed ? <CircleCheck /> : <CircleX />}
             >
               {o.model}
               {o.run_number > 1 ? ` #${o.run_number}` : ""}
@@ -64,7 +70,11 @@ export function CaseView({
               {notJudged} {RESULTS_COPY.notJudged.toLowerCase()}
             </StatusBadge>
           ) : null}
-          {failed ? (
+          {blind ? (
+            <StatusBadge tone="neutral" className="ml-auto">
+              {BLIND_COPY.hidden}
+            </StatusBadge>
+          ) : failed ? (
             <StatusBadge tone="danger" icon={<CircleX />} className={notJudged ? "" : "ml-auto"}>
               {failed} failed
             </StatusBadge>
@@ -104,23 +114,27 @@ export function CaseView({
               key={o.test_case_run_id}
               className={cn(
                 "rounded-lg border p-3",
-                !o.judged
-                  ? "border-warning/40 bg-warning-soft/40"
-                  : o.passed
-                    ? "border-success/40 bg-success-soft/40"
-                    : "border-danger/40 bg-danger-soft/40",
+                o.hidden
+                  ? "border-border bg-card"
+                  : !o.judged
+                    ? "border-warning/40 bg-warning-soft/40"
+                    : o.passed
+                      ? "border-success/40 bg-success-soft/40"
+                      : "border-danger/40 bg-danger-soft/40",
               )}
             >
               <div className="mb-2 flex items-center gap-2 text-xs">
                 <span className="font-medium">{o.model}</span>
                 <span className="text-muted-foreground">{RESULTS_COPY.run(o.run_number)}</span>
-                <StatusBadge
-                  tone={!o.judged ? "warning" : o.passed ? "success" : "danger"}
-                  icon={!o.judged ? <CircleAlert /> : o.passed ? <CircleCheck /> : <CircleX />}
-                  className="ml-auto"
-                >
-                  {!o.judged ? RESULTS_COPY.notJudged : o.passed ? RESULTS_COPY.pass : RESULTS_COPY.fail}
-                </StatusBadge>
+                {o.hidden ? null : (
+                  <StatusBadge
+                    tone={!o.judged ? "warning" : o.passed ? "success" : "danger"}
+                    icon={!o.judged ? <CircleAlert /> : o.passed ? <CircleCheck /> : <CircleX />}
+                    className="ml-auto"
+                  >
+                    {!o.judged ? RESULTS_COPY.notJudged : o.passed ? RESULTS_COPY.pass : RESULTS_COPY.fail}
+                  </StatusBadge>
+                )}
               </div>
               <pre className="font-mono text-xs whitespace-pre-wrap">{o.output ?? o.error}</pre>
               {o.truncated ? (
@@ -167,14 +181,15 @@ export function CaseView({
                   ),
                 )}
               </ul>
-              {o.hidden ? null : (
-                <LabelBar
-                  projectId={projectId}
-                  experimentId={experimentId}
-                  answerId={o.test_case_run_id}
-                  labels={o.labels}
-                />
-              )}
+              <LabelBar
+                projectId={projectId}
+                experimentId={experimentId}
+                answerId={o.test_case_run_id}
+                labels={o.labels}
+              />
+              {fromApp(o.model_profile_id) ? (
+                <AppCalls projectId={projectId} experimentId={experimentId} runId={o.test_case_run_id} />
+              ) : null}
               {o.scores.length ? (
                 <>
                   <EvidencePanel

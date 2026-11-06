@@ -248,6 +248,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/code-checks/contract": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Code Check Contract
+         * @description The limits a custom code check runs under, and whether this server allows custom code checks.
+         */
+        get: operations["code_check_contract_api_v1_projects__project_id__code_checks_contract_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/code-checks/try": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Try Code Check
+         * @description Run a code check on one sample answer. Nothing is saved; a failing check is a result, not an error.
+         */
+        post: operations["try_code_check_api_v1_projects__project_id__code_checks_try_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/credentials": {
         parameters: {
             query?: never;
@@ -540,6 +580,26 @@ export interface paths {
         };
         /** Get Evaluator Version */
         get: operations["get_evaluator_version_api_v1_projects__project_id__evaluator_set_versions__version_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/evidence-thresholds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Evidence Thresholds
+         * @description The two settings behind the words "clearly better" and "proven", so the screens can state them.
+         */
+        get: operations["evidence_thresholds_api_v1_projects__project_id__evidence_thresholds_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1616,6 +1676,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/rule-checks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Rule Checks
+         * @description Every rule check that can be added to a project, with what it does and what it can be set to.
+         */
+        get: operations["list_rule_checks_api_v1_projects__project_id__rule_checks_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/task-specs": {
         parameters: {
             query?: never;
@@ -2508,6 +2588,61 @@ export interface components {
             /** Size */
             size: number;
         };
+        /** CodeContractOut */
+        CodeContractOut: {
+            /** Enabled */
+            enabled: boolean;
+            limits: components["schemas"]["CodeLimitsOut"];
+            /** Max Code Chars */
+            max_code_chars: number;
+        };
+        /** CodeLimitsOut */
+        CodeLimitsOut: {
+            /** Cpu S */
+            cpu_s: number;
+            /** Memory Mb */
+            memory_mb: number;
+            /** Output Chars */
+            output_chars: number;
+            /** Wall S */
+            wall_s: number;
+        };
+        /** CodeTryOut */
+        CodeTryOut: {
+            /** Error */
+            error: string | null;
+            /** Ok */
+            ok: boolean;
+            /** Passed */
+            passed: boolean | null;
+            /** Reason */
+            reason: string;
+            /** Score */
+            score: number | null;
+            /** Timed Out */
+            timed_out: boolean;
+        };
+        /** CodeTryRequest */
+        CodeTryRequest: {
+            /** Code */
+            code: string;
+            /** Expected */
+            expected?: string | null;
+            /**
+             * Inputs
+             * @default {}
+             */
+            inputs: {
+                [key: string]: unknown;
+            };
+            /**
+             * Output
+             * @default
+             */
+            output: string;
+            /** Rubric */
+            rubric?: string | null;
+        };
         /** ColumnMapping */
         ColumnMapping: {
             /** Category */
@@ -2846,6 +2981,19 @@ export interface components {
              * Format: uuid
              */
             test_case_run_id: string;
+        };
+        /** EvidenceThresholdsOut */
+        EvidenceThresholdsOut: {
+            /**
+             * Clearly Better Min Cases
+             * @description Judged cases needed before two prompts can be called clearly different.
+             */
+            clearly_better_min_cases: number;
+            /**
+             * Proven Min Holdout
+             * @description Held-back cases needed before an improvement can be called proven.
+             */
+            proven_min_holdout: number;
         };
         /** ExperimentCreate */
         ExperimentCreate: {
@@ -4303,6 +4451,20 @@ export interface components {
          * @enum {string}
          */
         ReviewStatus: "trusted" | "draft" | "approved";
+        /** RuleInfoOut */
+        RuleInfoOut: {
+            /** Description */
+            description: string;
+            /** Name */
+            name: string;
+            /**
+             * Settings
+             * @description What can be set, as plain text, for example 'values (list), case_sensitive'.
+             */
+            settings: string;
+            /** Title */
+            title: string;
+        };
         /**
          * RunConfiguration
          * @description What an experiment was set up with. `hash` is the same for the same configuration.
@@ -5514,6 +5676,72 @@ export interface operations {
             };
         };
     };
+    code_check_contract_api_v1_projects__project_id__code_checks_contract_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CodeContractOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    try_code_check_api_v1_projects__project_id__code_checks_try_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeTryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CodeTryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_credentials_api_v1_projects__project_id__credentials_get: {
         parameters: {
             query?: never;
@@ -6237,6 +6465,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EvaluatorSetVersionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    evidence_thresholds_api_v1_projects__project_id__evidence_thresholds_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EvidenceThresholdsOut"];
                 };
             };
             /** @description Validation Error */
@@ -8616,6 +8875,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PromptVersionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_rule_checks_api_v1_projects__project_id__rule_checks_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleInfoOut"][];
                 };
             };
             /** @description Validation Error */

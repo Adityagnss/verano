@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { CheckLibrary } from "@/features/checks/components/check-library"
 import { useCurrentPrompt } from "@/features/prompt/hooks"
 import type { DatasetVersionOut, GenerationRequest } from "@/lib/api/types"
 import { formatCost } from "@/lib/format"
@@ -357,6 +358,9 @@ export function TestsStep({ projectId }: { projectId: string }) {
       ) : null}
       {current && evaluators.data ? (
         <EvaluatorCard projectId={projectId} versionId={current.id} set={evaluators.data} frozen={frozen} />
+      ) : null}
+      {current && evaluators.data ? (
+        <CheckLibrary projectId={projectId} versionId={current.id} set={evaluators.data} frozen={frozen} />
       ) : null}
       {version.isPending ? null : (
         <PageActions

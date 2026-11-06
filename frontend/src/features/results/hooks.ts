@@ -40,13 +40,17 @@ export function useCases(
   failedOnly: boolean,
   enabled: boolean,
   evaluationRunId: string | null = null,
+  blind = false,
 ) {
   return useQuery({
-    queryKey: ["projects", projectId, "result-cases", experimentId, failedOnly, evaluationRunId],
+    queryKey: ["projects", projectId, "result-cases", experimentId, failedOnly, evaluationRunId, blind],
     queryFn: () =>
       call(() =>
         api.GET("/api/v1/projects/{project_id}/experiments/{experiment_id}/cases", {
-          params: { ...experimentPath(projectId, experimentId ?? ""), query: { failed_only: failedOnly } },
+          params: {
+            ...experimentPath(projectId, experimentId ?? ""),
+            query: { failed_only: failedOnly, blind },
+          },
         }),
       ),
     enabled: enabled && experimentId !== null,

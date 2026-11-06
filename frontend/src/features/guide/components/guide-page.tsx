@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { pageAsMarkdown } from "../copy-text"
 import { usePromptNotes } from "../hooks"
 import { DIAGRAMS, DIAGRAM_LABELS } from "./diagrams"
+import { ProofExplainer } from "@/features/results/components/proof-explainer"
 
 export function GuidePage({ projectId }: { projectId: string }) {
   const notes = usePromptNotes()
@@ -59,6 +60,7 @@ export function GuidePage({ projectId }: { projectId: string }) {
           ) : null}
         </div>
       </header>
+      <ProofExplainer projectId={projectId} />
       <div className="grid gap-6 lg:grid-cols-[14rem_minmax(0,1fr)]">
         <nav aria-label="On this page" className="hidden lg:block">
           <ul className="sticky top-20 flex flex-col gap-1 text-sm">
