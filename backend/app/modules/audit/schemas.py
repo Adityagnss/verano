@@ -20,6 +20,7 @@ class AuditAction(StrEnum):
     KEY_DETACHED = "key.detached"
     VERSION_ACCEPTED = "version.accepted"
     LABEL_MOVED = "label.moved"
+    PROMPT_DELETED = "prompt.deleted"
     ANSWER_LABELLED = "answer.labelled"
     ROLE_CHANGED = "role.changed"
     MEMBER_REMOVED = "member.removed"
@@ -40,6 +41,7 @@ ACTION_LABELS: dict[AuditAction, str] = {
     AuditAction.KEY_DETACHED: "Key taken out of a project",
     AuditAction.VERSION_ACCEPTED: "Prompt version accepted",
     AuditAction.LABEL_MOVED: "Prompt label moved",
+    AuditAction.PROMPT_DELETED: "Prompt deleted",
     AuditAction.ANSWER_LABELLED: "Answer labelled",
     AuditAction.ROLE_CHANGED: "Role changed",
     AuditAction.MEMBER_REMOVED: "Member removed",

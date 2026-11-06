@@ -36,6 +36,7 @@ from app.modules.auth.schemas import (
     VerifyEmailRequest,
 )
 from app.modules.auth.service import IssuedSession
+from app.modules.projects.dependencies import ProjectServiceDep
 
 REFRESH_PATH = "/auth/refresh"
 
@@ -156,7 +157,11 @@ async def me(principal: CurrentPrincipal, service: AuthServiceDep) -> MeOut:
 
 
 @router.post("/tokens", status_code=status.HTTP_201_CREATED)
-async def create_token(body: ApiTokenCreate, principal: CurrentPrincipal, service: AuthServiceDep) -> ApiTokenCreated:
+async def create_token(
+    body: ApiTokenCreate, principal: CurrentPrincipal, service: AuthServiceDep, projects: ProjectServiceDep
+) -> ApiTokenCreated:
+    if body.project_id is not None:  # a token can only be limited to a project you can open
+        await projects.require_access(principal, body.project_id)
     return await service.create_api_token(principal, body)
 
 

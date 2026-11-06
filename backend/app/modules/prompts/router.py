@@ -4,8 +4,9 @@ case, checking a saved version, and inspecting an unsaved draft (for the live ed
 """
 
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Query, status
 
 from app.core.pagination import Page, PageDep
 from app.core.security import CurrentPrincipal
@@ -47,6 +48,17 @@ async def inspect_draft(body: InspectRequest, project: ProjectScope, service: Pr
 @router.get("/prompts/{prompt_id}")
 async def get_prompt(prompt_id: uuid.UUID, project: ProjectScope, service: PromptServiceDep) -> PromptOut:
     return await service.get_prompt(project, prompt_id)
+
+
+@router.delete("/prompts/{prompt_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_prompt(
+    prompt_id: uuid.UUID,
+    project: ProjectScope,
+    principal: CurrentPrincipal,
+    service: PromptServiceDep,
+    confirm: Annotated[bool, Query(description="Must be true: deleting removes every version and label.")] = False,
+) -> None:
+    await service.delete_prompt(project, principal, prompt_id, confirm)
 
 
 @router.post("/prompts/{prompt_id}/versions", status_code=status.HTTP_201_CREATED)

@@ -5660,6 +5660,162 @@
         "title": "ExperimentStatus",
         "type": "string"
       },
+      "ExternalCase": {
+        "properties": {
+          "answer": {
+            "default": "",
+            "description": "The answer that was checked; long answers are cut.",
+            "title": "Answer",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "problems": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Problems",
+            "type": "array"
+          }
+        },
+        "required": ["name", "passed"],
+        "title": "ExternalCase",
+        "type": "object"
+      },
+      "ExternalRunCreate": {
+        "properties": {
+          "cases": {
+            "items": {
+              "$ref": "#/components/schemas/ExternalCase"
+            },
+            "maxItems": 2000,
+            "title": "Cases",
+            "type": "array"
+          },
+          "details": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Short notes: commit, branch.",
+            "title": "Details",
+            "type": "object"
+          },
+          "name": {
+            "description": "What was checked, such as the test suite or commit.",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "source": {
+            "default": "pytest",
+            "maxLength": 40,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9._-]*$",
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": ["name", "cases"],
+        "title": "ExternalRunCreate",
+        "type": "object"
+      },
+      "ExternalRunOut": {
+        "properties": {
+          "cases": {
+            "items": {
+              "$ref": "#/components/schemas/ExternalCase"
+            },
+            "title": "Cases",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "details": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Details",
+            "type": "object"
+          },
+          "failed": {
+            "title": "Failed",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "integer"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": ["id", "source", "name", "passed", "failed", "details", "created_at", "cases"],
+        "title": "ExternalRunOut",
+        "type": "object"
+      },
+      "ExternalRunSummary": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "details": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Details",
+            "type": "object"
+          },
+          "failed": {
+            "title": "Failed",
+            "type": "integer"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "integer"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": ["id", "source", "name", "passed", "failed", "details", "created_at"],
+        "title": "ExternalRunSummary",
+        "type": "object"
+      },
       "FailureCount": {
         "properties": {
           "count": {
@@ -9715,6 +9871,31 @@
         },
         "required": ["items", "next_cursor"],
         "title": "Page[ExperimentOut]",
+        "type": "object"
+      },
+      "Page_ExternalRunSummary_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ExternalRunSummary"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": ["items", "next_cursor"],
+        "title": "Page[ExternalRunSummary]",
         "type": "object"
       },
       "Page_InputFileOut_": {
@@ -20205,6 +20386,195 @@
         "tags": ["experiments"]
       }
     },
+    "/api/v1/projects/{project_id}/external-results": {
+      "get": {
+        "operationId": "list_results_api_v1_projects__project_id__external_results_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_ExternalRunSummary_"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Results",
+        "tags": ["external results"]
+      },
+      "post": {
+        "operationId": "send_results_api_v1_projects__project_id__external_results_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalRunCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalRunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Send Results",
+        "tags": ["external results"]
+      }
+    },
+    "/api/v1/projects/{project_id}/external-results/{result_id}": {
+      "get": {
+        "operationId": "get_result_api_v1_projects__project_id__external_results__result_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "result_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Result Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalRunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Result",
+        "tags": ["external results"]
+      }
+    },
     "/api/v1/projects/{project_id}/generations": {
       "post": {
         "operationId": "start_generation_api_v1_projects__project_id__generations_post",
@@ -23922,6 +24292,65 @@
       }
     },
     "/api/v1/projects/{project_id}/prompts/{prompt_id}": {
+      "delete": {
+        "operationId": "delete_prompt_api_v1_projects__project_id__prompts__prompt_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "prompt_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Prompt Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Must be true: deleting removes every version and label.",
+            "in": "query",
+            "name": "confirm",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Must be true: deleting removes every version and label.",
+              "title": "Confirm",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Prompt",
+        "tags": ["prompts"]
+      },
       "get": {
         "operationId": "get_prompt_api_v1_projects__project_id__prompts__prompt_id__get",
         "parameters": [

@@ -9,6 +9,7 @@ from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 revision: str = "a8c4e1f7d203"
 down_revision: str | None = "7b3e9c1d4a58"
@@ -56,8 +57,27 @@ def upgrade() -> None:
     )
     op.create_index("ix_prompt_label_moves_prompt_id_id", "prompt_label_moves", ["prompt_id", "id"])
 
+    op.create_table(
+        "external_runs",
+        sa.Column("id", sa.Uuid(), nullable=False),
+        sa.Column("project_id", sa.Uuid(), nullable=False),
+        sa.Column("source", sa.String(length=40), nullable=False),
+        sa.Column("name", sa.String(length=200), nullable=False),
+        sa.Column("passed", sa.Integer(), nullable=False),
+        sa.Column("failed", sa.Integer(), nullable=False),
+        sa.Column("cases", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.Column("details", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.Column("created_by", sa.Uuid(), nullable=True),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.ForeignKeyConstraint(["project_id"], ["projects.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["created_by"], ["users.id"], ondelete="SET NULL"),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index("ix_external_runs_project_id_id", "external_runs", ["project_id", "id"])
+
 
 def downgrade() -> None:
+    op.drop_table("external_runs")
     op.drop_table("prompt_label_moves")
     op.drop_table("prompt_labels")
     op.drop_constraint("fk_api_tokens_project_id_projects", "api_tokens", type_="foreignkey")

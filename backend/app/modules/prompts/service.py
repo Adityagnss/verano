@@ -17,9 +17,11 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
-from app.core.errors import NotFound, ValidationFailed
+from app.core.errors import Conflict, NotFound, ValidationFailed
 from app.core.pagination import Page, PageParams, to_page
 from app.core.security import Principal
+from app.modules.audit.schemas import AuditAction
+from app.modules.audit.service import AuditLog
 from app.modules.projects.schemas import ProjectOut
 from app.modules.prompts.domain import TemplateInfo, analyze, context_fits, missing_inputs, render, tool_warnings
 from app.modules.prompts.label_service import LabelService
@@ -44,6 +46,11 @@ PROMPT_NOT_FOUND = "This prompt doesn't exist in this project."
 VERSION_NOT_FOUND = "This prompt version doesn't exist in this project."
 PARENT_ELSEWHERE = "The parent version belongs to a different prompt."
 TOO_LONG = "The {label} prompt is {length:,} characters long; the limit is {limit:,}."
+NOT_CONFIRMED = "Deleting a prompt removes all its versions and labels for good. Send confirm=true to go ahead."
+HAS_RESULTS = (
+    "This prompt has been tested in {count} experiment(s), and those results need its versions. "
+    "Delete the experiments first, or keep the prompt."
+)
 UNKNOWN_PARAMS = "Unknown parameters: {names}. Use only: {known}."
 
 
@@ -60,6 +67,7 @@ def version_out(row: PromptVersion) -> PromptVersionOut:
 
 class PromptService:
     def __init__(self, session: AsyncSession, registry: RegistryService, settings: Settings) -> None:
+        self._session = session
         self._repo = PromptRepository(session)
         self.labels = LabelService(session, settings)
         self._registry = registry
@@ -71,6 +79,29 @@ class PromptService:
         version = await self._save(prompt, principal, body, parent_version_id=None, number=1)
         return PromptOut(
             id=prompt.id, project_id=project.id, name=prompt.name, created_at=prompt.created_at, latest_version=version
+        )
+
+    async def delete_prompt(
+        self, project: ProjectOut, principal: Principal, prompt_id: uuid.UUID, confirm: bool
+    ) -> None:
+        """Remove a prompt with its versions and labels. Needs `confirm`; refused while experiments used it."""
+        prompt = await self._repo.prompt(project.id, prompt_id, lock=True)
+        if prompt is None:
+            raise NotFound(PROMPT_NOT_FOUND)
+        if not confirm:
+            raise ValidationFailed(NOT_CONFIRMED)
+        used = await self._repo.experiments_using(prompt.id)
+        if used:
+            raise Conflict(HAS_RESULTS.format(count=used))
+        await self._repo.delete_prompt(prompt.id)
+        await AuditLog(self._session).record(
+            organization_id=project.organization_id,
+            project_id=project.id,
+            actor_id=principal.user_id,
+            action=AuditAction.PROMPT_DELETED,
+            summary=f"Deleted the prompt {prompt.name} from {project.name}.",
+            target_type="prompt",
+            target_id=prompt.id,
         )
 
     async def save_version(

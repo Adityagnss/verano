@@ -21,6 +21,7 @@ from app.modules.evaluation.judging_router import router as judging_router
 from app.modules.evaluation.queue_router import router as review_queue_router
 from app.modules.evaluation.router import project_router as evaluators_router
 from app.modules.evaluation.router import router as results_router
+from app.modules.external_results.router import router as external_results_router
 from app.modules.gateway.router import health_router as provider_health_router
 from app.modules.gateway.router import router as gateway_router
 from app.modules.generator.router import router as generator_router
@@ -49,6 +50,7 @@ for module_router in (
     activity_router,
     prompts_router,
     labels_router,
+    external_results_router,
     datasets_router,
     documents_router,
     generator_router,
