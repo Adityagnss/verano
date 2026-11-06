@@ -1,11 +1,12 @@
 [project]
 name = "verano"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Command-line tool for Verano: set up and run prompt evaluations from your own codebase."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
+authors = [{ name = "Verano contributors" }]
 keywords = ["llm", "prompts", "evaluation", "testing", "ci", "openai", "anthropic"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -18,6 +19,8 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Framework :: Pytest",
     "Topic :: Software Development :: Quality Assurance",
     "Topic :: Software Development :: Testing",
 ]
@@ -40,8 +43,26 @@ dependencies = [
     "tree-sitter-swift>=0.7.4",
 ]
 
+[project.optional-dependencies]
+pytest = ["pytest>=8"]
+langchain = ["langchain-core>=0.3"]
+llamaindex = ["llama-index-core>=0.11"]
+openai = ["openai>=1.40"]
+
+[project.urls]
+Homepage = "https://github.com/verano/verano"
+Documentation = "https://github.com/verano/verano/tree/main/cli"
+Changelog = "https://github.com/verano/verano/blob/main/cli/CHANGELOG.md"
+Issues = "https://github.com/verano/verano/issues"
+
 [project.scripts]
 verano = "verano.cli:main"
+
+[project.entry-points.pytest11]
+verano = "verano.pytest_plugin"
+
+[tool.hatch.version]
+path = "src/verano/__init__.py"
 
 [build-system]
 requires = ["hatchling"]

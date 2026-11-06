@@ -1,0 +1,44 @@
+{
+  "name": "@verano/sdk",
+  "version": "0.1.0",
+  "description": "Fetch the prompt Verano serves for a label (production, staging) in your app, with a local cache and a safe fallback.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "llm",
+    "prompts",
+    "verano",
+    "prompt-management"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/verano/verano",
+    "directory": "sdk/typescript"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "typescript": "^5"
+  }
+}
