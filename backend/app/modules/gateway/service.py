@@ -146,6 +146,19 @@ class GatewayService:
         params: dict[str, Any] | None = None,
     ) -> M:
         """`complete_json` for a target resolved beforehand (no transaction open during the call)."""
+        return (await self.complete_json_target_with_calls(target, messages, schema, purpose, context, params))[0]
+
+    async def complete_json_target_with_calls(
+        self,
+        target: CallTarget,
+        messages: list[Message],
+        schema: type[M],
+        purpose: CallPurpose,
+        context: CallContext,
+        params: dict[str, Any] | None = None,
+    ) -> tuple[M, list[LLMResult]]:
+        """`complete_json_target` that also returns every call it made (a repair makes a second), so a caller
+        can account for their tokens and cost."""
         json_param = self._registry.catalog.json_mode_parameter
         request_params = dict(params or {})
         if target.profile.supports_json_mode:
@@ -156,12 +169,14 @@ class GatewayService:
         )
         conversation = with_instruction(messages, instruction, target.profile.supports_system_prompt)
         call_ids: list[uuid.UUID] = []
+        results: list[LLMResult] = []
         error = ""
         for _ in range(1 + self._settings.json_repair_attempts):
             result = await self._run(target, conversation, filtered, purpose, context)
             call_ids.append(result.call_id)
+            results.append(result)
             try:
-                return schema.model_validate(parse_json(result.text))
+                return schema.model_validate(parse_json(result.text)), results
             except (ValueError, ValidationError) as exc:
                 error = str(exc)[:1000]
                 repair = render_system_prompt(PROMPTS_DIR, "json_repair.jinja", error=error)

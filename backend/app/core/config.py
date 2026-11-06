@@ -14,6 +14,7 @@ With VERANO_ENVIRONMENT=production, settings that only make sense for local deve
 from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import AliasChoices, Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -157,6 +158,22 @@ class Settings(BaseSettings):
     rate_limit_floor_fraction: float = 0.05
     rate_limit_acquire_timeout_s: float = 120.0
     rate_limit_state_ttl_s: int = 3600
+
+    # Judging upgrades (ADR 0038): review queue, the judge reading the prompt, generated criteria with a
+    # self-check, the combined judge call and golden answers as the judge's reference
+    review_queue_max_assign: int = 500
+    review_queue_page_size: int = 50
+    judge_sees_prompt: bool = True
+    judge_prompt_max_chars: int = 6_000
+    judge_uses_reference: bool = True
+    scoring_mode: Literal["accurate", "fast"] = "accurate"
+    combined_judge_enabled: bool = True
+    combined_judge_min_checks: int = 2
+    combined_judge_max_checks: int = 8
+    fast_skip_judges_after_required_failure: bool = False
+    rubric_criteria_min: int = 3
+    rubric_criteria_max: int = 7
+    rubric_max_criterion_chars: int = 400
 
     @model_validator(mode="after")
     def _production_is_locked_down(self) -> "Settings":

@@ -89,6 +89,10 @@ class EvidenceService:
                     limits=limits,
                     agreement=agreements.get(score.evaluator_name),
                     agreement_note=None if score.evaluator_name in agreements or kind != "judge" else NOT_MEASURED,
+                    reference_used=bool(score.extra.get("reference_used")),
+                    prompt_seen=bool(score.extra.get("prompt_seen")),
+                    combined=bool(score.extra.get("combined")),
+                    usage=score.extra.get("usage"),
                 )
             )
         return EvidenceOut(test_case_run_id=test_case_run_id, evaluation_run_id=run.id, scores=found)

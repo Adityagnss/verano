@@ -99,3 +99,13 @@ class AuthRepository:
 
     async def api_token(self, user_id: uuid.UUID, token_id: uuid.UUID) -> ApiToken | None:
         return await self._session.scalar(select(ApiToken).where(ApiToken.id == token_id, ApiToken.user_id == user_id))
+
+    async def members(self, organization_id: uuid.UUID) -> list[tuple[User, MembershipRole]]:
+        """The people in one organization with their roles, by name."""
+        query = (
+            select(User, Membership.role)
+            .join(Membership, Membership.user_id == User.id)
+            .where(Membership.organization_id == organization_id)
+            .order_by(User.name, User.id)
+        )
+        return [(user, role) for user, role in (await self._session.execute(query)).all()]

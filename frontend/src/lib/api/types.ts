@@ -77,3 +77,8 @@ export type CodeContractOut = Schemas["CodeContractOut"]
 export type CodeTryOut = Schemas["CodeTryOut"]
 export type AppCallOut = Schemas["AppCallOut"]
 export type EvidenceThresholdsOut = Schemas["EvidenceThresholdsOut"]
+
+export type ReviewAssignRequest = Schemas["AssignRequest"]
+export type ReviewItemOut = Schemas["ReviewItemOut"]
+export type ResolveRequest = Schemas["ResolveRequest"]
+export type DisputeOut = Schemas["DisputeOut"]

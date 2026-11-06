@@ -15,7 +15,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from app.modules.evaluation.domain import EvalCase, Score, inputs_text, score
+from app.modules.evaluation.domain import EvalCase, Score, score
+from app.modules.evaluation.judging import input_for_judge, reference_of, with_reference_note
 from app.modules.gateway.schemas import CallContext, CallPurpose, Message
 from app.modules.gateway.service import GatewayService
 from app.modules.registry.schemas import CallTarget
@@ -87,12 +88,16 @@ def instructions_for(config: dict[str, Any], case: EvalCase) -> tuple[str | None
     return (criteria, []) if criteria else None
 
 
+def _needs(config: dict[str, Any]) -> set[str]:
+    return {part.strip() for part in str(config.get("requires") or "").split(",")}
+
+
 def criteria_for(config: dict[str, Any], case: EvalCase) -> str | None:
     asked = instructions_for(config, case)
     return asked[0] if asked else None
 
 
-def _answer_text(config: dict[str, Any], case: EvalCase) -> str:
+def answer_text(config: dict[str, Any], case: EvalCase) -> str:
     """The answer the judge reads. A judge that looks at tool use also gets the tools the app called."""
     if not config.get("include_tool_calls") or not case.tool_calls:
         return case.output
@@ -118,8 +123,10 @@ async def judge(
     from deepeval.metrics import GEval
     from deepeval.test_case import LLMTestCase, SingleTurnParams
 
+    reference = reference_of(config, case)
+    criteria, steps = with_reference_note(criteria, steps, reference is not None and "expected" not in _needs(config))
     params = [SingleTurnParams.INPUT, SingleTurnParams.ACTUAL_OUTPUT]
-    if case.expected is not None:
+    if reference is not None:
         params.append(SingleTurnParams.EXPECTED_OUTPUT)
     if case.context:
         params.append(SingleTurnParams.CONTEXT)
@@ -134,9 +141,9 @@ async def judge(
         verbose_mode=False,
     )
     test_case = LLMTestCase(
-        input=inputs_text(case.inputs),
-        actual_output=_answer_text(config, case),
-        expected_output=case.expected,
+        input=input_for_judge(config, case),
+        actual_output=answer_text(config, case),
+        expected_output=reference,
         context=[str(item) for item in case.context] or None,
     )
     await metric.a_measure(test_case, _show_indicator=False)

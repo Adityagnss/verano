@@ -51,6 +51,7 @@ from app.modules.auth.schemas import (
     ApiTokenOut,
     AuthConfigOut,
     LoginRequest,
+    MembershipRole,
     MeOut,
     OrganizationOut,
     SessionOut,
@@ -166,6 +167,10 @@ class AuthService:
 
     async def organization_ids(self, user_id: uuid.UUID) -> list[uuid.UUID]:
         return [org.id for org in await self.organizations(user_id)]
+
+    async def organization_members(self, organization_id: uuid.UUID) -> list[tuple[UserOut, MembershipRole]]:
+        """The people in one organization and their roles. The caller has already been checked to belong to it."""
+        return [(UserOut.model_validate(user), role) for user, role in await self._repo.members(organization_id)]
 
     async def personal_organization_id(self, user_id: uuid.UUID) -> uuid.UUID:
         personal = [org.id for org in await self.organizations(user_id) if org.is_personal]
