@@ -14,7 +14,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from app.modules.evaluation.domain import EvalCase, Score, score
+from app.modules.evaluation.domain import EvalCase, Score, inputs_text, score
 from app.modules.gateway.schemas import CallContext, CallPurpose, Message
 from app.modules.gateway.service import GatewayService
 from app.modules.registry.schemas import CallTarget
@@ -116,7 +116,7 @@ async def judge(
         verbose_mode=False,
     )
     test_case = LLMTestCase(
-        input="\n".join(f"{key}: {value}" for key, value in case.inputs.items()),
+        input=inputs_text(case.inputs),
         actual_output=case.output,
         expected_output=case.expected,
         context=[str(item) for item in case.context] or None,

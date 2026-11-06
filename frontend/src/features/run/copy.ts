@@ -99,5 +99,9 @@ export const RUN_COPY = {
   progress: (done: number, total: number) => `${done} / ${total}`,
   failedCalls: (count: number) => `${count} failed`,
   cancel: "Stop",
+  scoringBar: "Scoring the answers",
+  scoringDone: (done: number, total: number) => `${done} of ${total} answers`,
+  timeLeft: (seconds: number) =>
+    seconds < 90 ? `about ${seconds} s left` : `about ${Math.round(seconds / 60)} min left`,
   results: "See results",
 }

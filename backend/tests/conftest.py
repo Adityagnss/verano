@@ -36,7 +36,7 @@ from app.core.database import Base, load_all_models
 from app.core.jobs import InlineJobQueue, load_all_jobs
 from app.main import create_app
 from app.modules.gateway.plugins.mock_provider import install_mock_provider
-from tests.helpers import FIXTURES, ROOT, Session, compose_image, sign_up
+from tests.helpers import FIXTURES, ROOT, TEST_CONTAINER_LABELS, Session, compose_image, sign_up
 
 
 @dataclass(frozen=True)
@@ -51,10 +51,9 @@ def infra() -> Iterator[Infra]:
     if all(provided):
         yield Infra(database_url=str(provided[0]), valkey_url=str(provided[1]))
         return
-    with (
-        PostgresContainer(compose_image("postgres"), driver="asyncpg") as postgres,
-        RedisContainer(compose_image("valkey")) as valkey,
-    ):
+    postgres = PostgresContainer(compose_image("postgres"), driver="asyncpg").with_kwargs(labels=TEST_CONTAINER_LABELS)
+    valkey = RedisContainer(compose_image("valkey")).with_kwargs(labels=TEST_CONTAINER_LABELS)
+    with postgres, valkey:
         valkey_url = f"redis://{valkey.get_container_host_ip()}:{valkey.get_exposed_port(6379)}/0"
         yield Infra(database_url=postgres.get_connection_url(), valkey_url=valkey_url)
 

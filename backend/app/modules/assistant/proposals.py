@@ -15,6 +15,7 @@ from app.modules.assistant.models import OptimizationSession, PromptCandidate
 from app.modules.assistant.repository import AssistantRepository
 from app.modules.assistant.schemas import CandidateDrafts, CandidateOutcome, FailureGroups
 from app.modules.engine.models import Experiment
+from app.modules.evaluation.domain import inputs_text
 from app.modules.evaluation.schemas import CaseResultOut
 from app.modules.prompts.domain import TemplateInfo, analyze
 from app.modules.prompts.schemas import PromptSource, PromptVersionCreate, PromptVersionOut
@@ -38,7 +39,9 @@ def failures_of(cases: list[CaseResultOut]) -> list[dict[str, Any]]:
                     "tag": rule_tag(output.output, failed),
                     "model": output.model,
                     "category": case.category,
-                    "inputs": clip(case.inputs),
+                    "inputs": clip(case.inputs)
+                    if set(case.inputs) != {"attachment"}
+                    else inputs_text(clip(case.inputs)),
                     "expected": case.expected_output,
                     "output": output.output or output.error,
                     "reasons": "; ".join(s.reason for s in output.scores if not s.passed),

@@ -37,16 +37,24 @@ import {
   useStartImprove,
   useStopImprove,
 } from "../hooks"
+import { formatCost } from "@/lib/format"
+
 import { History } from "./history"
 import { CandidateCard, percent } from "./candidate-card"
 import { ResultDialog } from "./result-dialog"
 import { StageTracker } from "./stage-tracker"
+
+/** Improve tests 3 candidates on the 70% it improves on and re-checks the best on the 30% held back: about 2.4 runs. */
+const COST_FACTOR = 2.4
 
 export function ImproveStep({ projectId, experimentId }: { projectId: string; experimentId: string | null }) {
   const router = useRouter()
   const experiments = useExperiments(projectId)
   const finished = (experiments.data ?? []).filter((e) => e.origin === "manual" && e.status === "completed")
   const chosen = experimentId ?? finished[0]?.id ?? null
+  const chosenCost = Number(
+    (finished.find((e) => e.id === chosen)?.progress ?? []).reduce((sum, m) => sum + Number(m.cost), 0),
+  )
   const latest = useLatestSession(projectId, chosen)
   const [viewId, setViewId] = useState<string | null>(null)
   const opened = useImprovement(projectId, viewId)
@@ -338,11 +346,13 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
       <History projectId={projectId} openId={viewId ?? data?.id ?? null} onOpen={setViewId} />
       <PageActions
         summary={
-          data && !winner && data.stage === "done"
-            ? confirmed?.verdict
-              ? IMPROVE_COPY.acceptOff
-              : IMPROVE_COPY.nothingToAccept
-            : null
+          !data && chosenCost > 0
+            ? IMPROVE_COPY.costHint(formatCost(chosenCost * COST_FACTOR))
+            : data && !winner && data.stage === "done"
+              ? confirmed?.verdict
+                ? IMPROVE_COPY.acceptOff
+                : IMPROVE_COPY.nothingToAccept
+              : null
         }
       >
         {primary}

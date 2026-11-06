@@ -2866,6 +2866,16 @@
             "title": "Prompt Version Id",
             "type": "string"
           },
+          "scoring": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScoringProgress"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "split_scope": {
             "$ref": "#/components/schemas/SplitScope"
           },
@@ -6382,6 +6392,22 @@
         "enum": ["scored", "unscored"],
         "title": "ScoreStatus",
         "type": "string"
+      },
+      "ScoringProgress": {
+        "description": "How far the judges have got: answers scored out of answers to score.",
+        "properties": {
+          "done": {
+            "title": "Done",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": ["done", "total"],
+        "title": "ScoringProgress",
+        "type": "object"
       },
       "SectionOut": {
         "properties": {

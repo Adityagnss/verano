@@ -23,6 +23,14 @@ class EvalCase:
     context: list[str] = field(default_factory=list)
 
 
+def inputs_text(inputs: dict[str, Any]) -> str:
+    """What the case sent, as a person or a judge reads it. A file row's text is the message itself, so it is shown
+    without its `attachment:` label (the label is Verano's, not part of the customer's message)."""
+    if set(inputs) == {"attachment"}:
+        return str(inputs["attachment"])
+    return "\n".join(f"{key}: {value}" for key, value in inputs.items())
+
+
 def judge_calls_per_answer(checks: list[dict[str, Any]]) -> int:
     """Judge calls one answer needs: a judged check made of criteria first has the judge write its own
     evaluation steps (one call) and then scores (another); a check given its steps scores directly."""

@@ -1,7 +1,8 @@
 """
 Helpers shared by integration tests: sign-up, a signed-in project session, adding a
 credential, loading recorded provider fixtures, the pinned image of a Compose service
-(docker-compose.yml is the one place image versions are written down), and the file
+(docker-compose.yml is the one place image versions are written down), the label every
+test container carries (so `make clean` can remove Verano's leftovers and nothing else), and the file
 ingestion flow as a user drives it: create a prompt, upload, map, import.
 """
 
@@ -18,6 +19,7 @@ ROOT = Path(__file__).resolve().parent.parent
 FIXTURES = ROOT / "tests/fixtures"
 COMPOSE_FILE = ROOT.parent / "docker-compose.yml"
 PASSWORD = "correct horse battery"
+TEST_CONTAINER_LABELS = {"dev.verano.test": "true"}
 
 
 @dataclass

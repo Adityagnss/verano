@@ -64,9 +64,9 @@ async def test_improve_uses_only_optimize_failures_and_reports_honestly(
     assert [v["id"] for v in listed] == [before["id"]]  # candidates are not saved versions
     proof = confirmed[0]["verdict"]
     assert proof["reason"] == "too_few_cases"
-    assert proof["minimum_cases"] == 30
+    assert proof["minimum_cases"] == 15
     assert proof["message"] == result["message"]
-    assert proof["comparison"]["cases"] < 30
+    assert proof["comparison"]["cases"] < 15
 
     after = (await client.get(f"{base}/prompts", headers=session.headers)).json()["items"][0]["latest_version"]
     assert after["id"] == before["id"]
@@ -213,6 +213,7 @@ async def test_any_candidate_can_be_saved_as_a_prompt_version_to_test(
         201,
         202,
     )
+    await jobs.drain()  # the run it started must finish inside this test, not during the next one
 
 
 async def test_a_stopped_improvement_keeps_everything_and_continues_where_it_left_off(

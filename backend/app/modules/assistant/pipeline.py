@@ -163,12 +163,17 @@ class ImprovementPipeline:
             return
         prompt = await self._prompts.get_version(baseline.project_id, baseline.prompt_version_id)
         spec = await self._spec(baseline)
-        await self._note(session_id, f"Grouping {len(failures)} failures by reason…")
-        groups = await self._ask(
-            baseline, row.writer, "failures.jinja", FailureGroups, "failure_groups", prompt, spec, cases=failures
-        )
-        clusters = await store_clusters(self._repo, baseline, run.id, groups, failures)
-        await self._session.commit()
+        # groups found earlier in this same session (Continue after a stop); a new session always groups afresh
+        clusters = [c for c in await self._repo.clusters(run.id) if c.created_at >= row.created_at]
+        if clusters:
+            await self._note(session_id, "Using the failure groups already found…")  # Continue after a stop
+        else:
+            await self._note(session_id, f"Grouping {len(failures)} failures by reason…")
+            groups = await self._ask(
+                baseline, row.writer, "failures.jinja", FailureGroups, "failure_groups", prompt, spec, cases=failures
+            )
+            clusters = await store_clusters(self._repo, baseline, run.id, groups, failures)
+            await self._session.commit()
         if not await self._working(session_id, SessionStage.ANALYZING):
             return
         await self._note(session_id, "Writing 3 better prompts (side by side)…")
@@ -321,7 +326,10 @@ class ImprovementPipeline:
             ),
             return_exceptions=True,
         )
-        drafts = [r.candidates[0] for r in results if isinstance(r, CandidateDrafts)]
+        # one is asked for; if a model sends several anyway, call number i keeps its i-th
+        drafts = [
+            r.candidates[min(i, len(r.candidates) - 1)] for i, r in enumerate(results) if isinstance(r, CandidateDrafts)
+        ]
         if not drafts:
             raise next(r for r in results if isinstance(r, BaseException))
         return CandidateDrafts(candidates=drafts)

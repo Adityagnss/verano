@@ -2529,6 +2529,7 @@ export interface components {
              * Format: uuid
              */
             prompt_version_id: string;
+            scoring?: components["schemas"]["ScoringProgress"] | null;
             split_scope: components["schemas"]["SplitScope"];
             /** Started At */
             started_at: string | null;
@@ -3842,6 +3843,16 @@ export interface components {
          * @enum {string}
          */
         ScoreStatus: "scored" | "unscored";
+        /**
+         * ScoringProgress
+         * @description How far the judges have got: answers scored out of answers to score.
+         */
+        ScoringProgress: {
+            /** Done */
+            done: number;
+            /** Total */
+            total: number;
+        };
         /** SectionOut */
         SectionOut: {
             /** Char Count */

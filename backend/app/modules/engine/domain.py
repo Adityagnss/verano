@@ -28,7 +28,7 @@ TRANSITIONS: dict[Status, frozenset[Status]] = {
     Status.PLANNED: frozenset({Status.RUNNING, Status.CANCELLED}),
     Status.RUNNING: frozenset({Status.EVALUATING, Status.PAUSED, Status.CANCELLED, Status.FAILED}),
     Status.PAUSED: frozenset({Status.RUNNING, Status.CANCELLED}),
-    Status.EVALUATING: frozenset({Status.COMPLETED, Status.FAILED}),
+    Status.EVALUATING: frozenset({Status.COMPLETED, Status.CANCELLED, Status.FAILED}),
     Status.COMPLETED: frozenset(),
     Status.CANCELLED: frozenset(),
     Status.FAILED: frozenset(),

@@ -93,6 +93,13 @@ class ExperimentEstimate(BaseModel):
     models: list[ModelEstimate]
 
 
+class ScoringProgress(BaseModel):
+    """How far the judges have got: answers scored out of answers to score."""
+
+    done: int
+    total: int
+
+
 class ModelProgress(BaseModel):
     model_profile_id: uuid.UUID
     model: str
@@ -159,6 +166,7 @@ class ExperimentOut(BaseModel):
     total_calls: int
     stop_reason: str | None
     progress: list[ModelProgress]
+    scoring: ScoringProgress | None = None
     configuration: RunConfiguration
     model_versions: list[ModelVersions]
     created_at: datetime

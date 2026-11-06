@@ -79,6 +79,7 @@ class ScoringService:
         self._scores = ScoreRepository(session)
         self._specs = TaskSpecRepository(session)
         self._jobs: JobQueue = container.jobs
+        self._sessions = container.database.sessions
 
     async def score(
         self,
@@ -108,18 +109,23 @@ class ScoringService:
             )
             await self._scores.add_run(run)
         try:
-            await self._score_pass(experiment, run, version_id)
+            finished = await self._score_pass(experiment, run, version_id)
         except Exception:
             await self._session.rollback()
             await self._scores.finish_run(run.id, EvaluationRunStatus.FAILED, utcnow())
             await self._session.commit()
             raise
+        if not finished:
+            await self._scores.finish_run(run.id, EvaluationRunStatus.FAILED, utcnow())
+            await self._session.commit()
+            return run.id
         await self._scores.finish_run(run.id, EvaluationRunStatus.COMPLETED, utcnow())
         await self._complete(experiment, trigger)
         await self._session.commit()
         return run.id
 
-    async def _score_pass(self, experiment: Experiment, run: EvaluationRun, version_id: uuid.UUID) -> None:
+    async def _score_pass(self, experiment: Experiment, run: EvaluationRun, version_id: uuid.UUID) -> bool:
+        """Scores every answer; False when the experiment was stopped meanwhile (the pass is then left unfinished)."""
         configs = await self._evaluators.configs(version_id)
         rows = await self._engine.runs(experiment.id)
         items = {
@@ -131,15 +137,28 @@ class ScoringService:
         await self._session.commit()
         limit = asyncio.Semaphore(self._settings.judge_concurrency)
         shared: dict[str, asyncio.Future[Score | Unscored | None]] = {}
-        batches = await asyncio.gather(
-            *(
-                self._score_call(
-                    experiment, run.id, row, items[row.dataset_item_id], configs, spec, target, limit, shared
-                )
-                for row in rows
+        saving = asyncio.Lock()
+
+        initial = run.trigger is EvaluationTrigger.INITIAL
+        stopped = False
+
+        async def score_and_save(row: TestCaseRun) -> None:
+            nonlocal stopped
+            if stopped:
+                return
+            batch = await self._score_call(
+                experiment, run.id, row, items[row.dataset_item_id], configs, spec, target, limit, shared
             )
-        )
-        await self._scores.insert_scores([score for batch in batches for score in batch])
+            # saved as each answer finishes (the pass is only read once it completes), so progress can be shown;
+            # on a session of its own, so the objects the other answers are reading are not expired meanwhile
+            async with saving, self._sessions() as own:
+                await ScoreRepository(own).insert_scores(batch)
+                await own.commit()
+                current = await EngineRepository(own).experiment(experiment.id)
+                stopped = initial and current is not None and current.status is ExperimentStatus.CANCELLED
+
+        await asyncio.gather(*(score_and_save(row) for row in rows))
+        return not stopped
 
     async def _complete(self, experiment: Experiment, trigger: EvaluationTrigger) -> None:
         if trigger is not EvaluationTrigger.INITIAL:

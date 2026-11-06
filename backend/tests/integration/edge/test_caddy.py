@@ -22,7 +22,7 @@ import pytest
 from testcontainers.core.container import DockerContainer
 from testcontainers.core.wait_strategies import LogMessageWaitStrategy
 
-from tests.helpers import ROOT, compose_image
+from tests.helpers import ROOT, TEST_CONTAINER_LABELS, compose_image
 
 pytestmark = [pytest.mark.integration, pytest.mark.edge]
 
@@ -78,7 +78,7 @@ def edge() -> Iterator[Edge]:
         .with_volume_mapping(str(CADDYFILE), "/etc/caddy/Caddyfile", "ro")
         .with_env("BACKEND_UPSTREAM", f"host.docker.internal:{port}")
         .with_env("FRONTEND_UPSTREAM", f"host.docker.internal:{port}")
-        .with_kwargs(extra_hosts={"host.docker.internal": "host-gateway"})
+        .with_kwargs(extra_hosts={"host.docker.internal": "host-gateway"}, labels=TEST_CONTAINER_LABELS)
         .with_exposed_ports(80)
         .waiting_for(LogMessageWaitStrategy("serving initial configuration"))
     )

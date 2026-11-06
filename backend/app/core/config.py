@@ -106,8 +106,8 @@ class Settings(BaseSettings):
     dataset_default_category: str = "happy_path"
     dataset_default_name: str = "Test cases"
     dataset_holdout_ratio: float = 0.3
-    dataset_min_holdout: int = 30
-    generator_default_size: int = 30
+    dataset_min_holdout: int = 15
+    generator_default_size: int = 50
     generator_confirm_cost: Decimal = Decimal("0.25")
     generator_batch_size: int = 10
     generator_example_rows: int = 5

@@ -44,10 +44,12 @@ from app.modules.engine.schemas import (
     ModelVersions,
     ReturnedModelOut,
     RunStatus,
+    ScoringProgress,
     SplitScope,
     TestCaseRunOut,
 )
 from app.modules.evaluation.domain import judge_calls_per_answer
+from app.modules.evaluation.repository import ScoreRepository
 from app.modules.evaluation.schemas import JudgeChoice
 from app.modules.evaluation.service import EvaluatorSetService
 from app.modules.gateway.domain import filter_params
@@ -401,10 +403,16 @@ class ExperimentService:
             entry.cost += cost or 0
             if status in (RunStatus.SUCCEEDED, RunStatus.FAILED, RunStatus.SKIPPED):
                 setattr(entry, status.value, getattr(entry, status.value) + count)
+        scoring = None
+        if row.status is ExperimentStatus.EVALUATING:
+            answered = sum(p.succeeded + p.failed for p in progress.values())
+            scored = await ScoreRepository(self._session).answers_scored(row.id)
+            scoring = ScoringProgress(done=min(scored, answered), total=answered)
         return ExperimentOut(
             **{name: getattr(row, name) for name in ExperimentOut.model_fields if hasattr(row, name)},
             stop_reason=await self._repo.last_reason(row.id),
             progress=list(progress.values()),
+            scoring=scoring,
             configuration=run_configuration(row, numbers.get(row.prompt_version_id)),
             model_versions=await self._model_versions(row),
         )

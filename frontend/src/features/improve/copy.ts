@@ -58,6 +58,8 @@ export const IMPROVE_COPY = {
   acceptAndTest: "Accept and test on all cases",
   saved: "Saved. Find it on the Prompt step, and test it on the Run step.",
   savedAndTesting: "Saved as a new version. Testing it on all test cases now.",
+  costHint: (cost: string) =>
+    `Rough cost: about ${cost} (three candidate tests and one check on the held-back cases, plus the writing).`,
   result: {
     title: "A better prompt is ready",
     summary: (strategy: string, before: string, after: string) =>

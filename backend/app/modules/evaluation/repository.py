@@ -95,6 +95,18 @@ class ScoreRepository:
             update(EvaluationRun).where(EvaluationRun.id == run_id).values(status=status, completed_at=completed_at)
         )
 
+    async def answers_scored(self, experiment_id: uuid.UUID) -> int:
+        """How many answers the scoring pass that is running now has finished (their scores are saved as they go)."""
+        running = (
+            select(EvaluationRun.id)
+            .where(EvaluationRun.experiment_id == experiment_id, EvaluationRun.status == EvaluationRunStatus.RUNNING)
+            .scalar_subquery()
+        )
+        count = await self._session.scalar(
+            select(func.count(func.distinct(Score.test_case_run_id))).where(Score.evaluation_run_id == running)
+        )
+        return int(count or 0)
+
     async def insert_scores(self, rows: list[dict[str, Any]]) -> None:
         for start in range(0, len(rows), 1000):
             await self._session.execute(insert(Score), rows[start : start + 1000])

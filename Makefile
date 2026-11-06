@@ -10,6 +10,7 @@ BUILD_CACHE_LIMIT ?= 5gb
 PROJECT_LABEL := label=com.docker.compose.project=verano
 BASE_OVERRIDE := .cache/base-images/compose.override.yml
 IMAGE_LABEL := label=dev.verano.image
+TEST_LABEL := label=dev.verano.test
 COMPOSE := docker compose
 COMPOSE_BUILD := docker compose -f docker-compose.yml -f $(BASE_OVERRIDE)
 BACKEND := cd backend &&
@@ -106,9 +107,9 @@ ci: base-images ## The "CI green" gate: locked installs, lint, types, full tests
 ci-offline: base-images ## Prove make ci needs no network: builder disconnected, uv and npm forced offline
 	@scripts/ci_offline.sh
 
-clean: ## Remove Verano leftovers only (stopped containers, dangling images, cache over the limit); never volumes
+clean: ## Remove Verano leftovers only (stopped containers, test containers, dangling images, cache over the limit); never volumes
 	@docker container prune -f --filter $(PROJECT_LABEL) >/dev/null
-	@docker container prune -f --filter label=org.testcontainers=true >/dev/null
+	@scripts/clean_test_containers.sh
 	@docker image prune -f --filter $(IMAGE_LABEL) >/dev/null
 	@docker image prune -f --filter $(PROJECT_LABEL) >/dev/null
 	@docker buildx prune -f --builder verano --max-used-space $(BUILD_CACHE_LIMIT) >/dev/null 2>&1 || true
