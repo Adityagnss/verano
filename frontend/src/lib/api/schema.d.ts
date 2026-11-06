@@ -1273,6 +1273,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/judge/criteria": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Write Criteria
+         * @description The judge writes criteria from the Task Spec and the prompt, then the self-check reads them.
+         */
+        post: operations["write_criteria_api_v1_projects__project_id__judge_criteria_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/judge/rubric-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Rubric
+         * @description Is every criterion answerable, specific and consistent? Free checks, plus a judge's read when one is given.
+         */
+        post: operations["check_rubric_api_v1_projects__project_id__judge_rubric_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/judge/suggestion": {
         parameters: {
             query?: never;
@@ -1610,6 +1650,133 @@ export interface paths {
         put?: never;
         /** Save Version */
         post: operations["save_version_api_v1_projects__project_id__prompts__prompt_id__versions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/review-queue/assignments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Assign */
+        post: operations["assign_api_v1_projects__project_id__review_queue_assignments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/review-queue/assignments/{assignment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Unassign */
+        delete: operations["unassign_api_v1_projects__project_id__review_queue_assignments__assignment_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/review-queue/disputes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Disputes */
+        get: operations["get_disputes_api_v1_projects__project_id__review_queue_disputes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/review-queue/disputes/{experiment_id}/{test_case_run_id}/resolution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Resolve */
+        put: operations["resolve_api_v1_projects__project_id__review_queue_disputes__experiment_id___test_case_run_id__resolution_put"];
+        post?: never;
+        /** Unresolve */
+        delete: operations["unresolve_api_v1_projects__project_id__review_queue_disputes__experiment_id___test_case_run_id__resolution_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/review-queue/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Members
+         * @description The people who can be given answers to label.
+         */
+        get: operations["get_members_api_v1_projects__project_id__review_queue_members_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/review-queue/mine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * My Queue
+         * @description Your queue, in the order answers were given to you. `blind=true` hides every judge field even for
+         *     assignments that were not given blind.
+         */
+        get: operations["my_queue_api_v1_projects__project_id__review_queue_mine_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/review-queue/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Progress */
+        get: operations["get_progress_api_v1_projects__project_id__review_queue_progress_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2207,6 +2374,66 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /** AssignOut */
+        AssignOut: {
+            /** Already Assigned */
+            already_assigned: number;
+            /** Assigned */
+            assigned: number;
+            /**
+             * Assignee User Id
+             * Format: uuid
+             */
+            assignee_user_id: string;
+            /** Message */
+            message: string;
+            /**
+             * Skipped
+             * @default 0
+             */
+            skipped: number;
+        };
+        /**
+         * AssignRequest
+         * @description Give answers to someone to label. Name the answers, or let the server pick `count` of them.
+         */
+        AssignRequest: {
+            /**
+             * Assignee User Id
+             * @description Who labels them; you, when left out.
+             */
+            assignee_user_id?: string | null;
+            /**
+             * Batch Label
+             * @description A name for the batch, e.g. "Tuesday".
+             */
+            batch_label?: string | null;
+            /**
+             * Blind
+             * @description Hide the judge's scores and verdicts while they label.
+             * @default false
+             */
+            blind: boolean;
+            /**
+             * Count
+             * @description How many answers to pick.
+             */
+            count?: number | null;
+            /**
+             * Experiment Id
+             * Format: uuid
+             */
+            experiment_id: string;
+            /**
+             * Pick
+             * @description Which answers to pick: ones nobody has labelled yet, or ones whose labels disagree.
+             * @default unlabelled
+             * @enum {string}
+             */
+            pick: "unlabelled" | "disputed";
+            /** Test Case Run Ids */
+            test_case_run_ids?: string[] | null;
+        };
         /** AuthConfigOut */
         AuthConfigOut: {
             /** Password Min Length */
@@ -2658,6 +2885,46 @@ export interface components {
             /** Tpm Limit */
             tpm_limit?: number | null;
         };
+        /** CriteriaOut */
+        CriteriaOut: {
+            /** Criteria */
+            criteria: string[];
+            /** Evaluator Config */
+            evaluator_config: {
+                [key: string]: unknown;
+            };
+            review: components["schemas"]["RubricCheckOut"] | null;
+        };
+        /** CriteriaRequest */
+        CriteriaRequest: {
+            /**
+             * Check
+             * @description Also run the rubric self-check on what was written.
+             * @default true
+             */
+            check: boolean;
+            /**
+             * Count
+             * @description How many criteria; the server default.
+             */
+            count?: number | null;
+            /**
+             * Focus
+             * @description A hint about what matters most.
+             */
+            focus?: string | null;
+            judge: components["schemas"]["JudgeChoice"];
+            /**
+             * Prompt Version Id
+             * @description Defaults to the prompt version the Task Spec was written for.
+             */
+            prompt_version_id?: string | null;
+            /**
+             * Task Spec Id
+             * Format: uuid
+             */
+            task_spec_id: string;
+        };
         /** DatasetVersionOut */
         DatasetVersionOut: {
             /** Approved At */
@@ -2709,6 +2976,30 @@ export interface components {
          * @enum {string}
          */
         DatasetVersionStatus: "draft" | "approved";
+        /** DisputeOut */
+        DisputeOut: {
+            /** Expected Output */
+            expected_output: string | null;
+            /**
+             * Experiment Id
+             * Format: uuid
+             */
+            experiment_id: string;
+            /** Inputs */
+            inputs: {
+                [key: string]: unknown;
+            };
+            /** Labels */
+            labels: components["schemas"]["PersonLabel"][];
+            /** Output */
+            output: string | null;
+            resolution: components["schemas"]["ResolutionOut"] | null;
+            /**
+             * Test Case Run Id
+             * Format: uuid
+             */
+            test_case_run_id: string;
+        };
         /** EvaluationRunOut */
         EvaluationRunOut: {
             /** Completed At */
@@ -3646,6 +3937,20 @@ export interface components {
             organizations: components["schemas"]["OrganizationOut"][];
             user: components["schemas"]["UserOut"];
         };
+        /** MemberOut */
+        MemberOut: {
+            /** Email */
+            email: string;
+            /** Is Owner */
+            is_owner: boolean;
+            /** Name */
+            name: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
         /**
          * MembershipRole
          * @enum {string}
@@ -3958,11 +4263,55 @@ export interface components {
             /** Min */
             min?: number | null;
         };
+        /** PersonLabel */
+        PersonLabel: {
+            /** Name */
+            name: string;
+            /** Note */
+            note: string | null;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            verdict: components["schemas"]["LabelVerdict"];
+        };
+        /** PersonProgress */
+        PersonProgress: {
+            /** Assigned */
+            assigned: number;
+            /** Done */
+            done: number;
+            /** Name */
+            name: string;
+            /** Open */
+            open: number;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
         /**
          * PriceSource
          * @enum {string}
          */
         PriceSource: "override" | "provider" | "litellm" | "free" | "unknown";
+        /** ProgressOut */
+        ProgressOut: {
+            /** Assigned */
+            assigned: number;
+            /** Disputed */
+            disputed: number;
+            /** Done */
+            done: number;
+            /** Open */
+            open: number;
+            /** People */
+            people: components["schemas"]["PersonProgress"][];
+            /** Resolved */
+            resolved: number;
+        };
         /** ProjectCreate */
         ProjectCreate: {
             /** Description */
@@ -4177,6 +4526,22 @@ export interface components {
             /** Cost */
             cost: string;
         };
+        /** QueueOut */
+        QueueOut: {
+            /** Done */
+            done: number;
+            /** Items */
+            items: components["schemas"]["ReviewItemOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+            /** Open */
+            open: number;
+        };
+        /**
+         * QueueStatus
+         * @enum {string}
+         */
+        QueueStatus: "open" | "done" | "all";
         /**
          * Reason
          * @description Why a candidate is or is not proven better than the current prompt.
@@ -4275,6 +4640,25 @@ export interface components {
             evaluators?: components["schemas"]["EvaluatorConfigIn"][] | null;
             judge?: components["schemas"]["JudgeChoice"] | null;
         };
+        /** ResolutionOut */
+        ResolutionOut: {
+            /** Note */
+            note: string | null;
+            /** Resolved By */
+            resolved_by: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            verdict: components["schemas"]["LabelVerdict"];
+        };
+        /** ResolveRequest */
+        ResolveRequest: {
+            /** Note */
+            note?: string | null;
+            verdict: components["schemas"]["LabelVerdict"];
+        };
         /** ResultsOut */
         ResultsOut: {
             evaluation_run: components["schemas"]["EvaluationRunOut"] | null;
@@ -4298,11 +4682,113 @@ export interface components {
             /** Id */
             id: string | null;
         };
+        /** ReviewItemOut */
+        ReviewItemOut: {
+            /**
+             * Assigned At
+             * Format: date-time
+             */
+            assigned_at: string;
+            /**
+             * Assignment Id
+             * Format: uuid
+             */
+            assignment_id: string;
+            /** Batch Label */
+            batch_label: string | null;
+            /** Blind */
+            blind: boolean;
+            /** Done */
+            done: boolean;
+            /** Expected Output */
+            expected_output: string | null;
+            /**
+             * Experiment Id
+             * Format: uuid
+             */
+            experiment_id: string;
+            /** Experiment Name */
+            experiment_name: string;
+            /** Hidden */
+            hidden: boolean;
+            /** Inputs */
+            inputs: {
+                [key: string]: unknown;
+            };
+            judge: components["schemas"]["ReviewJudgeOut"] | null;
+            labels: components["schemas"]["LabelSummary"] | null;
+            /** Model */
+            model: string;
+            my_label: components["schemas"]["LabelVerdict"] | null;
+            /** My Note */
+            my_note: string | null;
+            /** Output */
+            output: string | null;
+            resolution: components["schemas"]["ResolutionOut"] | null;
+            /** Retrieved Chunks */
+            retrieved_chunks: unknown[] | null;
+            /** Rubric */
+            rubric: unknown[] | null;
+            /**
+             * Test Case Run Id
+             * Format: uuid
+             */
+            test_case_run_id: string;
+            /** Tool Calls */
+            tool_calls: unknown[] | null;
+            /** Truncated */
+            truncated: boolean;
+        };
+        /**
+         * ReviewJudgeOut
+         * @description The judge's side of an answer. Never present in a blind review.
+         */
+        ReviewJudgeOut: {
+            /** Passed */
+            passed: boolean | null;
+            /** Quality */
+            quality: number | null;
+            /** Scores */
+            scores: components["schemas"]["ScoreOut"][];
+        };
         /**
          * ReviewStatus
          * @enum {string}
          */
         ReviewStatus: "trusted" | "draft" | "approved";
+        /** RubricCheckOut */
+        RubricCheckOut: {
+            /** Issues */
+            issues: components["schemas"]["RubricIssue"][];
+            /** Judged */
+            judged: boolean;
+            /** Ok */
+            ok: boolean;
+            /** Summary */
+            summary: string;
+        };
+        /** RubricCheckRequest */
+        RubricCheckRequest: {
+            /** Criteria */
+            criteria: string[];
+            /** @description Leave out to run only the free checks. */
+            judge?: components["schemas"]["JudgeChoice"] | null;
+            /** Prompt Version Id */
+            prompt_version_id?: string | null;
+            /** Task Spec Id */
+            task_spec_id?: string | null;
+        };
+        /** RubricIssue */
+        RubricIssue: {
+            /** Criterion */
+            criterion?: number | null;
+            /** Detail */
+            detail: string;
+            /** Kind */
+            kind: string;
+            /** Suggestion */
+            suggestion?: string | null;
+        };
         /**
          * RunConfiguration
          * @description What an experiment was set up with. `hash` is the same for the same configuration.
@@ -4370,6 +4856,11 @@ export interface components {
             answers_unscored: number;
             /** Cached */
             cached: boolean;
+            /**
+             * Combined
+             * @default false
+             */
+            combined: boolean;
             /** Evaluator Name */
             evaluator_name: string;
             /** Kind */
@@ -4378,9 +4869,23 @@ export interface components {
             limits: string;
             /** Passed */
             passed: boolean;
+            /**
+             * Prompt Seen
+             * @default false
+             */
+            prompt_seen: boolean;
             /** Reason */
             reason: string;
+            /**
+             * Reference Used
+             * @default false
+             */
+            reference_used: boolean;
             status: components["schemas"]["ScoreStatus"];
+            /** Usage */
+            usage?: {
+                [key: string]: unknown;
+            } | null;
             /** Value */
             value: number;
         };
@@ -7800,6 +8305,76 @@ export interface operations {
             };
         };
     };
+    write_criteria_api_v1_projects__project_id__judge_criteria_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CriteriaRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CriteriaOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_rubric_api_v1_projects__project_id__judge_rubric_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RubricCheckRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RubricCheckOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     suggest_judge_model_api_v1_projects__project_id__judge_suggestion_get: {
         parameters: {
             query?: never;
@@ -8616,6 +9191,274 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PromptVersionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assign_api_v1_projects__project_id__review_queue_assignments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssignOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unassign_api_v1_projects__project_id__review_queue_assignments__assignment_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assignment_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_disputes_api_v1_projects__project_id__review_queue_disputes_get: {
+        parameters: {
+            query: {
+                experiment_id: string;
+                include_settled?: boolean;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DisputeOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_api_v1_projects__project_id__review_queue_disputes__experiment_id___test_case_run_id__resolution_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                experiment_id: string;
+                test_case_run_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResolutionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unresolve_api_v1_projects__project_id__review_queue_disputes__experiment_id___test_case_run_id__resolution_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                experiment_id: string;
+                test_case_run_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_members_api_v1_projects__project_id__review_queue_members_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_queue_api_v1_projects__project_id__review_queue_mine_get: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["QueueStatus"];
+                experiment_id?: string | null;
+                blind?: boolean;
+                limit?: number | null;
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QueueOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_progress_api_v1_projects__project_id__review_queue_progress_get: {
+        parameters: {
+            query?: {
+                experiment_id?: string | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgressOut"];
                 };
             };
             /** @description Validation Error */

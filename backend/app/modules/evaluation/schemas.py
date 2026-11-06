@@ -388,6 +388,10 @@ class ScoreEvidence(BaseModel):
     limits: str
     agreement: AgreementOut | None
     agreement_note: str | None
+    reference_used: bool = False  # a judge was given the case's expected answer as its reference
+    prompt_seen: bool = False  # a judge was given the prompt under test as context
+    combined: bool = False  # scored in one judge call together with other checks (fast scoring)
+    usage: dict[str, Any] | None = None  # this check's share of a combined call's tokens and cost
 
 
 class EvidenceOut(BaseModel):

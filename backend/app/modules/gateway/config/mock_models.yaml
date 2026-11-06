@@ -39,3 +39,8 @@ models:
     latency_ms: 250
     input_price_per_mtok: 0.30
     output_price_per_mtok: 0.90
+  judge:
+    behavior: judge_json
+    display_name: Mock Judge (structured replies)
+    input_price_per_mtok: 1.00
+    output_price_per_mtok: 3.00

@@ -14,6 +14,8 @@ from app.core.errors import Conflict
 
 APPS = "apps"
 CODE_CHECKS = "code_checks"
+REVIEW_QUEUE = "review_queue"
+JUDGING_TOOLS = "judging_tools"
 SWITCHED_OFF = (
     "This feature ({name}) is switched off on this server. Remove it from VERANO_DISABLED_FEATURES to use it."
 )

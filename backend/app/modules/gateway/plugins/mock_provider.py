@@ -99,6 +99,55 @@ def answer_key(llm: "MockLLM", request: MockRequest) -> str:
     return request.rng.choice(wrong)
 
 
+@BEHAVIORS.register("judge_json")
+def judge_json(llm: "MockLLM", request: MockRequest) -> str:
+    """A judge that answers the structured judging prompts (several checks in one call, writing criteria,
+    reviewing a rubric) from what the prompt says, and defers to the scripted fixtures for everything else.
+    A check scores 9 when the answer matches the reference (or there is none), else 3."""
+    text = request.prompt_text
+    if "You are judging one answer against several separate checks" in text:
+        names = re.findall(r'named "([^"]+)"', text)
+        answer = re.search(r"The answer to judge:\n(.*?)\n\nThe checks:", text, re.DOTALL)
+        reference = re.search(r"Reference answer \(the expected output\):\n(.*?)\n\n", text, re.DOTALL)
+        good = True
+        if answer and reference:
+            good = reference.group(1).strip().lower() in answer.group(1).strip().lower()
+        checks = [
+            {"name": name, "score": 9 if good else 3, "reason": "Matches the reference." if good else "Differs."}
+            for name in names
+        ]
+        return json.dumps({"checks": checks})
+    if "You review a rubric before it is used" in text:
+        lines = re.findall(r"^(\d+)\. (.+)$", text.split("The rubric:\n", 1)[-1], re.MULTILINE)
+        issues = [
+            {
+                "kind": "vague",
+                "criterion": int(number),
+                "detail": "Too short to say what to look for.",
+                "suggestion": None,
+            }
+            for number, body in lines
+            if len(body.split()) <= 3
+        ]
+        return json.dumps({"issues": issues})
+    if "You write the criteria a judge uses" in text:
+        wanted = re.search(r"Write (\d+) criteria", text)
+        task = re.search(r"What the task is for: (.+)", text)
+        count = int(wanted.group(1)) if wanted else 3
+        goal = task.group(1) if task else "the task"
+        pool = [
+            f"The answer does what is asked: {goal}",
+            "The answer stays on the subject and does not invent facts.",
+            "The answer follows every rule the task states.",
+            "The answer is clear and complete enough to use as it is.",
+            "The answer matches the format the task asks for.",
+            "The answer handles an unclear or unusual input sensibly.",
+            "The answer is no longer than it needs to be.",
+        ]
+        return json.dumps({"criteria": pool[: max(1, min(count, len(pool)))]})
+    return scripted(llm, request)
+
+
 def _rate_limit(request: MockRequest) -> str:
     headers = {"retry-after": str(request.spec.retry_after_s)}
     raise llm_errors.RateLimitError(

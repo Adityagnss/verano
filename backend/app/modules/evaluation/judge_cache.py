@@ -25,10 +25,15 @@ def cache_key(
     expected: str | None,
     rubric: Sequence[str] | None,
     context: Sequence[str],
+    extras: dict[str, Any] | None = None,
 ) -> str:
-    """A stable 64-character key for one judged check on one answer."""
+    """A stable 64-character key for one judged check on one answer. `extras` is what else the judge was shown
+    or how it was asked (the prompt, a reference, a combined call); with none, the key is what it always was."""
+    parts: list[Any] = [evaluator_name, config, threshold, judge_model, inputs, output, expected, rubric, list(context)]
+    if extras:
+        parts.append(extras)
     payload = json.dumps(
-        [evaluator_name, config, threshold, judge_model, inputs, output, expected, rubric, list(context)],
+        parts,
         sort_keys=True,
         default=str,
         ensure_ascii=False,

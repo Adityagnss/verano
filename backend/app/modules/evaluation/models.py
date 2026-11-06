@@ -129,3 +129,50 @@ class JudgeCacheEntry(CreatedAtMixin, Base):
     passed: Mapped[bool]
     reason: Mapped[str] = mapped_column(Text)
     hits: Mapped[int] = mapped_column(default=0, server_default="0")
+
+
+class ReviewAssignment(IdMixin, CreatedAtMixin, Base):
+    """An answer given to a person to label (ADR 0038). It is done when that person has labelled the answer, so
+    there is no status to keep in step: `human_labels` is the one record of what people said."""
+
+    __tablename__ = "review_assignments"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["experiment_id", "test_case_run_id"],
+            ["test_case_runs.experiment_id", "test_case_runs.id"],
+            ondelete="CASCADE",
+        ),
+        Index(None, "experiment_id", "test_case_run_id", "assignee_user_id", unique=True),
+        Index(None, "project_id", "assignee_user_id", "id"),
+        Index(None, "experiment_id", "id"),
+    )
+
+    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id", ondelete="CASCADE"))
+    experiment_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("experiments.id", ondelete="CASCADE"))
+    test_case_run_id: Mapped[uuid.UUID]
+    assignee_user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    assigned_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    blind: Mapped[bool] = mapped_column(default=False, server_default="false")
+    batch_label: Mapped[str | None] = mapped_column(String(120))
+
+
+class ReviewResolution(IdMixin, CreatedAtMixin, Base):
+    """The final verdict on an answer whose labels disagree, set by an owner. It sits beside the labels and the
+    scores and never changes either."""
+
+    __tablename__ = "review_resolutions"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["experiment_id", "test_case_run_id"],
+            ["test_case_runs.experiment_id", "test_case_runs.id"],
+            ondelete="CASCADE",
+        ),
+        Index(None, "experiment_id", "test_case_run_id", unique=True),
+    )
+
+    experiment_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("experiments.id", ondelete="CASCADE"))
+    test_case_run_id: Mapped[uuid.UUID]
+    verdict: Mapped[str] = mapped_column(String(16))
+    note: Mapped[str | None] = mapped_column(Text)
+    resolved_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())

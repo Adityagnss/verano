@@ -1629,6 +1629,116 @@
         "title": "AppTestRequest",
         "type": "object"
       },
+      "AssignOut": {
+        "properties": {
+          "already_assigned": {
+            "title": "Already Assigned",
+            "type": "integer"
+          },
+          "assigned": {
+            "title": "Assigned",
+            "type": "integer"
+          },
+          "assignee_user_id": {
+            "format": "uuid",
+            "title": "Assignee User Id",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "skipped": {
+            "default": 0,
+            "title": "Skipped",
+            "type": "integer"
+          }
+        },
+        "required": ["assignee_user_id", "assigned", "already_assigned", "message"],
+        "title": "AssignOut",
+        "type": "object"
+      },
+      "AssignRequest": {
+        "description": "Give answers to someone to label. Name the answers, or let the server pick `count` of them.",
+        "properties": {
+          "assignee_user_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Who labels them; you, when left out.",
+            "title": "Assignee User Id"
+          },
+          "batch_label": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A name for the batch, e.g. \"Tuesday\".",
+            "title": "Batch Label"
+          },
+          "blind": {
+            "default": false,
+            "description": "Hide the judge's scores and verdicts while they label.",
+            "title": "Blind",
+            "type": "boolean"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How many answers to pick.",
+            "title": "Count"
+          },
+          "experiment_id": {
+            "format": "uuid",
+            "title": "Experiment Id",
+            "type": "string"
+          },
+          "pick": {
+            "default": "unlabelled",
+            "description": "Which answers to pick: ones nobody has labelled yet, or ones whose labels disagree.",
+            "enum": ["unlabelled", "disputed"],
+            "title": "Pick",
+            "type": "string"
+          },
+          "test_case_run_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Test Case Run Ids"
+          }
+        },
+        "required": ["experiment_id"],
+        "title": "AssignRequest",
+        "type": "object"
+      },
       "AuthConfigOut": {
         "properties": {
           "password_min_length": {
@@ -2993,6 +3103,96 @@
         "title": "CredentialUpdate",
         "type": "object"
       },
+      "CriteriaOut": {
+        "properties": {
+          "criteria": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Criteria",
+            "type": "array"
+          },
+          "evaluator_config": {
+            "additionalProperties": true,
+            "title": "Evaluator Config",
+            "type": "object"
+          },
+          "review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RubricCheckOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": ["criteria", "review", "evaluator_config"],
+        "title": "CriteriaOut",
+        "type": "object"
+      },
+      "CriteriaRequest": {
+        "properties": {
+          "check": {
+            "default": true,
+            "description": "Also run the rubric self-check on what was written.",
+            "title": "Check",
+            "type": "boolean"
+          },
+          "count": {
+            "anyOf": [
+              {
+                "maximum": 20.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How many criteria; the server default.",
+            "title": "Count"
+          },
+          "focus": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A hint about what matters most.",
+            "title": "Focus"
+          },
+          "judge": {
+            "$ref": "#/components/schemas/JudgeChoice"
+          },
+          "prompt_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Defaults to the prompt version the Task Spec was written for.",
+            "title": "Prompt Version Id"
+          },
+          "task_spec_id": {
+            "format": "uuid",
+            "title": "Task Spec Id",
+            "type": "string"
+          }
+        },
+        "required": ["judge", "task_spec_id"],
+        "title": "CriteriaRequest",
+        "type": "object"
+      },
       "DatasetVersionOut": {
         "properties": {
           "approved_at": {
@@ -3139,6 +3339,75 @@
         "enum": ["draft", "approved"],
         "title": "DatasetVersionStatus",
         "type": "string"
+      },
+      "DisputeOut": {
+        "properties": {
+          "expected_output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Output"
+          },
+          "experiment_id": {
+            "format": "uuid",
+            "title": "Experiment Id",
+            "type": "string"
+          },
+          "inputs": {
+            "additionalProperties": true,
+            "title": "Inputs",
+            "type": "object"
+          },
+          "labels": {
+            "items": {
+              "$ref": "#/components/schemas/PersonLabel"
+            },
+            "title": "Labels",
+            "type": "array"
+          },
+          "output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output"
+          },
+          "resolution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResolutionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "test_case_run_id": {
+            "format": "uuid",
+            "title": "Test Case Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "experiment_id",
+          "test_case_run_id",
+          "inputs",
+          "expected_output",
+          "output",
+          "labels",
+          "resolution"
+        ],
+        "title": "DisputeOut",
+        "type": "object"
       },
       "EvaluationRunOut": {
         "properties": {
@@ -5747,6 +6016,30 @@
         "title": "MeOut",
         "type": "object"
       },
+      "MemberOut": {
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "is_owner": {
+            "title": "Is Owner",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": ["user_id", "name", "email", "is_owner"],
+        "title": "MemberOut",
+        "type": "object"
+      },
       "MembershipRole": {
         "enum": ["owner", "member"],
         "title": "MembershipRole",
@@ -6526,10 +6819,102 @@
         "title": "ParameterRange",
         "type": "object"
       },
+      "PersonLabel": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/LabelVerdict"
+          }
+        },
+        "required": ["user_id", "name", "verdict", "note"],
+        "title": "PersonLabel",
+        "type": "object"
+      },
+      "PersonProgress": {
+        "properties": {
+          "assigned": {
+            "title": "Assigned",
+            "type": "integer"
+          },
+          "done": {
+            "title": "Done",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "open": {
+            "title": "Open",
+            "type": "integer"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": ["user_id", "name", "assigned", "done", "open"],
+        "title": "PersonProgress",
+        "type": "object"
+      },
       "PriceSource": {
         "enum": ["override", "provider", "litellm", "free", "unknown"],
         "title": "PriceSource",
         "type": "string"
+      },
+      "ProgressOut": {
+        "properties": {
+          "assigned": {
+            "title": "Assigned",
+            "type": "integer"
+          },
+          "disputed": {
+            "title": "Disputed",
+            "type": "integer"
+          },
+          "done": {
+            "title": "Done",
+            "type": "integer"
+          },
+          "open": {
+            "title": "Open",
+            "type": "integer"
+          },
+          "people": {
+            "items": {
+              "$ref": "#/components/schemas/PersonProgress"
+            },
+            "title": "People",
+            "type": "array"
+          },
+          "resolved": {
+            "title": "Resolved",
+            "type": "integer"
+          }
+        },
+        "required": ["people", "assigned", "done", "open", "disputed", "resolved"],
+        "title": "ProgressOut",
+        "type": "object"
       },
       "ProjectCreate": {
         "properties": {
@@ -7048,6 +7433,44 @@
         "title": "PurposeCost",
         "type": "object"
       },
+      "QueueOut": {
+        "properties": {
+          "done": {
+            "title": "Done",
+            "type": "integer"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "open": {
+            "title": "Open",
+            "type": "integer"
+          }
+        },
+        "required": ["items", "next_cursor", "open", "done"],
+        "title": "QueueOut",
+        "type": "object"
+      },
+      "QueueStatus": {
+        "enum": ["open", "done", "all"],
+        "title": "QueueStatus",
+        "type": "string"
+      },
       "Reason": {
         "description": "Why a candidate is or is not proven better than the current prompt.",
         "enum": ["proven", "worse", "not_proven", "too_few_cases", "different_judge", "unjudged"],
@@ -7306,6 +7729,66 @@
         "title": "RescoreRequest",
         "type": "object"
       },
+      "ResolutionOut": {
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "resolved_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved By"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/LabelVerdict"
+          }
+        },
+        "required": ["verdict", "note", "resolved_by", "updated_at"],
+        "title": "ResolutionOut",
+        "type": "object"
+      },
+      "ResolveRequest": {
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/LabelVerdict"
+          }
+        },
+        "required": ["verdict"],
+        "title": "ResolveRequest",
+        "type": "object"
+      },
       "ResultsOut": {
         "properties": {
           "evaluation_run": {
@@ -7365,10 +7848,360 @@
         "title": "ReturnedModelOut",
         "type": "object"
       },
+      "ReviewItemOut": {
+        "properties": {
+          "assigned_at": {
+            "format": "date-time",
+            "title": "Assigned At",
+            "type": "string"
+          },
+          "assignment_id": {
+            "format": "uuid",
+            "title": "Assignment Id",
+            "type": "string"
+          },
+          "batch_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch Label"
+          },
+          "blind": {
+            "title": "Blind",
+            "type": "boolean"
+          },
+          "done": {
+            "title": "Done",
+            "type": "boolean"
+          },
+          "expected_output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Output"
+          },
+          "experiment_id": {
+            "format": "uuid",
+            "title": "Experiment Id",
+            "type": "string"
+          },
+          "experiment_name": {
+            "title": "Experiment Name",
+            "type": "string"
+          },
+          "hidden": {
+            "title": "Hidden",
+            "type": "boolean"
+          },
+          "inputs": {
+            "additionalProperties": true,
+            "title": "Inputs",
+            "type": "object"
+          },
+          "judge": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewJudgeOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "labels": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LabelSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "my_label": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LabelVerdict"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "my_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "My Note"
+          },
+          "output": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output"
+          },
+          "resolution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResolutionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "retrieved_chunks": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retrieved Chunks"
+          },
+          "rubric": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rubric"
+          },
+          "test_case_run_id": {
+            "format": "uuid",
+            "title": "Test Case Run Id",
+            "type": "string"
+          },
+          "tool_calls": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Calls"
+          },
+          "truncated": {
+            "title": "Truncated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "assignment_id",
+          "experiment_id",
+          "experiment_name",
+          "test_case_run_id",
+          "assigned_at",
+          "batch_label",
+          "blind",
+          "done",
+          "inputs",
+          "expected_output",
+          "rubric",
+          "output",
+          "truncated",
+          "model",
+          "retrieved_chunks",
+          "tool_calls",
+          "my_label",
+          "my_note",
+          "judge",
+          "labels",
+          "resolution",
+          "hidden"
+        ],
+        "title": "ReviewItemOut",
+        "type": "object"
+      },
+      "ReviewJudgeOut": {
+        "description": "The judge's side of an answer. Never present in a blind review.",
+        "properties": {
+          "passed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passed"
+          },
+          "quality": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality"
+          },
+          "scores": {
+            "items": {
+              "$ref": "#/components/schemas/ScoreOut"
+            },
+            "title": "Scores",
+            "type": "array"
+          }
+        },
+        "required": ["passed", "quality", "scores"],
+        "title": "ReviewJudgeOut",
+        "type": "object"
+      },
       "ReviewStatus": {
         "enum": ["trusted", "draft", "approved"],
         "title": "ReviewStatus",
         "type": "string"
+      },
+      "RubricCheckOut": {
+        "properties": {
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/RubricIssue"
+            },
+            "title": "Issues",
+            "type": "array"
+          },
+          "judged": {
+            "title": "Judged",
+            "type": "boolean"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": ["ok", "issues", "judged", "summary"],
+        "title": "RubricCheckOut",
+        "type": "object"
+      },
+      "RubricCheckRequest": {
+        "properties": {
+          "criteria": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Criteria",
+            "type": "array"
+          },
+          "judge": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JudgeChoice"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Leave out to run only the free checks."
+          },
+          "prompt_version_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version Id"
+          },
+          "task_spec_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Spec Id"
+          }
+        },
+        "required": ["criteria"],
+        "title": "RubricCheckRequest",
+        "type": "object"
+      },
+      "RubricIssue": {
+        "properties": {
+          "criterion": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Criterion"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "suggestion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggestion"
+          }
+        },
+        "required": ["kind", "detail"],
+        "title": "RubricIssue",
+        "type": "object"
       },
       "RunConfiguration": {
         "description": "What an experiment was set up with. `hash` is the same for the same configuration.",
@@ -7528,6 +8361,11 @@
             "title": "Cached",
             "type": "boolean"
           },
+          "combined": {
+            "default": false,
+            "title": "Combined",
+            "type": "boolean"
+          },
           "evaluator_name": {
             "title": "Evaluator Name",
             "type": "string"
@@ -7544,12 +8382,34 @@
             "title": "Passed",
             "type": "boolean"
           },
+          "prompt_seen": {
+            "default": false,
+            "title": "Prompt Seen",
+            "type": "boolean"
+          },
           "reason": {
             "title": "Reason",
             "type": "string"
           },
+          "reference_used": {
+            "default": false,
+            "title": "Reference Used",
+            "type": "boolean"
+          },
           "status": {
             "$ref": "#/components/schemas/ScoreStatus"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usage"
           },
           "value": {
             "title": "Value",
@@ -14139,6 +14999,120 @@
         "tags": ["evaluators"]
       }
     },
+    "/api/v1/projects/{project_id}/judge/criteria": {
+      "post": {
+        "description": "The judge writes criteria from the Task Spec and the prompt, then the self-check reads them.",
+        "operationId": "write_criteria_api_v1_projects__project_id__judge_criteria_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CriteriaRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CriteriaOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Write Criteria",
+        "tags": ["judging"]
+      }
+    },
+    "/api/v1/projects/{project_id}/judge/rubric-check": {
+      "post": {
+        "description": "Is every criterion answerable, specific and consistent? Free checks, plus a judge's read when one is given.",
+        "operationId": "check_rubric_api_v1_projects__project_id__judge_rubric_check_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RubricCheckRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RubricCheckOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Check Rubric",
+        "tags": ["judging"]
+      }
+    },
     "/api/v1/projects/{project_id}/judge/suggestion": {
       "get": {
         "operationId": "suggest_judge_model_api_v1_projects__project_id__judge_suggestion_get",
@@ -16327,6 +17301,544 @@
         ],
         "summary": "Save Version",
         "tags": ["prompts"]
+      }
+    },
+    "/api/v1/projects/{project_id}/review-queue/assignments": {
+      "post": {
+        "operationId": "assign_api_v1_projects__project_id__review_queue_assignments_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssignOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Assign",
+        "tags": ["review queue"]
+      }
+    },
+    "/api/v1/projects/{project_id}/review-queue/assignments/{assignment_id}": {
+      "delete": {
+        "operationId": "unassign_api_v1_projects__project_id__review_queue_assignments__assignment_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assignment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assignment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Unassign",
+        "tags": ["review queue"]
+      }
+    },
+    "/api/v1/projects/{project_id}/review-queue/disputes": {
+      "get": {
+        "operationId": "get_disputes_api_v1_projects__project_id__review_queue_disputes_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_settled",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Settled",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DisputeOut"
+                  },
+                  "title": "Response Get Disputes Api V1 Projects  Project Id  Review Queue Disputes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Disputes",
+        "tags": ["review queue"]
+      }
+    },
+    "/api/v1/projects/{project_id}/review-queue/disputes/{experiment_id}/{test_case_run_id}/resolution": {
+      "delete": {
+        "operationId": "unresolve_api_v1_projects__project_id__review_queue_disputes__experiment_id___test_case_run_id__resolution_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "test_case_run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Test Case Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Unresolve",
+        "tags": ["review queue"]
+      },
+      "put": {
+        "operationId": "resolve_api_v1_projects__project_id__review_queue_disputes__experiment_id___test_case_run_id__resolution_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "experiment_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Experiment Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "test_case_run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Test Case Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResolutionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Resolve",
+        "tags": ["review queue"]
+      }
+    },
+    "/api/v1/projects/{project_id}/review-queue/members": {
+      "get": {
+        "description": "The people who can be given answers to label.",
+        "operationId": "get_members_api_v1_projects__project_id__review_queue_members_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MemberOut"
+                  },
+                  "title": "Response Get Members Api V1 Projects  Project Id  Review Queue Members Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Members",
+        "tags": ["review queue"]
+      }
+    },
+    "/api/v1/projects/{project_id}/review-queue/mine": {
+      "get": {
+        "description": "Your queue, in the order answers were given to you. `blind=true` hides every judge field even for\nassignments that were not given blind.",
+        "operationId": "my_queue_api_v1_projects__project_id__review_queue_mine_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/QueueStatus",
+              "default": "open"
+            }
+          },
+          {
+            "in": "query",
+            "name": "experiment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Experiment Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "blind",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Blind",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QueueOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "My Queue",
+        "tags": ["review queue"]
+      }
+    },
+    "/api/v1/projects/{project_id}/review-queue/progress": {
+      "get": {
+        "operationId": "get_progress_api_v1_projects__project_id__review_queue_progress_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "experiment_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Experiment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Progress",
+        "tags": ["review queue"]
       }
     },
     "/api/v1/projects/{project_id}/task-specs": {

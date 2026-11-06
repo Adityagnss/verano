@@ -72,3 +72,8 @@ export type GalleryJudgeOut = Schemas["GalleryJudgeOut"]
 export type AppTargetOut = Schemas["AppTargetOut"]
 export type AppTargetCreate = Schemas["AppTargetCreate"]
 export type AppTestOut = Schemas["AppTestOut"]
+
+export type ReviewAssignRequest = Schemas["AssignRequest"]
+export type ReviewItemOut = Schemas["ReviewItemOut"]
+export type ResolveRequest = Schemas["ResolveRequest"]
+export type DisputeOut = Schemas["DisputeOut"]
