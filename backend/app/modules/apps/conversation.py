@@ -19,6 +19,7 @@ from app.modules.apps.runner import AppCallResult, AppRunner, AppSpec
 
 DONE = "[DONE]"
 OPENING = "opening"
+MAX_TURNS = "max_turns"
 Simulator = Callable[[list[dict[str, str]]], Awaitable[str | None]]
 
 
@@ -43,6 +44,14 @@ class Conversation:
         return json.dumps({"ended": self.ended.value, "turns": self.history}, ensure_ascii=False, indent=2)
 
 
+def case_turns(inputs: dict[str, Any], cap: int) -> int:
+    """The turns of one case: its own `max_turns` when it is a whole number of at least 1, never above the cap."""
+    own = inputs.get(MAX_TURNS)
+    if isinstance(own, int) and not isinstance(own, bool) and own >= 1:
+        return min(own, cap)
+    return cap
+
+
 async def converse(
     runner: AppRunner,
     spec: AppSpec,
@@ -51,7 +60,8 @@ async def converse(
     simulate: Simulator,
     max_turns: int,
 ) -> Conversation:
-    """Runs one conversation of at most `max_turns` app replies."""
+    """Runs one conversation of at most `max_turns` app replies (a case may ask for fewer with its own `max_turns`)."""
+    max_turns = case_turns(inputs, max_turns)
     found = Conversation()
     message = str(inputs[OPENING]) if inputs.get(OPENING) else await simulate(found.history)
     for turn in range(1, max_turns + 1):

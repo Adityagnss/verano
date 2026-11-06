@@ -14,6 +14,7 @@ from app.core.events import sse_response
 from app.core.security import CurrentPrincipal
 from app.modules.datasets.schemas import DatasetVersionOut
 from app.modules.evaluation.schemas import EvaluatorSetUpdate, EvaluatorSetVersionOut
+from app.modules.generator.defaults_router import router as defaults_router
 from app.modules.generator.dependencies import GeneratorServiceDep
 from app.modules.generator.schemas import (
     CaseCategory,
@@ -28,6 +29,7 @@ from app.modules.generator.schemas import (
 from app.modules.projects.dependencies import ProjectScope
 
 router = APIRouter(prefix="/projects/{project_id}", tags=["generator"])
+router.include_router(defaults_router)
 VERSION = "/dataset-versions/{version_id}"
 
 

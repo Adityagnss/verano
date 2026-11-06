@@ -10,11 +10,18 @@ from fastapi import APIRouter, status
 from app.core.pagination import Page, PageDep
 from app.core.security import CurrentPrincipal
 from app.modules.engine.dependencies import ExperimentServiceDep
+from app.modules.engine.options import RunOptionsOut
 from app.modules.engine.schemas import ExperimentCreate, ExperimentEstimate, ExperimentOut, TestCaseRunOut
 from app.modules.projects.dependencies import ProjectScope
 
 router = APIRouter(prefix="/projects/{project_id}/experiments", tags=["experiments"])
 EXPERIMENT = "/{experiment_id}"
+
+
+@router.get("/run-options")
+async def run_options(project: ProjectScope, service: ExperimentServiceDep) -> RunOptionsOut:
+    """What each chosen model accepts: settings and ranges, reasoning effort, response formats."""
+    return await service.run_options(project)
 
 
 @router.post("/estimate")

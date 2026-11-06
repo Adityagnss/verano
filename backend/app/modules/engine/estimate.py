@@ -12,7 +12,8 @@ from typing import Any
 
 from app.core.config import Settings
 from app.core.tokens import estimate_tokens
-from app.modules.engine.schemas import ExperimentCreate, ExperimentEstimate, ModelEstimate
+from app.modules.engine.columns import Column, column_name
+from app.modules.engine.schemas import ExperimentEstimate, ModelEstimate
 from app.modules.gateway.domain import compute_cost
 from app.modules.prompts.domain import render
 from app.modules.prompts.schemas import PromptVersionOut
@@ -32,7 +33,7 @@ def estimate_experiment(
     prompt: PromptVersionOut,
     items: list[tuple[uuid.UUID, dict[str, Any]]],
     profiles: list[ModelProfileOut],
-    body: ExperimentCreate,
+    columns: list[Column],
     judge: ModelProfileOut | None,
     judge_metrics: int,
 ) -> ExperimentEstimate:
@@ -43,16 +44,16 @@ def estimate_experiment(
     )
     by_id = {profile.id: profile for profile in profiles}
     models, judge_in, judge_out, calls_total = [], 0, 0, 0
-    for model in body.models:
-        profile = by_id[model.model_profile_id]
+    for model in columns:
+        profile = by_id[model.profile_id]
         reply = int(model.params.get("max_tokens") or TYPICAL_REPLY_TOKENS)
         calls = len(items) * model.runs
         input_tokens, output_tokens = prompt_tokens * model.runs, reply * calls
         cost = compute_cost(input_tokens, output_tokens, profile.input_price_per_mtok, profile.output_price_per_mtok)
         models.append(
             ModelEstimate(
-                model_profile_id=profile.id,
-                display_name=profile.display_name,
+                model_profile_id=model.column_id,
+                display_name=column_name(profile.display_name, model.set_name),
                 calls=calls,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,

@@ -46,7 +46,10 @@ import {
   randomnessOf,
   withRandomness,
 } from "../settings"
+import { extrasBody, NO_EXTRAS, type RunExtras } from "../extras"
 import { ProgressCard } from "./progress-card"
+import { RunExtrasPanel } from "./run-extras"
+import { UpdateChecks } from "./update-checks"
 
 function Money({ value }: { value: string | null | undefined }) {
   return value === null || value === undefined ? (
@@ -123,6 +126,7 @@ export function RunStep({ projectId }: { projectId: string }) {
   const cancel = useCancelExperiment(projectId)
   const [rows, setRows] = useState<Record<string, Row>>({})
   const [budget, setBudget] = useState("")
+  const [extras, setExtras] = useState<RunExtras>(NO_EXTRAS)
   const [open, setOpen] = useState<Record<string, boolean>>({})
   const [pickedJudge, setPickedJudge] = useState("")
   const [pickedVersion, setPickedVersion] = useState("")
@@ -132,7 +136,9 @@ export function RunStep({ projectId }: { projectId: string }) {
   const judge = useChosenJudge(projectId, pickedJudge)
   const selected = useMemo(() => (models.data ?? []).filter((m) => m.is_selected), [models.data])
   const approved = version.data?.status === "approved"
-  const plan = approved ? toBody(selected, rows, budget) : null
+  const extra = extrasBody(extras)
+  const base = approved ? toBody(selected, rows, budget) : null
+  const plan = base && extra ? { ...base, ...extra } : null
   const promptVersion = pickedVersion || null
   const body = useDebounced(
     plan
@@ -378,6 +384,19 @@ export function RunStep({ projectId }: { projectId: string }) {
         <div className="grid gap-6 md:grid-cols-2">
           <div className="flex flex-col gap-4">
             <JudgePicker projectId={projectId} id="judge" picked={pickedJudge} onPick={setPickedJudge} />
+            <RunExtrasPanel
+              projectId={projectId}
+              chosen={selected.filter((m) => (rows[m.id] ?? defaultRow(m)).include).map((m) => m.id)}
+              value={extras}
+              onChange={setExtras}
+            />
+            {version.data?.evaluator_set_version_id ? (
+              <UpdateChecks
+                projectId={projectId}
+                versionId={extras.evaluatorVersionId ?? version.data.evaluator_set_version_id}
+                onApplied={(id) => setExtras({ ...extras, evaluatorVersionId: id })}
+              />
+            ) : null}
             <div className="flex max-w-xs flex-col gap-1.5">
               <Label htmlFor="budget">{RUN_COPY.budget}</Label>
               <Input

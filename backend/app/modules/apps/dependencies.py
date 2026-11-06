@@ -6,6 +6,7 @@ from fastapi import Depends
 
 from app.core.container import ContainerDep
 from app.core.database import SessionDep
+from app.modules.apps.cases import ConversationCaseService
 from app.modules.apps.service import AppService
 
 
@@ -14,3 +15,10 @@ def get_app_service(session: SessionDep, container: ContainerDep) -> AppService:
 
 
 AppServiceDep = Annotated[AppService, Depends(get_app_service)]
+
+
+def get_case_service(session: SessionDep, container: ContainerDep) -> ConversationCaseService:
+    return ConversationCaseService(session, container)
+
+
+CaseServiceDep = Annotated[ConversationCaseService, Depends(get_case_service)]

@@ -35,6 +35,7 @@ from litellm.types.utils import ModelResponse
 from app.core.config import Settings
 from app.core.datafiles import load_yaml
 from app.core.registry import Registry
+from app.modules.gateway.plugins.mock_format import shape_reply
 from app.modules.gateway.schemas import MockAnswerKey, MockModelsConfig, MockModelSpec, MockScript, MockScriptFile
 
 PROVIDER = "mock"
@@ -238,6 +239,8 @@ class MockLLM(CustomLLM):
         if spec.latency_ms:
             await asyncio.sleep(spec.latency_ms / 1000)
         text = BEHAVIORS[spec.behavior](self, request)
+        if spec.honour_response_format:
+            text = shape_reply(text, (kwargs.get("optional_params") or {}).get("response_format"))
         prompt_tokens = len(request.prompt_text) // CHARS_PER_TOKEN + 1
         completion_tokens = len(text) // CHARS_PER_TOKEN + 1
         reported = spec.response_models[(occurrence - 1) % len(spec.response_models)] if spec.response_models else model

@@ -46,10 +46,26 @@ class ExperimentOrigin(StrEnum):
     OPTIMIZATION = "optimization"
 
 
-class ModelRun(BaseModel):
-    model_profile_id: uuid.UUID
-    runs: int = Field(default=1, ge=1, le=MAX_RUNS)
+class ResponseFormatKind(StrEnum):
+    """How the answer is asked for: free text, any JSON object, or JSON that fits the task's output schema."""
+
+    TEXT = "text"
+    JSON_OBJECT = "json_object"
+    JSON_SCHEMA = "json_schema"
+
+
+class ParamSet(BaseModel):
+    """A named group of settings (for example "creative" and "strict") applied to every model of the run."""
+
+    name: str = Field(min_length=1, max_length=60)
     params: dict[str, Any] = {}
+
+    @field_validator("name")
+    @classmethod
+    def _trimmed(cls, name: str) -> str:
+        if not name.strip():
+            raise ValueError("A parameter set needs a name.")
+        return name.strip()
 
     @field_validator("params")
     @classmethod
@@ -57,11 +73,32 @@ class ModelRun(BaseModel):
         return normalize_params(params)
 
 
+class ModelRun(BaseModel):
+    model_profile_id: uuid.UUID
+    runs: int = Field(default=1, ge=1, le=MAX_RUNS)
+    params: dict[str, Any] = {}
+    # Settings of this model only, by parameter set name: they win over the set's own value
+    overrides: dict[str, dict[str, Any]] = {}
+
+    @field_validator("params")
+    @classmethod
+    def _sampling(cls, params: dict[str, Any]) -> dict[str, Any]:
+        return normalize_params(params)
+
+    @field_validator("overrides")
+    @classmethod
+    def _override_sampling(cls, overrides: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+        return {name: normalize_params(params) for name, params in overrides.items()}
+
+
 class ExperimentCreate(BaseModel):
     name: str | None = Field(default=None, max_length=200)
     dataset_version_id: uuid.UUID | None = None
     split_scope: SplitScope = SplitScope.ALL
     models: list[ModelRun] = Field(min_length=1)
+    # Run every model once per set below (none: each model runs with its own `params`)
+    param_sets: list[ParamSet] = []
+    response_format: ResponseFormatKind = ResponseFormatKind.TEXT
     budget_cap: Decimal | None = Field(default=None, gt=0)
     judge: JudgeChoice | None = None
     evaluator_set_version_id: uuid.UUID | None = None
@@ -135,6 +172,9 @@ class ModelSetting(BaseModel):
     runs: int
     params: dict[str, Any]
     ignored_params: list[str]
+    # The model itself and the parameter set this column ran (a column is a model, or a model with one set)
+    profile_id: uuid.UUID | None = None
+    param_set: str | None = None
 
 
 class RunConfiguration(BaseModel):
@@ -147,6 +187,7 @@ class RunConfiguration(BaseModel):
     evaluator_set_version_id: uuid.UUID
     split_scope: SplitScope
     judge_model: str | None
+    response_format: ResponseFormatKind = ResponseFormatKind.TEXT
     models: list[ModelSetting]
     libraries: dict[str, str | None]
 

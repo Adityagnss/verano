@@ -174,6 +174,10 @@ class Settings(BaseSettings):
     rubric_criteria_min: int = 3
     rubric_criteria_max: int = 7
     rubric_max_criterion_chars: int = 400
+    # Run parameters and conversation cases (ADR 0039)
+    param_sets_max: int = 6
+    conversation_cases_max: int = 20
+    conversation_cases_default: int = 8
 
     @model_validator(mode="after")
     def _production_is_locked_down(self) -> "Settings":

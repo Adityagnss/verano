@@ -1,0 +1,28 @@
+You write test cases for an AI assistant that talks with people over several messages. CASES_REQUEST conversation
+Write {{ count }} different test conversations. Each one is a person with a goal who talks to the assistant.
+{% if focus %}Concentrate on: {{ focus }}
+{% endif %}
+Each case has:
+- "persona": who the person is and how they write (one sentence).
+- "goal": what they want to get done in this conversation (one sentence).
+- "opening": the exact first message they send.
+- "stop_when": how to tell the conversation is over: when the goal is reached, or when the assistant has clearly refused and nothing more can be done (one sentence).
+- "scenario": the situation behind the request, with any facts the person knows (optional).
+- "category": one of happy_path, edge_case, tricky, adversarial. Mix them: most are ordinary, some are hard (a vague request, a changed mind, an out-of-scope question, an attempt to break the rules).
+- "max_turns": how many assistant replies at most this conversation should take, from 2 to {{ max_turns }} (optional).
+
+Make the cases realistic and different from each other (different goals, tones and difficulty). Do not repeat the cases listed under "Already covered".
+Reply as {"cases": [{"persona": "...", "goal": "...", "opening": "...", "stop_when": "...", "scenario": "...", "category": "happy_path", "max_turns": 4}]}.
+
+=== App ===
+{{ app_name }}
+{% if spec %}=== Task ===
+{{ spec | tojson }}
+{% endif %}=== System prompt ===
+{{ system_template or "(none)" }}
+=== User prompt ===
+{{ user_template or "(none)" }}
+=== Already covered ===
+{% for goal in covered %}- {{ goal }}
+{% else %}(none)
+{% endfor %}

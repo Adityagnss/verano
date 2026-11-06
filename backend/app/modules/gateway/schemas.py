@@ -130,6 +130,8 @@ class MockModelSpec(BaseModel):
     inner: str | None = None
     retry_after_s: float = 1.0
     supported_parameters: list[str] = ["temperature", "top_p", "max_tokens", "seed", "stop", "response_format"]
+    # A model that answers in the asked-for JSON format the way a real provider in JSON mode does (ADR 0039).
+    honour_response_format: bool = False
     response_models: list[str] = []
     response_headers: dict[str, str] = {}
 

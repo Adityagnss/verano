@@ -47,6 +47,15 @@ class ModelRule(BaseModel):
     reason: str = ""
 
 
+class RunParameterSpec(BaseModel):
+    """What a provider's models accept beyond plain sampling settings, as data (ADR 0039): which models take a
+    reasoning effort and which values, and whether the provider enforces a JSON schema."""
+
+    reasoning_efforts: list[str] = []
+    reasoning_models: list[str] = []
+    json_schema: bool = False
+
+
 class ProviderSpec(BaseModel):
     display_name: str
     client: str
@@ -67,6 +76,7 @@ class ProviderSpec(BaseModel):
     unsupported_parameters: list[str] = []
     model_rules: list[ModelRule] = []
     extra_parameters: list[str] = []
+    run_parameters: RunParameterSpec = RunParameterSpec()
     rate_limits: RateLimits
 
 

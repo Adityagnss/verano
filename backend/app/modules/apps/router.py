@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, status
 
 from app.core.features import APPS, require_feature
 from app.core.security import CurrentPrincipal
-from app.modules.apps.dependencies import AppServiceDep
+from app.modules.apps.case_schemas import ConversationCasesOut, ConversationCasesRequest
+from app.modules.apps.dependencies import AppServiceDep, CaseServiceDep
 from app.modules.apps.schemas import (
     AppCallOut,
     AppTargetCreate,
@@ -54,6 +55,14 @@ async def change_app(
 @router.delete("/{app_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_app(app_id: uuid.UUID, project: ProjectScope, service: AppServiceDep) -> None:
     await service.delete(project.id, app_id)
+
+
+@router.post("/{app_id}/conversation-cases", status_code=status.HTTP_201_CREATED)
+async def generate_conversation_cases(
+    app_id: uuid.UUID, body: ConversationCasesRequest, project: ProjectScope, service: CaseServiceDep
+) -> ConversationCasesOut:
+    """Write draft conversation cases (persona, goal, opening message, stopping condition) for an app that talks."""
+    return await service.generate(project, app_id, body)
 
 
 @router.post("/{app_id}/test")

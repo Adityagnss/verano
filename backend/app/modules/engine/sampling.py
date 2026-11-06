@@ -7,7 +7,7 @@ when the experiment is created, not silently dropped later. Whether a model supp
 setting, and its range, is checked against the model's profile in the service.
 """
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from pydantic import AfterValidator, BaseModel, BeforeValidator, ConfigDict, Field
 
@@ -50,6 +50,8 @@ class SamplingParams(BaseModel):
     presence_penalty: Annotated[Real, Field(ge=-2, le=2)] | None = None
     frequency_penalty: Annotated[Real, Field(ge=-2, le=2)] | None = None
     stop: Annotated[list[str], AfterValidator(_stop)] | None = None
+    # Only for models that think before they answer; checked per provider when the experiment is set up (ADR 0039)
+    reasoning_effort: Literal["minimal", "low", "medium", "high"] | None = None
 
     def normalized(self) -> dict[str, Any]:
         """Only the settings that were given; an empty stop list means none."""

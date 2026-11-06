@@ -42,9 +42,10 @@ from app.modules.assistant.schemas import (
 )
 from app.modules.datasets.schemas import Split
 from app.modules.datasets.service import DatasetService
+from app.modules.engine.columns import request_fields
 from app.modules.engine.models import Experiment
 from app.modules.engine.repository import EngineRepository
-from app.modules.engine.schemas import ExperimentCreate, ExperimentOrigin, ModelRun, SplitScope
+from app.modules.engine.schemas import ExperimentCreate, ExperimentOrigin, SplitScope
 from app.modules.engine.service import ExperimentService
 from app.modules.evaluation.comparisons import comparison_out
 from app.modules.evaluation.repository import ScoreRepository
@@ -405,15 +406,11 @@ class ImprovementPipeline:
     async def _rerun(self, baseline: Experiment, scope: SplitScope, name: str) -> ExperimentCreate:
         """The baseline's models and settings, scored with the same checks and judge as the numbers being
         compared against: the version of the baseline's latest scoring pass."""
-        models = [
-            ModelRun(model_profile_id=uuid.UUID(m["model_profile_id"]), runs=m["runs"], params=m["params"])
-            for m in baseline.config["models"]
-        ]
         return ExperimentCreate(
             name=f"Candidate: {name}"[:200],
             dataset_version_id=baseline.dataset_version_id,
             split_scope=scope,
-            models=models,
+            **request_fields(baseline.config),
             evaluator_set_version_id=await self._results.scored_with(baseline),
         )
 
