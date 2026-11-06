@@ -9,6 +9,7 @@ the case's own rubric. The G-Eval
 score is already normalized to 0.0-1.0. Telemetry is switched off before DeepEval loads.
 """
 
+import json
 import os
 from typing import Any
 
@@ -66,6 +67,10 @@ def instructions_for(config: dict[str, Any], case: EvalCase) -> tuple[str | None
     """What the judge is asked about this case: (criteria, steps), or None when the check does not apply
     (it uses the case's own rubric and the case has none). Steps, when given, replace the criteria, and a step
     that is exactly "{rubric}" stands for the case's rubric."""
+    if config.get("requires") == "context" and not case.context:
+        return None
+    if config.get("requires") == "tool_calls" and not case.tool_calls:
+        return None
     steps = steps_of(config)
     if steps:
         if RUBRIC not in steps:
@@ -82,6 +87,16 @@ def instructions_for(config: dict[str, Any], case: EvalCase) -> tuple[str | None
 def criteria_for(config: dict[str, Any], case: EvalCase) -> str | None:
     asked = instructions_for(config, case)
     return asked[0] if asked else None
+
+
+def _answer_text(config: dict[str, Any], case: EvalCase) -> str:
+    """The answer the judge reads. A judge that looks at tool use also gets the tools the app called."""
+    if not config.get("include_tool_calls") or not case.tool_calls:
+        return case.output
+    calls = "\n".join(
+        f"- {call.get('name')}({json.dumps(call.get('arguments', {}), ensure_ascii=False)})" for call in case.tool_calls
+    )
+    return f"{case.output}\n\nTools the app called:\n{calls}"
 
 
 async def judge(
@@ -117,7 +132,7 @@ async def judge(
     )
     test_case = LLMTestCase(
         input=inputs_text(case.inputs),
-        actual_output=case.output,
+        actual_output=_answer_text(config, case),
         expected_output=case.expected,
         context=[str(item) for item in case.context] or None,
     )

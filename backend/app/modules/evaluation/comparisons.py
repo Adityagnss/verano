@@ -9,7 +9,7 @@ from collections.abc import Iterable, Sequence
 
 from app.modules.evaluation.metrics import CaseOutcome, ModelMetrics
 from app.modules.evaluation.schemas import ComparisonOut
-from app.modules.evaluation.significance import METHOD, CaseResult, Comparison, case_result, compare_to_best
+from app.modules.evaluation.significance import METHOD, MIN_CASES, CaseResult, Comparison, case_result, compare_to_best
 
 CACHE_SIZE = 256
 _cache: "OrderedDict[tuple[object, ...], dict[uuid.UUID, ComparisonOut]]" = OrderedDict()
@@ -54,11 +54,15 @@ def best_by_quality(metrics: Sequence[ModelMetrics]) -> ModelMetrics | None:
 
 
 def versus_best(
-    run_id: uuid.UUID, experiment_id: uuid.UUID, metrics: Sequence[ModelMetrics], outcomes: Sequence[CaseOutcome]
+    run_id: uuid.UUID,
+    experiment_id: uuid.UUID,
+    metrics: Sequence[ModelMetrics],
+    outcomes: Sequence[CaseOutcome],
+    min_cases: int = MIN_CASES,
 ) -> dict[uuid.UUID, ComparisonOut]:
     """For every judged model except the best on quality: how it compares with the best. A finished scoring pass
     never changes, so the answer is kept (bounded) instead of resampled on every read."""
-    key = (run_id,)
+    key = (run_id, min_cases)
     if key in _cache:
         _cache.move_to_end(key)
         return _cache[key]
@@ -72,7 +76,9 @@ def versus_best(
                     o for o in outcomes if o.model_profile_id == m.model_profile_id
                 )
         if len(per_model) > 1:
-            compared = compare_to_best(per_model, str(best.model_profile_id), seed_ids=[experiment_id])
+            compared = compare_to_best(
+                per_model, str(best.model_profile_id), seed_ids=[experiment_id], min_cases=min_cases
+            )
             found = {uuid.UUID(model): comparison_out(c) for model, c in compared.items()}
     _cache[key] = found
     while len(_cache) > CACHE_SIZE:

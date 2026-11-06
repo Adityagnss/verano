@@ -9,8 +9,10 @@ import { StatusBadge } from "@/components/common/status-badge"
 import type { CaseResultOut } from "@/lib/api/types"
 import { cn } from "@/lib/utils"
 
-import { RESULTS_COPY } from "../copy"
+import { LABEL_COPY, RESULTS_COPY } from "../copy"
+import { EvidencePanel } from "./evidence-panel"
 import { JudgeCalls } from "./judge-calls"
+import { LabelBar } from "./label-bar"
 
 function inputText(item: CaseResultOut): string {
   const values = Object.values(item.inputs)
@@ -121,6 +123,33 @@ export function CaseView({
                 </StatusBadge>
               </div>
               <pre className="font-mono text-xs whitespace-pre-wrap">{o.output ?? o.error}</pre>
+              {o.truncated ? (
+                <p className="text-warning-strong mt-1 text-xs">{LABEL_COPY.truncated}</p>
+              ) : null}
+              {o.retrieved_chunks?.length ? (
+                <details className="mt-2 text-xs">
+                  <summary className="text-text-muted cursor-pointer">
+                    {LABEL_COPY.chunks} ({o.retrieved_chunks.length})
+                  </summary>
+                  <ul className="mt-1 flex flex-col gap-1">
+                    {o.retrieved_chunks.map((chunk, index) => (
+                      <li key={index} className="bg-subtle ring-border rounded p-2 ring-1">
+                        {String(chunk)}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              ) : null}
+              {o.tool_calls?.length ? (
+                <details className="mt-2 text-xs">
+                  <summary className="text-text-muted cursor-pointer">
+                    {LABEL_COPY.toolCalls} ({o.tool_calls.length})
+                  </summary>
+                  <pre className="bg-subtle ring-border mt-1 rounded p-2 font-mono ring-1">
+                    {JSON.stringify(o.tool_calls, null, 2)}
+                  </pre>
+                </details>
+              ) : null}
               <ul className="text-text-secondary mt-2 flex flex-col gap-0.5 text-xs">
                 {o.scores.map((s) =>
                   s.status === "unscored" ? (
@@ -138,8 +167,27 @@ export function CaseView({
                   ),
                 )}
               </ul>
+              {o.hidden ? null : (
+                <LabelBar
+                  projectId={projectId}
+                  experimentId={experimentId}
+                  answerId={o.test_case_run_id}
+                  labels={o.labels}
+                />
+              )}
               {o.scores.length ? (
-                <JudgeCalls projectId={projectId} experimentId={experimentId} answerId={o.test_case_run_id} />
+                <>
+                  <EvidencePanel
+                    projectId={projectId}
+                    experimentId={experimentId}
+                    answerId={o.test_case_run_id}
+                  />
+                  <JudgeCalls
+                    projectId={projectId}
+                    experimentId={experimentId}
+                    answerId={o.test_case_run_id}
+                  />
+                </>
               ) : null}
             </div>
           ))}

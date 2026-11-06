@@ -113,7 +113,7 @@ class EvaluatorSetService:
         base = await self._out(await self._version(project_id, base_id))
         if evaluators is not None:
             for item in evaluators:
-                if item.config.get("kind") != "deepeval" and item.evaluator_name not in RULES:
+                if item.config.get("kind") not in ("deepeval", "code") and item.evaluator_name not in RULES:
                     raise ValidationFailed(UNKNOWN_CHECK.format(name=item.evaluator_name))
         wanted = [e.model_dump() for e in evaluators] if evaluators is not None else _checks(base)
         wanted_judge = judge or base.judge

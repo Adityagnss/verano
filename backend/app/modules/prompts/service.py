@@ -122,7 +122,12 @@ class PromptService:
         rows = await self._repo.versions(prompt.id, page)
         return to_page([version_out(row) for row in rows], page, lambda item: item.id)
 
-    async def latest_version_id(self, project_id: uuid.UUID) -> uuid.UUID | None:
+    async def latest_version_id(self, project_id: uuid.UUID, prompt_id: uuid.UUID | None = None) -> uuid.UUID | None:
+        """The latest saved version of the named prompt, or of the project's first prompt when none is named."""
+        if prompt_id is not None:
+            prompt = await self._prompt(project_id, prompt_id)
+            found = await self._repo.latest_versions([prompt.id])
+            return found[prompt.id].id if prompt.id in found else None
         prompts = await self._repo.prompts(project_id, PageParams(limit=1, cursor=None))
         if not prompts:
             return None

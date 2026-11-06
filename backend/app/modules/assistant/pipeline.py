@@ -87,6 +87,7 @@ class ImprovementPipeline:
         self._prompts = PromptService(session, self._registry, container.settings)
         self._specs = TaskSpecRepository(session)
         self._minimum = container.settings.dataset_min_holdout
+        self._compare_min = container.settings.compare_min_cases
 
     async def improve(self, session_id: uuid.UUID) -> None:
         row = await self._repo.session(session_id)
@@ -392,7 +393,7 @@ class ImprovementPipeline:
         elif not (new_judged and old_judged):
             proof = VerdictOut(reason=Reason.UNJUDGED, message=UNJUDGED, minimum_cases=self._minimum, comparison=None)
         else:
-            found = compare(new, old, seed=seed_for(holdout.id, baseline.id))
+            found = compare(new, old, seed=seed_for(holdout.id, baseline.id), min_cases=self._compare_min)
             reason, message = verdict(found, self._minimum)
             proof = VerdictOut(
                 reason=reason, message=message, minimum_cases=self._minimum, comparison=comparison_out(found)

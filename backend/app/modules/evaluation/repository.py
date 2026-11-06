@@ -7,10 +7,19 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import func, insert, select, update
+from sqlalchemy import delete, func, insert, select, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.modules.evaluation.models import EvaluationRun, EvaluatorConfig, EvaluatorSet, EvaluatorSetVersion, Score
+from app.modules.evaluation.models import (
+    EvaluationRun,
+    EvaluatorConfig,
+    EvaluatorSet,
+    EvaluatorSetVersion,
+    HumanLabel,
+    JudgeCacheEntry,
+    Score,
+)
 from app.modules.evaluation.schemas import EvaluationRunStatus
 from app.modules.gateway.models import LLMCall
 from app.modules.gateway.schemas import CallPurpose
@@ -126,3 +135,68 @@ class ScoreRepository:
             .order_by(LLMCall.started_at, LLMCall.id)
         )
         return list((await self._session.scalars(query)).all())
+
+
+class LabelRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def set(
+        self, experiment_id: uuid.UUID, test_case_run_id: uuid.UUID, user_id: uuid.UUID, verdict: str, note: str | None
+    ) -> HumanLabel:
+        """One label per person per answer: a second label from the same person replaces their first."""
+        statement = (
+            pg_insert(HumanLabel)
+            .values(
+                experiment_id=experiment_id,
+                test_case_run_id=test_case_run_id,
+                user_id=user_id,
+                verdict=verdict,
+                note=note,
+            )
+            .on_conflict_do_update(
+                index_elements=["experiment_id", "test_case_run_id", "user_id"],
+                set_={"verdict": verdict, "note": note, "updated_at": func.now()},
+            )
+            .returning(HumanLabel.id)
+        )
+        label_id = await self._session.scalar(statement)
+        row = await self._session.scalar(
+            select(HumanLabel).where(HumanLabel.id == label_id).execution_options(populate_existing=True)
+        )
+        assert row is not None
+        return row
+
+    async def remove(self, experiment_id: uuid.UUID, test_case_run_id: uuid.UUID, user_id: uuid.UUID) -> None:
+        await self._session.execute(
+            delete(HumanLabel).where(
+                HumanLabel.experiment_id == experiment_id,
+                HumanLabel.test_case_run_id == test_case_run_id,
+                HumanLabel.user_id == user_id,
+            )
+        )
+
+    async def for_experiment(self, experiment_id: uuid.UUID) -> list[HumanLabel]:
+        query = select(HumanLabel).where(HumanLabel.experiment_id == experiment_id).order_by(HumanLabel.created_at)
+        return list((await self._session.scalars(query.execution_options(populate_existing=True))).all())
+
+
+class JudgeCacheRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def get(self, key: str) -> JudgeCacheEntry | None:
+        return await self._session.scalar(select(JudgeCacheEntry).where(JudgeCacheEntry.key == key))
+
+    async def put(self, key: str, evaluator_name: str, value: float, passed: bool, reason: str) -> None:
+        """Stores a judge's result; the same content judged twice at once keeps the first."""
+        await self._session.execute(
+            pg_insert(JudgeCacheEntry)
+            .values(key=key, evaluator_name=evaluator_name, value=value, passed=passed, reason=reason)
+            .on_conflict_do_nothing(index_elements=["key"])
+        )
+
+    async def count_hit(self, key: str) -> None:
+        await self._session.execute(
+            update(JudgeCacheEntry).where(JudgeCacheEntry.key == key).values(hits=JudgeCacheEntry.hits + 1)
+        )

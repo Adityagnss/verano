@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.pagination import PageParams, keyset
 from app.modules.engine.models import Experiment, ExperimentEvent, TestCaseRun
 from app.modules.engine.schemas import ExperimentStatus, RunStatus
-from app.modules.prompts.models import PromptVersion
+from app.modules.prompts.models import Prompt, PromptVersion
 
 
 class EngineRepository:
@@ -121,6 +121,15 @@ class EngineRepository:
             select(PromptVersion.id, PromptVersion.version).where(PromptVersion.id.in_(set(version_ids)))
         )
         return {row[0]: row[1] for row in rows.all()}
+
+    async def prompt_names(self, version_ids: Sequence[uuid.UUID]) -> dict[uuid.UUID, tuple[uuid.UUID, str]]:
+        """For each prompt version: the prompt it belongs to and that prompt's name."""
+        rows = await self._session.execute(
+            select(PromptVersion.id, PromptVersion.prompt_id, Prompt.name)
+            .join(Prompt, Prompt.id == PromptVersion.prompt_id)
+            .where(PromptVersion.id.in_(set(version_ids)))
+        )
+        return {row[0]: (row[1], row[2]) for row in rows.all()}
 
     async def progress(self, experiment_id: uuid.UUID) -> list[tuple[uuid.UUID, str, RunStatus, int, Decimal | None]]:
         query = (

@@ -25,7 +25,7 @@ task_types:
     - {name: g_eval_conciseness, version: "1", kind: deepeval, config: {metric: g_eval, criteria: "The summary is concise, with no repetition or filler."}}
   question_answering:
     - {name: g_eval_correctness, version: "1", kind: deepeval, config: {metric: g_eval, criteria: "The answer is factually consistent with the expected output."}}
-    - {name: answer_relevancy, version: "1", kind: deepeval, config: {metric: answer_relevancy}}
+    - {name: g_eval_relevancy, version: "1", kind: deepeval, config: {metric: g_eval, criteria: "The answer addresses what the user asked, directly and without drifting onto other topics."}}
   generation:
     - {name: g_eval_rubric, version: "1", kind: deepeval, config: {metric: g_eval, criteria: "{rubric}"}}
   transformation:

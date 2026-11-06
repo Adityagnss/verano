@@ -23,9 +23,10 @@ x-backend: &backend
     VERANO_MOCK_PROVIDER_ENABLED: ${VERANO_MOCK_PROVIDER_ENABLED:-false}
     VERANO_STORAGE_ROOT: /srv/data
     VERANO_EMBEDDING_CACHE_DIR: /srv/data/models
+    VERANO_SANDBOX_URL: http://sandbox:8099
   volumes:
     - files:/srv/data
-  networks: [edge]
+  networks: [edge, checks]
   extra_hosts:
     - "host.docker.internal:host-gateway"
   restart: unless-stopped
@@ -105,6 +106,36 @@ services:
       migrate:
         condition: service_completed_successfully
 
+  # Runs users' custom code checks (ADR 0019). No internet, no database, no secrets: it sits on an internal-only
+  # network that only the backend and the worker share, with a read-only filesystem and tight limits.
+  sandbox:
+    image: verano-backend:dev
+    pull_policy: never
+    command: ["python", "-m", "app.sandbox.server"]
+    networks: [checks]
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 128
+    mem_limit: 512m
+    environment:
+      VERANO_SANDBOX_WALL_S: ${VERANO_SANDBOX_WALL_S:-5.0}
+      VERANO_SANDBOX_CPU_S: ${VERANO_SANDBOX_CPU_S:-3}
+      VERANO_SANDBOX_MEMORY_MB: ${VERANO_SANDBOX_MEMORY_MB:-256}
+      VERANO_SANDBOX_OUTPUT_CHARS: ${VERANO_SANDBOX_OUTPUT_CHARS:-2000}
+      VERANO_SANDBOX_CONCURRENCY: 4
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8099/health', timeout=2)"]
+      interval: 15s
+      timeout: 4s
+      retries: 3
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
   frontend:
     build:
       context: ./frontend
@@ -157,6 +188,8 @@ services:
     restart: unless-stopped
 
 networks:
+  checks:
+    internal: true
   edge:
     ipam:
       config:

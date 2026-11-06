@@ -12,7 +12,6 @@ session that ran it is moved on.
 """
 
 import asyncio
-import json
 import logging
 import uuid
 from typing import Any
@@ -21,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.container import Container
 from app.core.errors import AppError, Conflict, NotFound, ValidationFailed
+from app.core.features import CODE_CHECKS, is_enabled
 from app.core.ids import uuid7
 from app.core.jobs import JobQueue
 from app.core.security import utcnow
@@ -32,10 +32,11 @@ from app.modules.engine.repository import EngineRepository
 from app.modules.engine.schemas import ExperimentOrigin, ExperimentStatus, RunStatus
 from app.modules.engine.service import ExperimentService
 from app.modules.evaluation.domain import EvalCase, Score, Unscored, check_instructions_fit, judge_calls_per_answer
+from app.modules.evaluation.judge_cache import CachedResult, RecentResults, cache_key
 from app.modules.evaluation.models import EvaluationRun, EvaluatorConfig
 from app.modules.evaluation.plugins.deepeval_adapter import instructions_for, judge
 from app.modules.evaluation.plugins.rules import RULES
-from app.modules.evaluation.repository import EvaluatorRepository, ScoreRepository
+from app.modules.evaluation.repository import EvaluatorRepository, JudgeCacheRepository, ScoreRepository
 from app.modules.evaluation.schemas import (
     EvaluationRunStatus,
     EvaluationTrigger,
@@ -54,16 +55,35 @@ from app.modules.generator.repository import TaskSpecRepository
 from app.modules.generator.schemas import TaskSpec
 from app.modules.registry.schemas import CallTarget
 from app.modules.registry.service import RegistryService
+from app.sandbox.contract import SandboxLimits, SandboxRequest
+from app.sandbox.factory import build_sandbox
+from app.sandbox.runner import Sandbox
 
 log = logging.getLogger(__name__)
 ADVANCE_JOB = "assistant.advance"
 CALL_ERROR = "call_error"
 DEEPEVAL = "deepeval"
+CODE = "code"
+CHECK_BROKEN = "The check could not run: {why}"
 NO_JUDGE = "No judge model is available, so this answer could not be judged."
 NOT_TRYABLE = "Only a judged check can be tried on an answer."
 NOT_APPLICABLE = "This check does not apply to this answer: it uses the test case's own rubric and the case has none."
 NO_SUCH_ANSWER = "This answer doesn't belong to this experiment, or it has no output to judge."
 JUDGE_FAILED = "The judge could not score this answer: {why}"
+
+
+def eval_case(item: DatasetItem, row: TestCaseRun, spec: TaskSpec) -> EvalCase:
+    """What the checks see of one answer: the case, the answer, and what an app reported with it (the chunks it
+    retrieved are context for the judges, its tool calls are for the tool checks)."""
+    return EvalCase(
+        inputs=item.inputs,
+        output=row.raw_output or "",
+        expected=item.expected_output,
+        rubric=[str(c) for c in item.rubric] if item.rubric else None,
+        task_spec=spec,
+        context=[str(c) for c in item.context] + [str(c) for c in row.retrieved_chunks or []],
+        tool_calls=[call for call in row.tool_calls or [] if isinstance(call, dict)],
+    )
 
 
 class ScoringService:
@@ -80,6 +100,8 @@ class ScoringService:
         self._specs = TaskSpecRepository(session)
         self._jobs: JobQueue = container.jobs
         self._sessions = container.database.sessions
+        self._sandbox: Sandbox = build_sandbox(container.settings.sandbox_url)
+        self._recent = RecentResults(container.settings.judge_cache_recent_size)
 
     async def score(
         self,
@@ -222,14 +244,7 @@ class ScoringService:
             ]
         if row.status is not RunStatus.SUCCEEDED:
             return []
-        case = EvalCase(
-            inputs=item.inputs,
-            output=row.raw_output or "",
-            expected=item.expected_output,
-            rubric=[str(c) for c in item.rubric] if item.rubric else None,
-            task_spec=spec,
-            context=[str(c) for c in item.context],
-        )
+        case = eval_case(item, row, spec)
         contexts = [
             CallContext(
                 project_id=experiment.project_id,
@@ -267,9 +282,20 @@ class ScoringService:
                     "weight": config.weight,
                     "reason": result.reason[:4000],
                     "llm_call_id": None,
+                    "extra": self._evidence(config, result),
                 }
             )
         return scored
+
+    @staticmethod
+    def _evidence(config: EvaluatorConfig, result: Score | Unscored) -> dict[str, Any]:
+        """What a stored score remembers about how it was made: whether a judge produced it, whether it came
+        from the cache, and whether it ran as custom code (agreement and "Why this score" read this)."""
+        kind = config.config.get("kind")
+        found: dict[str, Any] = {"judged": kind == DEEPEVAL, "code": kind == CODE}
+        if isinstance(result, Score) and result.metadata.get("cached"):
+            found["cached"] = True
+        return found
 
     async def _evaluate_once(
         self,
@@ -284,27 +310,58 @@ class ScoringService:
         exactly the same thing, so a second call would only repeat the cost. A failed call is never shared."""
         if config.config.get("kind") != DEEPEVAL or target is None:
             return await self._evaluate(config, case, target, context, limit)
-        key = json.dumps(
-            [
-                config.evaluator_name,
-                config.config,
-                config.threshold,
-                case.inputs,
-                case.output,
-                case.expected,
-                case.rubric,
-                case.context,
-            ],
-            sort_keys=True,
-            default=str,
+        key = cache_key(
+            config.evaluator_name,
+            config.config,
+            config.threshold,
+            target.profile.litellm_model,
+            case.inputs,
+            case.output,
+            case.expected,
+            case.rubric,
+            case.context,
         )
         task = shared.get(key)
         if task is None:
-            task = shared[key] = asyncio.ensure_future(self._evaluate(config, case, target, context, limit))
+            task = shared[key] = asyncio.ensure_future(self._judge_cached(key, config, case, target, context, limit))
             return await task
         result = await task
         if isinstance(result, Unscored):
             return await self._evaluate(config, case, target, context, limit)
+        return result
+
+    async def _judge_cached(
+        self,
+        key: str,
+        config: EvaluatorConfig,
+        case: EvalCase,
+        target: CallTarget,
+        context: CallContext,
+        limit: asyncio.Semaphore,
+    ) -> Score | Unscored | None:
+        """The stored result for this exact content when there is one (no judge call, no cost); otherwise the
+        judge is called and a result that scored is stored. A failed or unscored call is never stored."""
+        if not self._settings.judge_cache_enabled or instructions_for(config.config, case) is None:
+            return await self._evaluate(config, case, target, context, limit)
+        recent = self._recent.get(key)
+        if recent is not None:
+            return Score(recent.value, recent.passed, recent.reason, {"cached": True})
+        async with self._sessions() as own:
+            stored = await JudgeCacheRepository(own).get(key)
+            if stored is not None:
+                await JudgeCacheRepository(own).count_hit(key)
+                await own.commit()
+        if stored is not None:
+            self._recent.put(key, CachedResult(stored.value, stored.passed, stored.reason))
+            return Score(stored.value, stored.passed, stored.reason, {"cached": True})
+        result = await self._evaluate(config, case, target, context, limit)
+        if isinstance(result, Score):
+            self._recent.put(key, CachedResult(result.value, result.passed, result.reason))
+            async with self._sessions() as own:
+                await JudgeCacheRepository(own).put(
+                    key, config.evaluator_name, result.value, result.passed, result.reason
+                )
+                await own.commit()
         return result
 
     async def _evaluate(
@@ -316,6 +373,8 @@ class ScoringService:
         limit: asyncio.Semaphore,
     ) -> Score | Unscored | None:
         """A score; None when the evaluator does not apply to this case; Unscored when it applies but failed."""
+        if config.config.get("kind") == CODE:
+            return await self._run_code(config, case)
         if config.config.get("kind") != DEEPEVAL:
             rule = RULES.get(config.evaluator_name)
             return rule(case, config.config, config.threshold) if rule else None
@@ -334,6 +393,28 @@ class ScoringService:
             except Exception as exc:
                 log.warning("judge %s failed unexpectedly", config.evaluator_name, exc_info=True)
                 return Unscored(JUDGE_FAILED.format(why=f"{type(exc).__name__}: {str(exc)[:200]}"))
+
+    async def _run_code(self, config: EvaluatorConfig, case: EvalCase) -> Score | Unscored:
+        """A custom code check, run in the sandbox. A check that errors, times out or cannot be reached is
+        shown as unscored with the reason, never as a pass and never as a zero (ADR 0019)."""
+        settings = self._settings
+        if not is_enabled(settings, CODE_CHECKS):
+            return Unscored(CHECK_BROKEN.format(why="custom code checks are switched off on this server."))
+        limits = SandboxLimits(
+            wall_s=settings.sandbox_wall_s,
+            cpu_s=settings.sandbox_cpu_s,
+            memory_mb=settings.sandbox_memory_mb,
+            output_chars=settings.sandbox_output_chars,
+        )
+        request = SandboxRequest(
+            code=str(config.config.get("code") or ""),
+            case={"inputs": case.inputs, "output": case.output, "expected": case.expected, "rubric": case.rubric},
+        )
+        result = await self._sandbox.run(request, limits)
+        if not result.ok or result.score is None:
+            return Unscored(CHECK_BROKEN.format(why=result.error or result.reason or "no result"))
+        passed = result.passed if result.passed is not None else result.score >= config.threshold
+        return Score(result.score, passed, result.reason or ("Passed." if passed else "Failed."))
 
     async def try_estimate(
         self, project_id: uuid.UUID, experiment_id: uuid.UUID, body: TryJudgeRequest
@@ -362,14 +443,7 @@ class ScoringService:
         target = await self._registry.call_target(project_id, choice.credential_id, choice.model)
         check_instructions_fit([body.evaluator.config], target.profile.context_window)
         spec = await self._spec(experiment)
-        case = EvalCase(
-            inputs=item.inputs,
-            output=row.raw_output or "",
-            expected=item.expected_output,
-            rubric=[str(c) for c in item.rubric] if item.rubric else None,
-            task_spec=spec,
-            context=[str(c) for c in item.context],
-        )
+        case = eval_case(item, row, spec)
         name = body.evaluator.evaluator_name
         context = CallContext(
             project_id=project_id,

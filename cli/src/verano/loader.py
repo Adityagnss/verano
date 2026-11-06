@@ -272,7 +272,7 @@ def _resolve(spec: VeranoFile, root: Path, node: yaml.Node | None, problems: lis
         resolved.append(
             ResolvedPrompt(
                 entry=entry,
-                project_name=f"{spec.project}{SEPARATOR}{entry.name}",
+                project_name=f"{spec.project}{SEPARATOR}{entry.group or entry.name}",
                 system=texts["system"],
                 user=texts["user"],
                 golden=golden,

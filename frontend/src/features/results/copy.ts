@@ -147,3 +147,46 @@ export const RESULTS_COPY = {
   next: "Next: improve the prompt",
   ms: (value: number) => formatMs(value),
 }
+
+export const LABEL_COPY = {
+  question: "Is this answer good?",
+  good: "Good",
+  bad: "Bad",
+  unsure: "Not sure",
+  clear: "Clear my label",
+  hint: "Your label sits beside the score and never changes it. Labels show how far to trust the judge.",
+  majority: (verdict: string, good: number, bad: number, unsure: number) =>
+    verdict === "unlabelled"
+      ? "Not labelled yet"
+      : verdict === "disputed"
+        ? `People disagree: ${good} good, ${bad} bad`
+        : `People say ${verdict}: ${good} good, ${bad} bad${unsure ? `, ${unsure} not sure` : ""}`,
+  truncated:
+    "This answer was longer than the storage limit and was cut. Scores were given on the part that was kept.",
+  chunks: "Text the app retrieved",
+  toolCalls: "Tools the app called",
+}
+
+export const EVIDENCE_COPY = {
+  open: "Why this score",
+  close: "Hide",
+  basis: (scored: number, unscored: number) =>
+    `Rests on ${scored} scored answer${scored === 1 ? "" : "s"}${unscored ? `, ${unscored} could not be scored` : ""}.`,
+  cached: "Reused from an earlier identical judgement; no new judge call was made.",
+  cannot: "What this check cannot tell",
+  kind: { rule: "A program check", judge: "A judge's opinion", code: "Your own code check" } as Record<
+    string,
+    string
+  >,
+}
+
+export const AGREEMENT_COPY = {
+  title: "Does the judge agree with people?",
+  description:
+    "Label answers good or bad in the cases below. Each judged check is compared with the people's majority.",
+  empty: "No judged answer has been labelled yet. Open a case and mark a few answers.",
+  agree: "Agree",
+  kappa: "Kappa",
+  used: (used: number, all: number) => `${used} of ${all} labelled answers compared`,
+  skipped: (n: number) => `${n} left out (not sure, or people disagreed)`,
+}

@@ -82,6 +82,9 @@ class TestCaseRun(CreatedAtMixin, Base):
     rendered_system_prompt: Mapped[str | None] = mapped_column(Text)
     rendered_user_prompt: Mapped[str | None] = mapped_column(Text)
     raw_output: Mapped[str | None] = mapped_column(Text)
+    output_truncated: Mapped[bool] = mapped_column(default=False, server_default="false")
+    retrieved_chunks: Mapped[list[Any] | None]
+    tool_calls: Mapped[list[Any] | None]
     parsed_output: Mapped[dict[str, Any] | None]
     finish_reason: Mapped[str | None] = mapped_column(String(64))
     error_type: Mapped[str | None] = mapped_column(String(64))

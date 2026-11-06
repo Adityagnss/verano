@@ -21,6 +21,7 @@ class EvalCase:
     rubric: list[str] | None
     task_spec: TaskSpec
     context: list[str] = field(default_factory=list)
+    tool_calls: list[dict[str, Any]] = field(default_factory=list)  # what an app reported: {name, arguments}
 
 
 def inputs_text(inputs: dict[str, Any]) -> str:

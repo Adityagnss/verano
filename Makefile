@@ -21,7 +21,7 @@ LOCAL_OLLAMA := http://ollama:11434
 FRONTEND := cd frontend &&
 OPENAPI := frontend/src/lib/api/openapi.json
 
-.PHONY: help env install builder base-images ci-offline up up-local down logs migrate migration test test-all lint fmt models bench api-client e2e ci hooks clean clean-all
+.PHONY: help env install builder base-images ci-offline up up-local down logs migrate migration test test-all lint fmt models bench api-compat api-client e2e ci hooks clean clean-all
 
 help: ## Show this list
 	@grep -E '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -81,6 +81,9 @@ fmt: ## Auto-format, then auto-fix what can be fixed (formatting always runs fir
 models: ## Pull the local Ollama models (once)
 	scripts/pull_models.sh
 
+api-compat: ## Fail when the API broke its promise since the last release (docs/api/baseline.json)
+	$(BACKEND) PYTHONPATH=. uv run python ../scripts/check_api_compat.py
+
 api-client: ## Regenerate the frontend API types from the backend OpenAPI schema
 	$(BACKEND) PYTHONPATH=. uv run python ../scripts/export_openapi.py ../$(OPENAPI)
 	$(FRONTEND) npx prettier --write src/lib/api/openapi.json >/dev/null
@@ -129,3 +132,4 @@ hooks: ## Install the git pre-commit hook (ruff / prettier / eslint on staged fi
 
 bench: ## Measure performance targets (ENGINEERING_STANDARDS section 4)
 	$(BACKEND) uv run python -m benchmarks.gateway_overhead
+	$(BACKEND) uv run python -m benchmarks.phase6_budgets

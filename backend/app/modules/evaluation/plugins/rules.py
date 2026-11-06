@@ -127,3 +127,7 @@ def constraints(case: EvalCase, config: dict[str, Any], threshold: float) -> Sco
     if unchecked:
         reason += f" Not checked automatically (the judges read these): {'; '.join(unchecked)}."
     return score(sum(checked.values()) / len(checked), threshold, reason)
+
+
+# the extra rules register themselves on import; imported last because they use `rule` defined above
+from app.modules.evaluation.plugins import rules_extra  # noqa: E402,F401

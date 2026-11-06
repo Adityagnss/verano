@@ -122,6 +122,14 @@ class MappingRequest(BaseModel):
     mapping: ColumnMapping
 
 
+class VariableMappingRequest(BaseModel):
+    """Which column of a table of inputs fills which prompt variable (or app input), one test case per row."""
+
+    variables: dict[str, str] = Field(min_length=1)
+    expected_output: str | None = None
+    category: str | None = None
+
+
 class IssueKind(StrEnum):
     MISSING_ANSWER = "missing_answer"
     UNPAIRED = "unpaired"

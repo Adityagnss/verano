@@ -28,6 +28,12 @@ from app.core.container import Container
 from app.core.errors import AppError
 from app.core.jobs import JobQueue
 from app.core.security import utcnow
+from app.core.text import bound
+from app.modules.apps.caller import AppCaller, PreparedApp
+from app.modules.apps.models import AppCall
+from app.modules.apps.repository import AppRepository
+from app.modules.apps.schemas import AppMode
+from app.modules.apps.simulator import SimulatedUser
 from app.modules.datasets.service import DatasetService
 from app.modules.engine.domain import parse_output
 from app.modules.engine.models import Experiment, TestCaseRun
@@ -46,6 +52,8 @@ from app.modules.registry.service import RegistryService
 SCORE_JOB = "evaluation.score_experiment"
 BUDGET_REACHED = "Budget cap of ${cap} reached; the remaining calls were skipped."
 INTERNAL = "internal_error"
+APP_PROVIDER = "app"
+NO_SIMULATOR = "This app holds conversations, so a judge model must be chosen to play the user."
 
 
 class ChunkExecutor:
@@ -59,8 +67,10 @@ class ChunkExecutor:
         datasets: DatasetService,
         experiments: ExperimentService,
         jobs: JobQueue,
+        apps: AppCaller | None = None,
     ) -> None:
         self._session = session
+        self._apps = apps
         self._settings = settings
         self._repo = EngineRepository(session)
         self._gateway = gateway
@@ -84,6 +94,7 @@ class ChunkExecutor:
             DatasetService(session, container.settings),
             ExperimentService.from_container(session, container),
             container.jobs,
+            AppCaller(session, container),
         )
 
     async def run_chunk(self, experiment_id: uuid.UUID, run_ids: list[uuid.UUID]) -> None:
@@ -94,22 +105,130 @@ class ChunkExecutor:
         prompt = await self._prompts.get_version(experiment.project_id, experiment.prompt_version_id)
         items = await self._datasets.items(experiment.dataset_version_id, ids=[row.dataset_item_id for row in rows])
         inputs = {item.id: item.inputs for item in items}
+        model_rows = [row for row in rows if row.provider != APP_PROVIDER]
+        app_rows = [row for row in rows if row.provider == APP_PROVIDER]
         targets = {
             key: await self._registry.call_target(experiment.project_id, key[0], key[1])
-            for key in {(row.credential_id or uuid.UUID(int=0), row.model) for row in rows}
+            for key in {(row.credential_id or uuid.UUID(int=0), row.model) for row in model_rows}
         }
+        apps = (
+            await self._apps.prepare({row.credential_id for row in app_rows if row.credential_id})
+            if self._apps and app_rows
+            else {}
+        )
+        judge = (
+            await self._judge_target(experiment) if any(a.mode is AppMode.CONVERSATION for a in apps.values()) else None
+        )
         await self._session.commit()
         limits: dict[str, asyncio.Semaphore] = defaultdict(
             lambda: asyncio.Semaphore(self._settings.engine_provider_concurrency)
         )
+        app_limits = {cid: asyncio.Semaphore(app.concurrency) for cid, app in apps.items()}
 
         async def one(row: TestCaseRun) -> None:
+            if row.provider == APP_PROVIDER:
+                prepared = apps.get(row.credential_id or uuid.UUID(int=0))
+                if prepared is None:
+                    await self._fail_app(experiment, row, "This app no longer exists.")
+                    return
+                async with app_limits[row.credential_id or uuid.UUID(int=0)]:
+                    await self._call_app(experiment, row, inputs[row.dataset_item_id], prepared, judge)
+                return
             async with limits[row.provider]:
                 target = targets[(row.credential_id or uuid.UUID(int=0), row.model)]
                 await self._call(experiment, prompt, row, inputs[row.dataset_item_id], target)
 
         await asyncio.gather(*(one(row) for row in rows))
         await self._finish_if_done(experiment)
+
+    async def _judge_target(self, experiment: Experiment) -> CallTarget | None:
+        """The model that plays the user in a conversation: the experiment's judge."""
+        choice = experiment.config.get("judge")
+        if not choice:
+            return None
+        return await self._registry.call_target(
+            experiment.project_id, uuid.UUID(choice["credential_id"]), choice["model"]
+        )
+
+    async def _claim(self, experiment: Experiment, row: TestCaseRun) -> bool:
+        async with self._lock:
+            if experiment.status is not ExperimentStatus.RUNNING:
+                return False
+            if not await self._repo.claim(experiment.id, row.id, utcnow()):
+                return False
+            await self._session.commit()
+            return True
+
+    async def _fail_app(self, experiment: Experiment, row: TestCaseRun, why: str) -> None:
+        if not await self._claim(experiment, row):
+            return
+        values = {"status": RunStatus.FAILED, "error_type": "app_error", "error_message": why, "attempts": 1}
+        await self._save(experiment, row, values, [], None)
+
+    async def _call_app(
+        self,
+        experiment: Experiment,
+        row: TestCaseRun,
+        inputs: dict[str, Any],
+        app: PreparedApp,
+        judge: CallTarget | None,
+    ) -> None:
+        """One test case sent to the user's app (or a whole conversation with it). The app's own model calls are
+        not ours: its cost is stored only when it reports one, and a simulated user's calls are costed here."""
+        if not await self._claim(experiment, row):
+            return
+        user: SimulatedUser | None = None
+        if app.mode is AppMode.CONVERSATION:
+            if judge is None:
+                await self._save(
+                    experiment,
+                    row,
+                    {"status": RunStatus.FAILED, "error_type": "app_error", "error_message": NO_SIMULATOR},
+                    [],
+                    None,
+                )
+                return
+            context = CallContext(
+                project_id=experiment.project_id, experiment_id=experiment.id, test_case_run_id=row.id
+            )
+            user = SimulatedUser(self._gateway, judge, context, inputs)
+        try:
+            outcome = await self._apps.run(app, inputs, user.as_simulator() if user else None) if self._apps else None
+        except AppError as error:
+            failure: dict[str, Any] = {
+                "status": RunStatus.FAILED,
+                "error_type": error.code,
+                "error_message": error.message,
+            }
+            await self._save(experiment, row, failure, [], None)
+            return
+        if outcome is None:
+            return
+        values: dict[str, Any] = dict(outcome.values)
+        if user is not None and user.cost:
+            values["cost"] = (values.get("cost") or 0) + user.cost
+        await self._save(experiment, row, values, outcome.calls, app.target_id)
+
+    async def _save(
+        self,
+        experiment: Experiment,
+        row: TestCaseRun,
+        values: dict[str, Any],
+        calls: list[dict[str, Any]],
+        target_id: uuid.UUID | None,
+    ) -> None:
+        async with self._lock:
+            await self._repo.update_run(experiment.id, row.id, values | {"completed_at": utcnow()})
+            if calls and target_id is not None:
+                await AppRepository(self._session).add_calls(
+                    [
+                        AppCall(experiment_id=experiment.id, test_case_run_id=row.id, app_target_id=target_id, **call)
+                        for call in calls
+                    ]
+                )
+            await self._session.commit()
+            await self._check_budget(experiment)
+            await self._session.commit()
 
     async def _call(
         self,
@@ -135,9 +254,11 @@ class ChunkExecutor:
                 CallPurpose.TEST_RUN,
                 CallContext(project_id=experiment.project_id, experiment_id=experiment.id, test_case_run_id=row.id),
             )
+            text, cut = bound(result.text, self._settings.stored_answer_max_chars)
             values |= {
                 "status": RunStatus.SUCCEEDED,
-                "raw_output": result.text,
+                "raw_output": text,
+                "output_truncated": cut,
                 "parsed_output": parse_output(result.text),
                 "finish_reason": result.finish_reason,
                 "response_model": result.response_model,

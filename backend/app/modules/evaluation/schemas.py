@@ -31,6 +31,9 @@ MAX_STEPS = 10
 MAX_STEP_CHARS = 1000
 NEEDS_CRITERIA = "A judged check needs criteria or evaluation steps: say in words what a good answer is."
 TOO_LONG = "Criteria can be at most {n} characters."
+MAX_CODE_CHARS = 20_000
+NEEDS_CODE = "A code check needs a function: def check(case): ... returning a score, a pass/fail or both."
+CODE_TOO_LONG = "A code check can be at most {n} characters."
 TOO_MANY_STEPS = f"Use at most {MAX_STEPS} evaluation steps, each at most {MAX_STEP_CHARS} characters."
 
 
@@ -41,6 +44,17 @@ class EvaluatorConfigIn(BaseModel):
     threshold: float = Field(ge=0.0, le=1.0)
     weight: float = Field(gt=0.0)
     required: bool = False
+
+    @model_validator(mode="after")
+    def _code_checks_have_code(self) -> "EvaluatorConfigIn":
+        if self.config.get("kind") != "code":
+            return self
+        code = str(self.config.get("code") or "")
+        if not code.strip():
+            raise ValueError(NEEDS_CODE)
+        if len(code) > MAX_CODE_CHARS:
+            raise ValueError(CODE_TOO_LONG.format(n=MAX_CODE_CHARS))
+        return self
 
     @model_validator(mode="after")
     def _judged_checks_say_what_to_judge(self) -> "EvaluatorConfigIn":
@@ -266,6 +280,35 @@ class ScoreOut(BaseModel):
     status: ScoreStatus = ScoreStatus.SCORED
 
 
+class LabelVerdict(StrEnum):
+    GOOD = "good"
+    BAD = "bad"
+    UNSURE = "unsure"
+
+
+class LabelIn(BaseModel):
+    verdict: LabelVerdict
+    note: str | None = Field(default=None, max_length=2000)
+
+
+class LabelOut(BaseModel):
+    test_case_run_id: uuid.UUID
+    user_id: uuid.UUID
+    verdict: LabelVerdict
+    note: str | None
+    updated_at: datetime
+
+
+class LabelSummary(BaseModel):
+    """What people said about one answer: the majority and the split, and this user's own label."""
+
+    verdict: str  # good, bad, disputed or unlabelled
+    good: int
+    bad: int
+    unsure: int
+    mine: LabelVerdict | None = None
+
+
 class CaseOutput(BaseModel):
     test_case_run_id: uuid.UUID
     model_profile_id: uuid.UUID
@@ -279,6 +322,11 @@ class CaseOutput(BaseModel):
     latency_ms: int | None
     cost: Decimal | None
     scores: list[ScoreOut]
+    truncated: bool = False
+    retrieved_chunks: list[Any] | None = None
+    tool_calls: list[Any] | None = None
+    labels: LabelSummary | None = None
+    hidden: bool = False  # blind review: the judge's score and verdict are left out of this response
 
 
 class CaseAgreement(BaseModel):
@@ -304,3 +352,66 @@ class CaseResultOut(BaseModel):
 class TryJudgeOut(BaseModel):
     score: ScoreOut
     calls: list[JudgeCallOut]
+
+
+class AgreementOut(BaseModel):
+    """How often one judged check agrees with people on the answers they labelled (ADR 0017)."""
+
+    evaluator_name: str
+    labelled_answers: int
+    answers_used: int
+    unsure_or_disputed: int
+    raw: float | None
+    kappa: float | None
+    true_pass: int
+    false_pass: int
+    false_fail: int
+    true_fail: int
+    too_few: bool
+    warn: bool
+    min_labels: int
+    raw_threshold: float
+    kappa_threshold: float
+    message: str
+
+
+class ScoreEvidence(BaseModel):
+    evaluator_name: str
+    kind: str  # rule, judge or code
+    value: float
+    passed: bool
+    status: ScoreStatus
+    reason: str
+    cached: bool
+    answers_scored: int
+    answers_unscored: int
+    limits: str
+    agreement: AgreementOut | None
+    agreement_note: str | None
+
+
+class EvidenceOut(BaseModel):
+    test_case_run_id: uuid.UUID
+    evaluation_run_id: uuid.UUID
+    scores: list[ScoreEvidence]
+
+
+class GalleryAgreement(BaseModel):
+    model: str
+    date: str
+    answers: int
+    raw: float
+    kappa: float | None
+
+
+class GalleryJudgeOut(BaseModel):
+    id: str
+    title: str
+    description: str
+    requires: str | None
+    threshold: float
+    criteria: str
+    limits: str
+    agreement: GalleryAgreement | None
+    agreement_note: str | None
+    config: dict[str, Any]

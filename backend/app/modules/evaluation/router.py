@@ -10,12 +10,23 @@ from fastapi import APIRouter, Query, status
 from fastapi.responses import Response
 
 from app.core.security import CurrentPrincipal
-from app.modules.evaluation.dependencies import ResultsServiceDep, ScoringServiceDep
+from app.modules.evaluation.dependencies import (
+    EvidenceServiceDep,
+    LabelServiceDep,
+    ResultsServiceDep,
+    ScoringServiceDep,
+)
+from app.modules.evaluation.gallery import NOT_MEASURED, as_config, gallery
 from app.modules.evaluation.schemas import (
+    AgreementOut,
     CaseResultOut,
     EvaluatorSetVersionOut,
+    EvidenceOut,
+    GalleryJudgeOut,
     JudgeCallOut,
     JudgeSuggestion,
+    LabelIn,
+    LabelOut,
     ReplicationOut,
     RescoreEstimate,
     RescoreRequest,
@@ -43,10 +54,12 @@ async def get_cases(
     experiment_id: uuid.UUID,
     project: ProjectScope,
     service: ResultsServiceDep,
+    principal: CurrentPrincipal,
     evaluation_run_id: RunQuery = None,
     failed_only: Annotated[bool, Query()] = False,
+    blind: Annotated[bool, Query()] = False,
 ) -> list[CaseResultOut]:
-    return await service.cases(project.id, experiment_id, evaluation_run_id, failed_only)
+    return await service.cases(project.id, experiment_id, evaluation_run_id, failed_only, principal.user_id, blind)
 
 
 @router.get("/compare")
@@ -57,6 +70,52 @@ async def compare_experiments(
     service: ResultsServiceDep,
 ) -> VersionComparisonOut:
     return await service.compare_versions(project.id, experiment_id, against)
+
+
+@router.put("/answers/{test_case_run_id}/label")
+async def put_label(
+    experiment_id: uuid.UUID,
+    test_case_run_id: uuid.UUID,
+    body: LabelIn,
+    project: ProjectScope,
+    principal: CurrentPrincipal,
+    labels: LabelServiceDep,
+) -> LabelOut:
+    return await labels.set_label(project.id, experiment_id, principal, test_case_run_id, body)
+
+
+@router.delete("/answers/{test_case_run_id}/label", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_label(
+    experiment_id: uuid.UUID,
+    test_case_run_id: uuid.UUID,
+    project: ProjectScope,
+    principal: CurrentPrincipal,
+    labels: LabelServiceDep,
+) -> None:
+    await labels.remove_label(project.id, experiment_id, principal, test_case_run_id)
+
+
+@router.get("/answers/{test_case_run_id}/evidence")
+async def get_evidence(
+    experiment_id: uuid.UUID,
+    test_case_run_id: uuid.UUID,
+    project: ProjectScope,
+    evidence: EvidenceServiceDep,
+    evaluation_run_id: RunQuery = None,
+) -> EvidenceOut:
+    return await evidence.evidence(project.id, experiment_id, test_case_run_id, evaluation_run_id)
+
+
+@router.get("/labels")
+async def get_labels(experiment_id: uuid.UUID, project: ProjectScope, labels: LabelServiceDep) -> list[LabelOut]:
+    return await labels.labels(project.id, experiment_id)
+
+
+@router.get("/agreement")
+async def get_agreement(
+    experiment_id: uuid.UUID, project: ProjectScope, labels: LabelServiceDep, evaluation_run_id: RunQuery = None
+) -> list[AgreementOut]:
+    return await labels.agreement(project.id, experiment_id, evaluation_run_id)
 
 
 @router.get("/replication")
@@ -130,3 +189,24 @@ async def get_evaluator_version(
 @project_router.get("/judge/suggestion")
 async def suggest_judge_model(project: ProjectScope, service: ResultsServiceDep) -> JudgeSuggestion:
     return await service.judge_suggestion(project)
+
+
+@project_router.get("/judge-gallery")
+async def get_judge_gallery(project: ProjectScope) -> list[GalleryJudgeOut]:
+    """The ready-made judges that can be added to this project's checks, with what each cannot tell and how
+    often it agrees with people (or that this was not measured yet)."""
+    return [
+        GalleryJudgeOut(
+            id=name,
+            title=entry.title,
+            description=entry.description,
+            requires=entry.requires,
+            threshold=entry.threshold,
+            criteria=entry.criteria,
+            limits=entry.limits,
+            agreement=entry.agreement.model_dump() if entry.agreement else None,
+            agreement_note=None if entry.agreement else NOT_MEASURED,
+            config=as_config(name, entry),
+        )
+        for name, entry in gallery().judges.items()
+    ]

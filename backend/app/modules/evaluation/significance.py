@@ -141,6 +141,7 @@ def compare(
     seed: int,
     comparisons: int = 1,
     alpha: float = ALPHA,
+    min_cases: int = MIN_CASES,
 ) -> Comparison:
     """Compares two sets of per-case results (keyed by test case). `comparisons` is how many models the same
     model is being compared with, so the interval can be widened to keep the chance of a false "clear" low."""
@@ -155,10 +156,10 @@ def compare(
     mean_a = sum(r.quality for r in a) / n if n else None
     mean_b = sum(r.quality for r in b) / n if n else None
     low = high = None
-    if n >= MIN_CASES:
+    if n >= min_cases:
         low, high = bootstrap_interval([x.quality - y.quality for x, y in zip(a, b, strict=True)], adjusted, seed)
     clear = low is not None and high is not None and (low > 0 or high < 0)
-    label = Label.CLEAR if clear else Label.NONE if n >= MIN_CASES else Label.TOO_FEW
+    label = Label.CLEAR if clear else Label.NONE if n >= min_cases else Label.TOO_FEW
     return Comparison(
         label=label,
         cases=n,
@@ -181,7 +182,11 @@ def compare(
 
 
 def compare_to_best(
-    results: Mapping[str, Mapping[str, CaseResult]], best: str, *, seed_ids: Iterable[object] = ()
+    results: Mapping[str, Mapping[str, CaseResult]],
+    best: str,
+    *,
+    seed_ids: Iterable[object] = (),
+    min_cases: int = MIN_CASES,
 ) -> dict[str, Comparison]:
     """Every other model compared with `best` (first side = the other model), the interval widened for the
     number of models compared."""
@@ -192,6 +197,7 @@ def compare_to_best(
             results[best],
             seed=seed_for(*seed_ids, m, best),
             comparisons=len(others),
+            min_cases=min_cases,
         )
         for m in others
     }

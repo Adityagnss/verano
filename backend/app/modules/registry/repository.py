@@ -60,7 +60,7 @@ class RegistryRepository:
         query = (
             select(ProviderCredential, func.coalesce(counts.c.n, 0))
             .outerjoin(counts, counts.c.credential_id == ProviderCredential.id)
-            .where(ProviderCredential.project_id == project_id)
+            .where(ProviderCredential.project_id == project_id, ProviderCredential.provider != "app")
             .order_by(ProviderCredential.id)
         )
         return [(row, int(n)) for row, n in (await self._session.execute(query)).all()]

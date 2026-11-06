@@ -1,0 +1,10 @@
+{
+  "A1001": {"status": "shipped", "carrier": "FastParcel", "eta": "2026-11-09"},
+  "A1002": {"status": "processing", "carrier": "FastParcel", "eta": "2026-11-12"},
+  "B2040": {"status": "delivered", "carrier": "NorthPost", "eta": "2026-11-02"},
+  "B2041": {"status": "processing", "carrier": "NorthPost", "eta": "2026-11-13"},
+  "C3007": {"status": "shipped", "carrier": "BlueLine", "eta": "2026-11-10"},
+  "C3008": {"status": "cancelled", "carrier": "BlueLine", "eta": "none"},
+  "D4150": {"status": "delivered", "carrier": "FastParcel", "eta": "2026-10-29"},
+  "E5002": {"status": "processing", "carrier": "NorthPost", "eta": "2026-11-14"}
+}

@@ -174,6 +174,8 @@ class Gate(Strict):
 
 class PromptEntry(Strict):
     name: str
+    # Prompts with the same `group` share one Verano project (and its test cases); each stays its own prompt
+    group: str | None = None
     source: Source | None = None
     system: str | None = None
     system_file: str | None = None
@@ -192,6 +194,15 @@ class PromptEntry(Strict):
     @classmethod
     def _name(cls, value: str) -> str:
         if not NAME.match(value):
+            raise ValueError(
+                "use letters, digits, '-', '_' or '.' (up to 64 characters, starting with a letter or digit)"
+            )
+        return value
+
+    @field_validator("group")
+    @classmethod
+    def _group(cls, value: str | None) -> str | None:
+        if value is not None and not NAME.match(value):
             raise ValueError(
                 "use letters, digits, '-', '_' or '.' (up to 64 characters, starting with a letter or digit)"
             )

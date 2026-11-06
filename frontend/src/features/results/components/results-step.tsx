@@ -34,6 +34,7 @@ import { bestOn, brokenModels, isBest } from "../insights"
 import { CaseView } from "./case-view"
 import { ConfigPanel } from "./config-panel"
 import { UnjudgedBanner } from "./unjudged-banner"
+import { AgreementPanel } from "./agreement-panel"
 import { JudgingPanel } from "./judging-panel"
 import { PassRateChart, percent, TradeoffTable } from "./tradeoff-table"
 
@@ -212,6 +213,7 @@ export function ResultsStep({ projectId, experimentId }: { projectId: string; ex
           cases={cases.data ?? []}
         />
       ) : null}
+      {scored && chosen ? <AgreementPanel projectId={projectId} experimentId={chosen} /> : null}
       {scored ? (
         <Section
           title={RESULTS_COPY.casesHeading}

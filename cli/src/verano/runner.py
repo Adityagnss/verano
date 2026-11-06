@@ -132,6 +132,9 @@ class Runner:
             "models": models,
             "budget_cap": str(entry.budget) if entry.budget else None,
         }
+        mine = next((p for p in self.api.pages(f"/projects/{pid}/prompts") if p["name"] == entry.name), None)
+        if mine is not None:
+            body["prompt_id"] = mine["id"]
         if entry.judge:
             judge = resolve_model(entry.judge, profiles)
             body["judge"] = {"credential_id": judge["credential_id"], "model": judge["model_name"]}
@@ -245,6 +248,7 @@ class Runner:
         earlier = self.api.get(f"/projects/{project_id}/experiments", limit=50)["items"]
         for other in earlier:
             same = other["id"] != finished["id"] and other["status"] == "completed" and other["origin"] == "manual"
+            same = same and other.get("prompt_id") in (None, finished.get("prompt_id"))
             if same and other["dataset_version_id"] == finished["dataset_version_id"] and _signature(other) == wanted:
                 scored = self.api.get(f"/projects/{project_id}/experiments/{other['id']}/results")
                 if scored["evaluation_run"] is not None:

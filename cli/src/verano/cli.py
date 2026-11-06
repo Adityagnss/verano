@@ -14,7 +14,7 @@ from typing import Annotated
 import click
 import typer
 
-from verano import __version__, auth, push, runner, ui, validate
+from verano import __version__, apps, auth, push, runner, ui, validate
 from verano.config import DEFAULT_URL, ENV_URL
 from verano.errors import CliError
 
@@ -27,6 +27,8 @@ app = typer.Typer(
 )
 token_app = typer.Typer(help="Manage personal API tokens (for CI and scripts).", no_args_is_help=True)
 app.add_typer(token_app, name="token")
+app_cmd = typer.Typer(help="Connect your own app (over HTTP) and test it.", no_args_is_help=True)
+app.add_typer(app_cmd, name="app")
 
 Url = Annotated[
     str | None,
@@ -175,6 +177,54 @@ def token_list() -> None:
 def token_revoke(token_id: Annotated[str, typer.Argument(help="The id shown by `verano token list`.")]) -> None:
     """Revoke a token so it stops working."""
     auth.revoke_token(token_id)
+
+
+ProjectName = Annotated[str, typer.Option("--project", "-p", help="The project's name in Verano.")]
+
+
+@app_cmd.command("list")
+def app_list(project: ProjectName) -> None:
+    """List the apps connected to a project."""
+    apps.list_command(project)
+
+
+@app_cmd.command("add")
+def app_add(
+    project: ProjectName,
+    name: Annotated[str, typer.Option("--name", help="What to call the app.")],
+    url: Annotated[str, typer.Option("--url", help="The address Verano sends each test case to.")],
+    template: Annotated[
+        str, typer.Option("--template", help="The JSON to send, for example '{\"question\": {{ question | tojson }}}'.")
+    ],
+    answer_path: Annotated[str, typer.Option("--answer-path", help="Where the answer is in the reply, e.g. $.answer.")],
+    chunks_path: Annotated[
+        str | None, typer.Option("--chunks-path", help="Where the retrieved text is, e.g. $.sources[*].text.")
+    ] = None,
+    tool_calls_path: Annotated[
+        str | None, typer.Option("--tool-calls-path", help="Where the tool calls are, e.g. $.tool_calls.")
+    ] = None,
+    cost_path: Annotated[str | None, typer.Option("--cost-path", help="Where the app reports its cost.")] = None,
+    conversation: Annotated[
+        bool, typer.Option("--conversation", help="Talk to the app turn by turn with a simulated user.")
+    ] = False,
+    bearer_env: Annotated[
+        str | None, typer.Option("--bearer-env", help="Name of an environment variable holding a bearer token.")
+    ] = None,
+) -> None:
+    """Connect an app to a project."""
+    apps.add_command(
+        project, name, url, template, answer_path, chunks_path, tool_calls_path, cost_path, conversation, bearer_env
+    )
+
+
+@app_cmd.command("test")
+def app_test(
+    project: ProjectName,
+    name: Annotated[str, typer.Argument(help="The app's name.")],
+    input: Annotated[list[str], typer.Option("--input", "-i", help="One input, name=value. Repeat for more.")],
+) -> None:
+    """Send one test case to an app and show what was sent, what came back and what Verano read."""
+    apps.test_command(project, name, input)
 
 
 def main() -> None:

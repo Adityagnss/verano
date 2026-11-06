@@ -250,7 +250,7 @@ class ExperimentService:
             raise ValidationFailed(UNKNOWN_MODELS)
         for model in body.models:
             filter_params(model.params, found[model.model_profile_id].parameters)
-        chosen = prompt_version_id or body.prompt_version_id or await self._latest_prompt(project_id)
+        chosen = prompt_version_id or body.prompt_version_id or await self._latest_prompt(project_id, body.prompt_id)
         prompt = await self._prompts.get_version(project_id, chosen)
         spec = await self._specs.get(project_id, version.task_spec_id) if version.task_spec_id else None
         cases_have = sorted(spec.spec.get("input_variables") or []) if spec else None
@@ -305,8 +305,8 @@ class ExperimentService:
             }
         )
 
-    async def _latest_prompt(self, project_id: uuid.UUID) -> uuid.UUID:
-        latest = await self._prompts.latest_version_id(project_id)
+    async def _latest_prompt(self, project_id: uuid.UUID, prompt_id: uuid.UUID | None = None) -> uuid.UUID:
+        latest = await self._prompts.latest_version_id(project_id, prompt_id)
         if latest is None:
             raise ValidationFailed(NO_PROMPT)
         return latest
@@ -408,8 +408,11 @@ class ExperimentService:
             answered = sum(p.succeeded + p.failed for p in progress.values())
             scored = await ScoreRepository(self._session).answers_scored(row.id)
             scoring = ScoringProgress(done=min(scored, answered), total=answered)
+        named = (await self._repo.prompt_names([row.prompt_version_id])).get(row.prompt_version_id)
         return ExperimentOut(
             **{name: getattr(row, name) for name in ExperimentOut.model_fields if hasattr(row, name)},
+            prompt_id=named[0] if named else None,
+            prompt_name=named[1] if named else None,
             stop_reason=await self._repo.last_reason(row.id),
             progress=list(progress.values()),
             scoring=scoring,

@@ -7,6 +7,8 @@ EvaluationRun names the exact version it scored with. Generation outputs are nev
 each scoring pass is its own EvaluationRun (`initial` or `rescore`) with its own Score rows,
 so rescoring adds results instead of overwriting them (ADR 0004). Results may only be
 compared across runs that used the same evaluator set version.
+`human_labels` holds what people said about an answer (ADR 0017); a label sits beside the scores and never changes one.
+`judge_cache` keeps a judge's result by the content it judged (ADR 0021).
 `scores` is keyed by (experiment_id, id) like `test_case_runs`, ready for partitioning.
 """
 
@@ -14,7 +16,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import ForeignKey, ForeignKeyConstraint, Index, String, Text
+from sqlalchemy import ForeignKey, ForeignKeyConstraint, Index, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base, CreatedAtMixin, IdMixin, str_enum
@@ -96,3 +98,34 @@ class Score(CreatedAtMixin, Base):
     reason: Mapped[str] = mapped_column(Text)
     extra: Mapped[dict[str, Any]]
     llm_call_id: Mapped[uuid.UUID | None]
+
+
+class HumanLabel(IdMixin, CreatedAtMixin, Base):
+    __tablename__ = "human_labels"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["experiment_id", "test_case_run_id"],
+            ["test_case_runs.experiment_id", "test_case_runs.id"],
+            ondelete="CASCADE",
+        ),
+        Index(None, "experiment_id", "test_case_run_id", "user_id", unique=True),
+        Index(None, "experiment_id"),
+    )
+
+    experiment_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("experiments.id", ondelete="CASCADE"))
+    test_case_run_id: Mapped[uuid.UUID]
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    verdict: Mapped[str] = mapped_column(String(16))
+    note: Mapped[str | None] = mapped_column(Text)
+    updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())
+
+
+class JudgeCacheEntry(CreatedAtMixin, Base):
+    __tablename__ = "judge_cache"
+
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    evaluator_name: Mapped[str] = mapped_column(String(100))
+    value: Mapped[float]
+    passed: Mapped[bool]
+    reason: Mapped[str] = mapped_column(Text)
+    hits: Mapped[int] = mapped_column(default=0, server_default="0")

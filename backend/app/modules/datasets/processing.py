@@ -34,7 +34,9 @@ from app.modules.datasets.domain import (
     as_text,
     checks_warning,
     evaluate_row,
+    is_blank,
     row_input,
+    row_inputs,
 )
 from app.modules.datasets.ingest import channel
 from app.modules.datasets.models import InputFile
@@ -66,6 +68,7 @@ load_plugins("app.modules.datasets.plugins.importers")
 
 FILE_NOT_FOUND = "This file no longer exists."
 NO_MAPPING = "This file has no confirmed column mapping yet."
+ROW_LEFT_OUT = "Row {row} was left out: {names} is empty in it."
 NO_ROWS = "This file has no rows with anything in them, so no test case was made. Row 1 should hold the column names."
 PROFILE_SAMPLE_ROWS = 5
 WARNING_SAMPLE_ROWS = 200
@@ -145,6 +148,10 @@ class FileProcessor:
         is the item's `attachment`. A blank row is skipped; the file's earlier import is replaced in one go."""
         row = await self._stage(file_id, InputFileStatus.IMPORTING, "import")
         ticker = self._ticker(row, "import")
+        variables: dict[str, str] = (row.column_mapping or {}).get("variables") or {}
+        expected_column: str | None = (row.column_mapping or {}).get("expected_output")
+        category_column: str | None = (row.column_mapping or {}).get("category")
+        left_out: list[str] = []
         drafts: list[ItemDraft] = []
         samples: list[dict[str, Any]] = []
         total = 0
@@ -159,6 +166,28 @@ class FileProcessor:
                     continue
                 if len(samples) < WARNING_SAMPLE_ROWS:
                     samples.append({name: as_text(value) for name, value in source.values.items()})
+                if variables:
+                    found, empty = row_inputs(variables, source.values)
+                    if empty:
+                        if len(left_out) < self._settings.report_max_listed_rows:
+                            left_out.append(ROW_LEFT_OUT.format(row=source.number, names=", ".join(empty)))
+                        continue
+                    expected = source.values.get(expected_column) if expected_column else None
+                    category = source.values.get(category_column) if category_column else None
+                    drafts.append(
+                        ItemDraft(
+                            inputs=dict(found),
+                            expected_output=None if is_blank(expected) else as_text(expected).strip(),
+                            rubric=None,
+                            category=as_text(category).strip()
+                            if not is_blank(category)
+                            else self._settings.dataset_default_category,
+                            tags=[],
+                            extra={"filename": row.filename, "row": source.number},
+                            source_row=source.number,
+                        )
+                    )
+                    continue
                 text = row_input(columns, source.values)
                 if text is not None:
                     drafts.append(
@@ -185,7 +214,7 @@ class FileProcessor:
             columns=columns,
             row_count=total,
             sample_rows=samples[:PROFILE_SAMPLE_ROWS],
-            warnings=checks_warning(columns, samples),
+            warnings=[*checks_warning(columns, samples), *left_out],
         )
         values = {
             "status": InputFileStatus.IMPORTED,

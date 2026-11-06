@@ -29,7 +29,7 @@ from app.core.pagination import Page, PageParams, to_page
 from app.core.progress import ProgressEvent, ProgressHub, ProgressStatus
 from app.core.security import Principal
 from app.core.storage import Storage
-from app.modules.datasets.domain import ColumnSynonyms, mapping_problems, suggest_mapping
+from app.modules.datasets.domain import ColumnSynonyms, mapping_problems, suggest_mapping, variable_problems
 from app.modules.datasets.models import InputFile
 from app.modules.datasets.repository import DatasetRepository
 from app.modules.datasets.schemas import (
@@ -41,6 +41,7 @@ from app.modules.datasets.schemas import (
     MappingRequest,
     MappingSuggestion,
     UploadPurpose,
+    VariableMappingRequest,
 )
 from app.modules.projects.schemas import ProjectOut
 
@@ -50,6 +51,7 @@ UNKNOWN_TYPE = "'{name}' isn't a supported file type. Use {labels}."
 WRONG_CARD = "This card takes {labels} files."
 NOT_READY = "This file isn't ready for that yet (it is {status})."
 MAPPING_INVALID = "The column mapping needs a few fixes before the entries can be checked."
+NOT_INPUT_TABLE = "Only a table of inputs can be mapped to variables."
 FILENAME_MAX = 500
 TERMINAL = {
     InputFileStatus.READY: "profile",
@@ -209,6 +211,31 @@ class FileIngestService:
         await self._repo.update_file(row.id, values)
         await self._session.commit()
         self._jobs.enqueue("datasets.validate_file", file_id=str(row.id))
+        return file_out(await self._file(row.id))
+
+    async def set_variables(
+        self, project: ProjectOut, file_id: uuid.UUID, body: VariableMappingRequest
+    ) -> InputFileOut:
+        """A table of inputs where each column fills one variable of the prompt (or one input of an app): the file
+        is imported again with every row as a test case that carries all of them."""
+        row = await self._require(file_id, project.id, MAPPABLE)
+        if row.kind is not InputFileKind.RAW_INPUTS:
+            raise ValidationFailed(NOT_INPUT_TABLE)
+        problems = variable_problems(body.variables, body.expected_output, body.category, self._profile(row).columns)
+        if problems:
+            raise ValidationFailed(MAPPING_INVALID, {"problems": problems})
+        values = {
+            "column_mapping": {
+                "variables": body.variables,
+                "expected_output": body.expected_output,
+                "category": body.category,
+            },
+            "status": InputFileStatus.IMPORTING,
+            "error_message": None,
+        }
+        await self._repo.update_file(row.id, values)
+        await self._session.commit()
+        self._jobs.enqueue("datasets.attach_rows", file_id=str(row.id))
         return file_out(await self._file(row.id))
 
     async def start_import(self, project: ProjectOut, file_id: uuid.UUID) -> InputFileOut:

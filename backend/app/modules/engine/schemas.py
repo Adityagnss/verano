@@ -65,8 +65,9 @@ class ExperimentCreate(BaseModel):
     budget_cap: Decimal | None = Field(default=None, gt=0)
     judge: JudgeChoice | None = None
     evaluator_set_version_id: uuid.UUID | None = None
-    # Which saved prompt version to test; left out, the latest one
+    # Which saved prompt version to test; left out, the latest version of `prompt_id`, else of the first prompt
     prompt_version_id: uuid.UUID | None = None
+    prompt_id: uuid.UUID | None = None
 
 
 class ModelEstimate(BaseModel):
@@ -157,6 +158,8 @@ class ExperimentOut(BaseModel):
     status: ExperimentStatus
     origin: ExperimentOrigin
     prompt_version_id: uuid.UUID
+    prompt_id: uuid.UUID | None = None
+    prompt_name: str | None = None
     dataset_version_id: uuid.UUID
     evaluator_set_version_id: uuid.UUID
     split_scope: SplitScope

@@ -15,6 +15,7 @@ from collections import defaultdict
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import Settings, get_settings
 from app.core.container import Container
 from app.core.errors import Conflict, NotFound
 from app.core.jobs import JobQueue
@@ -29,6 +30,7 @@ from app.modules.engine.schemas import RunStatus
 from app.modules.evaluation.comparisons import case_results, comparison_out, versus_best
 from app.modules.evaluation.domain import JudgeCandidate, check_instructions_fit, judge_calls_per_answer, suggest_judge
 from app.modules.evaluation.domain import Score as ScoreValue
+from app.modules.evaluation.labels import LabelService
 from app.modules.evaluation.metrics import CaseOutcome, WeightedScore, case_result, model_metrics
 from app.modules.evaluation.models import EvaluationRun, Score
 from app.modules.evaluation.repository import ScoreRepository
@@ -56,7 +58,7 @@ from app.modules.evaluation.schemas import (
     VersionModelComparison,
 )
 from app.modules.evaluation.service import EvaluatorSetService, judge_call_out
-from app.modules.evaluation.significance import compare, seed_for
+from app.modules.evaluation.significance import MIN_CASES, compare, seed_for
 from app.modules.evaluation.stability import Answer, ModelStability, case_agreements, model_stability, replication
 from app.modules.projects.schemas import ProjectOut
 from app.modules.registry.service import RegistryService
@@ -84,8 +86,12 @@ class ResultsService:
         jobs: JobQueue,
         evaluators: EvaluatorSetService,
         registry: RegistryService,
+        compare_min_cases: int = MIN_CASES,
+        settings: Settings | None = None,
     ) -> None:
         self._session = session
+        self._compare_min = compare_min_cases
+        self._labels = LabelService(session, settings or get_settings())
         self._engine = EngineRepository(session)
         self._scores = ScoreRepository(session)
         self._datasets = datasets
@@ -101,6 +107,8 @@ class ResultsService:
             container.jobs,
             EvaluatorSetService(session),
             RegistryService(session, container),
+            container.settings.compare_min_cases,
+            container.settings,
         )
 
     async def results(self, project_id: uuid.UUID, experiment_id: uuid.UUID, run_id: uuid.UUID | None) -> ResultsOut:
@@ -113,7 +121,7 @@ class ResultsService:
             stable = model_stability(await self._answers(experiment))
             nothing = ModelStability(stability=None, stable_cases=0, compared_cases=0)
             metrics = model_metrics(outcomes)
-            versus = versus_best(run.id, experiment.id, metrics, outcomes)
+            versus = versus_best(run.id, experiment.id, metrics, outcomes, self._compare_min)
             models = [
                 ModelMetricsOut(
                     **vars(m), **vars(stable.get(m.model_profile_id, nothing)), vs_best=versus.get(m.model_profile_id)
@@ -128,13 +136,20 @@ class ResultsService:
         )
 
     async def cases(
-        self, project_id: uuid.UUID, experiment_id: uuid.UUID, run_id: uuid.UUID | None, failed_only: bool
+        self,
+        project_id: uuid.UUID,
+        experiment_id: uuid.UUID,
+        run_id: uuid.UUID | None,
+        failed_only: bool,
+        user_id: uuid.UUID | None = None,
+        blind: bool = False,
     ) -> list[CaseResultOut]:
         experiment = await self._experiment(project_id, experiment_id)
         run = self._pick(await self._scores.runs(experiment.id), run_id)
         if run is None:
             raise NotFound(NOT_SCORED)
         grouped: dict[uuid.UUID, list[CaseOutput]] = defaultdict(list)
+        labelled = await self._labels.summaries_for(experiment.id, user_id)
         for outcome, row, scores in await self._outcomes(experiment, run):
             grouped[row.dataset_item_id].append(
                 CaseOutput(
@@ -144,12 +159,14 @@ class ResultsService:
                     run_number=row.run_number,
                     output=row.raw_output,
                     error=row.error_message,
-                    passed=outcome.passed,
-                    quality=outcome.quality,
-                    judged=outcome.judged,
+                    passed=False if blind else outcome.passed,
+                    quality=0.0 if blind else outcome.quality,
+                    judged=False if blind else outcome.judged,
                     latency_ms=row.latency_ms,
                     cost=row.cost,
-                    scores=[
+                    scores=[]
+                    if blind
+                    else [
                         ScoreOut(
                             evaluator_name=s.evaluator_name,
                             value=s.value,
@@ -159,6 +176,11 @@ class ResultsService:
                         )
                         for s in scores
                     ],
+                    truncated=row.output_truncated,
+                    retrieved_chunks=row.retrieved_chunks,
+                    tool_calls=row.tool_calls,
+                    labels=labelled.get(row.id),
+                    hidden=blind,
                 )
             )
         agreements = case_agreements(await self._answers(experiment))
@@ -180,7 +202,7 @@ class ResultsService:
                 ],
             )
             for item in items
-            if not failed_only or any(not output.passed for output in grouped[item.id])
+            if not failed_only or blind or any(not output.passed for output in grouped[item.id])
         ]
 
     async def export_csv(self, project_id: uuid.UUID, experiment_id: uuid.UUID, run_id: uuid.UUID | None) -> str:
@@ -204,6 +226,11 @@ class ResultsService:
             "judged",
             "latency_ms",
             "cost",
+            "truncated",
+            "human_label",
+            "human_good",
+            "human_bad",
+            "human_unsure",
         ]
         writer.writerow(header + names)
         for case in cases:
@@ -226,6 +253,11 @@ class ResultsService:
                         "yes" if o.judged else "no",
                         o.latency_ms,
                         o.cost,
+                        "yes" if o.truncated else "",
+                        o.labels.verdict if o.labels else "",
+                        o.labels.good if o.labels else "",
+                        o.labels.bad if o.labels else "",
+                        o.labels.unsure if o.labels else "",
                         *[by_name.get(name, "") for name in names],
                     ]
                 )
@@ -380,7 +412,11 @@ class ResultsService:
                 VersionModelComparison(
                     model_profile_id=model_id,
                     model=names.get(str(model_id), str(model_id)),
-                    comparison=comparison_out(compare(mine, theirs, seed=seed_for(current.id, earlier.id, model_id))),
+                    comparison=comparison_out(
+                        compare(
+                            mine, theirs, seed=seed_for(current.id, earlier.id, model_id), min_cases=self._compare_min
+                        )
+                    ),
                     fixed=sorted(uuid.UUID(c) for c in common if mine[c].passed and not theirs[c].passed),
                     broken=sorted(uuid.UUID(c) for c in common if theirs[c].passed and not mine[c].passed),
                 )
@@ -448,6 +484,7 @@ class ResultsService:
                 case_results(o for o in now if o.model_profile_id == model_id),
                 case_results(o for o in before if o.model_profile_id == model_id),
                 seed=seed_for(current.id, earlier.id, model_id),
+                min_cases=self._compare_min,
             )
             found[model_id] = comparison_out(result)
         return found

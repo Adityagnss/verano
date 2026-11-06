@@ -133,6 +133,38 @@ def row_input(columns: list[str], values: dict[str, Any]) -> str | None:
     return "\n".join(lines) or None
 
 
+VARIABLE_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+BAD_VARIABLE = (
+    "'{name}' can't be used as a variable name: use letters, digits and underscores, not starting with a digit."
+)
+UNKNOWN_COLUMN = "The file has no column called '{column}'."
+
+
+def variable_problems(
+    variables: dict[str, str], expected_output: str | None, category: str | None, columns: list[str]
+) -> list[str]:
+    """What is wrong with a column-to-variable mapping, all at once: a variable name that is not a name, and a
+    column that the file does not have."""
+    problems = [BAD_VARIABLE.format(name=name) for name in variables if not VARIABLE_NAME.match(name)]
+    wanted = [*variables.values(), *(c for c in (expected_output, category) if c)]
+    problems += [UNKNOWN_COLUMN.format(column=c) for c in dict.fromkeys(wanted) if c not in columns]
+    return problems
+
+
+def row_inputs(variables: dict[str, str], values: dict[str, Any]) -> tuple[dict[str, str], list[str]]:
+    """One row's inputs by variable, and the variables whose column is empty in this row (the row is then left
+    out, never sent with a blank variable)."""
+    found: dict[str, str] = {}
+    empty = []
+    for name, column in variables.items():
+        value = values.get(column)
+        if is_blank(value):
+            empty.append(name)
+        else:
+            found[name] = as_text(value).strip()
+    return found, empty
+
+
 CHECK_COLUMNS = {"type", "check", "rule", "assertion", "constraint", "criterion", "criteria"}
 CHECK_NAME = re.compile(r"^(must|should|never|always|max|min)_[a-z0-9_]+$")
 CHECKS_WARNING = (

@@ -223,3 +223,67 @@ export function useTryJudge(projectId: string, experimentId: string) {
     onSettled: () => queryClient.invalidateQueries({ queryKey: ["projects", projectId, "judge-calls"] }),
   })
 }
+
+type LabelVerdict = "good" | "bad" | "unsure"
+
+/** What people said about one answer: set this person's label, or take it back. Scores never change. */
+export function useSetLabel(projectId: string, experimentId: string) {
+  const queryClient = useQueryClient()
+  const path = (answerId: string) => ({
+    path: { project_id: projectId, experiment_id: experimentId, test_case_run_id: answerId },
+  })
+  return useMutation({
+    mutationFn: ({ answerId, verdict }: { answerId: string; verdict: LabelVerdict | null }) =>
+      verdict === null
+        ? call(() =>
+            api.DELETE(
+              "/api/v1/projects/{project_id}/experiments/{experiment_id}/answers/{test_case_run_id}/label",
+              { params: path(answerId) },
+            ),
+          )
+        : call(() =>
+            api.PUT(
+              "/api/v1/projects/{project_id}/experiments/{experiment_id}/answers/{test_case_run_id}/label",
+              { params: path(answerId), body: { verdict } },
+            ),
+          ),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["projects", projectId, "result-cases", experimentId] })
+      void queryClient.invalidateQueries({ queryKey: ["projects", projectId, "agreement", experimentId] })
+    },
+  })
+}
+
+/** How often each judged check agrees with the people who labelled answers. */
+export function useAgreement(projectId: string, experimentId: string | null) {
+  return useQuery({
+    queryKey: ["projects", projectId, "agreement", experimentId],
+    queryFn: () =>
+      call(() =>
+        api.GET("/api/v1/projects/{project_id}/experiments/{experiment_id}/agreement", {
+          params: experimentPath(projectId, experimentId ?? ""),
+        }),
+      ),
+    enabled: experimentId !== null,
+    retry: false,
+  })
+}
+
+/** "Why this score" for one answer: the reason, the sample behind it and what the check cannot tell. */
+export function useEvidence(projectId: string, experimentId: string, answerId: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ["projects", projectId, "evidence", experimentId, answerId],
+    queryFn: () =>
+      call(() =>
+        api.GET(
+          "/api/v1/projects/{project_id}/experiments/{experiment_id}/answers/{test_case_run_id}/evidence",
+          {
+            params: {
+              path: { project_id: projectId, experiment_id: experimentId, test_case_run_id: answerId },
+            },
+          },
+        ),
+      ),
+    enabled,
+  })
+}

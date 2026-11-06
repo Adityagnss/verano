@@ -129,6 +129,29 @@ class Settings(BaseSettings):
     document_max_chars: int = 5_000_000
     token_estimate_chars_per_token: int = 4
 
+    # Phase 6: labels, agreement, judge cache, stored answers, code checks
+    disabled_features: list[str] = []
+    label_min_for_agreement: int = 20
+    agreement_min_raw: float = 0.8
+    agreement_min_kappa: float = 0.6
+    compare_min_cases: int = 10
+    stored_answer_max_chars: int = 200_000
+    judge_cache_enabled: bool = True
+    judge_cache_recent_size: int = 2_048
+    sandbox_url: str | None = None
+    sandbox_wall_s: float = 5.0
+    sandbox_cpu_s: int = 3
+    sandbox_memory_mb: int = 256
+    sandbox_output_chars: int = 2_000
+    # Phase 7: apps under test
+    app_allowed_hosts: list[str] = []
+    app_timeout_s: float = 60.0
+    app_concurrency: int = 5
+    app_retry_attempts: int = 0
+    app_response_max_bytes: int = 2_000_000
+    app_max_redirects: int = 3
+    conversation_max_turns: int = 8
+
     rate_limit_decrease_factor: float = 0.5
     rate_limit_increase_fraction: float = 0.05
     rate_limit_floor_fraction: float = 0.05

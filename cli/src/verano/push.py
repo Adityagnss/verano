@@ -224,7 +224,7 @@ class Pusher:
         existing = self.api.pages(f"/projects/{project_id}/prompts")
         mine = next((p for p in existing if p["name"] == entry.name), None)
         others = [p["name"] for p in existing if p["name"] != entry.name]
-        if others and mine is None:
+        if others and mine is None and not entry.group:
             ui.warn(f"This project also has prompts made elsewhere ({', '.join(others)}). Verano tests the newest one.")
         if mine is None:
             if self.dry:

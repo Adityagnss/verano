@@ -16,7 +16,14 @@ from app.core.pagination import Page, PageDep
 from app.core.security import CurrentPrincipal
 from app.core.storage import CHUNK_BYTES
 from app.modules.datasets.dependencies import IngestServiceDep, UploadGuard
-from app.modules.datasets.schemas import InputFileOut, MappingRequest, MappingSuggestion, SheetRequest, UploadPurpose
+from app.modules.datasets.schemas import (
+    InputFileOut,
+    MappingRequest,
+    MappingSuggestion,
+    SheetRequest,
+    UploadPurpose,
+    VariableMappingRequest,
+)
 from app.modules.projects.dependencies import ProjectScope
 
 router = APIRouter(prefix="/projects/{project_id}/input-files", tags=["datasets"])
@@ -78,6 +85,13 @@ async def submit_mapping(
     file_id: uuid.UUID, body: MappingRequest, project: ProjectScope, service: IngestServiceDep
 ) -> InputFileOut:
     return await service.submit_mapping(project, file_id, body)
+
+
+@router.put(f"{FILE}/variables")
+async def set_variables(
+    file_id: uuid.UUID, body: VariableMappingRequest, project: ProjectScope, service: IngestServiceDep
+) -> InputFileOut:
+    return await service.set_variables(project, file_id, body)
 
 
 @router.post(f"{FILE}/import")
