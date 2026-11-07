@@ -28,6 +28,7 @@ LOCK = ROOT / "infra/base-images.lock"
 CACHE = ROOT / ".cache/base-images"
 OVERRIDE = CACHE / "compose.override.yml"
 COMPOSE = ROOT / "docker-compose.yml"
+CORP_CA = ROOT / ".cache/certs/corp-ca.pem"  # optional: the root certificate of a network that re-signs HTTPS
 BUILDER = "verano"
 FROM = re.compile(r"^FROM\s+(\S+)", re.MULTILINE)
 
@@ -68,7 +69,12 @@ def override(locked: dict[str, str]) -> dict[str, object]:
         if missing:
             raise SystemExit(f"{dockerfile.name} uses base images missing from {LOCK.name}: {', '.join(missing)}")
         contexts = {tag: f"oci-layout://{layout_dir(tag)}" for tag in bases}
-        result[name] = {"build": {"additional_contexts": contexts}}
+        build_options: dict[str, object] = {"additional_contexts": contexts}
+        if CORP_CA.exists():
+            build_options["secrets"] = ["corp_ca"]
+        result[name] = {"build": build_options}
+    if CORP_CA.exists():
+        return {"services": result, "secrets": {"corp_ca": {"file": str(CORP_CA)}}}
     return {"services": result}
 
 

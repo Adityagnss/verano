@@ -15,7 +15,11 @@ COPY --from=uv /uv /usr/local/bin/uv
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=never UV_PROJECT_ENVIRONMENT=/opt/venv
 WORKDIR /srv
 COPY pyproject.toml uv.lock .python-version ./
-RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev --no-install-project
+# A network that re-signs HTTPS (a company firewall) is trusted through an optional build secret, never stored in
+# the image: `make base-images` adds it when .cache/certs/corp-ca.pem exists. Without it the build is unchanged.
+RUN --mount=type=cache,target=/root/.cache/uv --mount=type=secret,id=corp_ca,required=false \
+    if [ -f /run/secrets/corp_ca ]; then export SSL_CERT_FILE=/run/secrets/corp_ca; fi; \
+    uv sync --frozen --no-dev --no-install-project
 RUN find /opt/venv -name "*.so*" -type f -not -path "*.libs/*" -exec strip --strip-unneeded {} + \
  && rm -rf /opt/venv/lib/python3.12/site-packages/litellm/proxy/_experimental/out
 

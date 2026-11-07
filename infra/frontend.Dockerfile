@@ -6,13 +6,18 @@
 FROM node:22.23.3-alpine3.24 AS deps
 WORKDIR /srv
 COPY package.json package-lock.json ./
-RUN --mount=type=cache,target=/root/.npm npm ci --prefer-offline --no-audit --no-fund
+# Optional build secret for a network that re-signs HTTPS (see backend.Dockerfile); not stored in the image.
+RUN --mount=type=cache,target=/root/.npm --mount=type=secret,id=corp_ca,required=false \
+    if [ -f /run/secrets/corp_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/corp_ca; fi; \
+    npm ci --prefer-offline --no-audit --no-fund
 
 FROM node:22.23.3-alpine3.24 AS build
 WORKDIR /srv
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY . .
-RUN --mount=type=bind,from=deps,source=/srv/node_modules,target=/srv/node_modules npm run build
+RUN --mount=type=bind,from=deps,source=/srv/node_modules,target=/srv/node_modules --mount=type=secret,id=corp_ca,required=false \
+    if [ -f /run/secrets/corp_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/corp_ca; fi; \
+    npm run build
 
 FROM node:22.23.3-alpine3.24 AS runtime
 LABEL dev.verano.image="frontend"
