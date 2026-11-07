@@ -21,8 +21,13 @@ import { useVersionActions } from "../hooks"
 import { EditCaseDialog } from "./edit-case-dialog"
 
 const REGENERABLE = new Set(Object.keys(TESTS_COPY.categories))
-const SOURCES = ["golden", "input_file", "generated"] as const
-const SOURCE_TONE: Record<string, Tone> = { golden: "gold", input_file: "info", generated: "violet" }
+const SOURCES = ["golden", "input_file", "generated", "traffic"] as const
+const SOURCE_TONE: Record<string, Tone> = {
+  golden: "gold",
+  input_file: "info",
+  generated: "violet",
+  traffic: "neutral",
+}
 
 function inputText(item: ItemOut): string {
   const values = Object.values(item.inputs)

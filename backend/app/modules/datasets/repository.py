@@ -129,6 +129,21 @@ class DatasetRepository:
         )
         return await self._session.scalar(query)
 
+    async def latest_evaluator_set_version(self, project_id: uuid.UUID) -> uuid.UUID | None:
+        """The evaluator set version of the project's newest test set that has one."""
+        query = (
+            select(DatasetVersion.evaluator_set_version_id)
+            .join(Dataset, Dataset.id == DatasetVersion.dataset_id)
+            .where(
+                Dataset.project_id == project_id,
+                Dataset.kind == "quality",
+                DatasetVersion.evaluator_set_version_id.is_not(None),
+            )
+            .order_by(DatasetVersion.id.desc())
+            .limit(1)
+        )
+        return await self._session.scalar(query)
+
     async def update_version(self, version_id: uuid.UUID, values: dict[str, Any]) -> None:
         await self._session.execute(update(DatasetVersion).where(DatasetVersion.id == version_id).values(**values))
 

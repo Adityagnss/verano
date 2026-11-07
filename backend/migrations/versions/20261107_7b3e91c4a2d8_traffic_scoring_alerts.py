@@ -24,7 +24,19 @@ def _project() -> sa.Column[sa.Uuid]:
     return sa.Column("project_id", sa.Uuid(), sa.ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
 
 
+SOURCES = ("golden", "input_file", "generated")
+CHECK = "ck_dataset_items_item_source"
+
+
+def _item_sources(values: tuple[str, ...]) -> None:
+    """Replaces the allowed values of a test case's source (a text column with a check, not a database enum)."""
+    op.drop_constraint(op.f(CHECK), "dataset_items", type_="check")
+    listed = ", ".join(f"'{value}'" for value in values)
+    op.create_check_constraint(op.f(CHECK), "dataset_items", f"source IN ({listed})")
+
+
 def upgrade() -> None:
+    _item_sources((*SOURCES, "traffic"))
     op.create_table(
         "traffic_configs",
         sa.Column("project_id", sa.Uuid(), nullable=False),
@@ -202,6 +214,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    op.execute("DELETE FROM dataset_items WHERE source = 'traffic'")
+    _item_sources(SOURCES)
     for table in (
         "traffic_alerts",
         "traffic_alert_rules",

@@ -26,4 +26,6 @@ celery_app.conf.update(
 # (`celery -A app.workers.celery_app beat`, or a worker started with `-B` in a one-worker install).
 celery_app.conf.beat_schedule = {
     "sweep-leases": {"task": "engine.sweep_leases", "schedule": settings.lease_sweep_interval_s},
+    # Traffic (ADR 0032): scoring, alert checks and the retention purge for projects that are not receiving traffic now.
+    "sweep-traffic": {"task": "traffic.sweep", "schedule": settings.traffic_sweep_interval_s},
 }

@@ -231,6 +231,11 @@ class GeneratorService:
         await self._session.flush()
         return spec_out(row)
 
+    async def latest_confirmed_spec(self, project_id: uuid.UUID) -> TaskSpec | None:
+        """The project's newest confirmed Task Spec, or None when none was confirmed yet."""
+        row = await self._repo.latest_confirmed(project_id)
+        return TaskSpec.model_validate(row.spec) if row is not None else None
+
     async def start(self, project: ProjectOut, body: GenerationRequest) -> DatasetVersionOut:
         row = await self._spec(project.id, body.task_spec_id)
         if row.status is not TaskSpecStatus.CONFIRMED:

@@ -279,6 +279,7 @@ class TrafficService:
         if body.dry_run or not keep:
             return self._cases_out(None, chosen, len(keep), folded, already, empty, body.dry_run)
         version = await self._datasets.ensure_draft(project.id)
+        await self._datasets.inherit_evaluators(project.id, version)
         rows = [
             {
                 "inputs": {body.variable: usable[i].input_text},
@@ -286,7 +287,7 @@ class TrafficService:
                 "rubric": None,
                 "category": FROM_TRAFFIC,
                 "tags": [FROM_TRAFFIC, usable[i].source],
-                "source": ItemSource.INPUT_FILE,
+                "source": ItemSource.TRAFFIC,
                 "review_status": ReviewStatus.DRAFT,
                 "split": None,
                 "input_file_id": None,

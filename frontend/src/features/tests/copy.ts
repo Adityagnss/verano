@@ -72,7 +72,12 @@ export const TESTS_COPY = {
   reviewHint:
     "Your files and golden answers are used as they are. Generated cases are drafts: spot-check a category, then approve it.",
   filterAll: "All",
-  sources: { golden: "Golden", input_file: "Your file", generated: "Generated" } as Record<string, string>,
+  sources: {
+    golden: "Golden",
+    input_file: "Your file",
+    generated: "Generated",
+    traffic: "From traffic",
+  } as Record<string, string>,
   categories: {
     happy_path: "Normal cases",
     edge_case: "Edge cases",

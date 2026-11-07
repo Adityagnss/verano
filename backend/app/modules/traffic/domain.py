@@ -123,7 +123,7 @@ def last_message_text(messages: list[dict[str, Any]], roles: Sequence[str]) -> s
 
 def input_text_of(value: Any) -> str:
     """What a person asked, from whatever the source stored: text, chat messages or a JSON object."""
-    if value is None:
+    if value is None or value == {} or value == []:
         return ""
     messages = message_list(value)
     if messages is not None:
@@ -162,7 +162,7 @@ def input_text_of(value: Any) -> str:
 
 def output_text_of(value: Any) -> str:
     """What the app or model answered, from a string, chat messages, an OpenAI or Anthropic reply or a JSON object."""
-    if value is None:
+    if value is None or value == {} or value == []:
         return ""
     messages = message_list(value)
     if messages is not None:

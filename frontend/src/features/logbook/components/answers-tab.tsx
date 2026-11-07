@@ -58,6 +58,13 @@ function Preview({ text, className }: { text: string | null; className?: string 
   )
 }
 
+const SOURCE_LABEL: Record<string, string> = {
+  golden: "Golden",
+  input_file: "Your file",
+  generated: "Generated",
+  traffic: "From traffic",
+}
+
 const COLUMNS: Column[] = [
   {
     key: "time",
@@ -93,7 +100,7 @@ const COLUMNS: Column[] = [
     show: true,
     cell: (r) => (
       <StatusBadge tone={r.source === "golden" ? "gold" : "neutral"}>
-        {r.source === "golden" ? "Golden" : r.source === "input_file" ? "Your file" : "Generated"}
+        {SOURCE_LABEL[r.source] ?? "Generated"}
       </StatusBadge>
     ),
   },

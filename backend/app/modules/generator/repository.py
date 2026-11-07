@@ -24,6 +24,15 @@ class TaskSpecRepository:
         query = select(TaskSpecRecord).where(TaskSpecRecord.id == spec_id, TaskSpecRecord.project_id == project_id)
         return await self._session.scalar(query.execution_options(populate_existing=True))
 
+    async def latest_confirmed(self, project_id: uuid.UUID) -> TaskSpecRecord | None:
+        query = (
+            select(TaskSpecRecord)
+            .where(TaskSpecRecord.project_id == project_id, TaskSpecRecord.status == TaskSpecStatus.CONFIRMED)
+            .order_by(TaskSpecRecord.id.desc())
+            .limit(1)
+        )
+        return await self._session.scalar(query)
+
     async def confirmed_for_version(self, project_id: uuid.UUID, version_id: uuid.UUID) -> list[TaskSpecRecord]:
         query = (
             select(TaskSpecRecord)
