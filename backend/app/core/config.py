@@ -200,6 +200,7 @@ class Settings(BaseSettings):
     traffic_judge_monthly_limit: int = 500
     traffic_score_batch: int = 200
     traffic_process_interval_s: int = 60
+    traffic_sweep_interval_s: float = 300.0
     traffic_alert_timeout_s: float = 10.0
     traffic_smtp_host: str | None = None
     traffic_smtp_port: int = 587

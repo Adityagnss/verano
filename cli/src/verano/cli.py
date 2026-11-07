@@ -14,7 +14,7 @@ from typing import Annotated
 import click
 import typer
 
-from verano import __version__, apps, auth, push, runner, ui, validate
+from verano import __version__, apps, auth, push, runner, traffic, ui, validate
 from verano import security as security_gate
 from verano.config import DEFAULT_URL, ENV_URL
 from verano.errors import CliError
@@ -30,6 +30,9 @@ token_app = typer.Typer(help="Manage personal API tokens (for CI and scripts).",
 app.add_typer(token_app, name="token")
 app_cmd = typer.Typer(help="Connect your own app (over HTTP) and test it.", no_args_is_help=True)
 app.add_typer(app_cmd, name="app")
+
+traffic_app = typer.Typer(help="Bring real traces into a project, and look at them.", no_args_is_help=True)
+app.add_typer(traffic_app, name="traffic")
 
 Url = Annotated[
     str | None,
@@ -257,6 +260,34 @@ def app_test(
 ) -> None:
     """Send one test case to an app and show what was sent, what came back and what Verano read."""
     apps.test_command(project, name, input)
+
+
+@traffic_app.command("import")
+def traffic_import(
+    project: ProjectName,
+    file: Annotated[Path, typer.Argument(help="An export file (JSON) from your tracing tool or a HAR file.")],
+    format: Annotated[
+        str, typer.Option("--format", help="auto, otel, har, langfuse, phoenix or langsmith (auto looks at the file).")
+    ] = "auto",
+    prompt_version: Annotated[
+        str | None, typer.Option("--prompt-version", help="Tag every trace with this prompt version.")
+    ] = None,
+) -> None:
+    """Import traces from a file. Personal data is removed before anything is stored."""
+    traffic.import_command(project, file, format, prompt_version)
+
+
+@traffic_app.command("list")
+def traffic_list(
+    project: ProjectName,
+    limit: Annotated[int, typer.Option("--limit", min=1, max=200, help="How many traces to show.")] = 20,
+    failed: Annotated[bool, typer.Option("--failed", help="Only calls that failed.")] = False,
+    low_rated: Annotated[bool, typer.Option("--low-rated", help="Only calls users rated poorly.")] = False,
+    source: Annotated[str | None, typer.Option("--source", help="Only one source, e.g. otlp or langfuse.")] = None,
+    query: Annotated[str | None, typer.Option("--search", help="Only questions containing this text.")] = None,
+) -> None:
+    """List stored traces, newest first."""
+    traffic.list_command(project, limit, failed, low_rated, source, query)
 
 
 @app.command("mcp")

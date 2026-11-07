@@ -66,6 +66,7 @@ class ItemSource(StrEnum):
     GOLDEN = "golden"
     INPUT_FILE = "input_file"
     GENERATED = "generated"
+    TRAFFIC = "traffic"
 
 
 class ReviewStatus(StrEnum):

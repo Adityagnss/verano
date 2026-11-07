@@ -16,7 +16,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.container import Container
@@ -30,8 +29,8 @@ from app.modules.evaluation.plugins.rules import RULES
 from app.modules.evaluation.repository import EvaluatorRepository
 from app.modules.gateway.dependencies import build_gateway
 from app.modules.gateway.schemas import CallContext
-from app.modules.generator.models import TaskSpecRecord
-from app.modules.generator.schemas import TaskSpec, TaskSpecStatus
+from app.modules.generator.schemas import TaskSpec
+from app.modules.generator.service import GeneratorService
 from app.modules.registry.schemas import CallTarget
 from app.modules.registry.service import RegistryService
 from app.modules.traffic.config import effective_config
@@ -83,13 +82,8 @@ class OnlineScoringService:
         versions = await self._evaluators.versions(evaluator_set.id)
         if not versions:
             return None
-        record = await self._session.scalar(
-            select(TaskSpecRecord)
-            .where(TaskSpecRecord.project_id == project_id, TaskSpecRecord.status == TaskSpecStatus.CONFIRMED)
-            .order_by(TaskSpecRecord.id.desc())
-            .limit(1)
-        )
-        if record is None:
+        spec = await GeneratorService.from_container(self._session, self._container).latest_confirmed_spec(project_id)
+        if spec is None:
             return None
         configs = await self._evaluators.configs(versions[0].id)
         target: CallTarget | None = None
@@ -101,9 +95,7 @@ class OnlineScoringService:
                 )
             except AppError:
                 log.warning("judge model unavailable for live scoring in project %s", project_id)
-        return Plan(
-            [c for c in configs if c.config.get("kind") != "code"], TaskSpec.model_validate(record.spec), target
-        )
+        return Plan([c for c in configs if c.config.get("kind") != "code"], spec, target)
 
     async def process(self, project_id: uuid.UUID) -> ProcessSummary:
         """Scores traces that have not been looked at yet, a batch at a time, committing after each batch."""

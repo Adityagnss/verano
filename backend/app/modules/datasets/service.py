@@ -64,8 +64,12 @@ SMALL_HOLDOUT = (
 
 
 def _unanswered(item: DatasetItem) -> bool:
-    """An input file without a golden answer is simply not scored, so it isn't a problem."""
-    return item.source is not ItemSource.INPUT_FILE and item.expected_output is None and not item.rubric
+    """An input file or a case from traffic without a golden answer is simply not scored, so it isn't a problem."""
+    return (
+        item.source not in (ItemSource.INPUT_FILE, ItemSource.TRAFFIC)
+        and item.expected_output is None
+        and not item.rubric
+    )
 
 
 def item_out(row: DatasetItem) -> ItemOut:
@@ -93,6 +97,15 @@ class DatasetService:
         )
         await self._repo.add(version)
         return version
+
+    async def inherit_evaluators(self, project_id: uuid.UUID, version: DatasetVersion) -> None:
+        """A draft made outside the generator (for example from traffic) starts with the checks of the project's
+        newest test set, so it can be approved without running the generator again."""
+        if version.evaluator_set_version_id is None:
+            inherited = await self._repo.latest_evaluator_set_version(project_id)
+            if inherited is not None:
+                await self._repo.update_version(version.id, {"evaluator_set_version_id": inherited})
+                version.evaluator_set_version_id = inherited
 
     async def find_draft(self, project_id: uuid.UUID) -> DatasetVersion | None:
         return await self._repo.draft_version(project_id)

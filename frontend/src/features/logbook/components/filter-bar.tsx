@@ -22,6 +22,7 @@ const SOURCES: Choice[] = [
   { value: "golden", label: "Golden", hint: "has your correct answer" },
   { value: "input_file", label: "Your file", hint: "no golden answer" },
   { value: "generated", label: "Generated", hint: "written by Verano" },
+  { value: "traffic", label: "From traffic", hint: "a real user question" },
 ]
 const STATUSES: Choice[] = [
   { value: "succeeded", label: "Call worked" },
