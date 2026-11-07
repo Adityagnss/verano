@@ -79,8 +79,8 @@ models:
     output_price_per_mtok: 1.50
   judge:
     behavior: judge_json
-    input_price_per_mtok: 1.00
-    output_price_per_mtok: 3.00
+    input_price_per_mtok: 0.90
+    output_price_per_mtok: 2.70
   thinker:
     behavior: echo
     input_price_per_mtok: 0.80
