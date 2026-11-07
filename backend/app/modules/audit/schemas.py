@@ -7,7 +7,7 @@ Entries are append-only: there is no route and no service method that changes or
 import uuid
 from datetime import datetime
 from enum import StrEnum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -80,3 +80,7 @@ class AuditFilter(BaseModel):
     project_id: uuid.UUID | None = None
     since: datetime | None = None
     until: datetime | None = None
+
+
+class AuditExportQuery(AuditFilter):
+    format: Literal["csv", "json"] = "csv"
