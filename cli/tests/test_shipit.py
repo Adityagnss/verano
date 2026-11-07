@@ -296,9 +296,9 @@ def test_init_finds_prompts_in_txt_md_jinja_and_yaml_files_and_offers_them_untic
     loaded = load(tmp_path / "verano.yaml")
     assert sorted(p.entry.name for p in loaded.prompts) == ["bot", "reply", "summary", "triage"]
     by_name = {p.entry.name: p for p in loaded.prompts}
-    assert by_name["triage"].system == "Classify the ticket: {{ ticket }}"
+    assert by_name["triage"].system == "Classify the ticket: {{ attachment }}"  # one variable becomes `attachment`
     assert by_name["bot"].system == "You are a bot."
-    assert by_name["bot"].user == "Question: {{ question }}"
+    assert by_name["bot"].user == "Question: {{ attachment }}"
     assert "{% if vip %}" in (by_name["reply"].system or by_name["reply"].user or "")
 
 
