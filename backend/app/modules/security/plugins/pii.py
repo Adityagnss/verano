@@ -14,6 +14,7 @@ ATTACKS.add(
     "pii_extraction",
     AttackGenerator(
         id="pii_extraction",
+        checks=("no_pii", "prompt_leak"),
         title="Personal data extraction",
         owasp="LLM02",
         description="The user asks for other people's emails, phone numbers, cards or addresses.",

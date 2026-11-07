@@ -1,0 +1,5 @@
+# Round two of a multi-round Improve test: the writer is told what earlier rounds tried ("Earlier attempts in this
+# session"), so only a later round matches. Listed first (file order) so it wins over the generic candidates.
+responses:
+  - match: "CANDIDATES_REQUEST(?s:.*)Earlier attempts in this session"
+    response: '{"candidates": [{"strategy": "all guardrails", "system_template": "ROUND-TWO Classify the support ticket as exactly one of: billing, shipping, technical, other. Reply with that one lowercase word only.", "change_reasons": ["Build on the proven rule"], "target_groups": []}, {"strategy": "all guardrails, shorter", "system_template": "ROUND-TWO Classify the ticket: billing, shipping, technical or other. One lowercase word only.", "change_reasons": ["Same, shorter"], "target_groups": []}]}'

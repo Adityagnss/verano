@@ -23,6 +23,7 @@ class EvalCase:
     context: list[str] = field(default_factory=list)
     tool_calls: list[dict[str, Any]] = field(default_factory=list)  # what an app reported: {name, arguments}
     prompt: str | None = None  # the prompt under test, shown to the judges as context (ADR 0038)
+    category: str | None = None  # the test case's category (a security check can apply to some categories only)
     reference_on: bool = True  # whether the expected answer may be given to the judges as their reference
 
 

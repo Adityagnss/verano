@@ -111,6 +111,7 @@ def eval_case(
         context=[str(c) for c in item.context] + [str(c) for c in row.retrieved_chunks or []],
         tool_calls=[call for call in row.tool_calls or [] if isinstance(call, dict)],
         prompt=prompt_text(row.rendered_system_prompt, row.rendered_user_prompt, prompt_chars),
+        category=item.category,
         reference_on=reference_on,
     )
 
@@ -616,7 +617,10 @@ class ScoringService:
             return await self._run_code(config, case)
         if config.config.get("kind") != DEEPEVAL:
             rule = RULES.get(config.evaluator_name)
-            return rule(case, config.config, config.threshold) if rule else None
+            scope = config.config.get("categories")
+            if rule is None or (scope and case.category not in scope):  # a check can be scoped to some categories
+                return None
+            return rule(case, config.config, config.threshold)
         if instructions_for(config.config, case) is None:
             return None
         if target is None:

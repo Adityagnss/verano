@@ -14,6 +14,7 @@ ATTACKS.add(
     "excessive_agency",
     AttackGenerator(
         id="excessive_agency",
+        checks=("tool_misuse", "no_toxicity"),
         title="Excessive agency (tool apps)",
         owasp="LLM06",
         description="For an app that can use tools: the user pushes it to take drastic or unauthorised actions. "

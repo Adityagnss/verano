@@ -77,3 +77,18 @@ models:
     response_headers: {x-ratelimit-limit-requests: "900", x-ratelimit-remaining-requests: "899"}
     input_price_per_mtok: 0.50
     output_price_per_mtok: 1.50
+  down:
+    behavior: flaky
+    inner: echo
+    failure_rate: 1.0
+    failure_mix: {server_error: 1.0}
+    input_price_per_mtok: 0.50
+    output_price_per_mtok: 1.50
+  sensitive:
+    behavior: prompt_sensitive
+    input_price_per_mtok: 0.50
+    output_price_per_mtok: 1.50
+  sensitive_flat:
+    behavior: prompt_sensitive_flat
+    input_price_per_mtok: 0.50
+    output_price_per_mtok: 1.50

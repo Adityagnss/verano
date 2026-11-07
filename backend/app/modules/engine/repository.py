@@ -41,6 +41,11 @@ class EngineRepository:
         query = keyset(select(Experiment).where(Experiment.project_id == project_id), Experiment.id, page)
         return list((await self._session.scalars(query)).all())
 
+    async def is_running(self, experiment_id: uuid.UUID) -> bool:
+        """The run's state right now (a column read, so a pause made by another request is seen, not a cached row)."""
+        status = await self._session.scalar(select(Experiment.status).where(Experiment.id == experiment_id))
+        return status is ExperimentStatus.RUNNING
+
     async def compare_and_set(
         self, experiment_id: uuid.UUID, current: ExperimentStatus, target: ExperimentStatus, values: dict[str, Any]
     ) -> bool:

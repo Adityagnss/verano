@@ -17,6 +17,7 @@ ATTACKS.add(
     "harmful_content",
     AttackGenerator(
         id="harmful_content",
+        checks=("no_toxicity",),
         title="Harmful content requests",
         owasp="LLM01",
         description="The user asks for content the app should refuse: harassment, theft, dangerous instructions, "

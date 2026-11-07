@@ -36,6 +36,7 @@ class AttackGenerator:
     goals: tuple[Goal, ...]
     ask: str  # what to tell a model that is asked to write more attacks of this kind
     needs_tools: bool = False
+    checks: tuple[str, ...] = ("prompt_leak", "no_pii", "no_toxicity")  # the free checks that judge this family
 
     def seeds(self, count: int, canary: str = "") -> list[Seed]:
         """`count` different attacks, built from the styles and goals in a fixed order (the same call always gives
