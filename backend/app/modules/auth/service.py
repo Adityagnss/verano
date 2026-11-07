@@ -18,6 +18,7 @@ import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import Any
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -43,6 +44,8 @@ from app.core.security import (
     utcnow,
 )
 from app.core.throttle import FixedWindowLimiter
+from app.modules.audit.schemas import AuditAction
+from app.modules.audit.service import AuditLog
 from app.modules.auth.domain import RefreshOutcome, RefreshTokenState, judge_refresh, normalize_email, password_problem
 from app.modules.auth.members import MemberService
 from app.modules.auth.models import User
@@ -227,6 +230,13 @@ class AuthService:
             body.scope,
             body.project_id,
         )
+        await self._audit_token(
+            principal,
+            AuditAction.TOKEN_CREATED,
+            f"Created the {body.scope.value} API token {body.name}.",
+            token.id,
+            {"name": body.name, "scope": body.scope.value, "project_id": str(body.project_id or "") or None},
+        )
         return ApiTokenCreated(**ApiTokenOut.model_validate(token).model_dump(), token=raw)
 
     async def list_api_tokens(self, principal: Principal) -> list[ApiTokenOut]:
@@ -238,6 +248,29 @@ class AuthService:
             raise NotFound(TOKEN_NOT_FOUND)
         if token.revoked_at is None:
             token.revoked_at = self._clock()
+            await self._audit_token(
+                principal,
+                AuditAction.TOKEN_REVOKED,
+                f"Revoked the API token {token.name}.",
+                token.id,
+                {"name": token.name},
+            )
+
+    async def _audit_token(
+        self, principal: Principal, action: AuditAction, summary: str, token_id: uuid.UUID, details: dict[str, Any]
+    ) -> None:
+        """A token reaches every workspace its owner belongs to, so each of them records the event."""
+        audit = AuditLog(self._session, self._settings)
+        for organization_id in await self.organization_ids(principal.user_id):
+            await audit.record(
+                organization_id=organization_id,
+                actor_id=principal.user_id,
+                action=action,
+                summary=summary,
+                target_type="api_token",
+                target_id=token_id,
+                details=details,
+            )
 
     async def _check_throttle(self, action: str, client_ip: str, email: str | None) -> None:
         settings = self._settings

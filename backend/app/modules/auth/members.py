@@ -147,9 +147,9 @@ class MemberService:
             raise Conflict("Invites are for shared workspaces. Create or use a shared workspace to invite people.")
         if any(user.email == email for _, user in await self._repo.members(organization_id)):
             raise Conflict(ALREADY_MEMBER.format(email=email))
+        await self._repo.revoke_open_invites_for(organization_id, email, now)  # a new invite replaces the open one
         if await self._repo.open_invite_count(organization_id, now) >= self._settings.max_open_invites:
             raise Conflict(TOO_MANY_INVITES.format(limit=self._settings.max_open_invites))
-        await self._repo.revoke_open_invites_for(organization_id, email, now)
         issued = await self._issue(actor, organization.name, organization_id, email, body.role, now)
         await self._audit.record(
             organization_id=organization_id,

@@ -23,7 +23,7 @@ CSV_COLUMNS = ("when", "who", "what", "summary", "project_id", "target_type", "t
 def clean_details(details: dict[str, Any] | None) -> dict[str, Any]:
     cleaned: dict[str, Any] = {}
     for name, value in (details or {}).items():
-        safe = name in SAFE_KEYS or name.endswith("_id")
+        safe = name in SAFE_KEYS or name.endswith(("_id", "_last4"))
         looks_secret = not safe and any(word in name.lower() for word in SECRET_WORDS)
         if looks_secret:
             cleaned[name] = REDACTED

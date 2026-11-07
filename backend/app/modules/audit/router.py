@@ -6,14 +6,14 @@ permission table, not here; the organization in the path is checked against the 
 """
 
 import uuid
-from typing import Annotated, Literal
+from typing import Annotated
 
 from fastapi import APIRouter, Query
 from fastapi.responses import Response
 
 from app.core.pagination import Page, PageDep
 from app.modules.audit.dependencies import AuditLogDep
-from app.modules.audit.schemas import AuditActionOut, AuditEventOut, AuditFilter
+from app.modules.audit.schemas import AuditActionOut, AuditEventOut, AuditExportQuery, AuditFilter
 
 router = APIRouter(prefix="/organizations/{organization_id}/audit-log", tags=["audit"])
 
@@ -34,10 +34,10 @@ async def list_actions(organization_id: uuid.UUID, audit: AuditLogDep) -> list[A
 async def export_events(
     organization_id: uuid.UUID,
     audit: AuditLogDep,
-    filters: Annotated[AuditFilter, Query()],
-    format: Annotated[Literal["csv", "json"], Query()] = "csv",
+    query: Annotated[AuditExportQuery, Query()],
 ) -> Response:
-    body = await audit.export(organization_id, filters, format == "csv")
-    media = "text/csv" if format == "csv" else "application/json"
-    headers = {"Content-Disposition": f'attachment; filename="audit-log.{format}"'}
+    # one model for all query fields: FastAPI reads a model from the query string only when it is the only one
+    body = await audit.export(organization_id, query, query.format == "csv")
+    media = "text/csv" if query.format == "csv" else "application/json"
+    headers = {"Content-Disposition": f'attachment; filename="audit-log.{query.format}"'}
     return Response(body, media_type=media, headers=headers)

@@ -19,6 +19,9 @@ from app.core.config import Settings
 from app.core.errors import Conflict, NotFound, ValidationFailed
 from app.core.pagination import Page, PageParams, to_page
 from app.core.security import Principal, utcnow
+from app.modules.audit.schemas import AuditAction
+from app.modules.audit.service import AuditLog
+from app.modules.projects.repository import ProjectRepository
 from app.modules.prompts.domain import rollback_target
 from app.modules.prompts.label_repository import LabelRepository
 from app.modules.prompts.label_schemas import (
@@ -46,6 +49,17 @@ NO_SUCH_VERSION = "The prompt {name} has no version {version}."
 BOTH = "Ask for a label or a version number, not both."
 
 
+def _move_summary(name: str, reason: MoveReason, removed: bool) -> str:
+    if removed:
+        return f"Removed the label {name} from a prompt."
+    how = {
+        MoveReason.ASSIGN: "Pointed",
+        MoveReason.ACCEPT: "Accept pointed",
+        MoveReason.ROLLBACK: "Rolled back",
+    }[reason]
+    return f"{how} the label {name} at another version of a prompt."
+
+
 def etag_of(version_id: uuid.UUID) -> str:
     return f'"{version_id.hex}"'
 
@@ -54,6 +68,8 @@ class LabelService:
     def __init__(self, session: AsyncSession, settings: Settings) -> None:
         self._repo = LabelRepository(session)
         self._prompts = PromptRepository(session)
+        self._projects = ProjectRepository(session)
+        self._audit = AuditLog(session, settings)
         self._settings = settings
 
     async def list(self, project_id: uuid.UUID, prompt_id: uuid.UUID) -> LabelsOut:
@@ -97,7 +113,7 @@ class LabelService:
         else:
             existing.prompt_version_id = version.id
             existing.moved_at = now
-        await self._record(prompt.id, name, before, version.id, reason, principal)
+        await self._record(project_id, prompt.id, name, before, version.id, reason, principal)
         return await self._out(prompt.id, existing, version.version)
 
     async def remove(self, project_id: uuid.UUID, principal: Principal | None, prompt_id: uuid.UUID, name: str) -> None:
@@ -106,7 +122,7 @@ class LabelService:
         if label is None:
             raise NotFound(LABEL_NOT_FOUND.format(name=name))
         await self._repo.delete_label(label)
-        await self._record(prompt.id, name, label.prompt_version_id, None, MoveReason.REMOVE, principal)
+        await self._record(project_id, prompt.id, name, label.prompt_version_id, None, MoveReason.REMOVE, principal)
 
     async def rollback(
         self, project_id: uuid.UUID, principal: Principal | None, prompt_id: uuid.UUID, name: str
@@ -183,6 +199,7 @@ class LabelService:
 
     async def _record(
         self,
+        project_id: uuid.UUID,
         prompt_id: uuid.UUID,
         name: str,
         before: uuid.UUID | None,
@@ -200,6 +217,23 @@ class LabelService:
                 moved_by=principal.user_id if principal else None,
             )
         )
+        organization_id = await self._projects.organization_id_of(project_id)
+        if organization_id is not None:
+            await self._audit.record(
+                organization_id=organization_id,
+                project_id=project_id,
+                actor_id=principal.user_id if principal else None,
+                action=AuditAction.LABEL_MOVED,
+                summary=_move_summary(name, reason, after is None),
+                target_type="prompt",
+                target_id=prompt_id,
+                details={
+                    "label": name,
+                    "reason": reason.value,
+                    "from_version_id": str(before) if before else None,
+                    "to_version_id": str(after) if after else None,
+                },
+            )
 
     async def _prompt(self, project_id: uuid.UUID, prompt_id: uuid.UUID, lock: bool = False) -> Prompt:
         prompt = await self._prompts.prompt(project_id, prompt_id, lock=lock)
