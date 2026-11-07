@@ -156,7 +156,10 @@ def test_criteria_are_trimmed_deduplicated_and_cut() -> None:
 
 
 def test_local_rubric_issues_find_size_repeats_long_and_vague_criteria() -> None:
-    kinds = lambda found: sorted(i.kind for i in found)  # noqa: E731
+
+    def kinds(found: list[Any]) -> list[str]:
+        return sorted(i.kind for i in found)
+
     assert kinds(local_issues(["Mentions the refund window of 30 days"], 3, 8, 200)) == ["size"]
     many = [f"Mentions fact number {n} from the context" for n in range(9)]
     assert kinds(local_issues(many, 3, 8, 200)) == ["size"]

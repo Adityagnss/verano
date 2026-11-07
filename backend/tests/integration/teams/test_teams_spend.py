@@ -37,6 +37,7 @@ async def scale_spend_to(container: Container, total: Decimal) -> None:
     limit of one cent any other way)."""
     async with container.database.engine.begin() as connection:
         spent = (await connection.execute(select(func.sum(LLMCall.cost)))).scalar_one()
+        assert spent is not None
         await connection.execute(text("UPDATE llm_calls SET cost = cost * :f"), {"f": total / spent})
 
 
@@ -109,7 +110,7 @@ async def test_the_limit_counts_every_project_of_the_workspace_and_nobody_elses(
 
     # a person's own workspace has no limit of its own
     personal = (await client.post("/api/v1/projects", json={"name": "Mine"}, headers=team.headers)).json()["id"]
-    mine = Session(team.headers, team.users["owner"], personal)  # type: ignore[arg-type]
+    mine = Session(team.headers, team.users["owner"], personal)
     mine_key = await add_credential(client, mine, "mock")
     assert (await call(client, mine, mine_key["id"])).status_code == 200
 

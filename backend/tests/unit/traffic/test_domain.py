@@ -2,6 +2,7 @@
 
 import time
 from datetime import UTC, date, datetime, timedelta
+from typing import Any
 
 import pytest
 
@@ -25,7 +26,7 @@ from app.modules.traffic.domain import (
 )
 
 TODAY = date(2026, 3, 20)
-RULE = {
+RULE: dict[str, Any] = {
     "kind": "drop",
     "threshold": 0.8,
     "margin": 0.1,
