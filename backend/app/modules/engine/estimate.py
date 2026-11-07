@@ -36,7 +36,11 @@ def estimate_experiment(
     columns: list[Column],
     judge: ModelProfileOut | None,
     judge_metrics: int,
+    judge_checks: int | None = None,
 ) -> ExperimentEstimate:
+    """`judge_metrics` is judge calls per answer; `judge_checks` the judged checks per answer (they differ when fast
+    scoring shares one call between checks: fewer calls, the same instructions to read)."""
+    units = judge_metrics if judge_checks is None else judge_checks
     chars = settings.token_estimate_chars_per_token
     prompt_tokens = sum(
         estimate_tokens((m.content for m in render(prompt.system_template, prompt.user_template, inputs)), 0, chars)
@@ -61,7 +65,7 @@ def estimate_experiment(
             )
         )
         calls_total += calls
-        judge_in += (input_tokens + output_tokens + JUDGE_OVERHEAD_TOKENS * calls) * judge_metrics
+        judge_in += (input_tokens + output_tokens) * judge_metrics + JUDGE_OVERHEAD_TOKENS * calls * units
         judge_out += JUDGE_REPLY_TOKENS * calls * judge_metrics
     generation = _sum([m.cost for m in models])
     judge_cost: Decimal | None = Decimal(0)
@@ -87,7 +91,7 @@ def estimate_experiment(
 
 
 def estimate_judging(
-    judge: ModelProfileOut | None, answers: list[tuple[int, int]], judge_metrics: int
+    judge: ModelProfileOut | None, answers: list[tuple[int, int]], judge_metrics: int, judge_checks: int | None = None
 ) -> tuple[int, Decimal | None]:
     """Judge calls and cost to score answers that already exist: one call per answer per judged check, each
     reading the stored input and output tokens of the answer plus the judge's own instructions."""
@@ -96,6 +100,7 @@ def estimate_judging(
         return 0, Decimal(0)
     if judge is None:
         return calls, None
-    tokens_in = sum((i + o + JUDGE_OVERHEAD_TOKENS) * judge_metrics for i, o in answers)
+    units = judge_metrics if judge_checks is None else judge_checks
+    tokens_in = sum((i + o) * judge_metrics + JUDGE_OVERHEAD_TOKENS * units for i, o in answers)
     tokens_out = JUDGE_REPLY_TOKENS * calls
     return calls, compute_cost(tokens_in, tokens_out, judge.input_price_per_mtok, judge.output_price_per_mtok)

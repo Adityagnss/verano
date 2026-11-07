@@ -1,0 +1,5 @@
+# The scripted reply for writing conversation cases (ADR 0039): two good cases, one that asks for more turns than the
+# server allows, one that repeats a goal in other words, and one with a blank persona.
+responses:
+  - match: "CASES_REQUEST conversation"
+    response: "{\"cases\": [{\"persona\": \"A rushed customer\", \"goal\": \"Get a refund for a double charge\", \"opening\": \"I was charged twice!\", \"stop_when\": \"The assistant has promised a refund or clearly refused\", \"category\": \"happy_path\", \"max_turns\": 4}, {\"persona\": \"A polite customer\", \"goal\": \"Change the delivery address\", \"opening\": \"Hello, can I move my delivery?\", \"stop_when\": \"The address is confirmed changed\", \"scenario\": \"Order shipped yesterday\", \"category\": \"edge_case\", \"max_turns\": 99}, {\"persona\": \"Another customer\", \"goal\": \"  get a REFUND for a double   charge \", \"opening\": \"Something else entirely\", \"stop_when\": \"Refund promised\"}, {\"persona\": \"   \", \"goal\": \"Cancel the plan\", \"opening\": \"cancel please\", \"stop_when\": \"Plan cancelled\"}]}"

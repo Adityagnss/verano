@@ -51,7 +51,7 @@ from app.modules.engine.schemas import (
     SplitScope,
     TestCaseRunOut,
 )
-from app.modules.evaluation.domain import judge_calls_per_answer
+from app.modules.evaluation.domain import judge_plan
 from app.modules.evaluation.repository import ScoreRepository
 from app.modules.evaluation.schemas import JudgeChoice
 from app.modules.evaluation.service import EvaluatorSetService
@@ -367,7 +367,13 @@ class ExperimentService:
         if choice is not None:
             judge = {"credential_id": str(choice.credential_id), "model": choice.model, "source": source}
             judge_profile = (await self._registry.call_target(project_id, choice.credential_id, choice.model)).profile
-        judge_metrics = judge_calls_per_answer([e.config for e in evaluators.evaluators])
+        settings = self._settings
+        judge_metrics, judge_checks = judge_plan(
+            [e.config for e in evaluators.evaluators],
+            settings.scoring_mode == "fast" and settings.combined_judge_enabled,
+            settings.combined_judge_min_checks,
+            settings.combined_judge_max_checks,
+        )
         if judge_metrics and judge_profile is None:
             raise ValidationFailed(NO_JUDGE_CHOSEN)
         return _PlanInputs(
@@ -380,6 +386,7 @@ class ExperimentService:
             judge=judge,
             judge_profile=judge_profile,
             judge_metrics=judge_metrics,
+            judge_checks=judge_checks,
             evaluator_set_version_id=base_version_id,
             stored_judge=evaluators.judge,
         )
@@ -398,7 +405,14 @@ class ExperimentService:
 
     def _estimate(self, plan: "_PlanInputs", body: ExperimentCreate) -> ExperimentEstimate:
         estimate = estimate_experiment(
-            self._settings, plan.prompt, plan.items, plan.profiles, plan.columns, plan.judge_profile, plan.judge_metrics
+            self._settings,
+            plan.prompt,
+            plan.items,
+            plan.profiles,
+            plan.columns,
+            plan.judge_profile,
+            plan.judge_metrics,
+            plan.judge_checks,
         )
         judge = plan.judge if plan.judge_metrics else None
         return estimate.model_copy(
@@ -555,5 +569,6 @@ class _PlanInputs:
     judge: dict[str, Any] | None
     judge_profile: ModelProfileOut | None
     judge_metrics: int
+    judge_checks: int
     evaluator_set_version_id: uuid.UUID
     stored_judge: JudgeChoice | None

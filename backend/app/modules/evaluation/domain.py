@@ -34,6 +34,18 @@ def inputs_text(inputs: dict[str, Any]) -> str:
     return "\n".join(f"{key}: {value}" for key, value in inputs.items())
 
 
+def judge_plan(checks: list[dict[str, Any]], fast: bool, min_checks: int, max_checks: int) -> tuple[int, int]:
+    """(judge calls, judged checks) per answer. Accurate scoring is one call per check, or two for a check made of
+    criteria. Fast scoring puts the judged checks of an answer into combined calls (one per `max_checks`) when there
+    are at least `min_checks` of them; each check is still read once, so the second number is what the cost of
+    reading the instructions grows with."""
+    judged = sum(1 for check in checks if check.get("kind") == "deepeval")
+    if fast and judged >= max(min_checks, 2):
+        return -(-judged // max(max_checks, 1)), judged
+    calls = judge_calls_per_answer(checks)
+    return calls, calls
+
+
 def judge_calls_per_answer(checks: list[dict[str, Any]]) -> int:
     """Judge calls one answer needs: a judged check made of criteria first has the judge write its own
     evaluation steps (one call) and then scores (another); a check given its steps scores directly."""
