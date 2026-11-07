@@ -114,7 +114,8 @@ def container(app: FastAPI) -> Container:
 
 
 @pytest.fixture
-async def clean(container: Container, settings: Settings) -> None:
+async def clean(container: Container, settings: Settings, jobs: InlineJobQueue) -> None:
+    await jobs.drain()  # a job a test left queued finishes against its own data, not the next test's
     load_all_models()
     tables = ", ".join(table.name for table in Base.metadata.sorted_tables)
     async with container.database.engine.begin() as connection:
