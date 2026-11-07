@@ -120,6 +120,7 @@ async def test_the_quick_check_tests_a_small_fixed_sample_and_only_survivors_get
     container: Container,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setattr(container.settings, "improve_quick_min_cases", 10)
     monkeypatch.setattr(container.settings, "improve_quick_max_cases", 10)
     experiment = await baseline_run(client, session, jobs, "sensitive")
     result = await improve(client, session, jobs, experiment["id"], rounds=1, population=3, quick_check=True)
