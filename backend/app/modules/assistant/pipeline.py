@@ -692,12 +692,7 @@ class ImprovementPipeline:
         if proven is None and row.current_round > 1:
             message = STOPPED_UNPROVEN.format(round=row.current_round, message=proof.message)
         if winner is not None:
-            summary["final_candidate_id"] = str(winner.id)
-            if winner.round > 1 and winner.holdout_experiment_id:
-                holdout = await self._engine.experiment(winner.holdout_experiment_id)
-                if holdout is not None:
-                    root = await self._prove(holdout, baseline)
-                    summary["versus_first"] = root.model_dump(mode="json")
+            await self._keep(summary, winner, baseline)
             if proven is not None and row.current_round > 1:
                 message = KEPT.format(message=proof.message, round=winner.round, rounds=row.current_round)
         await self._repo.update_session(row.id, {"summary": summary})
@@ -708,10 +703,19 @@ class ImprovementPipeline:
         if any, is still the answer."""
         winner = await self._last_winner(row.id)
         summary = dict(row.summary or {})
-        if winner is not None:
-            summary["final_candidate_id"] = str(winner.id)
+        baseline = await self._engine.experiment(row.baseline_experiment_id) if row.baseline_experiment_id else None
+        if winner is not None and baseline is not None:
+            await self._keep(summary, winner, baseline)
         await self._repo.update_session(row.id, {"summary": summary})
         await self._finish(row.id, SessionStage.DONE, message)
+
+    async def _keep(self, summary: dict[str, Any], winner: PromptCandidate, baseline: Experiment) -> None:
+        """Record the session's answer; a winner of a later round is also compared with the very first prompt."""
+        summary["final_candidate_id"] = str(winner.id)
+        if winner.round > 1 and winner.holdout_experiment_id:
+            holdout = await self._engine.experiment(winner.holdout_experiment_id)
+            if holdout is not None:
+                summary["versus_first"] = (await self._prove(holdout, baseline)).model_dump(mode="json")
 
     # -- model calls ----------------------------------------------------------------------------------------------
 

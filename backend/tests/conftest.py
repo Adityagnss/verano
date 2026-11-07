@@ -30,11 +30,13 @@ from sqlalchemy import text
 from testcontainers.community.postgres import PostgresContainer
 from testcontainers.community.redis import RedisContainer
 
+import tests.mock_behaviors  # noqa: F401  (registers the prompt-sensitive mock models)
 from app.core.config import Settings
 from app.core.container import Container
 from app.core.database import Base, load_all_models
 from app.core.jobs import InlineJobQueue, load_all_jobs
 from app.main import create_app
+from app.modules.gateway import service as gateway_service
 from app.modules.gateway.plugins.mock_provider import install_mock_provider
 from tests.helpers import FIXTURES, ROOT, TEST_CONTAINER_LABELS, Session, compose_image, sign_up
 
@@ -119,6 +121,7 @@ async def clean(container: Container, settings: Settings) -> None:
         await connection.execute(text(f"TRUNCATE {tables} CASCADE"))
     await container.valkey.flushall()
     install_mock_provider(settings)
+    gateway_service._BREAKER = None  # the provider's health is per process; a test must not inherit another's
 
 
 @pytest.fixture

@@ -192,7 +192,7 @@ class ChunkExecutor:
 
     async def _claim(self, experiment: Experiment, row: TestCaseRun) -> bool:
         async with self._lock:
-            if experiment.status is not ExperimentStatus.RUNNING:
+            if not await self._repo.is_running(experiment.id):
                 return False
             if not await self._repo.claim(experiment.id, row.id, utcnow(), self._lease()):
                 return False
@@ -279,7 +279,7 @@ class ChunkExecutor:
         target: CallTarget,
     ) -> None:
         async with self._lock:
-            if experiment.status is not ExperimentStatus.RUNNING:
+            if not await self._repo.is_running(experiment.id):
                 return
             if not await self._repo.claim(experiment.id, row.id, utcnow(), self._lease()):
                 return

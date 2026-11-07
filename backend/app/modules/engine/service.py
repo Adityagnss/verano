@@ -65,6 +65,7 @@ from app.modules.registry.schemas import ModelProfileOut
 from app.modules.registry.service import RegistryService
 
 RUN_CHUNK_JOB = "engine.run_chunk"
+SCORE_JOB = "evaluation.score_experiment"
 EXPERIMENT_NOT_FOUND = "This experiment doesn't exist in this project."
 RUN_NOT_FOUND = "This call doesn't exist in this experiment."
 NO_APPROVED = "Approve your test cases (step 4) before starting an experiment."
@@ -269,7 +270,15 @@ class ExperimentService:
         if not await self.transition(experiment, ExperimentStatus.RUNNING, RESUMED, values):
             raise Conflict(NOT_PAUSED)
         await self._session.commit()
-        self._enqueue_pending(experiment.id, await self._repo.run_ids(experiment.id, RunStatus.PENDING))
+        pending = await self._repo.run_ids(experiment.id, RunStatus.PENDING)
+        if pending:
+            self._enqueue_pending(experiment.id, pending)
+        elif (
+            not await self._repo.open_count(experiment.id)  # everything finished while it was paused
+            and await self.transition(experiment, ExperimentStatus.EVALUATING)
+        ):
+            await self._session.commit()
+            self._jobs.enqueue(SCORE_JOB, experiment_id=str(experiment.id))
         return await self.get(project.id, experiment_id)
 
     async def retry_failed(self, project: ProjectOut, experiment_id: uuid.UUID) -> ExperimentOut:
