@@ -4,7 +4,8 @@ Human labels and judge agreement use cases (ADR 0017).
 A person labels an answer good, bad or unsure, with an optional note. The label is stored beside the scores and
 never changes one. Every label is kept; an answer shows the majority and the split. Agreement compares each
 judged check's pass or fail with the people's majority on the answers they labelled, with the thresholds and the
-minimum number of labels coming from settings. Blind review leaves the judge's fields out of the response itself.
+minimum number of labels coming from settings. A disagreement an owner has settled counts with the owner's final
+verdict instead of the (tied) majority. Blind review leaves the judge's fields out of the response itself.
 """
 
 import uuid
@@ -20,6 +21,7 @@ from app.modules.engine.schemas import RunStatus
 from app.modules.evaluation.agreement import agreement, majority
 from app.modules.evaluation.models import HumanLabel
 from app.modules.evaluation.repository import LabelRepository, ScoreRepository
+from app.modules.evaluation.review_repository import ReviewRepository
 from app.modules.evaluation.schemas import (
     AgreementOut,
     EvaluationRunStatus,
@@ -68,6 +70,7 @@ class LabelService:
         self._engine = EngineRepository(session)
         self._labels = LabelRepository(session)
         self._scores = ScoreRepository(session)
+        self._review = ReviewRepository(session)
         self._settings = settings
 
     async def set_label(
@@ -106,6 +109,11 @@ class LabelService:
         if run is None:
             raise NotFound(NOT_SCORED)
         labelled = summaries(await self._labels.for_experiment(experiment_id), None)
+        # an owner's final verdict on a disagreement stands in for the people's majority (it never edits a label)
+        for settled in await self._review.resolutions(experiment_id, None):
+            summary = labelled.get(settled.test_case_run_id)
+            if summary is not None:
+                labelled[settled.test_case_run_id] = summary.model_copy(update={"verdict": settled.verdict})
         scores = await self._scores.scores(experiment_id, run.id)
         settings = self._settings
         by_check: dict[str, list[tuple[bool, bool]]] = defaultdict(list)

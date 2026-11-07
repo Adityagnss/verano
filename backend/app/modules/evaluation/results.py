@@ -28,7 +28,7 @@ from app.modules.engine.provenance import changed_between, known, summarize
 from app.modules.engine.repository import EngineRepository
 from app.modules.engine.schemas import RunStatus
 from app.modules.evaluation.comparisons import case_results, comparison_out, versus_best
-from app.modules.evaluation.domain import JudgeCandidate, check_instructions_fit, judge_calls_per_answer, suggest_judge
+from app.modules.evaluation.domain import JudgeCandidate, check_instructions_fit, judge_plan, suggest_judge
 from app.modules.evaluation.domain import Score as ScoreValue
 from app.modules.evaluation.labels import LabelService
 from app.modules.evaluation.metrics import CaseOutcome, WeightedScore, case_result, model_metrics
@@ -91,7 +91,8 @@ class ResultsService:
     ) -> None:
         self._session = session
         self._compare_min = compare_min_cases
-        self._labels = LabelService(session, settings or get_settings())
+        self._settings = settings or get_settings()
+        self._labels = LabelService(session, self._settings)
         self._engine = EngineRepository(session)
         self._scores = ScoreRepository(session)
         self._datasets = datasets
@@ -322,13 +323,20 @@ class ResultsService:
         if choice is not None:
             profile = (await self._registry.call_target(project.id, choice.credential_id, choice.model)).profile
         checks = body.evaluators if body.evaluators is not None else version.evaluators
-        judged_checks = judge_calls_per_answer([e.config for e in checks])
+        chosen = experiment.config.get("scoring_mode")
+        mode = chosen if chosen in ("accurate", "fast") else self._settings.scoring_mode
+        judged_checks, reads = judge_plan(
+            [e.config for e in checks],
+            mode == "fast" and self._settings.combined_judge_enabled,
+            self._settings.combined_judge_min_checks,
+            self._settings.combined_judge_max_checks,
+        )
         answers = [
             (row.input_tokens or 0, row.output_tokens or 0)
             for row in await self._engine.runs(experiment.id)
             if row.status is RunStatus.SUCCEEDED
         ]
-        calls, cost = estimate_judging(profile, answers, judged_checks)
+        calls, cost = estimate_judging(profile, answers, judged_checks, reads)
         return RescoreEstimate(
             judge_calls=calls,
             judge_cost=cost,
