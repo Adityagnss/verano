@@ -10,10 +10,14 @@ unless the file changed; a prompt whose text did not change creates no new versi
 """
 
 import os
+import sys
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+import click
+import typer
 
 from verano import auth, ui
 from verano.client import ApiClient
@@ -24,6 +28,7 @@ from verano.spec import ENV_REFERENCE
 
 MANAGED_BY = "verano push"
 KEY_TAIL = 4
+HAS_RESULTS_STATUS = 409
 
 
 @dataclass
@@ -71,8 +76,14 @@ class Pusher:
         with_data: bool = True,
         replace_draft: bool = False,
         label: str | None = None,
+        prune: bool = False,
+        yes: bool = False,
+        interactive: bool | None = None,
     ) -> None:
         self.label = label
+        self.prune = prune
+        self.yes = yes
+        self.interactive = sys.stdin.isatty() and sys.stderr.isatty() if interactive is None else interactive
         self.api = api
         self.loaded = loaded
         self.dry = dry_run
@@ -224,12 +235,43 @@ class Pusher:
         group = prompt.project_name
         wanted = {p.entry.name for p in self.loaded.prompts if p.project_name == group}
         gone = removed_prompts(existing, wanted)
-        if gone:
+        if gone and self.prune:
+            self._delete_removed(existing, gone, outcome)
+        elif gone:
             self._say(
                 outcome,
                 f"no longer in verano.yaml: {', '.join(gone)}. Verano keeps them (and their labels and history); "
-                "an app that still fetches them keeps working.",
+                "an app that still fetches them keeps working. Add --prune to delete them.",
             )
+
+    def _delete_removed(self, existing: list[dict[str, Any]], gone: list[str], outcome: Outcome) -> None:
+        """`--prune`: delete the prompts this tool made earlier and the file no longer lists, after confirmation.
+        A prompt that experiments already used is kept (Verano refuses), and that is said, not treated as a failure."""
+        project_id = outcome.project_id
+        names = ", ".join(gone)
+        if self.dry or project_id is None:
+            self._say(outcome, "", would=f"delete the prompts no longer in verano.yaml: {names}")
+            return
+        if not self.yes:
+            if not self.interactive:
+                raise CliError(
+                    f"Not deleting {names} without your confirmation.",
+                    "Add --yes to delete in a script, or leave out --prune to keep them.",
+                )
+            if not typer.confirm(
+                f"Delete {names} from Verano, with all versions and labels? Apps fetching them will stop working.",
+                err=True,
+            ):
+                raise click.exceptions.Abort()
+        for prompt in (p for p in existing if p["name"] in gone):
+            try:
+                self.api.request("DELETE", f"/projects/{project_id}/prompts/{prompt['id']}", params={"confirm": "true"})
+            except CliError as error:
+                if error.status != HAS_RESULTS_STATUS:
+                    raise
+                self._say(outcome, f"kept {prompt['name']}: {error.message}")
+                continue
+            self._say(outcome, f"deleted {prompt['name']}")
 
     def _models(self, project_id: str | None, prompt: ResolvedPrompt, outcome: Outcome) -> dict[str, Any] | None:
         """Selects the listed models. Returns the judge's profile, if the entry names a judge."""
@@ -338,7 +380,18 @@ def command(
     with_data: bool,
     replace_draft: bool,
     label: str | None = None,
+    prune: bool = False,
+    yes: bool = False,
 ) -> None:
     loaded = load(file or find_file())
-    pusher = Pusher(auth.client(), loaded, dry_run, with_data=with_data, replace_draft=replace_draft, label=label)
+    pusher = Pusher(
+        auth.client(),
+        loaded,
+        dry_run,
+        with_data=with_data,
+        replace_draft=replace_draft,
+        label=label,
+        prune=prune,
+        yes=yes,
+    )
     summarize(pusher.run(only), dry_run)
