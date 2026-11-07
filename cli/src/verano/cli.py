@@ -111,9 +111,14 @@ def push_command(
     label: Annotated[
         str | None, typer.Option("--label", help="Point this label (for example staging) at the pushed version.")
     ] = None,
+    prune: Annotated[
+        bool,
+        typer.Option("--prune", help="Also delete prompts that an earlier push made and the file no longer lists."),
+    ] = False,
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="With --prune: delete without asking.")] = False,
 ) -> None:
     """Create or update the projects, keys, models, prompts and test cases described in verano.yaml."""
-    push.command(file, name, dry_run, not no_data, replace_draft, label)
+    push.command(file, name, dry_run, not no_data, replace_draft, label, prune, yes)
 
 
 @app.command("run")

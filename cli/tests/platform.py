@@ -37,9 +37,13 @@ class FakePlatform(FakeVerano):
     specs: dict[str, dict[str, Any]] = field(default_factory=dict)
     evaluator_kinds: list[str] = field(default_factory=lambda: ["exact_match"])
     stuck: bool = False
+    used_prompts: set[str] = field(default_factory=set)
+    labels: dict[tuple[str, str], str] = field(default_factory=dict)
     experiments: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
     started: list[dict[str, Any]] = field(default_factory=list)
     quality: dict[str, float] = field(default_factory=dict)
+    latency: dict[str, float] = field(default_factory=dict)
+    call_cost: dict[str, str] = field(default_factory=dict)
     price: str | None = "0.0420"
     stop_reason: str | None = None
     stall: bool = False
@@ -68,7 +72,8 @@ class FakePlatform(FakeVerano):
 
     def route(self, request: httpx.Request, path: str) -> httpx.Response:
         bearer = request.headers.get("authorization", "").removeprefix("Bearer ")
-        if not path.startswith("/auth") and bearer not in {t["token"] for t in self.tokens.values()}:
+        known = {t["token"] for t in self.tokens.values()} | {"session-jwt"}
+        if not path.startswith("/auth") and bearer not in known:
             return error(401, "This API token is invalid, expired or revoked.")
         is_json = request.headers.get("content-type", "").startswith("application/json")
         body = json.loads(request.content) if request.content and is_json else {}
@@ -85,6 +90,12 @@ class FakePlatform(FakeVerano):
         pid, rest = parts[1], "/" + "/".join(parts[2:])
         if rest == "/credentials":
             return self.credential_route(pid, method, body)
+        if rest.startswith("/credentials/") and method == "PATCH":
+            stored = next(c for c in self.credentials[pid] if c["id"] == rest.rsplit("/", 1)[1])
+            if body.get("api_key"):
+                self.secrets.append(body["api_key"])
+                stored["key_last4"] = body["api_key"][-4:]
+            return httpx.Response(200, json=stored)
         if rest == "/models" and method == "GET":
             return self.page(self.profiles.get(pid, []), request)
         if rest == "/models/selection" and method == "PUT":
@@ -102,6 +113,16 @@ class FakePlatform(FakeVerano):
         data = self.data_route(pid, rest, method, body, request)
         if data is not None:
             return data
+        if parts[2] == "prompts" and len(parts) == 4 and method == "DELETE":
+            if request.url.params.get("confirm") != "true":
+                return error(422, "Send confirm=true to go ahead.")
+            if parts[3] in self.used_prompts:
+                return error(409, "This prompt has been tested in 1 experiment(s).")
+            self.prompts[pid] = [p for p in self.prompts[pid] if p["id"] != parts[3]]
+            return httpx.Response(204)
+        if parts[2] == "prompts" and len(parts) == 6 and parts[4] == "labels" and method == "PUT":
+            self.labels[(parts[3], parts[5])] = body["version_id"]
+            return httpx.Response(200, json={"name": parts[5], "version_id": body["version_id"]})
         if parts[2] == "prompts" and len(parts) == 5 and parts[4] == "versions" and method == "POST":
             prompt = next(p for p in self.prompts[pid] if p["id"] == parts[3])
             version = self.version(prompt["latest_version"]["version"] + 1, body)
@@ -384,6 +405,7 @@ class FakePlatform(FakeVerano):
                 ],
             },
             "polls": 0, "scored": 0, "quality": dict(self.quality),
+            "latency": dict(self.latency), "call_cost": dict(self.call_cost),
         }  # fmt: skip
         self.experiments.setdefault(pid, []).append(record)
         return httpx.Response(201, json=record)
@@ -416,8 +438,8 @@ class FakePlatform(FakeVerano):
                 {
                     "model": name, "quality": quality, "pass_rate": quality, "consistency": 1.0,
                     "cases": 3, "judged_cases": 3, "unscored_cases": 0,
-                    "stability": 1.0 if entry["runs"] > 1 else None, "latency_ms": 420.0,
-                    "cost_per_call": "0.0014", "failed_calls": 0,
+                    "stability": 1.0 if entry["runs"] > 1 else None, "latency_ms": record["latency"].get(name, 420.0),
+                    "cost_per_call": record["call_cost"].get(name, "0.0014"), "failed_calls": 0,
                 }
             )  # fmt: skip
         best = max(models, key=lambda m: (m["quality"], m["model"]), default=None)

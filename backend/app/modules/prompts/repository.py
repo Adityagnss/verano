@@ -9,11 +9,12 @@ loads every listed prompt's latest version in one `DISTINCT ON` query, not one p
 import uuid
 from collections.abc import Sequence
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.pagination import PageParams, keyset
+from app.modules.engine.models import Experiment
 from app.modules.prompts.models import Prompt, PromptVersion
 
 
@@ -82,3 +83,14 @@ class PromptRepository:
         return await self._session.scalar(
             select(PromptVersion).where(PromptVersion.id == version_id, PromptVersion.prompt_id == prompt_id)
         )
+
+    async def experiments_using(self, prompt_id: uuid.UUID) -> int:
+        """How many experiments ran any version of this prompt (their results keep the version alive)."""
+        versions = select(PromptVersion.id).where(PromptVersion.prompt_id == prompt_id)
+        count = await self._session.scalar(
+            select(func.count()).select_from(Experiment).where(Experiment.prompt_version_id.in_(versions))
+        )
+        return int(count or 0)
+
+    async def delete_prompt(self, prompt_id: uuid.UUID) -> None:
+        await self._session.execute(delete(Prompt).where(Prompt.id == prompt_id))

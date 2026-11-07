@@ -1468,6 +1468,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/external-results": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Results */
+        get: operations["list_results_api_v1_projects__project_id__external_results_get"];
+        put?: never;
+        /** Send Results */
+        post: operations["send_results_api_v1_projects__project_id__external_results_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/external-results/{result_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Result */
+        get: operations["get_result_api_v1_projects__project_id__external_results__result_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/generations": {
         parameters: {
             query?: never;
@@ -2251,7 +2286,8 @@ export interface paths {
         get: operations["get_prompt_api_v1_projects__project_id__prompts__prompt_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete Prompt */
+        delete: operations["delete_prompt_api_v1_projects__project_id__prompts__prompt_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -5146,6 +5182,95 @@ export interface components {
          * @enum {string}
          */
         ExperimentStatus: "draft" | "planned" | "running" | "paused" | "evaluating" | "completed" | "cancelled" | "failed";
+        /** ExternalCase */
+        ExternalCase: {
+            /**
+             * Answer
+             * @description The answer that was checked; long answers are cut.
+             * @default
+             */
+            answer: string;
+            /** Name */
+            name: string;
+            /** Passed */
+            passed: boolean;
+            /** Problems */
+            problems?: string[];
+        };
+        /** ExternalRunCreate */
+        ExternalRunCreate: {
+            /** Cases */
+            cases: components["schemas"]["ExternalCase"][];
+            /**
+             * Details
+             * @description Short notes: commit, branch.
+             */
+            details?: {
+                [key: string]: string;
+            };
+            /**
+             * Name
+             * @description What was checked, such as the test suite or commit.
+             */
+            name: string;
+            /**
+             * Source
+             * @default pytest
+             */
+            source: string;
+        };
+        /** ExternalRunOut */
+        ExternalRunOut: {
+            /** Cases */
+            cases: components["schemas"]["ExternalCase"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Details */
+            details: {
+                [key: string]: string;
+            };
+            /** Failed */
+            failed: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Passed */
+            passed: number;
+            /** Source */
+            source: string;
+        };
+        /** ExternalRunSummary */
+        ExternalRunSummary: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Details */
+            details: {
+                [key: string]: string;
+            };
+            /** Failed */
+            failed: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Passed */
+            passed: number;
+            /** Source */
+            source: string;
+        };
         /** FailureCount */
         FailureCount: {
             /** Count */
@@ -6679,6 +6804,13 @@ export interface components {
         Page_ExperimentOut_: {
             /** Items */
             items: components["schemas"]["ExperimentOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
+        /** Page[ExternalRunSummary] */
+        Page_ExternalRunSummary_: {
+            /** Items */
+            items: components["schemas"]["ExternalRunSummary"][];
             /** Next Cursor */
             next_cursor: string | null;
         };
@@ -11795,6 +11927,107 @@ export interface operations {
             };
         };
     };
+    list_results_api_v1_projects__project_id__external_results_get: {
+        parameters: {
+            query?: {
+                limit?: number | null;
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_ExternalRunSummary_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_results_api_v1_projects__project_id__external_results_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExternalRunCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExternalRunOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_result_api_v1_projects__project_id__external_results__result_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                result_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExternalRunOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     start_generation_api_v1_projects__project_id__generations_post: {
         parameters: {
             query?: never;
@@ -13487,6 +13720,39 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PromptOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_prompt_api_v1_projects__project_id__prompts__prompt_id__delete: {
+        parameters: {
+            query?: {
+                /** @description Must be true: deleting removes every version and label. */
+                confirm?: boolean;
+            };
+            header?: never;
+            path: {
+                prompt_id: string;
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

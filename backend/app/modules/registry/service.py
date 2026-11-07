@@ -250,8 +250,7 @@ class RegistryService:
         spec = self._spec(credential.provider)
         if not api_key:
             raise ValidationFailed(KEY_REQUIRED.format(provider=spec.display_name))
-        if spec.key_check_path:
-            await self._client(spec).validate(api_key, credential.base_url or self._default_base_url(spec) or "")
+        await self.check_key(credential.provider, api_key, credential.base_url)
         return {
             "encrypted_key": self._secrets.encrypt(api_key),
             "key_last4": key_last4(api_key),
