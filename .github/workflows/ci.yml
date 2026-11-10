@@ -1,8 +1,9 @@
-# CI calls `make ci` and nothing else, so what runs here is exactly what runs locally and
-# the two can never drift (ENGINEERING_STANDARDS 6, 8). This file only provides the
-# machine: the toolchains, dependency caches, and Postgres + Valkey as service containers,
+# CI runs the same `make` targets as `make ci`, split into parallel jobs so the whole thing takes about 4 minutes
+# instead of 15: lint and the small test suites, the backend tests in five shards, the frontend, and the images.
+# `make ci` runs the same four targets one after another locally (ENGINEERING_STANDARDS 6, 8), so the two can't
+# drift. This file only provides the machine: toolchains, caches, and Postgres + Valkey as service containers,
 # which the test suite finds through VERANO_TEST_DATABASE_URL / VERANO_TEST_VALKEY_URL.
-# Any other CI system needs the same three things and the same one command.
+# The last job, `ci`, passes only when every other job did.
 name: ci
 
 on:
@@ -15,9 +16,53 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  ci:
+  lint:
+    name: lint, types, CLI and SDK tests
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.19"
+          enable-cache: true
+          cache-dependency-glob: |
+            backend/uv.lock
+            cli/uv.lock
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.23.3"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: make ci-lint
+
+  backend:
+    name: backend tests (${{ matrix.name }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: teams
+            tests: tests/integration/teams
+          - name: traffic
+            tests: tests/integration/traffic
+          - name: evaluation and engine
+            tests: tests/integration/evaluation tests/integration/engine
+          - name: auth, datasets and gateway
+            tests: tests/integration/auth tests/integration/datasets tests/integration/gateway
+          # Everything not named above, so a new test folder is never left out of CI.
+          - name: unit and the rest
+            tests: >-
+              tests
+              --ignore=tests/integration/teams
+              --ignore=tests/integration/traffic
+              --ignore=tests/integration/evaluation
+              --ignore=tests/integration/engine
+              --ignore=tests/integration/auth
+              --ignore=tests/integration/datasets
+              --ignore=tests/integration/gateway
     services:
       postgres:
         image: postgres:16.15-alpine3.24
@@ -44,12 +89,45 @@ jobs:
         with:
           version: "0.12.19"
           enable-cache: true
-          cache-dependency-glob: |
-            backend/uv.lock
-            cli/uv.lock
+          cache-dependency-glob: backend/uv.lock
+      - run: make ci-backend TESTS="${{ matrix.tests }}"
+
+  frontend:
+    name: frontend tests and build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "22.23.3"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: make ci
+      - run: make ci-frontend
+
+  images:
+    name: build the images
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.19"
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - run: make ci-images
+
+  ci:
+    name: ci
+    if: always()
+    needs: [lint, backend, frontend, images]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - run: |
+          echo "lint=${{ needs.lint.result }} backend=${{ needs.backend.result }} frontend=${{ needs.frontend.result }} images=${{ needs.images.result }}"
+          test "${{ needs.lint.result }}" = "success"
+          test "${{ needs.backend.result }}" = "success"
+          test "${{ needs.frontend.result }}" = "success"
+          test "${{ needs.images.result }}" = "success"

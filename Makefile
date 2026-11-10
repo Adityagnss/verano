@@ -21,7 +21,7 @@ LOCAL_OLLAMA := http://ollama:11434
 FRONTEND := cd frontend &&
 OPENAPI := frontend/src/lib/api/openapi.json
 
-.PHONY: help env install builder base-images ci-offline up up-local down logs migrate migration test test-all test-sdk integrations lint fmt models bench api-compat api-client e2e ci hooks clean clean-all
+.PHONY: help env install builder base-images ci-lint ci-backend ci-frontend ci-images ci-offline up up-local down logs migrate migration test test-all test-sdk integrations lint fmt models bench api-compat api-client e2e ci hooks clean clean-all
 
 help: ## Show this list
 	@grep -E '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -101,17 +101,29 @@ e2e: env base-images ## Browser tests (Chromium, WebKit, Firefox) against the st
 	@$(MAKE) --no-print-directory clean
 	$(FRONTEND) npx playwright test
 
-ci: base-images ## The "CI green" gate: locked installs, lint, types, full tests (incl. migrations and the frontend's), builds, images (a running stack is moved onto the new images)
+ci: ci-lint ci-backend ci-frontend ci-images ## The "CI green" gate: locked installs, lint, types, full tests (incl. migrations and the frontend's), builds, images (a running stack is moved onto the new images)
+
+# CI runs these four as parallel jobs (the backend one in shards), and `make ci` runs them one after another,
+# so what runs on GitHub and what runs here are the same commands.
+ci-lint: ## Locked installs, lint, types, API compatibility, and the CLI and SDK tests
 	$(BACKEND) uv sync --frozen
 	$(CLI) uv sync --frozen
 	$(FRONTEND) npm ci --prefer-offline --no-audit --no-fund
 	$(MAKE) lint
 	$(MAKE) api-compat
-	$(BACKEND) uv run pytest -q
 	$(CLI) uv run pytest -q
 	$(MAKE) test-sdk
+
+ci-backend: ## The backend tests; TESTS="tests/unit tests/integration/auth" runs a part (CI shards them)
+	$(BACKEND) uv sync --frozen
+	$(BACKEND) uv run pytest -q $(TESTS)
+
+ci-frontend: ## The frontend's unit tests and production build
+	$(FRONTEND) npm ci --prefer-offline --no-audit --no-fund
 	$(FRONTEND) npm test
 	$(FRONTEND) npm run build
+
+ci-images: base-images ## Build the images (a running stack is moved onto them)
 	$(COMPOSE_BUILD) build
 	@if [ -n "$$($(COMPOSE) ps -q)" ]; then $(COMPOSE) up -d --wait --no-build; fi
 	@$(MAKE) --no-print-directory clean
