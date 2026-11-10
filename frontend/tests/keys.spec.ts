@@ -15,7 +15,7 @@ test("a new project can connect a provider and choose a model to test", async ({
   await page.getByLabel("Project name").fill("Support triage")
   await page.getByRole("button", { name: "Create project" }).click()
   await expect(page).toHaveURL(/\/projects\/[0-9a-f-]+\/keys$/)
-  await expect(page.getByRole("heading", { name: "Connect your model providers" })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Connect models", level: 1 })).toBeVisible()
 
   const mock = page.locator('[data-slot="card"]', { hasText: "Mock (development)" })
   await mock.getByRole("button", { name: "Connect" }).click()
@@ -25,9 +25,11 @@ test("a new project can connect a provider and choose a model to test", async ({
   const echo = page.getByRole("listitem").filter({ hasText: "Mock Echo" })
   await expect(echo).toContainText("$0.50 / $1.50")
   await echo.getByRole("checkbox").click()
-  await page.getByRole("button", { name: "Use 1 selected model" }).click()
+  await page.getByRole("button", { name: "Continue with 1 model" }).click()
   await expect(page.getByText("Selection saved.")).toBeVisible()
 
+  await expect(page).toHaveURL(/\/prompt$/)
+  await page.goBack()
   await page.reload()
   await expect(
     page.getByRole("listitem").filter({ hasText: "Mock Echo" }).getByRole("checkbox"),

@@ -27,7 +27,7 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   await expect(page.getByText(/Key saved\. Found \d+ chat models\./)).toBeVisible()
   await page.getByRole("listitem").filter({ hasText: "Mock Scripted" }).getByRole("checkbox").click()
   await page.getByRole("listitem").filter({ hasText: "Mock Echo" }).getByRole("checkbox").click()
-  await page.getByRole("button", { name: "Use 2 selected models" }).click()
+  await page.getByRole("button", { name: "Continue with 2 models" }).click()
   await expect(page.getByText("Selection saved.")).toBeVisible()
 
   await goToPage(page, /^Write your prompt/)

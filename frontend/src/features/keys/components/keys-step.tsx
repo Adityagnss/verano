@@ -5,6 +5,7 @@
  */
 "use client"
 
+import { useRouter } from "next/navigation"
 import { useCallback, useMemo, useState } from "react"
 import { toast } from "sonner"
 
@@ -13,9 +14,10 @@ import { ErrorMessage } from "@/components/common/error-message"
 import { PageActions } from "@/components/common/page-actions"
 import { Section } from "@/components/common/section"
 import { StatusBadge } from "@/components/common/status-badge"
-import { StepHeader } from "@/components/common/step-header"
+import { PageIntro } from "@/components/common/page-intro"
 import { Button } from "@/components/ui/button"
 import type { ProviderOut } from "@/lib/api/types"
+import { ALL_PROJECT_PAGES, projectHref } from "@/lib/nav"
 
 import { KEYS_COPY } from "../copy"
 import { useCredentials, useModels, useProviders, useSaveSelection } from "../hooks"
@@ -26,7 +28,11 @@ import { ProviderGrid } from "./provider-grid"
 import { SharedKeys } from "./shared-keys"
 import { SuggestedModels } from "./suggested-models"
 
+const PAGE = ALL_PROJECT_PAGES.find((p) => p.key === "keys")!
+const NEXT = ALL_PROJECT_PAGES.find((p) => p.key === "prompt")!
+
 export function KeysStep({ projectId }: { projectId: string }) {
+  const router = useRouter()
   const providers = useProviders()
   const credentials = useCredentials(projectId)
   const models = useModels(projectId)
@@ -72,21 +78,39 @@ export function KeysStep({ projectId }: { projectId: string }) {
     })
     setChanges(new Map())
     toast.success(KEYS_COPY.saved)
+    router.push(projectHref(projectId, NEXT))
   }
 
   const unknownPrice = (models.data ?? []).some((m) => selected.has(m.id) && !m.price_known)
   return (
     <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-6">
-      <StepHeader
-        projectId={projectId}
-        step="keys"
-        title={KEYS_COPY.title}
-        description={KEYS_COPY.subtitle}
-        howItWorks={KEYS_COPY.howItWorks}
+      <PageIntro
+        storageKey="keys"
+        title={PAGE.label}
+        what={KEYS_COPY.intro.what}
+        whenToUse={KEYS_COPY.intro.whenToUse}
+        youGet={KEYS_COPY.intro.youGet}
+        learnMore="keys"
+        hasContent={(credentials.data?.length ?? 0) > 0}
+        primaryAction={
+          (credentials.data?.length ?? 0) === 0 ? (
+            <Button
+              size="lg"
+              onClick={() => document.getElementById("providers")?.scrollIntoView({ behavior: "smooth" })}
+            >
+              {KEYS_COPY.intro.connectFirst}
+            </Button>
+          ) : null
+        }
       />
       <ErrorMessage error={providers.error ?? credentials.error ?? models.error} />
+      <div id="providers" className="scroll-mt-20" />
       <Section number={1} title={KEYS_COPY.providersHeading} description={KEYS_COPY.providersDescription}>
-        <ProviderGrid providers={providers.data ?? []} onAdd={setAdding} />
+        <ProviderGrid
+          providers={providers.data ?? []}
+          credentials={credentials.data ?? []}
+          onAdd={setAdding}
+        />
         <SharedKeys projectId={projectId} providerNames={providerNames} />
       </Section>
       <Section
@@ -143,7 +167,7 @@ export function KeysStep({ projectId }: { projectId: string }) {
           onClick={() => void saveSelection().catch(() => undefined)}
           disabled={selected.size === 0 || save.isPending}
         >
-          {KEYS_COPY.useSelected(selected.size)}
+          {KEYS_COPY.continueWith(selected.size)}
         </Button>
       </PageActions>
       <AddKeyDialog projectId={projectId} provider={adding} onClose={() => setAdding(null)} />
