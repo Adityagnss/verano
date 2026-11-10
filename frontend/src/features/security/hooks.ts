@@ -55,6 +55,20 @@ export function useReport(projectId: string, packId: string | null, experimentId
   })
 }
 
+/** The CI gate for one run: the minimum pass rate and what falls below it. */
+export function useGate(projectId: string, packId: string | null, experimentId: string | null) {
+  return useQuery({
+    queryKey: ["projects", projectId, "security", "gate", packId, experimentId],
+    enabled: packId !== null && experimentId !== null,
+    queryFn: () =>
+      call(() =>
+        api.GET("/api/v1/projects/{project_id}/security/packs/{pack_id}/gate", {
+          params: { ...packPath(projectId, packId ?? ""), query: { experiment_id: experimentId ?? "" } },
+        }),
+      ),
+  })
+}
+
 function useRefresh(projectId: string) {
   const queryClient = useQueryClient()
   return () => queryClient.invalidateQueries({ queryKey: ["projects", projectId] })
