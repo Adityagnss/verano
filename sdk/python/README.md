@@ -10,7 +10,7 @@ pip install verano-sdk
 ```python
 from verano_sdk import Verano
 
-verano = Verano()   # reads VERANO_URL, VERANO_API_TOKEN, VERANO_PROJECT_ID
+verano = Verano()  # reads VERANO_URL, VERANO_API_TOKEN, VERANO_PROJECT_ID
 prompt = verano.prompt("support-bot", label="production")
 system, user = prompt.render(question="Where is my order?")
 print(prompt.version, prompt.from_cache)

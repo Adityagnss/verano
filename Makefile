@@ -21,7 +21,7 @@ LOCAL_OLLAMA := http://ollama:11434
 FRONTEND := cd frontend &&
 OPENAPI := frontend/src/lib/api/openapi.json
 
-.PHONY: help env install builder base-images ci-offline up up-local down logs migrate migration test test-all lint fmt models bench api-compat api-client e2e ci hooks clean clean-all
+.PHONY: help env install builder base-images ci-offline up up-local down logs migrate migration test test-all test-sdk lint fmt models bench api-compat api-client e2e ci hooks clean clean-all
 
 help: ## Show this list
 	@grep -E '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -66,6 +66,10 @@ test: ## Run only the tests affected by your changes
 test-all: ## Run the full test suite (phase checkpoints)
 	$(BACKEND) uv run pytest -q
 
+test-sdk: ## SDK tests: Python (standard library only, run in the CLI's environment) and TypeScript (the frontend's vitest)
+	cd sdk/python && uv run --project ../../cli --frozen pytest -q
+	cd sdk/typescript && ../../frontend/node_modules/.bin/vitest run --globals
+
 lint: ## Backend and CLI ruff + format check + mypy, frontend eslint + prettier + tsc
 	$(BACKEND) uv run ruff check . ../scripts && uv run ruff format --check . ../scripts && uv run mypy app tests benchmarks ../scripts
 	$(CLI) uv run ruff check . && uv run ruff format --check . && uv run mypy src tests
@@ -102,6 +106,7 @@ ci: base-images ## The "CI green" gate: locked installs, lint, types, full tests
 	$(MAKE) api-compat
 	$(BACKEND) uv run pytest -q
 	$(CLI) uv run pytest -q
+	$(MAKE) test-sdk
 	$(FRONTEND) npm test
 	$(FRONTEND) npm run build
 	$(COMPOSE_BUILD) build
