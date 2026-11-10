@@ -21,7 +21,7 @@ LOCAL_OLLAMA := http://ollama:11434
 FRONTEND := cd frontend &&
 OPENAPI := frontend/src/lib/api/openapi.json
 
-.PHONY: help env install builder base-images ci-offline up up-local down logs migrate migration test test-all test-sdk lint fmt models bench api-compat api-client e2e ci hooks clean clean-all
+.PHONY: help env install builder base-images ci-offline up up-local down logs migrate migration test test-all test-sdk integrations lint fmt models bench api-compat api-client e2e ci hooks clean clean-all
 
 help: ## Show this list
 	@grep -E '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -65,6 +65,9 @@ test: ## Run only the tests affected by your changes
 
 test-all: ## Run the full test suite (phase checkpoints)
 	$(BACKEND) uv run pytest -q
+
+integrations: ## Check docs/integrations/registry.yaml and regenerate the README block and docs/integrations/README.md
+	cd backend && PYTHONPATH=. uv run python ../scripts/integrations.py check && PYTHONPATH=. uv run python ../scripts/integrations.py write
 
 test-sdk: ## SDK tests: Python (standard library only, run in the CLI's environment) and TypeScript (the frontend's vitest)
 	cd sdk/python && uv run --project ../../cli --frozen pytest -q
