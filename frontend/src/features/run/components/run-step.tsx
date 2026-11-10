@@ -12,7 +12,7 @@ import { EmptyState } from "@/components/common/empty-state"
 import { ErrorMessage } from "@/components/common/error-message"
 import { PageActions } from "@/components/common/page-actions"
 import { Section } from "@/components/common/section"
-import { StepHeader } from "@/components/common/step-header"
+import { PageIntro } from "@/components/common/page-intro"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
@@ -28,6 +28,7 @@ import { DatasetWarnings } from "@/components/common/dataset-warnings"
 import { useCurrentVersion } from "@/features/tests/hooks"
 import type { ModelProfileOut } from "@/lib/api/types"
 import { formatCost } from "@/lib/format"
+import { ALL_PROJECT_PAGES } from "@/lib/nav"
 import { useDebounced } from "@/lib/use-debounced"
 
 import { RUN_COPY } from "../copy"
@@ -50,6 +51,8 @@ import { extrasBody, NO_EXTRAS, type RunExtras } from "../extras"
 import { ProgressCard } from "./progress-card"
 import { RunExtrasPanel } from "./run-extras"
 import { UpdateChecks } from "./update-checks"
+
+const PAGE = ALL_PROJECT_PAGES.find((p) => p.key === "run")!
 
 function Money({ value }: { value: string | null | undefined }) {
   return value === null || value === undefined ? (
@@ -186,12 +189,14 @@ export function RunStep({ projectId }: { projectId: string }) {
     setRows({ ...rows, [m.id]: { ...(rows[m.id] ?? defaultRow(m)), [field]: value } })
   return (
     <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-6">
-      <StepHeader
-        projectId={projectId}
-        step="run"
-        title={RUN_COPY.title}
-        description={RUN_COPY.subtitle}
-        howItWorks={RUN_COPY.howItWorks}
+      <PageIntro
+        storageKey="run"
+        title={PAGE.label}
+        what={RUN_COPY.what}
+        whenToUse={RUN_COPY.whenToUse}
+        youGet={RUN_COPY.youGet}
+        learnMore="run"
+        hasContent={Boolean(latest)}
       />
       <ErrorMessage error={models.error ?? version.error ?? experiments.error} />
       <DatasetWarnings projectId={projectId} />
@@ -209,195 +214,22 @@ export function RunStep({ projectId }: { projectId: string }) {
           {estimate.data?.total_cost ? <Money value={estimate.data.total_cost} /> : null}
         </p>
       </div>
-      <Section
-        number={1}
-        title={RUN_COPY.modelsHeading}
-        description={`${RUN_COPY.modelsHint} ${RUN_COPY.modelsHint2}`}
-      >
-        <div className="grid gap-5 md:grid-cols-2">
-          <PromptChooser
-            projectId={projectId}
-            value={pickedPrompt}
-            onChange={(id) => {
-              setPickedPrompt(id)
-              setPickedVersion("")
-            }}
-          />
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="prompt-version">{RUN_COPY.versionLabel}</Label>
-            <NativeSelect
-              id="prompt-version"
-              value={pickedVersion}
-              onChange={(e) => setPickedVersion(e.target.value)}
-              className="h-9 max-w-md"
-            >
-              {(versions.data ?? []).map((v, i) => (
-                <option key={v.id} value={i === 0 ? "" : v.id}>
-                  {i === 0
-                    ? RUN_COPY.versionLatest(v.version)
-                    : RUN_COPY.versionOption(v.version, v.change_reason)}
-                </option>
-              ))}
-            </NativeSelect>
-            <p className="text-text-muted text-xs">{RUN_COPY.versionHint}</p>
-          </div>
-          <fieldset className="flex flex-col gap-1.5">
-            <legend className="mb-1.5 text-sm font-medium">{RUN_COPY.randomnessLabel}</legend>
-            {(["repeatable", "default"] as const).map((mode) => (
-              <label key={mode} className="flex items-start gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="randomness"
-                  className="accent-lagoon mt-1"
-                  checked={randomness === mode}
-                  onChange={() => chooseRandomness(mode)}
-                />
-                <span>
-                  <span className="font-medium">{RUN_COPY.randomness[mode].label}</span>
-                  <span className="text-text-muted block text-xs">{RUN_COPY.randomness[mode].hint}</span>
-                </span>
-              </label>
-            ))}
-            {randomness === "custom" ? (
-              <p className="text-text-muted text-xs">{RUN_COPY.randomness.custom}</p>
-            ) : null}
-            <p className="text-text-muted text-xs">{RUN_COPY.replicabilityHint}</p>
-          </fieldset>
-        </div>
-        <div className="flex max-w-xs flex-col gap-1.5">
-          <Label htmlFor="runs-all">{RUN_COPY.runsAll}</Label>
-          <Input
-            id="runs-all"
-            type="number"
-            min={1}
-            max={MAX_RUNS}
-            value={runsAll}
-            onChange={(e) => setAllRuns(e.target.value)}
-          />
-          <p className="text-text-muted text-xs">{RUN_COPY.runsAllHint}</p>
-        </div>
-        <details open={anyWrong || undefined} className="group">
-          <summary className="text-accent cursor-pointer text-sm">{RUN_COPY.expert}</summary>
-          <div className="mt-3">
-            <div className="border-border overflow-hidden rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-16">{RUN_COPY.include}</TableHead>
-                    <TableHead>{RUN_COPY.columns.model}</TableHead>
-                    <TableHead className="w-24">{RUN_COPY.columns.runs}</TableHead>
-                    <TableHead className="w-32">{RUN_COPY.columns.temperature}</TableHead>
-                    <TableHead className="w-36">{RUN_COPY.columns.maxTokens}</TableHead>
-                    <TableHead className="w-44">{RUN_COPY.advanced}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {selected.map((m) => {
-                    const row = rows[m.id] ?? defaultRow(m)
-                    const wrong = problems(m, row)
-                    const heads = warning(m, row)
-                    const count = advancedCount(m, row)
-                    return (
-                      <Fragment key={m.id}>
-                        <TableRow>
-                          <TableCell>
-                            <Checkbox
-                              checked={row.include}
-                              onCheckedChange={(checked) => set(m, "include", checked)}
-                              aria-label={m.display_name}
-                            />
-                          </TableCell>
-                          <TableCell>{m.display_name}</TableCell>
-                          <TableCell>
-                            <Input
-                              type="number"
-                              min={1}
-                              max={MAX_RUNS}
-                              value={row.runs}
-                              aria-label={`${RUN_COPY.columns.runs} ${m.display_name}`}
-                              aria-invalid={wrong.runs ? true : undefined}
-                              title={wrong.runs}
-                              onChange={(e) => set(m, "runs", e.target.value)}
-                            />
-                          </TableCell>
-                          {(["temperature", "max_tokens"] as const).map((name) => (
-                            <TableCell key={name}>
-                              <Input
-                                type="number"
-                                step={name === "temperature" ? "0.1" : "1"}
-                                min={m.parameters?.[name]?.min ?? undefined}
-                                max={m.parameters?.[name]?.max ?? undefined}
-                                disabled={!supports(m, name)}
-                                title={supports(m, name) ? wrong[name] : RUN_COPY.unsupported}
-                                aria-label={`${RUN_COPY.columns[name === "temperature" ? "temperature" : "maxTokens"]} ${m.display_name}`}
-                                aria-invalid={wrong[name] ? true : undefined}
-                                value={row[name]}
-                                onChange={(e) => set(m, name, e.target.value)}
-                              />
-                            </TableCell>
-                          ))}
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              aria-expanded={open[m.id] ?? false}
-                              onClick={() => setOpen({ ...open, [m.id]: !open[m.id] })}
-                            >
-                              {RUN_COPY.advancedSet(count)} {open[m.id] ? "▴" : "▾"}
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                        {open[m.id] ? (
-                          <TableRow>
-                            <TableCell colSpan={6} className="bg-subtle whitespace-normal">
-                              <AdvancedFields
-                                model={m}
-                                row={row}
-                                wrong={wrong}
-                                onChange={(f, v) => set(m, f, v)}
-                              />
-                            </TableCell>
-                          </TableRow>
-                        ) : null}
-                        {Object.keys(wrong).length > 0 || heads ? (
-                          <TableRow>
-                            <TableCell colSpan={6} className="py-1 text-xs">
-                              {Object.entries(wrong).map(([field, message]) => (
-                                <p key={field} className="text-danger-strong">
-                                  {m.display_name}: {field.replaceAll("_", " ")} — {message}
-                                </p>
-                              ))}
-                              {heads ? <p className="text-warning-strong">{heads}</p> : null}
-                            </TableCell>
-                          </TableRow>
-                        ) : null}
-                      </Fragment>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        </details>
-      </Section>
-      <Section number={2} title={RUN_COPY.previewHeading} description={RUN_COPY.previewHint}>
+      <Section number={1} title={RUN_COPY.settingsHeading} description={RUN_COPY.settingsHint}>
         <div className="grid gap-6 md:grid-cols-2">
           <div className="flex flex-col gap-4">
-            <JudgePicker projectId={projectId} id="judge" picked={pickedJudge} onPick={setPickedJudge} />
-            <RunExtrasPanel
-              projectId={projectId}
-              chosen={selected.filter((m) => (rows[m.id] ?? defaultRow(m)).include).map((m) => m.id)}
-              value={extras}
-              onChange={setExtras}
-            />
-            {version.data?.evaluator_set_version_id ? (
-              <UpdateChecks
-                projectId={projectId}
-                versionId={extras.evaluatorVersionId ?? version.data.evaluator_set_version_id}
-                onApplied={(id) => setExtras({ ...extras, evaluatorVersionId: id })}
+            <div className="flex w-full flex-col gap-1.5 sm:max-w-xs">
+              <Label htmlFor="runs-all">{RUN_COPY.runsAll}</Label>
+              <Input
+                id="runs-all"
+                type="number"
+                min={1}
+                max={MAX_RUNS}
+                value={runsAll}
+                onChange={(e) => setAllRuns(e.target.value)}
               />
-            ) : null}
-            <div className="flex max-w-xs flex-col gap-1.5">
+              <p className="text-text-muted text-xs">{RUN_COPY.runsAllHint}</p>
+            </div>
+            <div className="flex w-full flex-col gap-1.5 sm:max-w-xs">
               <Label htmlFor="budget">{RUN_COPY.budget}</Label>
               <Input
                 id="budget"
@@ -410,7 +242,7 @@ export function RunStep({ projectId }: { projectId: string }) {
               <p className="text-text-muted text-xs">{RUN_COPY.budgetHint}</p>
             </div>
           </div>
-          <div className="bg-subtle ring-border rounded-lg p-4 ring-1">
+          <div className="bg-subtle ring-border rounded-lg p-4 ring-1" aria-live="polite">
             <div className="flex flex-col gap-1.5 text-sm">
               <ErrorMessage error={estimate.error} />
               {estimate.data ? (
@@ -442,9 +274,182 @@ export function RunStep({ projectId }: { projectId: string }) {
             </div>
           </div>
         </div>
+        <details open={anyWrong || undefined} className="group">
+          <summary className="text-accent min-h-10 cursor-pointer py-2 text-sm">{RUN_COPY.expert}</summary>
+          <div className="mt-3 flex flex-col gap-6">
+            <div className="grid gap-5 md:grid-cols-2">
+              <PromptChooser
+                projectId={projectId}
+                value={pickedPrompt}
+                onChange={(id) => {
+                  setPickedPrompt(id)
+                  setPickedVersion("")
+                }}
+              />
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="prompt-version">{RUN_COPY.versionLabel}</Label>
+                <NativeSelect
+                  id="prompt-version"
+                  value={pickedVersion}
+                  onChange={(e) => setPickedVersion(e.target.value)}
+                  className="h-9 max-w-md"
+                >
+                  {(versions.data ?? []).map((v, i) => (
+                    <option key={v.id} value={i === 0 ? "" : v.id}>
+                      {i === 0
+                        ? RUN_COPY.versionLatest(v.version)
+                        : RUN_COPY.versionOption(v.version, v.change_reason)}
+                    </option>
+                  ))}
+                </NativeSelect>
+                <p className="text-text-muted text-xs">{RUN_COPY.versionHint}</p>
+              </div>
+              <fieldset className="flex flex-col gap-1.5">
+                <legend className="mb-1.5 text-sm font-medium">{RUN_COPY.randomnessLabel}</legend>
+                {(["repeatable", "default"] as const).map((mode) => (
+                  <label key={mode} className="flex items-start gap-2 text-sm">
+                    <input
+                      type="radio"
+                      name="randomness"
+                      className="accent-lagoon mt-1"
+                      checked={randomness === mode}
+                      onChange={() => chooseRandomness(mode)}
+                    />
+                    <span>
+                      <span className="font-medium">{RUN_COPY.randomness[mode].label}</span>
+                      <span className="text-text-muted block text-xs">{RUN_COPY.randomness[mode].hint}</span>
+                    </span>
+                  </label>
+                ))}
+                {randomness === "custom" ? (
+                  <p className="text-text-muted text-xs">{RUN_COPY.randomness.custom}</p>
+                ) : null}
+                <p className="text-text-muted text-xs">{RUN_COPY.replicabilityHint}</p>
+              </fieldset>
+            </div>
+            <div className="flex flex-col gap-4">
+              <JudgePicker projectId={projectId} id="judge" picked={pickedJudge} onPick={setPickedJudge} />
+              <RunExtrasPanel
+                projectId={projectId}
+                chosen={selected.filter((m) => (rows[m.id] ?? defaultRow(m)).include).map((m) => m.id)}
+                value={extras}
+                onChange={setExtras}
+              />
+              {version.data?.evaluator_set_version_id ? (
+                <UpdateChecks
+                  projectId={projectId}
+                  versionId={extras.evaluatorVersionId ?? version.data.evaluator_set_version_id}
+                  onApplied={(id) => setExtras({ ...extras, evaluatorVersionId: id })}
+                />
+              ) : null}
+            </div>
+            <div className="overflow-x-auto">
+              <div className="mt-3">
+                <div className="border-border overflow-hidden rounded-lg border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-16">{RUN_COPY.include}</TableHead>
+                        <TableHead>{RUN_COPY.columns.model}</TableHead>
+                        <TableHead className="w-24">{RUN_COPY.columns.runs}</TableHead>
+                        <TableHead className="w-32">{RUN_COPY.columns.temperature}</TableHead>
+                        <TableHead className="w-36">{RUN_COPY.columns.maxTokens}</TableHead>
+                        <TableHead className="w-44">{RUN_COPY.advanced}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selected.map((m) => {
+                        const row = rows[m.id] ?? defaultRow(m)
+                        const wrong = problems(m, row)
+                        const heads = warning(m, row)
+                        const count = advancedCount(m, row)
+                        return (
+                          <Fragment key={m.id}>
+                            <TableRow>
+                              <TableCell>
+                                <Checkbox
+                                  checked={row.include}
+                                  onCheckedChange={(checked) => set(m, "include", checked)}
+                                  aria-label={m.display_name}
+                                />
+                              </TableCell>
+                              <TableCell>{m.display_name}</TableCell>
+                              <TableCell>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  max={MAX_RUNS}
+                                  value={row.runs}
+                                  aria-label={`${RUN_COPY.columns.runs} ${m.display_name}`}
+                                  aria-invalid={wrong.runs ? true : undefined}
+                                  title={wrong.runs}
+                                  onChange={(e) => set(m, "runs", e.target.value)}
+                                />
+                              </TableCell>
+                              {(["temperature", "max_tokens"] as const).map((name) => (
+                                <TableCell key={name}>
+                                  <Input
+                                    type="number"
+                                    step={name === "temperature" ? "0.1" : "1"}
+                                    min={m.parameters?.[name]?.min ?? undefined}
+                                    max={m.parameters?.[name]?.max ?? undefined}
+                                    disabled={!supports(m, name)}
+                                    title={supports(m, name) ? wrong[name] : RUN_COPY.unsupported}
+                                    aria-label={`${RUN_COPY.columns[name === "temperature" ? "temperature" : "maxTokens"]} ${m.display_name}`}
+                                    aria-invalid={wrong[name] ? true : undefined}
+                                    value={row[name]}
+                                    onChange={(e) => set(m, name, e.target.value)}
+                                  />
+                                </TableCell>
+                              ))}
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  aria-expanded={open[m.id] ?? false}
+                                  onClick={() => setOpen({ ...open, [m.id]: !open[m.id] })}
+                                >
+                                  {RUN_COPY.advancedSet(count)} {open[m.id] ? "▴" : "▾"}
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                            {open[m.id] ? (
+                              <TableRow>
+                                <TableCell colSpan={6} className="bg-subtle whitespace-normal">
+                                  <AdvancedFields
+                                    model={m}
+                                    row={row}
+                                    wrong={wrong}
+                                    onChange={(f, v) => set(m, f, v)}
+                                  />
+                                </TableCell>
+                              </TableRow>
+                            ) : null}
+                            {Object.keys(wrong).length > 0 || heads ? (
+                              <TableRow>
+                                <TableCell colSpan={6} className="py-1 text-xs">
+                                  {Object.entries(wrong).map(([field, message]) => (
+                                    <p key={field} className="text-danger-strong">
+                                      {m.display_name}: {field.replaceAll("_", " ")} — {message}
+                                    </p>
+                                  ))}
+                                  {heads ? <p className="text-warning-strong">{heads}</p> : null}
+                                </TableCell>
+                              </TableRow>
+                            ) : null}
+                          </Fragment>
+                        )
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </details>
       </Section>
       {latest ? (
-        <Section number={3} title={RUN_COPY.runningHeading} description={RUN_COPY.runningHint}>
+        <Section number={2} title={RUN_COPY.runningHeading} description={RUN_COPY.runningHint}>
           <ProgressCard
             projectId={projectId}
             experiment={latest}
@@ -457,6 +462,11 @@ export function RunStep({ projectId }: { projectId: string }) {
         summary={
           <>
             <ErrorMessage error={start.error ?? cancel.error} />
+            {estimate.data ? (
+              <span className="font-medium">
+                {RUN_COPY.total}: <Money value={estimate.data.total_cost} />{" "}
+              </span>
+            ) : null}
             {busy ? <span>{RUN_COPY.busy}</span> : null}
           </>
         }

@@ -11,6 +11,7 @@ import { useMemo, useState } from "react"
 import { EmptyState } from "@/components/common/empty-state"
 import { ErrorMessage } from "@/components/common/error-message"
 import { StatusBadge, type Tone } from "@/components/common/status-badge"
+import { useBreakpoint } from "@/components/common/use-breakpoint"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { ItemOut } from "@/lib/api/types"
@@ -52,14 +53,26 @@ type Props = { projectId: string; versionId: string; items: ItemOut[]; frozen: b
 export function CaseTable({ projectId, versionId, items, frozen }: Props) {
   const actions = useVersionActions(projectId, versionId)
   const [source, setSource] = useState<string | null>(null)
+  const [status, setStatus] = useState<"all" | "draft" | "approved">("all")
   const [editing, setEditing] = useState<ItemOut | null>(null)
+  const { atLeast } = useBreakpoint()
+  const wide = atLeast("md")
+  const allDrafts = useMemo(
+    () => [...new Set(items.filter((i) => i.review_status === "draft").map((i) => i.category))],
+    [items],
+  )
   const groups = useMemo(() => {
     const byCategory = new Map<string, ItemOut[]>()
-    for (const item of items.filter((i) => source === null || i.source === source)) {
+    const shown = items.filter(
+      (i) =>
+        (source === null || i.source === source) &&
+        (status === "all" || (status === "draft") === (i.review_status === "draft")),
+    )
+    for (const item of shown) {
       byCategory.set(item.category, [...(byCategory.get(item.category) ?? []), item])
     }
     return [...byCategory.entries()]
-  }, [items, source])
+  }, [items, source, status])
 
   if (items.length === 0) return <EmptyState title={TESTS_COPY.tableHeading} description={TESTS_COPY.empty} />
   const error =
@@ -70,7 +83,7 @@ export function CaseTable({ projectId, versionId, items, frozen }: Props) {
   return (
     <div className="flex flex-col gap-4">
       <div
-        className="bg-subtle ring-border inline-flex self-start rounded-lg p-1 ring-1"
+        className="bg-subtle ring-border flex flex-wrap self-start rounded-lg p-1 ring-1"
         role="group"
         aria-label="Filter by source"
       >
@@ -81,7 +94,7 @@ export function CaseTable({ projectId, versionId, items, frozen }: Props) {
             aria-pressed={source === value}
             onClick={() => setSource(value)}
             className={cn(
-              "rounded-md px-3 py-1 text-sm transition-colors",
+              "min-h-10 rounded-md px-3 py-1 text-sm transition-colors sm:min-h-8",
               source === value
                 ? "bg-card text-foreground ring-border font-medium ring-1"
                 : "text-text-secondary hover:text-foreground",
@@ -91,93 +104,188 @@ export function CaseTable({ projectId, versionId, items, frozen }: Props) {
           </button>
         ))}
       </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <div
+          className="bg-subtle ring-border flex flex-wrap rounded-lg p-1 ring-1"
+          role="group"
+          aria-label={TESTS_COPY.statusFilter}
+        >
+          {(
+            [
+              ["all", TESTS_COPY.filterAll],
+              ["draft", TESTS_COPY.filterNeedsReview],
+              ["approved", TESTS_COPY.filterReviewed],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={status === value}
+              onClick={() => setStatus(value)}
+              className={cn(
+                "min-h-10 rounded-md px-3 py-1 text-sm transition-colors sm:min-h-8",
+                status === value
+                  ? "bg-card text-foreground ring-border font-medium ring-1"
+                  : "text-text-secondary hover:text-foreground",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {!frozen && allDrafts.length > 1 ? (
+          <Button
+            variant="outline"
+            className="min-h-10"
+            disabled={actions.approveDrafts.isPending}
+            onClick={() => {
+              void (async () => {
+                for (const category of allDrafts) await actions.approveDrafts.mutateAsync(category)
+              })().catch(() => undefined)
+            }}
+          >
+            {TESTS_COPY.approveAllDrafts(items.filter((i) => i.review_status === "draft").length)}
+          </Button>
+        ) : null}
+      </div>
       <ErrorMessage error={error} />
+      {groups.length === 0 ? <p className="text-text-muted text-sm">{TESTS_COPY.noMatches}</p> : null}
       {groups.map(([category, rows]) => {
         const drafts = rows.filter((r) => r.review_status === "draft").length
         return (
           <section key={category} className="border-border overflow-hidden rounded-lg border">
-            <header className="bg-subtle border-border flex items-center gap-3 border-b px-3 py-2">
+            <header className="bg-subtle border-border flex flex-wrap items-center gap-3 border-b px-3 py-2">
               <h4 className="text-sm font-semibold">{TESTS_COPY.categories[category] ?? category}</h4>
               <StatusBadge tone="neutral">{rows.length}</StatusBadge>
               {drafts ? <StatusBadge tone="warning">{TESTS_COPY.draftCount(drafts)}</StatusBadge> : null}
               <div className="ml-auto flex gap-2">
                 {!frozen && drafts > 0 ? (
-                  <Button size="sm" variant="outline" onClick={() => actions.approveDrafts.mutate(category)}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="min-h-10 sm:min-h-0"
+                    onClick={() => actions.approveDrafts.mutate(category)}
+                  >
                     {TESTS_COPY.approveCategory(drafts)}
                   </Button>
                 ) : null}
                 {!frozen && REGENERABLE.has(category) ? (
-                  <Button size="sm" variant="ghost" onClick={() => actions.regenerate.mutate(category)}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="min-h-10 sm:min-h-0"
+                    onClick={() => actions.regenerate.mutate(category)}
+                  >
                     <RefreshCw />
                     {TESTS_COPY.regenerate}
                   </Button>
                 ) : null}
               </div>
             </header>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-1/2">Input</TableHead>
-                  <TableHead>{TESTS_COPY.expected}</TableHead>
-                  <TableHead className="w-56" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="align-top whitespace-normal">
-                      <p className="line-clamp-3 font-mono text-xs">{inputText(item)}</p>
-                      {item.context.length ? (
-                        <p
-                          className="text-muted-foreground mt-1 line-clamp-2 text-xs"
-                          title={String(item.context[0])}
-                        >
-                          {TESTS_COPY.context}: {String(item.context[0])}
-                        </p>
-                      ) : null}
-                    </TableCell>
-                    <TableCell className="align-top whitespace-normal">
-                      <Answer item={item} />
-                    </TableCell>
-                    <TableCell className="align-top">
-                      <div className="flex flex-nowrap items-center justify-end gap-1">
-                        <StatusBadge tone={SOURCE_TONE[item.source]}>
-                          {TESTS_COPY.sources[item.source]}
-                        </StatusBadge>
-                        {item.review_status === "draft" ? (
-                          <StatusBadge tone="warning">{TESTS_COPY.draft}</StatusBadge>
-                        ) : (
-                          <CircleCheck
-                            className="text-success size-4"
-                            aria-label={TESTS_COPY.approvedBadge}
-                          />
-                        )}
-                        {frozen ? null : (
-                          <>
-                            <Button
-                              size="icon-xs"
-                              variant="ghost"
-                              aria-label={TESTS_COPY.edit}
-                              onClick={() => setEditing(item)}
-                            >
-                              <Pencil />
-                            </Button>
-                            <Button
-                              size="icon-xs"
-                              variant="ghost"
-                              aria-label={TESTS_COPY.delete}
-                              onClick={() => actions.deleteItem.mutate(item.id)}
-                            >
-                              <Trash2 />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
+            {wide ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-1/2">Input</TableHead>
+                    <TableHead>{TESTS_COPY.expected}</TableHead>
+                    <TableHead className="w-56" />
                   </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="align-top whitespace-normal">
+                        <p className="line-clamp-3 font-mono text-xs">{inputText(item)}</p>
+                        {item.context.length ? (
+                          <p
+                            className="text-muted-foreground mt-1 line-clamp-2 text-xs"
+                            title={String(item.context[0])}
+                          >
+                            {TESTS_COPY.context}: {String(item.context[0])}
+                          </p>
+                        ) : null}
+                      </TableCell>
+                      <TableCell className="align-top whitespace-normal">
+                        <Answer item={item} />
+                      </TableCell>
+                      <TableCell className="align-top">
+                        <div className="flex flex-nowrap items-center justify-end gap-1">
+                          <StatusBadge tone={SOURCE_TONE[item.source]}>
+                            {TESTS_COPY.sources[item.source]}
+                          </StatusBadge>
+                          {item.review_status === "draft" ? (
+                            <StatusBadge tone="warning">{TESTS_COPY.draft}</StatusBadge>
+                          ) : (
+                            <CircleCheck
+                              className="text-success size-4"
+                              aria-label={TESTS_COPY.approvedBadge}
+                            />
+                          )}
+                          {frozen ? null : (
+                            <>
+                              <Button
+                                size="icon-xs"
+                                variant="ghost"
+                                aria-label={TESTS_COPY.edit}
+                                onClick={() => setEditing(item)}
+                              >
+                                <Pencil />
+                              </Button>
+                              <Button
+                                size="icon-xs"
+                                variant="ghost"
+                                aria-label={TESTS_COPY.delete}
+                                onClick={() => actions.deleteItem.mutate(item.id)}
+                              >
+                                <Trash2 />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <ul className="divide-border divide-y">
+                {rows.map((item) => (
+                  <li key={item.id} className="flex flex-col gap-2 p-3">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <StatusBadge tone={SOURCE_TONE[item.source]}>
+                        {TESTS_COPY.sources[item.source]}
+                      </StatusBadge>
+                      {item.review_status === "draft" ? (
+                        <StatusBadge tone="warning">{TESTS_COPY.draft}</StatusBadge>
+                      ) : (
+                        <StatusBadge tone="success">{TESTS_COPY.approvedBadge}</StatusBadge>
+                      )}
+                    </div>
+                    <p className="line-clamp-4 font-mono text-xs break-words">{inputText(item)}</p>
+                    <div>
+                      <p className="text-text-muted text-xs">{TESTS_COPY.expected}</p>
+                      <Answer item={item} />
+                    </div>
+                    {frozen ? null : (
+                      <div className="flex gap-2">
+                        <Button variant="outline" className="min-h-10" onClick={() => setEditing(item)}>
+                          <Pencil />
+                          {TESTS_COPY.edit}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="min-h-10"
+                          onClick={() => actions.deleteItem.mutate(item.id)}
+                        >
+                          <Trash2 />
+                          {TESTS_COPY.delete}
+                        </Button>
+                      </div>
+                    )}
+                  </li>
                 ))}
-              </TableBody>
-            </Table>
+              </ul>
+            )}
           </section>
         )
       })}

@@ -1,5 +1,17 @@
 /** User-facing text for the Test Cases step. */
 export const TESTS_COPY = {
+  what: "Check the questions the models will be tested on, and the answers they should give.",
+  whenToUse: "you have a prompt and, optionally, your own examples",
+  youGet: "an approved set of test cases, 70% to improve on and 30% held back to check the result",
+  summaryLabel: "Test case summary",
+  heldBack: "Held back",
+  advanced: "Advanced: spending limit",
+  continueToRun: "Continue: run the test",
+  statusFilter: "Filter by status",
+  filterNeedsReview: "Need review",
+  filterReviewed: "Reviewed",
+  approveAllDrafts: (n: number) => `Approve all ${n} drafts to review`,
+  noMatches: "No test cases match this filter.",
   title: "Create and approve your test cases",
   subtitle:
     "Verano first describes the task in a short card for you to confirm, then writes test cases for whatever your data doesn't cover. Review them, then approve.",

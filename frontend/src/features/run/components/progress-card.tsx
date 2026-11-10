@@ -5,6 +5,9 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 
 import { StatusBadge, type Tone } from "@/components/common/status-badge"
+import { AnimatedCircularProgressBar } from "@/components/ui/animated-circular-progress-bar"
+import { AnimatedList } from "@/components/ui/animated-list"
+import { BorderBeam } from "@/components/ui/border-beam"
 import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import type { ExperimentOut } from "@/lib/api/types"
@@ -59,6 +62,30 @@ function ScoringBar({ done, total }: { done: number; total: number }) {
   )
 }
 
+type Note = { id: string; text: string }
+
+/** The last few model updates, newest last, built from how far each model has got. */
+function useActivity(experiment: ExperimentOut): Note[] {
+  const [seen, setSeen] = useState<Record<string, number>>({})
+  const [notes, setNotes] = useState<Note[]>([])
+  const next: Record<string, number> = {}
+  const added: Note[] = []
+  for (const m of experiment.progress) {
+    const done = m.succeeded + m.failed + m.skipped
+    next[m.model_profile_id] = done
+    if (done > (seen[m.model_profile_id] ?? 0))
+      added.push({
+        id: `${m.model_profile_id}-${done}`,
+        text: `${m.model}: ${RUN_COPY.progress(done, m.total)}`,
+      })
+  }
+  if (added.length > 0) {
+    setSeen(next)
+    setNotes([...notes, ...added].slice(-4))
+  }
+  return notes
+}
+
 export function ProgressCard({ projectId, experiment, onCancel, cancelling }: Props) {
   useExperimentEvents(
     projectId,
@@ -68,8 +95,20 @@ export function ProgressCard({ projectId, experiment, onCancel, cancelling }: Pr
   const scoring = experiment.status === "evaluating"
   const running = experiment.status === "running" || experiment.status === "planned" || scoring
   const finished = ["completed", "cancelled", "failed"].includes(experiment.status)
+  const callsDone = experiment.progress.reduce((n, m) => n + m.succeeded + m.failed + m.skipped, 0)
+  const callsTotal = experiment.progress.reduce((n, m) => n + m.total, 0)
+  const overall = callsTotal ? Math.round((callsDone / callsTotal) * 100) : 0
+  const notes = useActivity(experiment)
   return (
-    <Card size="sm" className="shadow-none">
+    <Card size="sm" className="relative overflow-hidden shadow-none">
+      {running ? (
+        <BorderBeam
+          size={120}
+          duration={8}
+          colorFrom="var(--color-lagoon)"
+          colorTo="var(--color-lagoon-strong)"
+        />
+      ) : null}
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           {experiment.name}
@@ -92,6 +131,30 @@ export function ProgressCard({ projectId, experiment, onCancel, cancelling }: Pr
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <RunControls projectId={projectId} experiment={experiment} />
+        {callsTotal > 0 ? (
+          <div className="flex flex-wrap items-center gap-4">
+            <div role="img" aria-label={RUN_COPY.overallLabel(overall)}>
+              <AnimatedCircularProgressBar
+                value={overall}
+                className="size-24 text-lg"
+                gaugePrimaryColor="var(--color-lagoon)"
+                gaugeSecondaryColor="var(--color-chart-track)"
+              />
+            </div>
+            <div className="min-w-0 flex-1 text-sm">
+              <p className="font-medium">{RUN_COPY.overall(callsDone, callsTotal)}</p>
+              {notes.length > 0 ? (
+                <AnimatedList delay={300} className="mt-2 items-stretch gap-1" aria-label={RUN_COPY.latest}>
+                  {notes.map((n) => (
+                    <p key={n.id} className="text-text-secondary truncate text-xs">
+                      {n.text}
+                    </p>
+                  ))}
+                </AnimatedList>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
         {scoring && experiment.scoring ? (
           <ScoringBar done={experiment.scoring.done} total={experiment.scoring.total} />
         ) : null}

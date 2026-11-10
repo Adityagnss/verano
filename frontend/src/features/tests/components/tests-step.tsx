@@ -15,11 +15,12 @@ import { ErrorMessage } from "@/components/common/error-message"
 import { PageActions } from "@/components/common/page-actions"
 import { Section } from "@/components/common/section"
 import { StatusBadge } from "@/components/common/status-badge"
-import { StepHeader } from "@/components/common/step-header"
+import { PageIntro } from "@/components/common/page-intro"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { ALL_PROJECT_PAGES } from "@/lib/nav"
 import { CheckLibrary } from "@/features/checks/components/check-library"
 import { useCurrentPrompt } from "@/features/prompt/hooks"
 import type { DatasetVersionOut, GenerationRequest } from "@/lib/api/types"
@@ -44,6 +45,7 @@ import { EvaluatorCard } from "./evaluator-card"
 import { modelKey, TaskSpecCard } from "./task-spec-card"
 
 const DEFAULT_SIZE = 50
+const PAGE = ALL_PROJECT_PAGES.find((p) => p.key === "tests")!
 
 function Approved({ version }: { version: DatasetVersionOut }) {
   return (
@@ -57,9 +59,9 @@ function Approved({ version }: { version: DatasetVersionOut }) {
   )
 }
 
-function Counts({ total, drafts }: { total: number; drafts: number }) {
+export function Counts({ total, drafts, heldBack }: { total: number; drafts: number; heldBack?: number }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2" aria-label={TESTS_COPY.summaryLabel}>
       <StatusBadge tone="neutral">
         {TESTS_COPY.total}: {total}
       </StatusBadge>
@@ -71,6 +73,11 @@ function Counts({ total, drafts }: { total: number; drafts: number }) {
       <StatusBadge tone="success">
         {TESTS_COPY.reviewed}: {total - drafts}
       </StatusBadge>
+      {heldBack ? (
+        <StatusBadge tone="info">
+          {TESTS_COPY.heldBack}: {heldBack}
+        </StatusBadge>
+      ) : null}
     </div>
   )
 }
@@ -181,8 +188,8 @@ export function TestsStep({ projectId }: { projectId: string }) {
   const drafts = Object.values(current?.by_source ?? {}).reduce((sum, group) => sum + (group?.draft ?? 0), 0)
   const generated = Boolean(current?.evaluator_set_version_id) && current?.task_spec_id === specId
   const primary = frozen ? (
-    <Button size="lg" disabled>
-      {TESTS_COPY.approvedTitle(current?.version ?? 1)}
+    <Button size="lg" render={<Link href={`/projects/${projectId}/run`} />}>
+      {TESTS_COPY.continueToRun}
     </Button>
   ) : !spec.data ? (
     <Button
@@ -212,12 +219,14 @@ export function TestsStep({ projectId }: { projectId: string }) {
 
   return (
     <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-6">
-      <StepHeader
-        projectId={projectId}
-        step="tests"
-        title={TESTS_COPY.title}
-        description={TESTS_COPY.subtitle}
-        howItWorks={TESTS_COPY.howItWorks}
+      <PageIntro
+        storageKey="tests"
+        title={PAGE.label}
+        what={TESTS_COPY.what}
+        whenToUse={TESTS_COPY.whenToUse}
+        youGet={TESTS_COPY.youGet}
+        learnMore="tests"
+        hasContent={total > 0}
       />
       <ErrorMessage
         error={prompt.error ?? version.error ?? suggestion.error ?? spec.error ?? draftSpec.error}
@@ -268,7 +277,7 @@ export function TestsStep({ projectId }: { projectId: string }) {
           }
         >
           <div className="flex flex-wrap items-end gap-6">
-            <div className="flex w-40 flex-col gap-1.5">
+            <div className="flex w-full flex-col gap-1.5 sm:w-40">
               <Label htmlFor="size">{TESTS_COPY.size}</Label>
               <Input
                 id="size"
@@ -283,18 +292,6 @@ export function TestsStep({ projectId }: { projectId: string }) {
                 }}
               />
             </div>
-            <div className="flex w-48 flex-col gap-1.5">
-              <Label htmlFor="budget">{TESTS_COPY.budget}</Label>
-              <Input
-                id="budget"
-                type="number"
-                min={0}
-                step="0.01"
-                value={budgetValue}
-                disabled={goldenOnly || !confirmed}
-                onChange={(e) => setBudget(e.target.value)}
-              />
-            </div>
             {hasGolden ? (
               <label className="flex items-center gap-2 pb-1.5 text-sm">
                 <Checkbox checked={goldenOnly} onCheckedChange={(checked) => setGoldenOnly(checked)} />
@@ -302,7 +299,7 @@ export function TestsStep({ projectId }: { projectId: string }) {
               </label>
             ) : null}
             {estimate.data && !goldenOnly && confirmed ? (
-              <div className="bg-subtle ring-border ml-auto flex items-center gap-4 rounded-lg px-4 py-2 text-sm ring-1">
+              <div className="bg-subtle ring-border flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg px-4 py-2 text-sm ring-1 sm:ml-auto">
                 <span className="text-text-secondary">
                   {TESTS_COPY.estimate(estimate.data.cases_to_generate, estimate.data.calls)}
                 </span>
@@ -317,9 +314,25 @@ export function TestsStep({ projectId }: { projectId: string }) {
               </div>
             ) : null}
           </div>
-          <p className="text-text-muted text-xs">
-            {TESTS_COPY.sizeHint} {TESTS_COPY.budgetHint}
-          </p>
+          <p className="text-text-muted text-xs">{TESTS_COPY.sizeHint}</p>
+          <details className="group">
+            <summary className="text-accent min-h-10 cursor-pointer py-2 text-sm">
+              {TESTS_COPY.advanced}
+            </summary>
+            <div className="flex flex-col gap-1.5 pt-2 sm:max-w-xs">
+              <Label htmlFor="budget">{TESTS_COPY.budget}</Label>
+              <Input
+                id="budget"
+                type="number"
+                min={0}
+                step="0.01"
+                value={budgetValue}
+                disabled={goldenOnly || !confirmed}
+                onChange={(e) => setBudget(e.target.value)}
+              />
+              <p className="text-text-muted text-xs">{TESTS_COPY.budgetHint}</p>
+            </div>
+          </details>
           {needsConfirm && confirmed ? (
             <label className="bg-warning-soft text-warning-strong ring-warning/25 flex items-center gap-2 rounded-lg p-3 text-sm ring-1">
               <Checkbox checked={accepted} onCheckedChange={(checked) => setAccepted(checked)} />
@@ -343,7 +356,7 @@ export function TestsStep({ projectId }: { projectId: string }) {
           number={frozen ? 2 : 3}
           title={TESTS_COPY.tableHeading}
           description={TESTS_COPY.reviewHint}
-          action={<Counts total={total} drafts={drafts} />}
+          action={<Counts total={total} drafts={drafts} heldBack={current?.by_split.holdout} />}
         >
           {current.warnings.map((warning) => (
             <p
