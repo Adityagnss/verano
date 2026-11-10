@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.pagination import PageParams, keyset
 from app.modules.engine.models import Experiment, ExperimentEvent, TestCaseRun
 from app.modules.engine.schemas import ExperimentStatus, RunStatus
+from app.modules.gateway.models import LLMCall
 from app.modules.prompts.models import Prompt, PromptVersion
 
 
@@ -153,8 +154,9 @@ class EngineRepository:
         return [(m, name, s, int(n), c) for m, name, s, n, c in (await self._session.execute(query)).all()]
 
     async def spent(self, experiment_id: uuid.UUID) -> Decimal:
+        """Everything the run has cost: the models' answers and the judge's scoring, both logged with the run."""
         total = await self._session.scalar(
-            select(func.coalesce(func.sum(TestCaseRun.cost), 0)).where(TestCaseRun.experiment_id == experiment_id)
+            select(func.coalesce(func.sum(LLMCall.cost), 0)).where(LLMCall.experiment_id == experiment_id)
         )
         return Decimal(total or 0)
 
