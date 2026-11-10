@@ -51,6 +51,14 @@ features:
     details: A GitHub Action runs your tests on every pull request, comments the results and fails the job when quality, cost or speed gets worse. A working demo is in the repository.
     link: /guides/use-in-ci
     linkText: Use it in CI
+  - title: Use it from an AI agent
+    details: "The verano mcp command starts an MCP server so an agent in your editor can list projects, run a test and read results. It is read-only until you start it with --allow-write, and --max-cost caps what it can spend."
+    link: /guides/use-from-an-ai-agent
+    linkText: Set up MCP
+  - title: SDKs and framework adapters
+    details: Python and TypeScript libraries fetch the prompt a label points at and keep working when Verano is down. A pytest plugin and LangChain, LlamaIndex and OpenAI adapters test your own code.
+    link: /reference/integrations
+    linkText: See every integration
 ---
 
 <div class="home-wrap">
