@@ -1,0 +1,9 @@
+word,expected
+alpha,beta
+beta,gamma
+gamma,alpha
+alpha,beta
+beta,gamma
+gamma,alpha
+alpha,beta
+beta,gamma

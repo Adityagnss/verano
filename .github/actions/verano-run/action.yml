@@ -30,6 +30,9 @@ inputs:
   comment:
     description: Post (or update) the results table as a pull request comment. Needs `pull-requests write` permission.
     default: "true"
+  cli-source:
+    description: Install the verano CLI from this path or pip requirement instead of PyPI, for example ./cli to use the copy in your checkout. Empty means PyPI.
+    default: ""
   cli-version:
     description: The version of the verano CLI to install (for example 0.2.0). Empty means the latest.
     default: ""
@@ -53,8 +56,13 @@ runs:
       shell: bash
       env:
         CLI_VERSION: ${{ inputs.cli-version }}
+        CLI_SOURCE: ${{ inputs.cli-source }}
       run: |
-        python -m pip install --quiet "verano${CLI_VERSION:+==$CLI_VERSION}"
+        if [ -n "$CLI_SOURCE" ]; then
+          python -m pip install --quiet "$CLI_SOURCE"
+        else
+          python -m pip install --quiet "verano${CLI_VERSION:+==$CLI_VERSION}"
+        fi
 
     - name: Run the prompt tests
       id: run

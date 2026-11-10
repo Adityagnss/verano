@@ -1,0 +1,19 @@
+version: 1
+project: "gate-demo"
+# A tiny task for the built-in test provider, so the gate can be shown with no model key and no cost.
+keys:
+  mock: none
+prompts:
+  - name: repeat-word
+    system: "Repeat the word you are given, and nothing else."
+    user: "{{ attachment }}"
+    task:
+      type: classification
+      goal: Repeat the word
+      allowed_outputs: [alpha, beta, gamma]
+    data:
+      cases: {file: cases.csv, input: word, expected: expected}
+    models: [echo]
+    runs: 1
+    budget: 0.50
+    gate: {min_quality: 0.9}

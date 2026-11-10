@@ -1,0 +1,18 @@
+version: 1
+project: "gate-demo-regression"
+keys:
+  mock: none
+prompts:
+  - name: repeat-word-regressed
+    system: "Repeat the word you are given, and nothing else (a regressed version)."
+    user: "{{ attachment }}"
+    task:
+      type: classification
+      goal: Repeat the word
+      allowed_outputs: [alpha, beta, gamma]
+    data:
+      cases: {file: cases-bad.csv, input: word, expected: expected}
+    models: [echo]
+    runs: 1
+    budget: 0.50
+    gate: {min_quality: 0.9}

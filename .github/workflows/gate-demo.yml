@@ -1,0 +1,91 @@
+# Shows the Verano GitHub Action working in a real job, with the built-in test provider (no model key, no cost).
+# It starts Verano from this checkout, signs up a throwaway account, then runs the action twice on a tiny task:
+# a prompt that meets the quality gate (the job must pass) and a regressed one that does not (the gate must fail
+# with exit code 2). Run it by hand from the Actions tab, or it runs when the action, the CLI or the example change.
+name: gate-demo
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/actions/verano-run/**"
+      - ".github/workflows/gate-demo.yml"
+      - "examples/gate-demo/**"
+      - "cli/**"
+
+concurrency:
+  group: gate-demo-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      VERANO_URL: http://localhost:8080
+      DEMO_EMAIL: gate-demo@example.com
+      DEMO_PASSWORD: gate-demo-password-12345
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Start Verano with the test provider
+        run: |
+          python3 scripts/init_env.py
+          VERANO_MOCK_PROVIDER_ENABLED=true docker compose up -d --build --wait
+
+      - name: Make an account and a CI token
+        run: |
+          curl -fsS -X POST "$VERANO_URL/api/v1/auth/signup" \
+            -H 'content-type: application/json' \
+            -d "{\"email\":\"$DEMO_EMAIL\",\"password\":\"$DEMO_PASSWORD\",\"name\":\"Gate demo\"}" > /dev/null
+          python -m pip install --quiet ./cli
+          token="$(echo "$DEMO_PASSWORD" | verano token create --name ci --email "$DEMO_EMAIL" --password-stdin | grep -o '^vrn_[A-Za-z0-9_-]*')"
+          echo "::add-mask::$token"
+          echo "VERANO_API_TOKEN=$token" >> "$GITHUB_ENV"
+
+      - name: Set up both prompts on the server
+        working-directory: examples/gate-demo
+        run: |
+          verano push
+          verano push -f verano-fail.yaml
+
+      - name: Gate on a prompt that is good enough (must pass)
+        uses: ./.github/actions/verano-run
+        with:
+          server-url: ${{ env.VERANO_URL }}
+          token: ${{ env.VERANO_API_TOKEN }}
+          file: examples/gate-demo/verano.yaml
+          cli-source: ./cli
+          comment: "false"
+
+      - name: Gate on a regressed prompt (must fail)
+        id: regressed
+        continue-on-error: true
+        uses: ./.github/actions/verano-run
+        with:
+          server-url: ${{ env.VERANO_URL }}
+          token: ${{ env.VERANO_API_TOKEN }}
+          file: examples/gate-demo/verano-fail.yaml
+          cli-source: ./cli
+          comment: "false"
+
+      - name: Check the regressed prompt failed the gate, and for the right reason
+        run: |
+          echo "exit code from the action: '${{ steps.regressed.outputs.exit-code }}'"
+          test "${{ steps.regressed.outcome }}" = "failure"
+          test "${{ steps.regressed.outputs.exit-code }}" = "2"
+
+      - name: Show the logs if something went wrong
+        if: failure()
+        run: docker compose logs --tail=80 backend worker
+
+      - name: Stop Verano
+        if: always()
+        run: docker compose down -v
