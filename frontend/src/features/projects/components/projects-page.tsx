@@ -20,11 +20,19 @@ import { useExperiments } from "@/features/run/hooks"
 import { formatCost } from "@/lib/format"
 
 import { PROJECTS_COPY } from "../copy"
+import { ProjectActions } from "./project-actions"
 import { useCostSummary, useCreateProject, useProjects, useStepCompletion } from "../hooks"
 import { AccountFrame } from "./account-frame"
 
 export const CLI_COMMANDS = ["verano login", "verano init", "verano push"]
 const DEFAULT_NAME = "My first project"
+
+/** The name to use when the field is left empty: never one the account already has. */
+export function freeDefaultName(taken: string[]): string {
+  const used = new Set(taken.map((n) => n.trim().toLowerCase()))
+  if (!used.has(DEFAULT_NAME.toLowerCase())) return DEFAULT_NAME
+  for (let n = 2; ; n++) if (!used.has(`my project ${n}`)) return `My project ${n}`
+}
 
 function ProgressRing({ done, total }: { done: number; total: number }) {
   const radius = 14
@@ -59,27 +67,29 @@ function ProjectCard({ id, name }: { id: string; name: string }) {
   const done = steps.data ? Object.values(steps.data).filter(Boolean).length : 0
   const last = runs.data?.[0]
   return (
-    <Link
-      href={`/projects/${id}`}
-      className="bg-card ring-border hover:ring-lagoon/40 flex min-h-32 flex-col justify-between gap-4 rounded-2xl p-5 ring-1"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <h2 className="min-w-0 truncate text-base font-semibold">{name}</h2>
-        <span role="img" aria-label={`${done} of 7 steps done`}>
-          <ProgressRing done={done} total={7} />
-        </span>
+    <div className="bg-card ring-border hover:ring-lagoon/40 relative flex min-h-32 rounded-2xl ring-1">
+      <Link href={`/projects/${id}`} className="flex w-full flex-col justify-between gap-4 rounded-2xl p-5">
+        <div className="flex items-start justify-between gap-3">
+          <h2 className="min-w-0 truncate text-base font-semibold">{name}</h2>
+          <span role="img" aria-label={`${done} of 7 steps done`}>
+            <ProgressRing done={done} total={7} />
+          </span>
+        </div>
+        <dl className="text-text-secondary grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <dt className="text-text-muted">Last run</dt>
+            <dd>{last ? new Date(last.created_at).toLocaleDateString() : "None yet"}</dd>
+          </div>
+          <div>
+            <dt className="text-text-muted">Spent</dt>
+            <dd>{cost.data ? formatCost(cost.data.cost) : "-"}</dd>
+          </div>
+        </dl>
+      </Link>
+      <div className="absolute right-2 bottom-2">
+        <ProjectActions id={id} name={name} />
       </div>
-      <dl className="text-text-secondary grid grid-cols-2 gap-2 text-xs">
-        <div>
-          <dt className="text-text-muted">Last run</dt>
-          <dd>{last ? new Date(last.created_at).toLocaleDateString() : "None yet"}</dd>
-        </div>
-        <div>
-          <dt className="text-text-muted">Spent</dt>
-          <dd>{cost.data ? formatCost(cost.data.cost) : "-"}</dd>
-        </div>
-      </dl>
-    </Link>
+    </div>
   )
 }
 
@@ -120,7 +130,9 @@ export function ProjectsPage() {
   const [cliProject, setCliProject] = useState<string | null>(null)
 
   async function start(destination: string | null) {
-    const project = await create.mutateAsync(name.trim() || DEFAULT_NAME)
+    const project = await create.mutateAsync(
+      name.trim() || freeDefaultName((projects.data?.items ?? []).map((p) => p.name)),
+    )
     if (destination === null) setCliProject(project.id)
     else router.push(`/projects/${project.id}/${destination}`)
   }

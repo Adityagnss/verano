@@ -5,7 +5,7 @@ from fastapi import APIRouter, status
 from app.core.pagination import Page, PageDep
 from app.core.security import CurrentPrincipal
 from app.modules.projects.dependencies import ProjectScope, ProjectServiceDep
-from app.modules.projects.schemas import ProjectCreate, ProjectOut
+from app.modules.projects.schemas import ProjectCreate, ProjectOut, ProjectRename
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -23,3 +23,15 @@ async def list_projects(principal: CurrentPrincipal, service: ProjectServiceDep,
 @router.get("/{project_id}")
 async def get_project(project: ProjectScope) -> ProjectOut:
     return project
+
+
+@router.patch("/{project_id}")
+async def rename_project(
+    body: ProjectRename, project: ProjectScope, principal: CurrentPrincipal, service: ProjectServiceDep
+) -> ProjectOut:
+    return await service.rename(principal, project, body)
+
+
+@router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_project(project: ProjectScope, principal: CurrentPrincipal, service: ProjectServiceDep) -> None:
+    await service.delete(principal, project)

@@ -25,6 +25,34 @@ export function useCreateProject() {
   })
 }
 
+export function useRenameProject(projectId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (name: string) =>
+      call(() =>
+        api.PATCH("/api/v1/projects/{project_id}", {
+          params: { path: { project_id: projectId } },
+          body: { name },
+        }),
+      ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projects"] }),
+  })
+}
+
+export function useDeleteProject(projectId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () =>
+      call(() =>
+        api.DELETE("/api/v1/projects/{project_id}", { params: { path: { project_id: projectId } } }),
+      ),
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: ["projects", projectId] })
+      return queryClient.invalidateQueries({ queryKey: ["projects"] })
+    },
+  })
+}
+
 export function useProject(projectId: string) {
   return useQuery({
     queryKey: ["projects", projectId],

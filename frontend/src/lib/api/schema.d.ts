@@ -545,10 +545,12 @@ export interface paths {
         get: operations["get_project_api_v1_projects__project_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete Project */
+        delete: operations["delete_project_api_v1_projects__project_id__delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Rename Project */
+        patch: operations["rename_project_api_v1_projects__project_id__patch"];
         trace?: never;
     };
     "/api/v1/projects/{project_id}/apps": {
@@ -7060,6 +7062,11 @@ export interface components {
              */
             organization_id: string;
         };
+        /** ProjectRename */
+        ProjectRename: {
+            /** Name */
+            name: string;
+        };
         /** PromptCheck */
         PromptCheck: {
             /** Context */
@@ -9888,6 +9895,70 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProjectOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_project_api_v1_projects__project_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_project_api_v1_projects__project_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectRename"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

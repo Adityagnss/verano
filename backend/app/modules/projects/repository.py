@@ -2,7 +2,7 @@
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.pagination import PageParams, keyset
@@ -32,3 +32,23 @@ class ProjectRepository:
     async def list_in(self, organization_ids: list[uuid.UUID], page: PageParams) -> list[Project]:
         query = keyset(select(Project).where(Project.organization_id.in_(organization_ids)), Project.id, page)
         return list((await self._session.scalars(query)).all())
+
+    async def name_taken(self, organization_id: uuid.UUID, name: str, except_id: uuid.UUID | None = None) -> bool:
+        """Is there already a project of this name in the workspace? Case and surrounding spaces don't count."""
+        query = select(Project.id).where(
+            Project.organization_id == organization_id,
+            func.lower(func.trim(Project.name)) == name.strip().lower(),
+        )
+        if except_id is not None:
+            query = query.where(Project.id != except_id)
+        return await self._session.scalar(query.limit(1)) is not None
+
+    async def rename(self, project_id: uuid.UUID, name: str) -> Project | None:
+        project = await self._session.get(Project, project_id)
+        if project is not None:
+            project.name = name
+            await self._session.flush()
+        return project
+
+    async def remove(self, project_id: uuid.UUID) -> None:
+        await self._session.execute(delete(Project).where(Project.id == project_id))

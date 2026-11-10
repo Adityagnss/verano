@@ -16,7 +16,7 @@ vi.mock("../hooks", () => ({
 }))
 vi.mock("@/features/run/hooks", () => ({ useExperiments: () => ({ data: [] }) }))
 
-import { ProjectsPage } from "./projects-page"
+import { freeDefaultName, ProjectsPage } from "./projects-page"
 
 describe("ProjectsPage first visit", () => {
   it("offers three starting paths and opens the app path", async () => {
@@ -32,5 +32,13 @@ describe("ProjectsPage first visit", () => {
     expect(await screen.findByText("verano login")).toBeInTheDocument()
     expect(screen.getByText("verano init")).toBeInTheDocument()
     expect(screen.getByText("verano push")).toBeInTheDocument()
+  })
+})
+
+describe("freeDefaultName", () => {
+  it("uses the friendly name first, then numbers, never one already taken", () => {
+    expect(freeDefaultName([])).toBe("My first project")
+    expect(freeDefaultName(["my first project "])).toBe("My project 2")
+    expect(freeDefaultName(["My first project", "My project 2"])).toBe("My project 3")
   })
 })
