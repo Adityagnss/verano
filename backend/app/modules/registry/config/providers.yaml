@@ -58,6 +58,11 @@ providers:
       temperature: {max: 1.0}
     unsupported_parameters: [seed, presence_penalty, frequency_penalty]
     extra_parameters: [top_k]
+    model_rules:
+      # Claude 5 models reject a temperature (seen live: "`temperature` is deprecated for this model", 400).
+      - pattern: '^claude-(sonnet|opus|haiku|fable)-5'
+        unsupported_parameters: [temperature]
+        reason: Claude 5 models set their own temperature
     rate_limits: {rpm: 50, tpm: 40000}
     run_parameters:
       reasoning_efforts: [low, medium, high]

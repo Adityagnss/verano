@@ -1,9 +1,12 @@
 """Unit tests for model profile building: price precedence, chat filtering and parameter ranges."""
 
+import re
 from decimal import Decimal
 
 import pytest
+import yaml
 
+from app.core.config import Settings
 from app.modules.registry.domain import build_profile, is_chat_model, raw_model_from_listing
 from app.modules.registry.schemas import (
     Capability,
@@ -141,3 +144,18 @@ def test_a_model_rule_removes_settings_a_family_of_models_refuses() -> None:
     ]:
         profile = build_profile(CATALOG, openai, RawModel(id=name), METADATA, None)
         assert ("temperature" in profile.parameters) is has_temperature, name
+
+
+def test_claude_5_models_are_not_sent_a_temperature_but_older_claude_models_are() -> None:
+    config = yaml.safe_load(Settings().providers_path.read_text(encoding="utf-8"))
+    rules = config["providers"]["anthropic"]["model_rules"]
+
+    def refuses_temperature(model: str) -> bool:
+        return any(
+            re.search(rule["pattern"], model) and "temperature" in rule["unsupported_parameters"] for rule in rules
+        )
+
+    for model in ("claude-haiku-5-5", "claude-sonnet-5-5", "claude-opus-5-5", "claude-fable-5-1"):
+        assert refuses_temperature(model), model
+    for model in ("claude-3-5-haiku-latest", "claude-sonnet-4-5"):
+        assert not refuses_temperature(model), model
