@@ -1,9 +1,10 @@
 /**
- * The guided path (DEVELOPMENT.md C1): the seven steps shown in the stepper, in order.
- * `hint` is the one-line "what happens here" shown under each step. `segment` is the route
- * under /projects/[projectId]/; `available` is false for steps whose screens aren't built,
- * which the stepper shows as upcoming but not clickable.
+ * The guided path: the seven steps with a done / current mark in the sidebar, in order. Names and
+ * hints come from `nav.ts` (the single source), so a rename happens in one place. `segment` is
+ * the route under /projects/[projectId]/.
  */
+import { PROJECT_NAV } from "./nav"
+
 export type StepKey = "keys" | "prompt" | "data" | "tests" | "run" | "results" | "improve"
 
 export type StepDefinition = {
@@ -14,12 +15,10 @@ export type StepDefinition = {
   available: boolean
 }
 
-export const STEPS: StepDefinition[] = [
-  { key: "keys", label: "Keys", hint: "Connect providers", segment: "keys", available: true },
-  { key: "prompt", label: "Prompt", hint: "Write what to test", segment: "prompt", available: true },
-  { key: "data", label: "Your Data", hint: "Optional examples", segment: "data", available: true },
-  { key: "tests", label: "Test Cases", hint: "Approve what is checked", segment: "tests", available: true },
-  { key: "run", label: "Run", hint: "Run on each model", segment: "run", available: true },
-  { key: "results", label: "Results", hint: "Compare the models", segment: "results", available: true },
-  { key: "improve", label: "Improve", hint: "Fix what fails", segment: "improve", available: true },
-]
+export const STEPS: StepDefinition[] = PROJECT_NAV.filter((entry) => entry.guided).map((entry) => ({
+  key: entry.key as StepKey,
+  label: entry.label,
+  hint: entry.subtitle,
+  segment: entry.segment,
+  available: entry.available,
+}))

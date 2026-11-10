@@ -4,18 +4,14 @@
  */
 "use client"
 
-import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
 import { useState } from "react"
 import { toast } from "sonner"
 
 import { ErrorMessage } from "@/components/common/error-message"
-import { Logo } from "@/components/common/logo"
 import { Section } from "@/components/common/section"
 import { StatusBadge } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { AccountMenu } from "@/features/projects/components/account-menu"
 
 import { useCreateToken, useRevokeToken, useTokenProjects, useTokens } from "../hooks"
 
@@ -47,18 +43,6 @@ export function TokensPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-[64rem] flex-col gap-6 px-4 py-6">
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Logo size={32} />
-          <Link
-            href="/projects"
-            className="text-text-secondary hover:text-foreground inline-flex items-center gap-1 text-sm"
-          >
-            <ArrowLeft className="size-4" aria-hidden /> Projects
-          </Link>
-        </div>
-        <AccountMenu />
-      </header>
       <div className="flex flex-col gap-1.5">
         <h1 className="text-2xl font-semibold tracking-tight">API tokens</h1>
         <p className="text-text-secondary text-[0.95rem]">

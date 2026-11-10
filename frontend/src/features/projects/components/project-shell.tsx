@@ -1,279 +1,159 @@
 /**
- * The frame around every project step (DEVELOPMENT.md C3): logo and stepper on the left
- * (a slide-over menu below the lg breakpoint), a breadcrumb with the project name and the project's running LLM cost at the top, the
- * step's content below.
- * When some calls used models with an unknown price, the cost says so instead of looking
- * complete.
+ * The frame around every project page: the responsive app frame with the project's navigation.
+ * The navigation comes from `src/lib/nav.ts`, grouped (Set up, Test, Improve, Trust, Production,
+ * Help). Pages on the guided path show whether they are done, the current page is highlighted,
+ * and the first unfinished one is marked "Next". The project name and the running model cost stay
+ * visible (sidebar and header pill). When some calls used models with an unknown price, the cost
+ * says so instead of looking complete.
  */
 "use client"
 
+import { Check } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import {
-  Activity,
-  BookOpen,
-  ClipboardCheck,
-  LayoutDashboard,
-  Menu,
-  Plug,
-  Radio,
-  ShieldCheck,
-  Table2,
-  X,
-} from "lucide-react"
-import { type ReactNode, useState } from "react"
+import type { ReactNode } from "react"
 
 import { COMMON_COPY } from "@/components/common/copy"
-import { Button } from "@/components/ui/button"
-import { Logo } from "@/components/common/logo"
-import { type StepItem, type StepState, Stepper } from "@/components/common/stepper"
+import {
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar"
 import { formatCost } from "@/lib/format"
-import { type StepKey, STEPS } from "@/lib/steps"
+import { ACCOUNT_NAV, itemsOf, NAV_GROUPS, type NavItem, projectHref, TRENDS_NAV } from "@/lib/nav"
+import { type StepKey } from "@/lib/steps"
+import { cn } from "@/lib/utils"
 
 import { useCostSummary, useProject, useStepCompletion } from "../hooks"
-import { AccountMenu } from "./account-menu"
+import { AppFrame } from "./app-frame"
+import { SpendPill } from "./spend-pill"
 
-function stepItems(projectId: string, pathname: string, done: Partial<Record<StepKey, boolean>>): StepItem[] {
-  const firstOpen = STEPS.find((step) => step.available && !done[step.key])?.key
-  return STEPS.map((step, index) => {
-    const href = `/projects/${projectId}/${step.segment}`
-    const current = pathname.startsWith(href)
-    const state: StepState = !step.available
-      ? "unavailable"
-      : current
-        ? "current"
-        : done[step.key]
-          ? "done"
-          : step.key === firstOpen
-            ? "next"
-            : "upcoming"
-    return { key: step.key, number: index + 1, label: step.label, hint: step.hint, href, state }
-  })
+type Done = Partial<Record<StepKey, boolean>>
+
+/** The first available guided page that is not done yet. */
+export function firstOpenKey(items: NavItem[], done: Done): string | undefined {
+  return items.find((item) => item.guided && item.available && !done[item.key as StepKey])?.key
 }
 
-function ToolLinks({ projectId, pathname }: { projectId: string; pathname: string }) {
+function NavLink({
+  projectId,
+  item,
+  pathname,
+  done,
+  next,
+}: {
+  projectId: string
+  item: NavItem
+  pathname: string
+  done: Done
+  next: boolean
+}) {
+  const href = projectHref(projectId, item)
+  const active = pathname.startsWith(href)
+  const finished = item.guided && done[item.key as StepKey]
   return (
-    <div className="flex flex-col gap-0.5">
-      <p className="text-text-muted px-3 pb-1 text-[11px] font-semibold tracking-wider uppercase">Tools</p>
-      <DashboardLink projectId={projectId} active={pathname.endsWith("/dashboard")} />
-      <AppsLink projectId={projectId} active={pathname.endsWith("/apps")} />
-      <ReviewLink projectId={projectId} active={pathname.endsWith("/review")} />
-      <TrafficLink projectId={projectId} active={pathname.endsWith("/traffic")} />
-      <SecurityLink projectId={projectId} active={pathname.endsWith("/security")} />
-      <LogbookLink projectId={projectId} active={pathname.endsWith("/logbook")} />
-      <GuideLink projectId={projectId} active={pathname.endsWith("/guide")} />
-      <Link
-        href="/activity"
-        className="hover:bg-subtle flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors"
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        isActive={active}
+        tooltip={item.label}
+        aria-current={active ? "page" : undefined}
+        aria-disabled={!item.available || undefined}
+        title={item.subtitle}
+        render={<Link href={href} />}
       >
-        <Activity className="text-lagoon-strong size-4" />
-        <span className="flex flex-col leading-tight">
-          Activity
-          <span className="text-text-muted text-xs font-normal">Usage across all projects</span>
-        </span>
-      </Link>
-    </div>
+        <item.icon aria-hidden className={cn(active && "text-lagoon-strong")} />
+        <span>{item.label}</span>
+        {finished ? (
+          <>
+            <Check aria-hidden className="text-success-strong ml-auto" strokeWidth={3} />
+            <span className="sr-only">(done)</span>
+          </>
+        ) : next && !active ? (
+          <span className="bg-lagoon-soft text-lagoon-strong ml-auto rounded-full px-2 py-0.5 text-[11px] font-semibold group-data-[collapsible=icon]:hidden">
+            Next
+          </span>
+        ) : null}
+      </SidebarMenuButton>
+    </SidebarMenuItem>
   )
 }
 
-function DashboardLink({ projectId, active }: { projectId: string; active: boolean }) {
+function ProjectSidebarBody({ projectId, pathname }: { projectId: string; pathname: string }) {
+  const done: Done = useStepCompletion(projectId).data ?? {}
+  const project = useProject(projectId).data
+  const cost = useCostSummary(projectId).data
+  const guided = NAV_GROUPS.flatMap((group) => itemsOf(group.id)).filter((item) => item.guided)
+  const doneCount = guided.filter((item) => done[item.key as StepKey]).length
+  const next = firstOpenKey(guided, done)
   return (
-    <Link
-      href={`/projects/${projectId}/dashboard`}
-      aria-current={active ? "page" : undefined}
-      className={`hover:bg-subtle flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${active ? "bg-lagoon-soft font-semibold" : "font-medium"}`}
-    >
-      <LayoutDashboard className="text-lagoon-strong size-4" />
-      <span className="flex flex-col leading-tight">
-        Dashboard
-        <span className="text-text-muted text-xs font-normal">Models, cost, trends</span>
-      </span>
-    </Link>
-  )
-}
-
-function AppsLink({ projectId, active }: { projectId: string; active: boolean }) {
-  return (
-    <Link
-      href={`/projects/${projectId}/apps`}
-      aria-current={active ? "page" : undefined}
-      className={`hover:bg-subtle flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${active ? "bg-lagoon-soft font-semibold" : "font-medium"}`}
-    >
-      <Plug className="text-lagoon-strong size-4" />
-      <span className="flex flex-col leading-tight">
-        Your apps
-        <span className="text-text-muted text-xs font-normal">Test your own app over HTTP</span>
-      </span>
-    </Link>
-  )
-}
-
-function ReviewLink({ projectId, active }: { projectId: string; active: boolean }) {
-  return (
-    <Link
-      href={`/projects/${projectId}/review`}
-      aria-current={active ? "page" : undefined}
-      className={`hover:bg-subtle flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${active ? "bg-lagoon-soft font-semibold" : "font-medium"}`}
-    >
-      <ClipboardCheck className="text-lagoon-strong size-4" />
-      <span className="flex flex-col leading-tight">
-        Review queue
-        <span className="text-text-muted text-xs font-normal">Label answers with your team</span>
-      </span>
-    </Link>
-  )
-}
-
-function TrafficLink({ projectId, active }: { projectId: string; active: boolean }) {
-  return (
-    <Link
-      href={`/projects/${projectId}/traffic`}
-      aria-current={active ? "page" : undefined}
-      className={`hover:bg-subtle flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${active ? "bg-lagoon-soft font-semibold" : "font-medium"}`}
-    >
-      <Radio className="text-lagoon-strong size-4" />
-      <span className="flex flex-col leading-tight">
-        Real traffic
-        <span className="text-text-muted text-xs font-normal">Import, score, alert</span>
-      </span>
-    </Link>
-  )
-}
-
-function SecurityLink({ projectId, active }: { projectId: string; active: boolean }) {
-  return (
-    <Link
-      href={`/projects/${projectId}/security`}
-      aria-current={active ? "page" : undefined}
-      className={`hover:bg-subtle flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${active ? "bg-lagoon-soft font-semibold" : "font-medium"}`}
-    >
-      <ShieldCheck className="text-lagoon-strong size-4" />
-      <span className="flex flex-col leading-tight">
-        Security
-        <span className="text-text-muted text-xs font-normal">Attacks, leaks, hardening</span>
-      </span>
-    </Link>
-  )
-}
-
-function LogbookLink({ projectId, active }: { projectId: string; active: boolean }) {
-  return (
-    <Link
-      href={`/projects/${projectId}/logbook`}
-      aria-current={active ? "page" : undefined}
-      className={`hover:bg-subtle flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${active ? "bg-lagoon-soft font-semibold" : "font-medium"}`}
-    >
-      <Table2 className="text-lagoon-strong size-4" />
-      <span className="flex flex-col leading-tight">
-        Logbook
-        <span className="text-text-muted text-xs font-normal">Every answer and call</span>
-      </span>
-    </Link>
-  )
-}
-
-function GuideLink({ projectId, active }: { projectId: string; active: boolean }) {
-  return (
-    <Link
-      href={`/projects/${projectId}/guide`}
-      aria-current={active ? "page" : undefined}
-      className={`hover:bg-subtle mx-0 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${active ? "bg-lagoon-soft font-semibold" : "font-medium"}`}
-    >
-      <BookOpen className="text-lagoon-strong size-4" />
-      <span className="flex flex-col leading-tight">
-        Prompt guide
-        <span className="text-text-muted text-xs font-normal">What helps, with evidence</span>
-      </span>
-    </Link>
-  )
-}
-
-function CostBadge({ projectId }: { projectId: string }) {
-  const summary = useCostSummary(projectId).data
-  const unknown = (summary?.calls_with_unknown_price ?? 0) > 0
-  return (
-    <span
-      className="text-text-secondary inline-flex items-baseline gap-1.5 text-sm"
-      title={unknown ? COMMON_COPY.unknownPriceNote : undefined}
-    >
-      <span className="hidden sm:inline">{COMMON_COPY.costSpent}</span>
-      <span className="text-foreground font-semibold tabular-nums">{formatCost(summary?.cost)}</span>
-      {unknown ? <span className="text-warning-strong">+?</span> : null}
-    </span>
+    <>
+      <SidebarContent>
+        <div className="px-4 pt-3 pb-1 group-data-[collapsible=icon]:hidden">
+          <p className="truncate text-sm font-semibold" title={project?.name}>
+            {project?.name ?? COMMON_COPY.loading}
+          </p>
+          <p className="text-text-secondary text-xs">
+            {COMMON_COPY.stepsDone(doneCount, guided.length)} · {formatCost(cost?.cost)} spent
+          </p>
+        </div>
+        {NAV_GROUPS.map((group) => (
+          <SidebarGroup key={group.id}>
+            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            <SidebarMenu>
+              {itemsOf(group.id).map((item) => (
+                <NavLink
+                  key={item.key}
+                  projectId={projectId}
+                  item={item}
+                  pathname={pathname}
+                  done={done}
+                  next={item.key === next}
+                />
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+        ))}
+      </SidebarContent>
+      <SidebarFooter className="border-t">
+        <SidebarMenu>
+          <NavLink projectId={projectId} item={TRENDS_NAV} pathname={pathname} done={done} next={false} />
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip={ACCOUNT_NAV[0].label} render={<Link href={ACCOUNT_NAV[0].href} />}>
+              {(() => {
+                const Icon = ACCOUNT_NAV[0].icon
+                return <Icon aria-hidden />
+              })()}
+              <span>{ACCOUNT_NAV[0].label}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+    </>
   )
 }
 
 export function ProjectShell({ projectId, children }: { projectId: string; children: ReactNode }) {
   const pathname = usePathname()
   const project = useProject(projectId).data
-  const done = useStepCompletion(projectId).data ?? {}
-  const [open, setOpen] = useState(false)
-  const steps = stepItems(projectId, pathname, done)
+  const segment = /^\/projects\/[^/]+\/([^/]+)/.exec(pathname)?.[1]
+  const page = [...itemsOf("setup"), ...NAV_GROUPS.flatMap((g) => itemsOf(g.id)), TRENDS_NAV].find(
+    (item) => item.segment === segment,
+  )
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[17.5rem_1fr]">
-      <aside className="border-border bg-card sticky top-0 hidden h-screen flex-col gap-7 overflow-y-auto border-r px-3 py-5 lg:flex">
-        <Link href="/projects" className="px-3">
-          <Logo />
-        </Link>
-        <Stepper steps={steps} />
-        <div className="border-border mt-auto border-t pt-3">
-          <ToolLinks projectId={projectId} pathname={pathname} />
-        </div>
-      </aside>
-      {open ? (
-        <div className="fixed inset-0 z-30 lg:hidden" role="dialog" aria-modal="true" aria-label="Steps">
-          <button
-            type="button"
-            aria-label="Close menu"
-            className="absolute inset-0 bg-[#14203a]/40"
-            onClick={() => setOpen(false)}
-          />
-          <div
-            className="bg-card absolute inset-y-0 left-0 flex w-[19rem] max-w-[85vw] flex-col gap-6 overflow-y-auto px-3 py-5 shadow-xl"
-            onClick={(event) => {
-              if ((event.target as HTMLElement).closest("a")) setOpen(false)
-            }}
-          >
-            <div className="flex items-center justify-between px-3">
-              <Logo />
-              <Button variant="ghost" size="icon-sm" aria-label="Close menu" onClick={() => setOpen(false)}>
-                <X />
-              </Button>
-            </div>
-            <Stepper steps={steps} />
-            <div className="border-border border-t pt-3">
-              <ToolLinks projectId={projectId} pathname={pathname} />
-            </div>
-          </div>
-        </div>
-      ) : null}
-      <div className="flex min-w-0 flex-col">
-        <header className="border-border bg-card/80 sticky top-0 z-10 flex items-center justify-between gap-3 border-b px-4 py-3 backdrop-blur sm:px-6 lg:px-8">
-          <div className="flex min-w-0 flex-1 items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              className="lg:hidden"
-              aria-label="Open menu"
-              onClick={() => setOpen(true)}
-            >
-              <Menu />
-            </Button>
-            <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-2 text-sm">
-              <Link href="/projects" className="text-text-muted hover:text-foreground hidden sm:inline">
-                {COMMON_COPY.projects}
-              </Link>
-              <span className="text-text-muted hidden sm:inline">/</span>
-              <h1 className="truncate font-medium">{project?.name ?? COMMON_COPY.loading}</h1>
-            </nav>
-          </div>
-          <div className="flex shrink-0 items-center gap-3 sm:gap-4">
-            <CostBadge projectId={projectId} />
-            <AccountMenu />
-          </div>
-        </header>
-        <main className="flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">{children}</main>
-      </div>
-    </div>
+    <AppFrame
+      sidebar={<ProjectSidebarBody projectId={projectId} pathname={pathname} />}
+      crumbs={[
+        { label: COMMON_COPY.projects, href: "/projects" },
+        { label: project?.name ?? COMMON_COPY.loading, href: projectHref(projectId, "keys") },
+        ...(page ? [{ label: page.label }] : []),
+      ]}
+      spend={<SpendPill projectId={projectId} />}
+    >
+      {children}
+    </AppFrame>
   )
 }

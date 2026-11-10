@@ -4,17 +4,13 @@
  */
 "use client"
 
-import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
 import { useMemo, useState } from "react"
 
 import { ErrorMessage } from "@/components/common/error-message"
-import { Logo } from "@/components/common/logo"
 import { NativeSelect } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { ActivityRow } from "@/lib/api/types"
 import { cn } from "@/lib/utils"
-import { AccountMenu } from "@/features/projects/components/account-menu"
 
 import type { Dimension, Metric } from "../domain"
 import { daysOf, labeler, palette, split } from "../domain"
@@ -94,20 +90,7 @@ export function ActivityPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[96rem] flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10">
-      <header className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Logo size={32} />
-          <Link
-            href="/projects"
-            className="text-text-secondary hover:text-foreground inline-flex items-center gap-1 text-sm"
-          >
-            <ArrowLeft className="size-4" aria-hidden /> Projects
-          </Link>
-        </div>
-        <AccountMenu />
-      </header>
-
+    <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-6 px-4 py-2">
       <div className="border-border flex flex-col gap-5 border-b pb-0">
         <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
           <div className="flex flex-col gap-1.5">
@@ -195,6 +178,6 @@ export function ActivityPage() {
           <Guardrails data={data} />
         )}
       </div>
-    </main>
+    </div>
   )
 }

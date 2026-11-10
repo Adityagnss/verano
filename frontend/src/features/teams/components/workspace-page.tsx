@@ -4,14 +4,10 @@
  */
 "use client"
 
-import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
 import { useState } from "react"
 
 import { ErrorMessage } from "@/components/common/error-message"
-import { Logo } from "@/components/common/logo"
 import { NativeSelect } from "@/components/ui/select"
-import { AccountMenu } from "@/features/projects/components/account-menu"
 import { useSession } from "@/lib/auth/use-session"
 
 import { atLeast, ROLE_TEXT } from "../domain"
@@ -42,19 +38,7 @@ export function WorkspacePage() {
   const active = tabs.includes(tab) ? tab : "People"
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[72rem] flex-col gap-6 px-4 py-8 sm:px-6 sm:py-10">
-      <header className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Logo size={32} />
-          <Link
-            href="/projects"
-            className="text-text-secondary hover:text-foreground inline-flex items-center gap-1 text-sm"
-          >
-            <ArrowLeft className="size-4" aria-hidden /> Projects
-          </Link>
-        </div>
-        <AccountMenu />
-      </header>
+    <div className="mx-auto flex w-full max-w-[72rem] flex-col gap-6 px-4 py-2">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-semibold tracking-tight">Workspace</h1>
@@ -112,6 +96,6 @@ export function WorkspacePage() {
           {active === "Audit log" ? <AuditPanel organizationId={current.id} /> : null}
         </div>
       ) : null}
-    </main>
+    </div>
   )
 }
