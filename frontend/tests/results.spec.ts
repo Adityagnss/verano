@@ -63,7 +63,9 @@ test("compare results: summary, compare models, answers, runs and details", asyn
   await expect(page.getByRole("heading", { name: "Compare results", level: 1 })).toBeVisible()
   await expect(page.getByRole("tab", { name: "Summary" })).toBeVisible({ timeout: 30_000 })
   await expect(page.getByTestId("winner-card")).toBeVisible({ timeout: 30_000 })
-  await expect(page.getByRole("link", { name: "Improve the prompt" })).toBeVisible()
+  await expect(
+    page.getByRole("tabpanel", { name: "Summary" }).getByRole("link", { name: "Improve the prompt" }),
+  ).toBeVisible()
 
   await page.getByRole("tab", { name: "Compare models" }).click()
   await expect(page.getByRole("columnheader", { name: "Quality" })).toBeVisible()

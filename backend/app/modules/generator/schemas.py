@@ -189,3 +189,16 @@ class GenerationEstimate(BaseModel):
     price_known: bool
     confirm_above: Decimal = Decimal(0)
     needs_confirmation: bool = False
+
+
+class PromptDraftRequest(GeneratorModel):
+    """Ask a model to write a first prompt from the project's documents and, optionally, an end goal."""
+
+    goal: str | None = Field(default=None, max_length=1000)
+
+
+class PromptDraft(BaseModel):
+    system_template: str = Field(min_length=1, max_length=20000)
+    user_template: str = Field(min_length=1, max_length=20000)
+    variables: list[str] = Field(default_factory=list, max_length=20)
+    reasons: list[str] = Field(default_factory=list, max_length=12)

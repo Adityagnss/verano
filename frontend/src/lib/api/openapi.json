@@ -10589,6 +10589,70 @@
         "title": "PromptCreate",
         "type": "object"
       },
+      "PromptDraft": {
+        "properties": {
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 12,
+            "title": "Reasons",
+            "type": "array"
+          },
+          "system_template": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "System Template",
+            "type": "string"
+          },
+          "user_template": {
+            "maxLength": 20000,
+            "minLength": 1,
+            "title": "User Template",
+            "type": "string"
+          },
+          "variables": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Variables",
+            "type": "array"
+          }
+        },
+        "required": ["system_template", "user_template"],
+        "title": "PromptDraft",
+        "type": "object"
+      },
+      "PromptDraftRequest": {
+        "description": "Ask a model to write a first prompt from the project's documents and, optionally, an end goal.",
+        "properties": {
+          "credential_id": {
+            "format": "uuid",
+            "title": "Credential Id",
+            "type": "string"
+          },
+          "goal": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Goal"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          }
+        },
+        "required": ["credential_id", "model"],
+        "title": "PromptDraftRequest",
+        "type": "object"
+      },
       "PromptLabelOut": {
         "properties": {
           "can_roll_back": {
@@ -20951,6 +21015,62 @@
           }
         ],
         "summary": "Estimate Generation",
+        "tags": ["generator"]
+      }
+    },
+    "/api/v1/projects/{project_id}/generator/prompt-draft": {
+      "post": {
+        "operationId": "draft_prompt_api_v1_projects__project_id__generator_prompt_draft_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PromptDraftRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromptDraft"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Draft Prompt",
         "tags": ["generator"]
       }
     },

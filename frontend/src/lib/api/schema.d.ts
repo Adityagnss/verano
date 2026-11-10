@@ -1539,6 +1539,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/generator/prompt-draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Draft Prompt */
+        post: operations["draft_prompt_api_v1_projects__project_id__generator_prompt_draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/generator/suggestion": {
         parameters: {
             query?: never;
@@ -7104,6 +7121,32 @@ export interface components {
             /** User Template */
             user_template?: string | null;
         };
+        /** PromptDraft */
+        PromptDraft: {
+            /** Reasons */
+            reasons?: string[];
+            /** System Template */
+            system_template: string;
+            /** User Template */
+            user_template: string;
+            /** Variables */
+            variables?: string[];
+        };
+        /**
+         * PromptDraftRequest
+         * @description Ask a model to write a first prompt from the project's documents and, optionally, an end goal.
+         */
+        PromptDraftRequest: {
+            /**
+             * Credential Id
+             * Format: uuid
+             */
+            credential_id: string;
+            /** Goal */
+            goal?: string | null;
+            /** Model */
+            model: string;
+        };
         /** PromptLabelOut */
         PromptLabelOut: {
             /** Can Roll Back */
@@ -12222,6 +12265,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GenerationEstimate"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    draft_prompt_api_v1_projects__project_id__generator_prompt_draft_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromptDraftRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptDraft"];
                 };
             };
             /** @description Validation Error */

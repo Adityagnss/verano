@@ -49,6 +49,8 @@ from app.modules.generator.schemas import (
     GeneratorModel,
     GeneratorSuggestion,
     OutputFormat,
+    PromptDraft,
+    PromptDraftRequest,
     TaskSpec,
     TaskSpecDraftRequest,
     TaskSpecOut,
@@ -74,6 +76,10 @@ CONFIRM_COST = (
 NEVER_GENERATED = "Run the generator once before regenerating a category."
 UNDER_TEST = "{model} is also a model under test. A model can favor its own style; a different generator is safer."
 SUMMARY_CHARS = 300
+PROMPT_DRAFT_CHARS = 2000
+NO_PROMPT_SOURCE = (
+    "Add a document on the Add examples step, or describe your end goal, so there is something to write it from."
+)
 
 
 def channel(version_id: uuid.UUID) -> str:
@@ -186,6 +192,27 @@ class GeneratorService:
         await self._repo.add(row)
         warnings = [UNDER_TEST.format(model=target.profile.display_name)] if target.profile.is_selected else []
         return spec_out(row, warnings)
+
+    async def draft_prompt(self, project: ProjectOut, body: PromptDraftRequest) -> PromptDraft:
+        """A first prompt written from the project's documents and an optional goal. Nothing is saved: the person
+        edits it and saves it as a normal prompt version."""
+        sections = await self._documents.project_sections(project.id, self._settings.generator_max_sections)
+        if not sections and not (body.goal and body.goal.strip()):
+            raise ValidationFailed(NO_PROMPT_SOURCE)
+        prompt = render_system_prompt(
+            PROMPTS_DIR,
+            "prompt_draft.jinja",
+            goal=body.goal.strip() if body.goal else None,
+            documents=[section.text[:PROMPT_DRAFT_CHARS] for section in sections],
+        )
+        return await self._gateway.complete_json(
+            body.model,
+            [Message(role="user", content=prompt)],
+            PromptDraft,
+            body.credential_id,
+            CallPurpose.GENERATION,
+            CallContext(project_id=project.id, labels={"step": "prompt_draft"}),
+        )
 
     async def provide_spec(self, project: ProjectOut, version_id: uuid.UUID, body: TaskSpecProvide) -> TaskSpecOut:
         """A confirmed Task Spec from a spec the user wrote: no model call. The same spec and judge

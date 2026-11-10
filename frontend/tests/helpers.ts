@@ -39,10 +39,11 @@ export async function chooseTheme(
 
 /** Clicks a page link in the sidebar by its (new) name, for example "Compare results". */
 export async function goToPage(page: Page, name: string | RegExp): Promise<void> {
-  const link = page.locator('[data-slot="sidebar-inner"]').getByRole("link", { name }).first()
+  const sidebar = page.locator('[data-slot="sidebar-inner"]').getByRole("link", { name }).first()
   // below 1024px the sidebar lives in a drawer that the menu button opens
-  if (!(await link.isVisible())) await page.getByRole("button", { name: "Open menu" }).click()
-  await link.click()
+  if (await sidebar.isVisible()) return sidebar.click()
+  await page.getByRole("button", { name: "Open menu" }).click()
+  await page.getByRole("dialog").getByRole("link", { name }).first().click()
 }
 
 /**

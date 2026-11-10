@@ -126,6 +126,7 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   await page.goto(`${project}/run`)
   await expect(page.getByLabel("Prompt version to test")).toContainText("Version 2 (latest)")
   await expect(page.getByLabel("Prompt version to test")).toContainText("Version 1")
+  await page.getByText(/^Expert settings/).click()
   await expect(page.getByRole("radio", { name: /Repeatable/ })).toBeChecked()
   await expect(page.getByText("What will run")).toBeVisible()
   await page.getByRole("button", { name: "Start experiment" }).click()

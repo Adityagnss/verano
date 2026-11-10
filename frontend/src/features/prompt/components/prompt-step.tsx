@@ -45,6 +45,7 @@ import {
   useSavePrompt,
 } from "../hooks"
 import { PromptCheck } from "./prompt-check"
+import { PromptDrafter } from "./prompt-drafter"
 
 const EMPTY: Draft = {
   name: "",
@@ -186,6 +187,16 @@ export function PromptStep({ projectId }: { projectId: string }) {
             ) : null
           }
         >
+          <PromptDrafter
+            projectId={projectId}
+            onUse={(written) =>
+              setDraft({
+                ...draft,
+                system_template: written.system_template,
+                user_template: written.user_template,
+              })
+            }
+          />
           {current.data ? null : (
             <div className="flex max-w-sm flex-col gap-1.5">
               <Label htmlFor="name">{PROMPT_COPY.name}</Label>

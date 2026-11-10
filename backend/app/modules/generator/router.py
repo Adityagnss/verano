@@ -21,6 +21,8 @@ from app.modules.generator.schemas import (
     GenerationEstimate,
     GenerationRequest,
     GeneratorSuggestion,
+    PromptDraft,
+    PromptDraftRequest,
     TaskSpecDraftRequest,
     TaskSpecOut,
     TaskSpecProvide,
@@ -40,6 +42,11 @@ class RegenerateRequest(BaseModel):
 @router.get("/generator/suggestion")
 async def suggest_generator(project: ProjectScope, service: GeneratorServiceDep) -> GeneratorSuggestion:
     return await service.suggestion(project)
+
+
+@router.post("/generator/prompt-draft")
+async def draft_prompt(body: PromptDraftRequest, project: ProjectScope, service: GeneratorServiceDep) -> PromptDraft:
+    return await service.draft_prompt(project, body)
 
 
 @router.post("/task-specs", status_code=status.HTTP_201_CREATED)
