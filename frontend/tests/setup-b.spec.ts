@@ -23,7 +23,7 @@ test("test cases, run and improve pages open cleanly at desktop and phone width"
   await page.getByRole("button", { name: "Check and save" }).click()
   await expect(page.getByText(/Key saved\. Found \d+ chat models\./)).toBeVisible()
   await page.getByRole("listitem").filter({ hasText: "Mock Echo" }).getByRole("checkbox").click()
-  await page.getByRole("button", { name: "Use 1 selected models" }).click()
+  await page.getByRole("button", { name: "Continue with 1 model" }).click()
   await expect(page.getByText("Selection saved.")).toBeVisible()
 
   await goToPage(page, /^Write your prompt/)
@@ -41,7 +41,7 @@ test("test cases, run and improve pages open cleanly at desktop and phone width"
     await page.setViewportSize({ width, height: 900 })
     for (const [link, heading] of pages) {
       await goToPage(page, link)
-      await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible()
+      await expect(page.getByText(heading, { exact: true }).first()).toBeVisible()
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
       )

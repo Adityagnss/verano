@@ -4,7 +4,7 @@
  */
 import { expect, test } from "@playwright/test"
 
-import { goToPage, signUp, uniqueEmail } from "./helpers"
+import { goToPage, signUp, uniqueEmail, addExamples } from "./helpers"
 
 const GOLDEN =
   "ticket,expected\nMy card was charged twice,billing\nWhere is my parcel?,shipping\nThe app crashes on start,technical\n"
@@ -23,7 +23,7 @@ test("compare results: summary, compare models, answers, runs and details", asyn
   await expect(page.getByText(/Key saved\. Found \d+ chat models\./)).toBeVisible()
   await page.getByRole("listitem").filter({ hasText: "Mock Scripted" }).getByRole("checkbox").click()
   await page.getByRole("listitem").filter({ hasText: "Mock Echo" }).getByRole("checkbox").click()
-  await page.getByRole("button", { name: "Use 2 selected models" }).click()
+  await page.getByRole("button", { name: "Continue with 2 models" }).click()
   await expect(page.getByText("Selection saved.")).toBeVisible()
 
   await goToPage(page, /^Write your prompt/)
@@ -33,23 +33,7 @@ test("compare results: summary, compare models, answers, runs and details", asyn
   await expect(page).toHaveURL(/\/data$/)
 
   const tickets = ["My card was charged twice", "Where is my parcel?", "The app crashes on start"]
-  await page.getByTestId("upload-inputs").setInputFiles(
-    tickets.map((text, i) => ({
-      name: `case${i + 1}.txt`,
-      mimeType: "text/plain",
-      buffer: Buffer.from(text),
-    })),
-  )
-  await expect(page.getByText("case3.txt", { exact: true })).toBeVisible()
-  await page.getByTestId("upload-golden").setInputFiles({
-    name: "golden.csv",
-    mimeType: "text/csv",
-    buffer: Buffer.from(GOLDEN),
-  })
-  await page.getByRole("button", { name: "Check entries" }).click()
-  await page.getByRole("button", { name: "Import 3 answers" }).click()
-  await expect(page.getByText("3 answers matched").first()).toBeVisible()
-  await page.getByRole("button", { name: "Next: test cases" }).click()
+  await addExamples(page, tickets, GOLDEN, "3 answers matched")
 
   // the writer model is a suggested line with a Change button since the review of the Test Cases step
   await page.locator("button#generator").click()

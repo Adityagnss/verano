@@ -36,7 +36,11 @@ test("connect a model, write a prompt, then add examples", async ({ page, browse
   })
   await expect(page.getByText("case1.txt", { exact: true }).first()).toBeVisible()
   await page.getByRole("button", { name: "Next", exact: true }).click()
-  await page.getByRole("button", { name: "Next", exact: true }).click()
+  // the next step waits while the file is still being read, so keep trying until it moves on
+  await expect(async () => {
+    await page.getByRole("button", { name: "Next", exact: true }).click()
+    await expect(page.getByRole("button", { name: "Next: test cases" })).toBeVisible({ timeout: 1000 })
+  }).toPass({ timeout: 20000 })
   await page.getByRole("button", { name: "Next: test cases" }).click()
   await expect(page).toHaveURL(/\/tests$/)
 

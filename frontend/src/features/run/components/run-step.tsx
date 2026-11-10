@@ -171,7 +171,7 @@ export function RunStep({ projectId }: { projectId: string }) {
         description={RUN_COPY.notApproved}
         action={
           <Link href={`/projects/${projectId}/tests`} className="text-accent text-sm">
-            →
+            Approve test cases
           </Link>
         }
       />

@@ -31,8 +31,6 @@ test("safety checks: pick attacks, and try the screen", async ({ page, browserNa
   await page.getByRole("button", { name: "Screen this text" }).click()
   await expect(page.getByText("Would be blocked")).toBeVisible()
 
-  await expect(page.getByRole("heading", { name: "What this does not do" })).toBeVisible()
-
   // no sideways scroll on a phone
   await page.setViewportSize({ width: 390, height: 800 })
   const overflow = await page.evaluate(

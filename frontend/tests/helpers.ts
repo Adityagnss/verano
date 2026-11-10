@@ -39,5 +39,46 @@ export async function chooseTheme(
 
 /** Clicks a page link in the sidebar by its (new) name, for example "Compare results". */
 export async function goToPage(page: Page, name: string | RegExp): Promise<void> {
-  await page.locator('[data-slot="sidebar-inner"]').getByRole("link", { name }).first().click()
+  const link = page.locator('[data-slot="sidebar-inner"]').getByRole("link", { name }).first()
+  // below 1024px the sidebar lives in a drawer that the menu button opens
+  if (!(await link.isVisible())) await page.getByRole("button", { name: "Open menu" }).click()
+  await link.click()
+}
+
+/**
+ * Fills the "Add examples" wizard: ticks the file kinds, uploads input files and a golden CSV, matches the columns
+ * and moves on to the test cases. The match step waits while a file is still being read, so the click retries.
+ */
+export async function addExamples(
+  page: Page,
+  tickets: string[],
+  golden: string,
+  expectedAnswers: string,
+): Promise<void> {
+  const next = page.getByRole("button", { name: "Next", exact: true })
+  await page.getByRole("checkbox", { name: "Input files" }).click()
+  await page.getByRole("checkbox", { name: "Golden set" }).click()
+  await next.click()
+  await page.getByTestId("upload-inputs").setInputFiles(
+    tickets.map((text, i) => ({
+      name: `case${i + 1}.txt`,
+      mimeType: "text/plain",
+      buffer: Buffer.from(text),
+    })),
+  )
+  await expect(page.getByText(`case${tickets.length}.txt`, { exact: true })).toBeVisible()
+  await page.getByTestId("upload-golden").setInputFiles({
+    name: "golden.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(golden),
+  })
+  await next.click()
+  await page.getByRole("button", { name: "Check entries" }).click()
+  await page.getByRole("button", { name: /^Import \d+ answers/ }).click()
+  await expect(page.getByText(expectedAnswers).first()).toBeVisible()
+  await expect(async () => {
+    await next.click()
+    await expect(page.getByRole("button", { name: "Next: test cases" })).toBeVisible({ timeout: 1000 })
+  }).toPass({ timeout: 20000 })
+  await page.getByRole("button", { name: "Next: test cases" }).click()
 }

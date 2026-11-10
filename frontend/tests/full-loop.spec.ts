@@ -7,7 +7,7 @@
  */
 import { expect, test } from "@playwright/test"
 
-import { chooseTheme, goToPage, openAccountMenu, signUp, uniqueEmail } from "./helpers"
+import { chooseTheme, goToPage, openAccountMenu, signUp, uniqueEmail, addExamples } from "./helpers"
 
 const GOLDEN =
   "ticket,expected\nMy card was charged twice,billing\nWhere is my parcel?,shipping\nThe app crashes on start,technical\n"
@@ -36,29 +36,8 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   await page.getByRole("button", { name: "Save prompt" }).click()
   await expect(page).toHaveURL(/\/data$/)
 
-  await page.getByRole("checkbox", { name: "Input files" }).click()
-  await page.getByRole("checkbox", { name: "Golden set" }).click()
-  await page.getByRole("button", { name: "Next", exact: true }).click()
   const tickets = ["My card was charged twice", "Where is my parcel?", "The app crashes on start"]
-  await page.getByTestId("upload-inputs").setInputFiles(
-    tickets.map((text, i) => ({
-      name: `case${i + 1}.txt`,
-      mimeType: "text/plain",
-      buffer: Buffer.from(text),
-    })),
-  )
-  await expect(page.getByText("case3.txt", { exact: true })).toBeVisible()
-  await page.getByTestId("upload-golden").setInputFiles({
-    name: "golden.csv",
-    mimeType: "text/csv",
-    buffer: Buffer.from(GOLDEN),
-  })
-  await page.getByRole("button", { name: "Next", exact: true }).click()
-  await page.getByRole("button", { name: "Check entries" }).click()
-  await page.getByRole("button", { name: "Import 3 answers" }).click()
-  await expect(page.getByText("3 answers matched").first()).toBeVisible()
-  await page.getByRole("button", { name: "Next", exact: true }).click()
-  await page.getByRole("button", { name: "Next: test cases" }).click()
+  await addExamples(page, tickets, GOLDEN, "3 answers matched")
 
   // the writer model is a suggested line with a Change button since the review of the Test Cases step
   await page.locator("button#generator").click()
