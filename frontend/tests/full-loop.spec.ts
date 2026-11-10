@@ -36,6 +36,9 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   await page.getByRole("button", { name: "Save prompt" }).click()
   await expect(page).toHaveURL(/\/data$/)
 
+  await page.getByRole("checkbox", { name: "Input files" }).click()
+  await page.getByRole("checkbox", { name: "Golden set" }).click()
+  await page.getByRole("button", { name: "Next", exact: true }).click()
   const tickets = ["My card was charged twice", "Where is my parcel?", "The app crashes on start"]
   await page.getByTestId("upload-inputs").setInputFiles(
     tickets.map((text, i) => ({
@@ -50,9 +53,11 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
     mimeType: "text/csv",
     buffer: Buffer.from(GOLDEN),
   })
+  await page.getByRole("button", { name: "Next", exact: true }).click()
   await page.getByRole("button", { name: "Check entries" }).click()
   await page.getByRole("button", { name: "Import 3 answers" }).click()
   await expect(page.getByText("3 answers matched").first()).toBeVisible()
+  await page.getByRole("button", { name: "Next", exact: true }).click()
   await page.getByRole("button", { name: "Next: test cases" }).click()
 
   // the writer model is a suggested line with a Change button since the review of the Test Cases step

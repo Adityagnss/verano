@@ -1,6 +1,27 @@
 /** User-facing text for the Your Data step. */
 export const DATA_COPY = {
-  title: "Add your data (optional)",
+  title: "Add examples",
+  intro: {
+    what: "Optional files with real inputs and the answers you expect. Without them, Verano writes test cases for you.",
+    whenToUse: "you have real messages, files or documents the prompt should handle",
+    youGet: "test cases built from your own examples",
+  },
+  wizard: {
+    chooseTitle: "Choose what you have",
+    chooseDescription: "Tick everything you can upload. You can skip this whole page.",
+    chooseNone: "Tick at least one kind of file, or skip this page.",
+    uploadTitle: "Upload",
+    uploadDescription: "Add the files. Each is read right away.",
+    uploadNone: "Upload at least one file, or go back and skip.",
+    matchTitle: "Match the columns",
+    matchDescription:
+      "Check which column holds the correct answer, then import. Input files need nothing here.",
+    confirmTitle: "Confirm",
+    confirmDescription: "This is what the test cases will be built from.",
+    confirmNone: "No files are ready yet.",
+    waiting: "Some files are still being read or need their columns matched.",
+  },
+  skip: "Skip: write test cases for me",
   subtitle:
     "Send your real files to the models and compare their answers with your golden answers. Everything here is optional: without data, Verano writes the test cases for you.",
   howItWorks: [
