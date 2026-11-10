@@ -124,7 +124,7 @@ Every integration below shows what has been checked, not what might work. Nothin
 - **Built:** the code exists; no automated test of this integration.
 - **Planned:** not built.
 
-Today: 1 validated · 13 sample-tested · 1 built · 10 planned.
+Today: 4 validated · 10 sample-tested · 1 built · 10 planned.
 
 ### Native SDKs
 
@@ -140,9 +140,9 @@ Today: 1 validated · 13 sample-tested · 1 built · 10 planned.
 | | Integration | Status | What it does and what shows it |
 |---|---|---|---|
 | <img src="docs/assets/logos/pytest.svg" alt="" width="20" height="20"> | **pytest plugin** | Validated | `verano.test(case, fn)` checks your function in a normal pytest run and writes a JSON report. [test_integrations.py](cli/tests/test_integrations.py) (runs the real pytest in a subprocess with the plugin loaded). Checked with pytest 9.1.1 on 2026-11-10. |
-| <img src="docs/assets/logos/langchain.svg" alt="" width="20" height="20"> | **LangChain adapter** | Sample-tested | Makes a LangChain runnable or chain callable by `verano.test` and `verano.serve`. [test_integrations.py](cli/tests/test_integrations.py) (against a stand-in runnable). Next: Run it against the real library. |
-| <kbd>LI</kbd> | **LlamaIndex adapter** | Sample-tested | Makes a LlamaIndex query engine callable, with the retrieved nodes as chunks. [test_integrations.py](cli/tests/test_integrations.py) (against a stand-in engine). Next: Run it against the real library. |
-| <kbd>OAI</kbd> | **OpenAI SDK adapter** | Sample-tested | Uses an OpenAI client for chat completions and reports the tool calls a model makes. [test_integrations.py](cli/tests/test_integrations.py) (against a stand-in client). Next: Run it against the real library. |
+| <img src="docs/assets/logos/langchain.svg" alt="" width="20" height="20"> | **LangChain adapter** | Validated | Makes a LangChain runnable or chain callable by `verano.test` and `verano.serve`. [test_adapters_real.py](cli/tests/test_adapters_real.py) (a real chain and runnable, no network). [test_integrations.py](cli/tests/test_integrations.py) (and against a stand-in runnable). [adapter-validation.md](docs/checkpoints/adapter-validation.md). Checked with langchain-core 1.7.7 on 2026-11-10. |
+| <kbd>LI</kbd> | **LlamaIndex adapter** | Validated | Makes a LlamaIndex query engine callable, with the retrieved nodes as chunks. [test_adapters_real.py](cli/tests/test_adapters_real.py) (a real index and query engine with a mock model). [test_integrations.py](cli/tests/test_integrations.py) (and against a stand-in engine). [adapter-validation.md](docs/checkpoints/adapter-validation.md). Checked with llama-index-core 0.14.25 on 2026-11-10. |
+| <kbd>OAI</kbd> | **OpenAI SDK adapter** | Validated | Uses an OpenAI client for chat completions and reports the tool calls a model makes. [test_adapters_real.py](cli/tests/test_adapters_real.py) (the real SDK against a local stand-in server). [test_integrations.py](cli/tests/test_integrations.py) (and against a stand-in client). [adapter-validation.md](docs/checkpoints/adapter-validation.md). Checked with openai 3.49.0 (against a local stand-in server, not the hosted API) on 2026-11-10. |
 
 ### Observability imports
 

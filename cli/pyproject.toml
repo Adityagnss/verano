@@ -97,6 +97,11 @@ strict = true
 mypy_path = "src"
 explicit_package_bases = true
 
+[[tool.mypy.overrides]]
+# optional extras: present only where someone installs them (tests/test_adapters_real.py skips without them)
+module = ["langchain_core.*", "llama_index.*", "openai.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src", "."]

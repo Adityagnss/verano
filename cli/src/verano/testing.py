@@ -102,6 +102,9 @@ def test(case: Case, fn: Callable[[Any], Any]) -> Reply:
     return reply
 
 
+test.__test__ = False  # type: ignore[attr-defined]  # so pytest does not run `from verano.testing import test` as a test
+
+
 class AppServer:
     """A local web server that answers Verano's app calls with your function: POST {"input": ...}."""
 

@@ -286,3 +286,19 @@ def test_a_read_tool_reads_and_a_write_tool_writes_only_with_the_flag(platform: 
     assert made["structuredContent"]["name"] == "From an agent"
     listed = rpc(readonly, "tools/call", {"name": "list_projects", "arguments": {}})["result"]["structuredContent"]
     assert "From an agent" in json.dumps(listed)
+
+
+def test_importing_test_by_name_does_not_make_pytest_run_it(tmp_path: Path) -> None:
+    (tmp_path / "test_app.py").write_text(
+        "from verano.testing import Case, test\ndef test_it(): test(Case('x', contains=('ok',)), lambda _: 'all ok')\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert result.returncode == 0, result.stdout
+    assert "1 passed" in result.stdout
+    assert "error" not in result.stdout.lower()
