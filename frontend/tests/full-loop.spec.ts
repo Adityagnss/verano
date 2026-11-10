@@ -82,6 +82,7 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   await page.getByRole("button", { name: "Start experiment" }).click()
   await page.getByRole("button", { name: "See results" }).click({ timeout: 90_000 })
 
+  await page.getByRole("tab", { name: "Compare models" }).click({ timeout: 30_000 })
   await expect(page.getByRole("columnheader", { name: "Quality" })).toBeVisible({ timeout: 30_000 })
   await expect(page.getByRole("cell", { name: "echo" })).toBeVisible()
   await expect(page.getByText("Passed test cases")).toBeVisible()
@@ -141,6 +142,7 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   await expect(page.getByText("What will run")).toBeVisible()
   await page.getByRole("button", { name: "Start experiment" }).click()
   await page.getByRole("button", { name: "See results" }).click({ timeout: 90_000 })
+  await page.getByRole("tab", { name: "Compare models" }).click({ timeout: 30_000 })
   await expect(page.getByRole("columnheader", { name: "Quality" })).toBeVisible({ timeout: 30_000 })
   await page.goto(`${project}/dashboard`)
   await expect(page.getByText("All versions at a glance")).toBeVisible()
