@@ -1,7 +1,7 @@
-/** Opening a project starts at its first step. */
-import { redirect } from "next/navigation"
+/** Project Home: the pipeline, the next step and the latest runs. */
+import { ProjectHome } from "@/features/home/project-home"
 
 export default async function ProjectPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params
-  redirect(`/projects/${projectId}/keys`)
+  return <ProjectHome projectId={projectId} />
 }

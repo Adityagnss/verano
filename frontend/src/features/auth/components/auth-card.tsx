@@ -4,6 +4,7 @@
  * Verano, and the form.
  */
 import { BarChart3, Repeat2, Target } from "lucide-react"
+import { motion } from "motion/react"
 import type { ReactNode } from "react"
 
 import { Logo } from "@/components/common/logo"
@@ -51,13 +52,24 @@ export function AuthCard({
           className="pointer-events-none absolute -bottom-32 -left-16 size-96 rounded-full bg-sky-300/20 blur-3xl"
         />
         <Logo size={40} tone="light" className="relative [&>span]:text-2xl" />
-        <div className="relative flex max-w-lg flex-col gap-8">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="relative flex max-w-lg flex-col gap-8"
+        >
           <h2 className="text-4xl leading-tight font-semibold [font-stretch:87.5%]">
             Know which prompt and which model really works.
           </h2>
           <ul className="flex flex-col gap-5">
-            {POINTS.map((point) => (
-              <li key={point.title} className="flex gap-4">
+            {POINTS.map((point, i) => (
+              <motion.li
+                key={point.title}
+                className="flex gap-4"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.25 + i * 0.12, duration: 0.4 }}
+              >
                 <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/25">
                   <point.icon className="size-5" />
                 </span>
@@ -65,10 +77,10 @@ export function AuthCard({
                   <span className="font-semibold">{point.title}</span>
                   <span className="text-sm text-white/75">{point.text}</span>
                 </span>
-              </li>
+              </motion.li>
             ))}
           </ul>
-        </div>
+        </motion.div>
         <p className="relative text-sm text-white/60">Measure first. Change one thing at a time.</p>
       </aside>
       <div className="flex flex-col items-center justify-center gap-6 px-4 py-10">
@@ -76,6 +88,10 @@ export function AuthCard({
           <Logo size={40} className="[&>span]:text-2xl" />
           <span className="text-text-secondary max-w-sm text-sm">{TAGLINE}</span>
         </div>
+        <p className="text-text-secondary hidden max-w-sm text-center text-sm lg:block">
+          <strong className="text-foreground">What is Verano?</strong> It tests your prompt on the models you
+          choose and shows which one is best, with proof.
+        </p>
         <Card className="w-full max-w-sm shadow-[0_8px_30px_rgb(20_32_58/0.08)]">
           <CardHeader>
             <CardTitle className="text-lg">{title}</CardTitle>

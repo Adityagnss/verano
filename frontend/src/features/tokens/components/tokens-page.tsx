@@ -8,6 +8,7 @@ import { useState } from "react"
 import { toast } from "sonner"
 
 import { ErrorMessage } from "@/components/common/error-message"
+import { PageIntro } from "@/components/common/page-intro"
 import { Section } from "@/components/common/section"
 import { StatusBadge } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
@@ -16,7 +17,7 @@ import { Input } from "@/components/ui/input"
 import { useCreateToken, useRevokeToken, useTokenProjects, useTokens } from "../hooks"
 
 const SELECT =
-  "border-input bg-background h-9 rounded-md border px-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 outline-none"
+  "border-input bg-background min-h-10 w-full rounded-md sm:w-auto border px-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 outline-none"
 const DAYS = [30, 90, 365]
 
 export function TokensPage() {
@@ -42,14 +43,16 @@ export function TokensPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[64rem] flex-col gap-6 px-4 py-6">
-      <div className="flex flex-col gap-1.5">
-        <h1 className="text-2xl font-semibold tracking-tight">API tokens</h1>
-        <p className="text-text-secondary text-[0.95rem]">
-          A token lets the command line, your CI and your app use Verano without your password. Use a
-          read-only token where it only needs to fetch prompts or look at results.
-        </p>
-      </div>
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 py-2">
+      <PageIntro
+        storageKey="tokens"
+        title="API tokens"
+        what="A token lets the command line, your CI and your app use Verano without your password."
+        whenToUse="a script or build needs to fetch prompts or look at results"
+        youGet="a key you can limit to read-only or one project, and revoke at any time"
+        learnMore="tokens"
+        hasContent={(tokens.data ?? []).length > 0}
+      />
 
       <Section title="Make a token" description="You will see the token once. Copy it somewhere safe.">
         <ErrorMessage error={create.error ?? revoke.error ?? tokens.error} />
@@ -65,11 +68,11 @@ export function TokensPage() {
             </Button>
           </div>
         ) : null}
-        <div className="flex flex-wrap items-end gap-3">
+        <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-end">
           <label className="flex flex-col gap-1 text-sm">
             Name
             <Input
-              className="w-52"
+              className="min-h-10 w-full sm:w-52"
               placeholder="for example ci"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -107,7 +110,7 @@ export function TokensPage() {
               ))}
             </select>
           </label>
-          <Button disabled={!name.trim() || create.isPending} onClick={make}>
+          <Button size="lg" className="min-h-10" disabled={!name.trim() || create.isPending} onClick={make}>
             Make token
           </Button>
         </div>
@@ -115,7 +118,9 @@ export function TokensPage() {
 
       <Section title="Your tokens">
         {tokens.data && tokens.data.length === 0 ? (
-          <p className="text-text-secondary text-sm">No tokens yet.</p>
+          <p className="text-text-secondary text-sm">
+            No tokens yet. Make one above; it works for the command line and CI.
+          </p>
         ) : null}
         <ul className="flex flex-col gap-2">
           {(tokens.data ?? []).map((t) => (
