@@ -12,9 +12,10 @@ Open source · Self-hostable · Apache 2.0
 > checked against people), **real apps** (test your own app over HTTP), **the production loop** (serve the winning
 > prompt, SDKs, a CI action, real traffic, teams) and **security, depth and hardening** (a security pack, Improve in
 > several rounds, pause and resume, recovery from a dead worker). The open-source launch is not started.
-> **Everything is tested on a mock provider, recorded responses and free models** (759 backend, 256 CLI and 25 frontend
-> tests pass); **nothing is proven on a paid model yet** because the spending cap is $0, and the newest screens have not
-> been opened in a browser. The CLI is not on PyPI. Evidence and gaps: the
+> **Everything is tested on a mock provider, recorded responses and free models** (781 backend, 260 CLI, 28 SDK and 25 frontend
+> tests pass, and 5 browser tests pass in Chromium, including every screen added since Phase 6); **nothing is proven on a
+> paid model yet** because the spending cap is $0, and the browser tests have not been run in WebKit or Firefox. The CLI is
+> not on PyPI. Evidence and gaps: the
 > [Phase 8 and 9 checkpoint](docs/checkpoints/phase-8-9.md), the [Phase 6 and 7 checkpoint](docs/checkpoints/phase-6-7.md),
 > the [pending checks](docs/PENDING_CHECKS.md) and the [backlog](docs/BACKLOG.md).
 
@@ -50,7 +51,9 @@ Open source · Self-hostable · Apache 2.0
 - **Teams.** Four roles, invites, sign-in with Google, Microsoft or any OIDC provider, one key store per workspace, a
   monthly spending limit and an audit log.
 - **A small security pack.** Prompt injection, jailbreak, prompt leak, PII and harmful-content cases, written as ordinary
-  approved cases, with a "harden" step that asks Improve for defensive instructions.
+  approved cases, with a "harden" step that asks Improve for defensive instructions, a CI gate (`verano run --security`),
+  and a **runtime screen** your app can call before and after a model call. The screen catches obvious cases only and is
+  not a security boundary.
 - **Free to try.** Runs on local models through Ollama, with no provider account and no API key.
 
 ## Quick start
@@ -181,7 +184,7 @@ Measured, with the hardware stated ([all numbers](docs/benchmarks.md)):
 | Plan 50,000 calls | backlog | < 5 s |
 | Results summary for 50,000 calls (p95) | backlog | < 300 ms |
 
-Resilience (429 storms, bad keys, outages, forged headers, a dead worker, a failing provider): [resilience](docs/resilience.md). The 3,000-call load test has a script but has not been run.
+Resilience (429 storms, bad keys, outages, forged headers, a dead worker, a failing provider): [resilience](docs/resilience.md). The 3,000-call load test was run (306 calls/s, 0 failed; [record](docs/checkpoints/load-test.md)).
 
 ## Extend it
 
@@ -219,8 +222,8 @@ The full plan is in the [backlog](docs/BACKLOG.md); what was built and what is l
 |---|---|---|
 | 6 | Proof and trust | **Built; real-model proof waiting for a budget.** Human labels and judge agreement, "Why this score", 27 rule checks, Python custom checks in a sandbox, a judge gallery, a judge cache |
 | 7 | Real apps | **Built.** Connect your own app over HTTP (RAG, tool calls, conversations with a simulated user), several inputs per test case, several prompts per project, run parameters, `verano app` |
-| 8 | The production loop | **Built and tested; screens not browser-checked.** Prompt labels, SDKs, the GitHub Action, `verano mcp`, trace import and an OTLP receiver, online scoring and drift alerts, teams, an organization key store, a spending limit, an audit log. Not on PyPI; the Action has not run in a real job |
-| 9 | Security, depth and hardening | **Built and tested; load test not run.** A security pack, Improve in several rounds, pause and resume, leases and a sweeper, a circuit breaker, live progress. The security pack and the SDKs still need API-level tests |
+| 8 | The production loop | **Built and tested; screens opened and exercised in Chromium.** Prompt labels, SDKs, the GitHub Action, `verano mcp`, trace import and an OTLP receiver, online scoring and drift alerts, teams, an organization key store, a spending limit, an audit log. Not on PyPI; the Action has not run in a real job |
+| 9 | Security, depth and hardening | **Built and tested.** A security pack and a runtime screen, Improve in several rounds, pause and resume, leases and a sweeper, a circuit breaker, live progress, a load test. "Harden" on a real model is untested, and the sandbox container can still reach the backend |
 | 10 | Open-source launch | **Not started.** Public repository, website and documentation on free GitHub services, evidence page, outsider test, release gate |
 
 What still needs a paid model (Improve, the judge, reproducibility) or people (the seven task types, the outsider test)
