@@ -16,11 +16,11 @@ npm run preview   # serve the built site
 
 | Generated page | Source |
 |---|---|
-| Improve a prompt, Add a provider, Add a scanner language, Self-hosting | `docs/guides/*.md` |
+| Improve a prompt, Add a provider, Add a scanner language, Self-hosting | `website/content/*.md` |
 | Command line, verano.yaml | `cli/README.md` |
 | GitHub Action | `.github/actions/verano-run/README.md` |
 | Examples | `examples/README.md` |
-| Integrations | `docs/integrations/registry.yaml` |
+| Integrations | `integrations/registry.yaml` |
 | API reference | `frontend/src/lib/api/openapi.json` (`scripts/gen-api.mjs`) |
 
 Relative links in the sources are rewritten to site routes, or to GitHub for files that are not pages. Internal documents (decision records, plans, checkpoints and the like) are never published; links to them are reduced to plain text (see `PRIVATE` in `scripts/lib.mjs`). Hand-written pages: `index.md`, `get-started/`, `how-it-works.md` and the five new guides in `guides/`.

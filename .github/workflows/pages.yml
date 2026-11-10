@@ -8,7 +8,7 @@ on:
     branches: [main]
     paths:
       - "website/**"
-      - "docs/**"
+      - "integrations/**"
       - "README.md"
       - "cli/README.md"
       - ".github/actions/verano-run/README.md"

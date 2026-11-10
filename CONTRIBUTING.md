@@ -16,30 +16,24 @@ No paid API key is needed: tests use a mock provider and recorded provider respo
 manual testing uses local Ollama models (`make models`).
 
 Where things live: `backend/` (API and workers), `frontend/` (the web app), `cli/` (the
-`verano` command-line tool, its own package), `docs/`, `examples/`. The layout and the rules
-for each are in [ENGINEERING_STANDARDS.md](docs/ENGINEERING_STANDARDS.md), section 10.
+`verano` command-line tool, its own package), `sdk/` (Python and TypeScript libraries), `website/` (this
+project's website and docs), `examples/`.
 
 ## Before you open a pull request
 
 - `make ci` passes. It is the one gate, locally and in any hosted CI, and it covers the
   backend, the CLI and the frontend.
-- The change follows [ENGINEERING_STANDARDS.md](docs/ENGINEERING_STANDARDS.md): no
-  hardcoded values, one header docstring per file and no line comments, registries
-  instead of `if/elif` chains, files in their module's standard place.
+- The change follows the code around it: no hardcoded values, one header docstring per file and no
+  line comments, registries instead of `if/elif` chains, files in their module's standard place.
 - New behavior has one precise test named as a sentence; no redundant tests. A test that
   starts a background job drains it before it ends.
 - Model changes come with an Alembic migration (`make migration name="..."`); API changes
   with a regenerated client (`make api-client`).
 - A change to how the CLI talks to the API is also run once against a real stack, because
-  the fake servers in its tests are only our reading of the API
-  ([section 10.8](docs/ENGINEERING_STANDARDS.md)).
-- **Docs move with the code.** Add a row to the decision log in
-  [DEVELOPMENT.md](docs/DEVELOPMENT.md) (Part F), update the README status and
-  [architecture](docs/architecture.md) if a capability, module, table or flow changed, strike
-  what you built from the [backlog](docs/BACKLOG.md), and add a short ADR in `docs/adr/` when
-  you make a design decision.
-- Commits are one per step, named `<Phase or Part> · Step <n>: what changed`, for example
-  `Part H · Step 3.4: verano run, status and the CI quality gate`.
+  the fake servers in its tests are only our reading of the API.
+- **Docs move with the code.** If a command, page or setting changed, update the guide for it in
+  `website/content/` or the README, and run `make integrations` if you touched `integrations/registry.yaml`.
+- Keep commits small, with a message that says what changed and why.
 
 ## Working on the CLI
 
@@ -55,8 +49,8 @@ tool does and [`examples/support-triage`](examples/support-triage/) for a runnab
 
 ## Common extensions
 
-- [Add a provider](docs/guides/add-a-provider.md): usually one YAML entry.
-- [Add a language to `verano init`](docs/guides/add-a-scanner-language.md): one table entry for
+- [Add a provider](website/content/add-a-provider.md): usually one YAML entry.
+- [Add a language to `verano init`](website/content/add-a-scanner-language.md): one table entry for
   a clue-based (Broad level) scan.
 - Add an evaluator: one plugin class (`evaluation/plugins/`) plus one line in the evaluator
   catalog (`evaluation/config/catalog.yaml`); a written guide is still to do.

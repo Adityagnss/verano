@@ -14,14 +14,14 @@ export const BRANCH = "main"
 /** Source file (repo-relative) -> route on the site. One source of truth: the page is generated from the file. */
 export const ROUTES = {
   "README.md": "/",
-  "docs/guides/improve-a-prompt.md": "/guides/improve-a-prompt",
-  "docs/guides/add-a-provider.md": "/guides/add-a-provider",
-  "docs/guides/add-a-scanner-language.md": "/guides/add-a-scanner-language",
-  "docs/guides/self-hosting.md": "/self-hosting/",
+  "website/content/improve-a-prompt.md": "/guides/improve-a-prompt",
+  "website/content/add-a-provider.md": "/guides/add-a-provider",
+  "website/content/add-a-scanner-language.md": "/guides/add-a-scanner-language",
+  "website/content/self-hosting.md": "/self-hosting/",
   "cli/README.md": "/reference/cli",
   ".github/actions/verano-run/README.md": "/reference/github-action",
-  "docs/integrations/README.md": "/reference/integrations",
-  "docs/integrations/registry.yaml": "/reference/integrations",
+  "integrations/README.md": "/reference/integrations",
+  "integrations/registry.yaml": "/reference/integrations",
   "examples/README.md": "/reference/examples",
 }
 

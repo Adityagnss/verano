@@ -1,0 +1,2988 @@
+{
+ "DELETE /api/v1/auth/refresh": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [],
+  "responses": {
+   "204": []
+  }
+ },
+ "DELETE /api/v1/auth/tokens/{token_id}": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:token_id"
+  ],
+  "responses": {
+   "204": [],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "DELETE /api/v1/projects/{project_id}/apps/{app_id}": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:app_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "204": [],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "DELETE /api/v1/projects/{project_id}/credentials/{credential_id}": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:credential_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "204": [],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "DELETE /api/v1/projects/{project_id}/dataset-versions/{version_id}/items/{item_id}": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:item_id",
+   "path:project_id",
+   "path:version_id"
+  ],
+  "responses": {
+   "204": [],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "DELETE /api/v1/projects/{project_id}/experiments/{experiment_id}/answers/{test_case_run_id}/label": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:experiment_id",
+   "path:project_id",
+   "path:test_case_run_id"
+  ],
+  "responses": {
+   "204": [],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "DELETE /api/v1/projects/{project_id}/input-files/{file_id}": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:file_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "204": [],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/activity": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [],
+  "responses": {
+   "200": [
+    "days",
+    "end",
+    "failures",
+    "keys",
+    "prior_start",
+    "projects",
+    "rows",
+    "start",
+    "timezone"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/auth/config": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [],
+  "responses": {
+   "200": [
+    "password_min_length",
+    "signup_open"
+   ]
+  }
+ },
+ "GET /api/v1/auth/me": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [],
+  "responses": {
+   "200": [
+    "organizations",
+    "user"
+   ]
+  }
+ },
+ "GET /api/v1/auth/tokens": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [],
+  "responses": {
+   "200": [
+    "created_at",
+    "expires_at",
+    "id",
+    "last_used_at",
+    "name",
+    "prefix",
+    "revoked_at"
+   ]
+  }
+ },
+ "GET /api/v1/projects": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [],
+  "responses": {
+   "200": [
+    "items",
+    "next_cursor"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "created_at",
+    "created_by",
+    "description",
+    "id",
+    "name",
+    "organization_id"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/apps": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "answer_path",
+    "auth_kind",
+    "chunks_path",
+    "concurrency",
+    "cost_path",
+    "credential_id",
+    "header_names",
+    "id",
+    "method",
+    "mode",
+    "model_profile_id",
+    "name",
+    "request_template",
+    "retries",
+    "timeout_s",
+    "tool_calls_path",
+    "url"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/apps/{app_id}": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:app_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "answer_path",
+    "auth_kind",
+    "chunks_path",
+    "concurrency",
+    "cost_path",
+    "credential_id",
+    "header_names",
+    "id",
+    "method",
+    "mode",
+    "model_profile_id",
+    "name",
+    "request_template",
+    "retries",
+    "timeout_s",
+    "tool_calls_path",
+    "url"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/credentials": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "base_url",
+    "created_at",
+    "id",
+    "key_last4",
+    "label",
+    "last_validated_at",
+    "model_count",
+    "provider",
+    "rpm_limit",
+    "status",
+    "tpm_limit"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/credentials/in-other-projects": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "base_url",
+    "id",
+    "key_last4",
+    "label",
+    "project_name",
+    "provider"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/dataset-versions/current": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "approved_at",
+    "by_category",
+    "by_source",
+    "by_split",
+    "dataset_id",
+    "evaluator_set_version_id",
+    "generation",
+    "holdout_ratio",
+    "id",
+    "item_count",
+    "split_seed",
+    "status",
+    "task_spec_id",
+    "version",
+    "warnings"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/dataset-versions/{version_id}": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id",
+   "path:version_id"
+  ],
+  "responses": {
+   "200": [
+    "approved_at",
+    "by_category",
+    "by_source",
+    "by_split",
+    "dataset_id",
+    "evaluator_set_version_id",
+    "generation",
+    "holdout_ratio",
+    "id",
+    "item_count",
+    "split_seed",
+    "status",
+    "task_spec_id",
+    "version",
+    "warnings"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/dataset-versions/{version_id}/evaluators": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id",
+   "path:version_id"
+  ],
+  "responses": {
+   "200": [
+    "change_reason",
+    "created_at",
+    "evaluator_set_id",
+    "evaluators",
+    "id",
+    "judge",
+    "version"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/dataset-versions/{version_id}/generation/events": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id",
+   "path:version_id"
+  ],
+  "responses": {
+   "200": [],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/dataset-versions/{version_id}/items": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id",
+   "path:version_id"
+  ],
+  "responses": {
+   "200": [
+    "items",
+    "next_cursor"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/evaluator-set-versions/{version_id}": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id",
+   "path:version_id"
+  ],
+  "responses": {
+   "200": [
+    "change_reason",
+    "created_at",
+    "evaluator_set_id",
+    "evaluators",
+    "id",
+    "judge",
+    "version"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/experiments": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "items",
+    "next_cursor"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/experiments/{experiment_id}": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:experiment_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "budget_cap",
+    "completed_at",
+    "config",
+    "configuration",
+    "created_at",
+    "dataset_version_id",
+    "estimate",
+    "evaluator_set_version_id",
+    "id",
+    "model_versions",
+    "name",
+    "origin",
+    "progress",
+    "project_id",
+    "prompt_id",
+    "prompt_name",
+    "prompt_version_id",
+    "scoring",
+    "split_scope",
+    "started_at",
+    "status",
+    "stop_reason",
+    "total_calls"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/experiments/{experiment_id}/agreement": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:experiment_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "answers_used",
+    "evaluator_name",
+    "false_fail",
+    "false_pass",
+    "kappa",
+    "kappa_threshold",
+    "labelled_answers",
+    "message",
+    "min_labels",
+    "raw",
+    "raw_threshold",
+    "too_few",
+    "true_fail",
+    "true_pass",
+    "unsure_or_disputed",
+    "warn"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/experiments/{experiment_id}/answers/{test_case_run_id}/evidence": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:experiment_id",
+   "path:project_id",
+   "path:test_case_run_id"
+  ],
+  "responses": {
+   "200": [
+    "evaluation_run_id",
+    "scores",
+    "test_case_run_id"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/experiments/{experiment_id}/answers/{test_case_run_id}/judge-calls": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:experiment_id",
+   "path:project_id",
+   "path:test_case_run_id"
+  ],
+  "responses": {
+   "200": [
+    "cost",
+    "created_at",
+    "error_message",
+    "evaluation_run_id",
+    "evaluator",
+    "id",
+    "model",
+    "output_text",
+    "preview",
+    "request_messages",
+    "status"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/experiments/{experiment_id}/cases": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:experiment_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "agreement",
+    "category",
+    "dataset_item_id",
+    "expected_output",
+    "inputs",
+    "outputs",
+    "rubric",
+    "source",
+    "split"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/experiments/{experiment_id}/compare": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:experiment_id",
+   "path:project_id",
+   "query:against"
+  ],
+  "responses": {
+   "200": [
+    "against_id",
+    "against_prompt_version",
+    "experiment_id",
+    "models",
+    "prompt_version",
+    "same_test_cases"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/experiments/{experiment_id}/export.csv": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:experiment_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/experiments/{experiment_id}/labels": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:experiment_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "note",
+    "test_case_run_id",
+    "updated_at",
+    "user_id",
+    "verdict"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/experiments/{experiment_id}/replication": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:experiment_id",
+   "path:project_id",
+   "query:against"
+  ],
+  "responses": {
+   "200": [
+    "against_id",
+    "against_name",
+    "compared",
+    "experiment_id",
+    "model_changed",
+    "models",
+    "same",
+    "skipped"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/experiments/{experiment_id}/results": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:experiment_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "evaluation_run",
+    "evaluation_runs",
+    "experiment_id",
+    "models"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/experiments/{experiment_id}/runs/{run_id}": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:experiment_id",
+   "path:project_id",
+   "path:run_id"
+  ],
+  "responses": {
+   "200": [
+    "attempts",
+    "completed_at",
+    "cost",
+    "dataset_item_id",
+    "error_message",
+    "error_type",
+    "experiment_id",
+    "finish_reason",
+    "id",
+    "input_tokens",
+    "latency_ms",
+    "llm_call_id",
+    "model",
+    "model_profile_id",
+    "output_tokens",
+    "param_set_key",
+    "params",
+    "parsed_output",
+    "prompt_version_id",
+    "provider",
+    "raw_output",
+    "rendered_system_prompt",
+    "rendered_user_prompt",
+    "response_model",
+    "run_number",
+    "span_id",
+    "started_at",
+    "status",
+    "trace_id",
+    "ttft_ms"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/generator/suggestion": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "candidates",
+    "suggested"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/improvements": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "baseline_experiment_id",
+    "best_outcome",
+    "best_strategy",
+    "candidate_count",
+    "created_at",
+    "id",
+    "message",
+    "stage"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/improvements/candidate-for/{experiment_id}": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:experiment_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "candidate_id",
+    "outcome",
+    "session_id",
+    "strategy"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/improvements/latest": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id",
+   "query:experiment_id"
+  ],
+  "responses": {
+   "200": [
+    "baseline_experiment_id",
+    "baseline_holdout_quality",
+    "baseline_optimize_quality",
+    "candidates",
+    "clusters",
+    "created_at",
+    "id",
+    "message",
+    "root_prompt_version_id",
+    "stage",
+    "started_experiment_id",
+    "status",
+    "writer_model"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/improvements/{session_id}": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id",
+   "path:session_id"
+  ],
+  "responses": {
+   "200": [
+    "baseline_experiment_id",
+    "baseline_holdout_quality",
+    "baseline_optimize_quality",
+    "candidates",
+    "clusters",
+    "created_at",
+    "id",
+    "message",
+    "root_prompt_version_id",
+    "stage",
+    "started_experiment_id",
+    "status",
+    "writer_model"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/input-files": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "items",
+    "next_cursor"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/input-files/{file_id}": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:file_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "column_mapping",
+    "created_at",
+    "dataset_version_id",
+    "error_message",
+    "filename",
+    "format",
+    "id",
+    "imported_rows",
+    "kind",
+    "profile",
+    "project_id",
+    "prompt_version_id",
+    "row_count",
+    "section_count",
+    "sha256",
+    "size_bytes",
+    "status",
+    "validation_report"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/input-files/{file_id}/events": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:file_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/input-files/{file_id}/mapping-suggestion": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:file_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "mapping"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/input-files/{file_id}/sections": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:file_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "items",
+    "next_cursor"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/judge-gallery": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "agreement",
+    "agreement_note",
+    "config",
+    "criteria",
+    "description",
+    "id",
+    "limits",
+    "requires",
+    "threshold",
+    "title"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/judge/suggestion": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "candidates",
+    "reason",
+    "suggested"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/llm-calls": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "items",
+    "next_cursor"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/llm-calls/summary": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "by_purpose",
+    "calls",
+    "calls_with_unknown_price",
+    "cost"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/logbook/analysis": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "failed_checks",
+    "groups",
+    "totals"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/logbook/answers": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "items",
+    "limit",
+    "offset",
+    "total"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/logbook/answers.csv": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/logbook/answers/{experiment_id}/{run_id}": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:experiment_id",
+   "path:project_id",
+   "path:run_id"
+  ],
+  "responses": {
+   "200": [
+    "finish_reason",
+    "golden_answer",
+    "inputs",
+    "output",
+    "params",
+    "rendered_system_prompt",
+    "rendered_user_prompt",
+    "response_model",
+    "row",
+    "rubric",
+    "scores",
+    "siblings"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/logbook/calls": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "items",
+    "limit",
+    "offset",
+    "total"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/logbook/calls/{call_id}": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:call_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "finish_reason",
+    "labels",
+    "output_text",
+    "params",
+    "request_messages",
+    "row",
+    "trace_id"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/logbook/options": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "categories",
+    "checks",
+    "experiments",
+    "models",
+    "prompt_versions",
+    "providers"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/models": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "items",
+    "next_cursor"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/prompt-versions/{version_id}": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id",
+   "path:version_id"
+  ],
+  "responses": {
+   "200": [
+    "change_reason",
+    "created_at",
+    "default_params",
+    "id",
+    "parent_version_id",
+    "prompt_id",
+    "required_inputs",
+    "shape",
+    "source",
+    "system_template",
+    "user_template",
+    "variables",
+    "version"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/prompts": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "items",
+    "next_cursor"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/prompts/{prompt_id}": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id",
+   "path:prompt_id"
+  ],
+  "responses": {
+   "200": [
+    "created_at",
+    "id",
+    "latest_version",
+    "name",
+    "project_id"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/prompts/{prompt_id}/versions": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id",
+   "path:prompt_id"
+  ],
+  "responses": {
+   "200": [
+    "items",
+    "next_cursor"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/projects/{project_id}/task-specs/{spec_id}": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id",
+   "path:spec_id"
+  ],
+  "responses": {
+   "200": [
+    "confirmed_at",
+    "created_at",
+    "generator_credential_id",
+    "generator_model",
+    "id",
+    "llm_call_id",
+    "project_id",
+    "prompt_version_id",
+    "spec",
+    "status",
+    "warnings"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "GET /api/v1/prompt-notes": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [],
+  "responses": {
+   "200": [
+    "markdown"
+   ]
+  }
+ },
+ "GET /api/v1/providers": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [],
+  "responses": {
+   "200": [
+    "default_base_url",
+    "display_name",
+    "free",
+    "name",
+    "requires_key"
+   ]
+  }
+ },
+ "PATCH /api/v1/projects/{project_id}/apps/{app_id}": {
+  "deprecated": false,
+  "request_properties": [
+   "answer_path",
+   "auth_kind",
+   "basic_password",
+   "basic_username",
+   "bearer_token",
+   "chunks_path",
+   "concurrency",
+   "cost_path",
+   "headers",
+   "method",
+   "mode",
+   "name",
+   "request_template",
+   "retries",
+   "timeout_s",
+   "tool_calls_path",
+   "url"
+  ],
+  "request_required": [],
+  "required_params": [
+   "path:app_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "answer_path",
+    "auth_kind",
+    "chunks_path",
+    "concurrency",
+    "cost_path",
+    "credential_id",
+    "header_names",
+    "id",
+    "method",
+    "mode",
+    "model_profile_id",
+    "name",
+    "request_template",
+    "retries",
+    "timeout_s",
+    "tool_calls_path",
+    "url"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "PATCH /api/v1/projects/{project_id}/credentials/{credential_id}": {
+  "deprecated": false,
+  "request_properties": [
+   "label",
+   "rpm_limit",
+   "tpm_limit"
+  ],
+  "request_required": [],
+  "required_params": [
+   "path:credential_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "base_url",
+    "created_at",
+    "id",
+    "key_last4",
+    "label",
+    "last_validated_at",
+    "model_count",
+    "provider",
+    "rpm_limit",
+    "status",
+    "tpm_limit"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "PATCH /api/v1/projects/{project_id}/dataset-versions/{version_id}/items/{item_id}": {
+  "deprecated": false,
+  "request_properties": [
+   "category",
+   "expected_output",
+   "inputs",
+   "rubric",
+   "tags"
+  ],
+  "request_required": [],
+  "required_params": [
+   "path:item_id",
+   "path:project_id",
+   "path:version_id"
+  ],
+  "responses": {
+   "200": [
+    "category",
+    "context",
+    "dataset_version_id",
+    "expected_output",
+    "extra",
+    "id",
+    "input_file_id",
+    "inputs",
+    "position",
+    "review_status",
+    "rubric",
+    "source",
+    "source_row",
+    "split",
+    "tags"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/auth/login": {
+  "deprecated": false,
+  "request_properties": [
+   "email",
+   "password"
+  ],
+  "request_required": [
+   "email",
+   "password"
+  ],
+  "required_params": [],
+  "responses": {
+   "200": [
+    "access_token",
+    "expires_in",
+    "token_type",
+    "user"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/auth/refresh": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [],
+  "responses": {
+   "200": [
+    "access_token",
+    "expires_in",
+    "token_type",
+    "user"
+   ]
+  }
+ },
+ "POST /api/v1/auth/signup": {
+  "deprecated": false,
+  "request_properties": [
+   "email",
+   "name",
+   "password"
+  ],
+  "request_required": [
+   "email",
+   "name",
+   "password"
+  ],
+  "required_params": [],
+  "responses": {
+   "201": [
+    "access_token",
+    "expires_in",
+    "token_type",
+    "user"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/auth/tokens": {
+  "deprecated": false,
+  "request_properties": [
+   "expires_in_days",
+   "name"
+  ],
+  "request_required": [
+   "name"
+  ],
+  "required_params": [],
+  "responses": {
+   "201": [
+    "created_at",
+    "expires_at",
+    "id",
+    "last_used_at",
+    "name",
+    "prefix",
+    "revoked_at",
+    "token"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects": {
+  "deprecated": false,
+  "request_properties": [
+   "description",
+   "name",
+   "organization_id"
+  ],
+  "request_required": [
+   "name"
+  ],
+  "required_params": [],
+  "responses": {
+   "201": [
+    "created_at",
+    "created_by",
+    "description",
+    "id",
+    "name",
+    "organization_id"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/apps": {
+  "deprecated": false,
+  "request_properties": [
+   "answer_path",
+   "auth_kind",
+   "basic_password",
+   "basic_username",
+   "bearer_token",
+   "chunks_path",
+   "concurrency",
+   "cost_path",
+   "headers",
+   "method",
+   "mode",
+   "name",
+   "request_template",
+   "retries",
+   "timeout_s",
+   "tool_calls_path",
+   "url"
+  ],
+  "request_required": [
+   "answer_path",
+   "name",
+   "request_template",
+   "url"
+  ],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "201": [
+    "answer_path",
+    "auth_kind",
+    "chunks_path",
+    "concurrency",
+    "cost_path",
+    "credential_id",
+    "header_names",
+    "id",
+    "method",
+    "mode",
+    "model_profile_id",
+    "name",
+    "request_template",
+    "retries",
+    "timeout_s",
+    "tool_calls_path",
+    "url"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/apps/{app_id}/test": {
+  "deprecated": false,
+  "request_properties": [
+   "inputs"
+  ],
+  "request_required": [
+   "inputs"
+  ],
+  "required_params": [
+   "path:app_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "error",
+    "latency_ms",
+    "reply",
+    "request_body",
+    "response_body",
+    "status_code",
+    "truncated"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/credentials": {
+  "deprecated": false,
+  "request_properties": [
+   "api_key",
+   "base_url",
+   "label",
+   "provider",
+   "rpm_limit",
+   "tpm_limit"
+  ],
+  "request_required": [
+   "provider"
+  ],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "201": [
+    "base_url",
+    "created_at",
+    "id",
+    "key_last4",
+    "label",
+    "last_validated_at",
+    "model_count",
+    "provider",
+    "rpm_limit",
+    "status",
+    "tpm_limit"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/credentials/copy": {
+  "deprecated": false,
+  "request_properties": [
+   "credential_id"
+  ],
+  "request_required": [
+   "credential_id"
+  ],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "201": [
+    "base_url",
+    "created_at",
+    "id",
+    "key_last4",
+    "label",
+    "last_validated_at",
+    "model_count",
+    "provider",
+    "rpm_limit",
+    "status",
+    "tpm_limit"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/credentials/{credential_id}/discover": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:credential_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "base_url",
+    "created_at",
+    "id",
+    "key_last4",
+    "label",
+    "last_validated_at",
+    "model_count",
+    "provider",
+    "rpm_limit",
+    "status",
+    "tpm_limit"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/credentials/{credential_id}/validate": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:credential_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "base_url",
+    "created_at",
+    "id",
+    "key_last4",
+    "label",
+    "last_validated_at",
+    "model_count",
+    "provider",
+    "rpm_limit",
+    "status",
+    "tpm_limit"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/dataset-versions/{version_id}/approve": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id",
+   "path:version_id"
+  ],
+  "responses": {
+   "200": [
+    "approved_at",
+    "by_category",
+    "by_source",
+    "by_split",
+    "dataset_id",
+    "evaluator_set_version_id",
+    "generation",
+    "holdout_ratio",
+    "id",
+    "item_count",
+    "split_seed",
+    "status",
+    "task_spec_id",
+    "version",
+    "warnings"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/dataset-versions/{version_id}/approve-drafts": {
+  "deprecated": false,
+  "request_properties": [
+   "category",
+   "source"
+  ],
+  "request_required": [],
+  "required_params": [
+   "path:project_id",
+   "path:version_id"
+  ],
+  "responses": {
+   "200": [
+    "approved_at",
+    "by_category",
+    "by_source",
+    "by_split",
+    "dataset_id",
+    "evaluator_set_version_id",
+    "generation",
+    "holdout_ratio",
+    "id",
+    "item_count",
+    "split_seed",
+    "status",
+    "task_spec_id",
+    "version",
+    "warnings"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/dataset-versions/{version_id}/generation/cancel": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id",
+   "path:version_id"
+  ],
+  "responses": {
+   "200": [
+    "approved_at",
+    "by_category",
+    "by_source",
+    "by_split",
+    "dataset_id",
+    "evaluator_set_version_id",
+    "generation",
+    "holdout_ratio",
+    "id",
+    "item_count",
+    "split_seed",
+    "status",
+    "task_spec_id",
+    "version",
+    "warnings"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/dataset-versions/{version_id}/items": {
+  "deprecated": false,
+  "request_properties": [
+   "category",
+   "expected_output",
+   "inputs",
+   "rubric",
+   "tags"
+  ],
+  "request_required": [
+   "inputs"
+  ],
+  "required_params": [
+   "path:project_id",
+   "path:version_id"
+  ],
+  "responses": {
+   "201": [
+    "category",
+    "context",
+    "dataset_version_id",
+    "expected_output",
+    "extra",
+    "id",
+    "input_file_id",
+    "inputs",
+    "position",
+    "review_status",
+    "rubric",
+    "source",
+    "source_row",
+    "split",
+    "tags"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/dataset-versions/{version_id}/regenerate": {
+  "deprecated": false,
+  "request_properties": [
+   "category"
+  ],
+  "request_required": [
+   "category"
+  ],
+  "required_params": [
+   "path:project_id",
+   "path:version_id"
+  ],
+  "responses": {
+   "202": [
+    "approved_at",
+    "by_category",
+    "by_source",
+    "by_split",
+    "dataset_id",
+    "evaluator_set_version_id",
+    "generation",
+    "holdout_ratio",
+    "id",
+    "item_count",
+    "split_seed",
+    "status",
+    "task_spec_id",
+    "version",
+    "warnings"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/experiments": {
+  "deprecated": false,
+  "request_properties": [
+   "budget_cap",
+   "dataset_version_id",
+   "evaluator_set_version_id",
+   "judge",
+   "models",
+   "name",
+   "prompt_id",
+   "prompt_version_id",
+   "split_scope"
+  ],
+  "request_required": [
+   "models"
+  ],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "201": [
+    "budget_cap",
+    "completed_at",
+    "config",
+    "configuration",
+    "created_at",
+    "dataset_version_id",
+    "estimate",
+    "evaluator_set_version_id",
+    "id",
+    "model_versions",
+    "name",
+    "origin",
+    "progress",
+    "project_id",
+    "prompt_id",
+    "prompt_name",
+    "prompt_version_id",
+    "scoring",
+    "split_scope",
+    "started_at",
+    "status",
+    "stop_reason",
+    "total_calls"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/experiments/estimate": {
+  "deprecated": false,
+  "request_properties": [
+   "budget_cap",
+   "dataset_version_id",
+   "evaluator_set_version_id",
+   "judge",
+   "models",
+   "name",
+   "prompt_id",
+   "prompt_version_id",
+   "split_scope"
+  ],
+  "request_required": [
+   "models"
+  ],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "calls",
+    "cases",
+    "generation_cost",
+    "input_tokens",
+    "judge_calls",
+    "judge_cost",
+    "judge_model",
+    "judge_source",
+    "models",
+    "output_tokens",
+    "price_known",
+    "total_cost"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/experiments/{experiment_id}/cancel": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:experiment_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "budget_cap",
+    "completed_at",
+    "config",
+    "configuration",
+    "created_at",
+    "dataset_version_id",
+    "estimate",
+    "evaluator_set_version_id",
+    "id",
+    "model_versions",
+    "name",
+    "origin",
+    "progress",
+    "project_id",
+    "prompt_id",
+    "prompt_name",
+    "prompt_version_id",
+    "scoring",
+    "split_scope",
+    "started_at",
+    "status",
+    "stop_reason",
+    "total_calls"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/experiments/{experiment_id}/judge/try": {
+  "deprecated": false,
+  "request_properties": [
+   "evaluator",
+   "judge",
+   "test_case_run_id"
+  ],
+  "request_required": [
+   "evaluator",
+   "test_case_run_id"
+  ],
+  "required_params": [
+   "path:experiment_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "calls",
+    "score"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/experiments/{experiment_id}/judge/try/estimate": {
+  "deprecated": false,
+  "request_properties": [
+   "evaluator",
+   "judge",
+   "test_case_run_id"
+  ],
+  "request_required": [
+   "evaluator",
+   "test_case_run_id"
+  ],
+  "required_params": [
+   "path:experiment_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "judge_calls",
+    "judge_cost",
+    "judge_model",
+    "price_known"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/experiments/{experiment_id}/rerun": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:experiment_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "201": [
+    "budget_cap",
+    "completed_at",
+    "config",
+    "configuration",
+    "created_at",
+    "dataset_version_id",
+    "estimate",
+    "evaluator_set_version_id",
+    "id",
+    "model_versions",
+    "name",
+    "origin",
+    "progress",
+    "project_id",
+    "prompt_id",
+    "prompt_name",
+    "prompt_version_id",
+    "scoring",
+    "split_scope",
+    "started_at",
+    "status",
+    "stop_reason",
+    "total_calls"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/experiments/{experiment_id}/rescore": {
+  "deprecated": false,
+  "request_properties": [
+   "change_reason",
+   "evaluator_set_version_id",
+   "evaluators",
+   "judge"
+  ],
+  "request_required": [],
+  "required_params": [
+   "path:experiment_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "202": [
+    "evaluation_run",
+    "evaluation_runs",
+    "experiment_id",
+    "models"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/experiments/{experiment_id}/rescore/estimate": {
+  "deprecated": false,
+  "request_properties": [
+   "change_reason",
+   "evaluator_set_version_id",
+   "evaluators",
+   "judge"
+  ],
+  "request_required": [],
+  "required_params": [
+   "path:experiment_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "judge_calls",
+    "judge_cost",
+    "judge_model",
+    "price_known"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/generations": {
+  "deprecated": false,
+  "request_properties": [
+   "accept_cost",
+   "budget_cap",
+   "golden_only",
+   "target_size",
+   "task_spec_id"
+  ],
+  "request_required": [
+   "task_spec_id"
+  ],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "202": [
+    "approved_at",
+    "by_category",
+    "by_source",
+    "by_split",
+    "dataset_id",
+    "evaluator_set_version_id",
+    "generation",
+    "holdout_ratio",
+    "id",
+    "item_count",
+    "split_seed",
+    "status",
+    "task_spec_id",
+    "version",
+    "warnings"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/generations/estimate": {
+  "deprecated": false,
+  "request_properties": [
+   "accept_cost",
+   "budget_cap",
+   "golden_only",
+   "target_size",
+   "task_spec_id"
+  ],
+  "request_required": [
+   "task_spec_id"
+  ],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "answers_to_draft",
+    "calls",
+    "cases_to_generate",
+    "confirm_above",
+    "cost",
+    "input_tokens",
+    "needs_confirmation",
+    "output_tokens",
+    "price_known"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/improvements": {
+  "deprecated": false,
+  "request_properties": [
+   "experiment_id",
+   "writer"
+  ],
+  "request_required": [
+   "experiment_id"
+  ],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "202": [
+    "baseline_experiment_id",
+    "baseline_holdout_quality",
+    "baseline_optimize_quality",
+    "candidates",
+    "clusters",
+    "created_at",
+    "id",
+    "message",
+    "root_prompt_version_id",
+    "stage",
+    "started_experiment_id",
+    "status",
+    "writer_model"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/improvements/{session_id}/candidates/{candidate_id}/accept": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:candidate_id",
+   "path:project_id",
+   "path:session_id"
+  ],
+  "responses": {
+   "200": [
+    "baseline_experiment_id",
+    "baseline_holdout_quality",
+    "baseline_optimize_quality",
+    "candidates",
+    "clusters",
+    "created_at",
+    "id",
+    "message",
+    "root_prompt_version_id",
+    "stage",
+    "started_experiment_id",
+    "status",
+    "writer_model"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/improvements/{session_id}/candidates/{candidate_id}/save": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:candidate_id",
+   "path:project_id",
+   "path:session_id"
+  ],
+  "responses": {
+   "200": [
+    "baseline_experiment_id",
+    "baseline_holdout_quality",
+    "baseline_optimize_quality",
+    "candidates",
+    "clusters",
+    "created_at",
+    "id",
+    "message",
+    "root_prompt_version_id",
+    "stage",
+    "started_experiment_id",
+    "status",
+    "writer_model"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/improvements/{session_id}/continue": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id",
+   "path:session_id"
+  ],
+  "responses": {
+   "202": [
+    "baseline_experiment_id",
+    "baseline_holdout_quality",
+    "baseline_optimize_quality",
+    "candidates",
+    "clusters",
+    "created_at",
+    "id",
+    "message",
+    "root_prompt_version_id",
+    "stage",
+    "started_experiment_id",
+    "status",
+    "writer_model"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/improvements/{session_id}/stop": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:project_id",
+   "path:session_id"
+  ],
+  "responses": {
+   "200": [
+    "baseline_experiment_id",
+    "baseline_holdout_quality",
+    "baseline_optimize_quality",
+    "candidates",
+    "clusters",
+    "created_at",
+    "id",
+    "message",
+    "root_prompt_version_id",
+    "stage",
+    "started_experiment_id",
+    "status",
+    "writer_model"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/input-files": {
+  "deprecated": false,
+  "request_properties": [
+   "file",
+   "purpose"
+  ],
+  "request_required": [
+   "file",
+   "purpose"
+  ],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "201": [
+    "column_mapping",
+    "created_at",
+    "dataset_version_id",
+    "error_message",
+    "filename",
+    "format",
+    "id",
+    "imported_rows",
+    "kind",
+    "profile",
+    "project_id",
+    "prompt_version_id",
+    "row_count",
+    "section_count",
+    "sha256",
+    "size_bytes",
+    "status",
+    "validation_report"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/input-files/{file_id}/import": {
+  "deprecated": false,
+  "request_properties": [],
+  "request_required": [],
+  "required_params": [
+   "path:file_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "column_mapping",
+    "created_at",
+    "dataset_version_id",
+    "error_message",
+    "filename",
+    "format",
+    "id",
+    "imported_rows",
+    "kind",
+    "profile",
+    "project_id",
+    "prompt_version_id",
+    "row_count",
+    "section_count",
+    "sha256",
+    "size_bytes",
+    "status",
+    "validation_report"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/llm-calls": {
+  "deprecated": false,
+  "request_properties": [
+   "credential_id",
+   "messages",
+   "model",
+   "params"
+  ],
+  "request_required": [
+   "credential_id",
+   "messages",
+   "model"
+  ],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "attempts",
+    "call_id",
+    "cost",
+    "finish_reason",
+    "input_tokens",
+    "latency_ms",
+    "model",
+    "output_tokens",
+    "params",
+    "provider",
+    "response_model",
+    "span_id",
+    "text",
+    "trace_id"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/prompt-versions/{version_id}/check": {
+  "deprecated": false,
+  "request_properties": [
+   "columns",
+   "model_profile_ids",
+   "sample_inputs"
+  ],
+  "request_required": [],
+  "required_params": [
+   "path:project_id",
+   "path:version_id"
+  ],
+  "responses": {
+   "200": [
+    "context",
+    "missing_inputs",
+    "ok",
+    "required_inputs",
+    "shape",
+    "variables",
+    "warnings"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/prompt-versions/{version_id}/render": {
+  "deprecated": false,
+  "request_properties": [
+   "inputs"
+  ],
+  "request_required": [
+   "inputs"
+  ],
+  "required_params": [
+   "path:project_id",
+   "path:version_id"
+  ],
+  "responses": {
+   "200": [
+    "messages",
+    "shape"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/prompts": {
+  "deprecated": false,
+  "request_properties": [
+   "change_reason",
+   "default_params",
+   "name",
+   "system_template",
+   "user_template"
+  ],
+  "request_required": [
+   "name"
+  ],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "201": [
+    "created_at",
+    "id",
+    "latest_version",
+    "name",
+    "project_id"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/prompts/inspect": {
+  "deprecated": false,
+  "request_properties": [
+   "columns",
+   "max_tokens",
+   "model_profile_ids",
+   "sample_inputs",
+   "system_template",
+   "user_template"
+  ],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "check",
+    "preview"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/prompts/{prompt_id}/versions": {
+  "deprecated": false,
+  "request_properties": [
+   "change_reason",
+   "default_params",
+   "parent_version_id",
+   "system_template",
+   "user_template"
+  ],
+  "request_required": [],
+  "required_params": [
+   "path:project_id",
+   "path:prompt_id"
+  ],
+  "responses": {
+   "201": [
+    "change_reason",
+    "created_at",
+    "default_params",
+    "id",
+    "parent_version_id",
+    "prompt_id",
+    "required_inputs",
+    "shape",
+    "source",
+    "system_template",
+    "user_template",
+    "variables",
+    "version"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "POST /api/v1/projects/{project_id}/task-specs": {
+  "deprecated": false,
+  "request_properties": [
+   "credential_id",
+   "model",
+   "prompt_version_id"
+  ],
+  "request_required": [
+   "credential_id",
+   "model",
+   "prompt_version_id"
+  ],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "201": [
+    "confirmed_at",
+    "created_at",
+    "generator_credential_id",
+    "generator_model",
+    "id",
+    "llm_call_id",
+    "project_id",
+    "prompt_version_id",
+    "spec",
+    "status",
+    "warnings"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "PUT /api/v1/projects/{project_id}/dataset-versions/{version_id}/evaluators": {
+  "deprecated": false,
+  "request_properties": [
+   "change_reason",
+   "evaluators",
+   "judge"
+  ],
+  "request_required": [
+   "evaluators"
+  ],
+  "required_params": [
+   "path:project_id",
+   "path:version_id"
+  ],
+  "responses": {
+   "200": [
+    "change_reason",
+    "created_at",
+    "evaluator_set_id",
+    "evaluators",
+    "id",
+    "judge",
+    "version"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "PUT /api/v1/projects/{project_id}/experiments/{experiment_id}/answers/{test_case_run_id}/label": {
+  "deprecated": false,
+  "request_properties": [
+   "note",
+   "verdict"
+  ],
+  "request_required": [
+   "verdict"
+  ],
+  "required_params": [
+   "path:experiment_id",
+   "path:project_id",
+   "path:test_case_run_id"
+  ],
+  "responses": {
+   "200": [
+    "note",
+    "test_case_run_id",
+    "updated_at",
+    "user_id",
+    "verdict"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "PUT /api/v1/projects/{project_id}/input-files/{file_id}/mapping": {
+  "deprecated": false,
+  "request_properties": [
+   "mapping"
+  ],
+  "request_required": [
+   "mapping"
+  ],
+  "required_params": [
+   "path:file_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "column_mapping",
+    "created_at",
+    "dataset_version_id",
+    "error_message",
+    "filename",
+    "format",
+    "id",
+    "imported_rows",
+    "kind",
+    "profile",
+    "project_id",
+    "prompt_version_id",
+    "row_count",
+    "section_count",
+    "sha256",
+    "size_bytes",
+    "status",
+    "validation_report"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "PUT /api/v1/projects/{project_id}/input-files/{file_id}/sheet": {
+  "deprecated": false,
+  "request_properties": [
+   "sheet"
+  ],
+  "request_required": [
+   "sheet"
+  ],
+  "required_params": [
+   "path:file_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "column_mapping",
+    "created_at",
+    "dataset_version_id",
+    "error_message",
+    "filename",
+    "format",
+    "id",
+    "imported_rows",
+    "kind",
+    "profile",
+    "project_id",
+    "prompt_version_id",
+    "row_count",
+    "section_count",
+    "sha256",
+    "size_bytes",
+    "status",
+    "validation_report"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "PUT /api/v1/projects/{project_id}/input-files/{file_id}/variables": {
+  "deprecated": false,
+  "request_properties": [
+   "category",
+   "expected_output",
+   "variables"
+  ],
+  "request_required": [
+   "variables"
+  ],
+  "required_params": [
+   "path:file_id",
+   "path:project_id"
+  ],
+  "responses": {
+   "200": [
+    "column_mapping",
+    "created_at",
+    "dataset_version_id",
+    "error_message",
+    "filename",
+    "format",
+    "id",
+    "imported_rows",
+    "kind",
+    "profile",
+    "project_id",
+    "prompt_version_id",
+    "row_count",
+    "section_count",
+    "sha256",
+    "size_bytes",
+    "status",
+    "validation_report"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "PUT /api/v1/projects/{project_id}/models/selection": {
+  "deprecated": false,
+  "request_properties": [
+   "selected",
+   "unselected"
+  ],
+  "request_required": [],
+  "required_params": [
+   "path:project_id"
+  ],
+  "responses": {
+   "204": [],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "PUT /api/v1/projects/{project_id}/prompt-versions/{version_id}/task-spec": {
+  "deprecated": false,
+  "request_properties": [
+   "judge",
+   "spec"
+  ],
+  "request_required": [
+   "spec"
+  ],
+  "required_params": [
+   "path:project_id",
+   "path:version_id"
+  ],
+  "responses": {
+   "200": [
+    "confirmed_at",
+    "created_at",
+    "generator_credential_id",
+    "generator_model",
+    "id",
+    "llm_call_id",
+    "project_id",
+    "prompt_version_id",
+    "spec",
+    "status",
+    "warnings"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ },
+ "PUT /api/v1/projects/{project_id}/task-specs/{spec_id}": {
+  "deprecated": false,
+  "request_properties": [
+   "spec"
+  ],
+  "request_required": [
+   "spec"
+  ],
+  "required_params": [
+   "path:project_id",
+   "path:spec_id"
+  ],
+  "responses": {
+   "200": [
+    "confirmed_at",
+    "created_at",
+    "generator_credential_id",
+    "generator_model",
+    "id",
+    "llm_call_id",
+    "project_id",
+    "prompt_version_id",
+    "spec",
+    "status",
+    "warnings"
+   ],
+   "422": [
+    "detail"
+   ]
+  }
+ }
+}

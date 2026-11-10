@@ -22,3 +22,6 @@ goldenset.JSON
 
 # virtual environments of any package (a tracked symlink to one wiped real environments once)
 .venv
+
+# Local development notes (decisions, checkpoints, plans); kept on the owner's machine, not published
+/docs/

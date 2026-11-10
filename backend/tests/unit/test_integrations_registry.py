@@ -1,4 +1,4 @@
-"""The integration registry (docs/integrations/registry.yaml): every row has the evidence its status needs, every logo
+"""The integration registry (integrations/registry.yaml): every row has the evidence its status needs, every logo
 exists, and the README block and the integrations page are exactly what the registry generates (so a surface cannot
 drift from it). The rules live in scripts/integrations.py."""
 
@@ -38,7 +38,7 @@ def test_the_readme_and_the_page_are_what_the_registry_generates() -> None:
     items = script.load()
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert script.with_block(readme, items) == readme, "run `make integrations`"
-    assert (ROOT / "docs/integrations/README.md").read_text(encoding="utf-8") == script.page(items)
+    assert (ROOT / "integrations/README.md").read_text(encoding="utf-8") == script.page(items)
 
 
 def test_no_row_claims_more_than_its_evidence_shows() -> None:
@@ -106,7 +106,7 @@ def test_a_logo_must_exist_and_without_one_a_short_chip_is_needed() -> None:
         row = next(i for i in items if i["id"] == "har")
         del row["chip"]
 
-    assert any("is not in docs/assets/logos" in p for p in mutate(missing_logo))
+    assert any("is not in integrations/logos" in p for p in mutate(missing_logo))
     assert any("give a 'chip'" in p for p in mutate(no_chip))
 
 
@@ -123,7 +123,7 @@ def test_ids_are_unique_and_groups_and_statuses_are_known() -> None:
 
 
 def test_every_logo_has_a_credit_line_and_the_counts_add_up() -> None:
-    credits = (ROOT / "docs/assets/logos/CREDITS.md").read_text(encoding="utf-8")
+    credits = (ROOT / "integrations/logos/CREDITS.md").read_text(encoding="utf-8")
     for item in script.load():
         if item.get("logo"):
             assert f"| {item['logo']} |" in credits, item["logo"]

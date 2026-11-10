@@ -4,7 +4,7 @@ Checks that the API did not break its promise (ADR 0022).
     cd backend && PYTHONPATH=. uv run python ../scripts/check_api_compat.py            # compare with the baseline
     cd backend && PYTHONPATH=. uv run python ../scripts/check_api_compat.py --update   # record the current API
 
-The baseline is the API of the last release (`docs/api/baseline.json`). A removal, a newly required field or a
+The baseline is the API of the last release (`backend/api-baseline.json`). A removal, a newly required field or a
 field that no longer comes back fails the check; additions and deprecated routes do not. After a release, or when
 a breaking change was announced and its window has passed, run it with --update and commit the new baseline.
 """
@@ -16,7 +16,7 @@ from pathlib import Path
 from app.core.apicompat import breaking_changes, signature
 from app.main import create_app
 
-BASELINE = Path(__file__).resolve().parents[1] / "docs" / "api" / "baseline.json"
+BASELINE = Path(__file__).resolve().parents[1] / "backend" / "api-baseline.json"
 
 
 def main() -> int:

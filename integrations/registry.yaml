@@ -1,0 +1,297 @@
+# The one list of integrations. The README, the integrations page, the comparison artifact and (later) the website are all
+# generated from this file by scripts/integrations.py; `make integrations` regenerates them and a test fails when they drift.
+#
+# status (what has been shown, strongest last):
+#   planned        not built.
+#   built          the code exists; no automated test of this integration.
+#   sample_tested  automated tests pass against stand-in objects or sample files we wrote.
+#   validated      checked against the real third-party tool or library (version and date recorded), not stand-ins.
+# Nothing here is counted as an integration because it is "theoretically compatible": a row needs the evidence for its status.
+#
+# group: native_sdk | framework_adapter | observability_import | ci_integration
+# logo: a Simple Icons slug whose file is in integrations/logos, or null with a short `chip` text instead.
+version: 1
+integrations:
+  # -- Native SDKs -------------------------------------------------------------------------------------------------
+  - id: python-sdk
+    name: Python SDK
+    group: native_sdk
+    status: sample_tested
+    logo: python
+    summary: Fetch the prompt a label points at, with a saved copy for outages (`verano-sdk`, standard library only).
+    where: sdk/python
+    evidence:
+      - {kind: test, ref: sdk/python/tests/test_client.py, note: "14 tests against a fake Verano"}
+      - {kind: record, ref: integrations/evidence/packaging.md, note: "builds and installs in a clean environment"}
+    distribution: not published to PyPI
+    next_step: Publish to PyPI (you run it; commands in the packaging record), then run it against a real stack.
+  - id: typescript-sdk
+    name: TypeScript SDK
+    group: native_sdk
+    status: sample_tested
+    logo: typescript
+    summary: The same fetch, cache and fallback for Node, Bun and Deno (`@verano/sdk`, no dependencies).
+    where: sdk/typescript
+    evidence:
+      - {kind: test, ref: sdk/typescript/tests/client.test.ts, note: "14 tests against a fake fetch"}
+      - {kind: record, ref: integrations/evidence/packaging.md, note: "builds and installs in a clean folder"}
+    distribution: not published to npm
+    next_step: Publish to npm (you run it; commands in the packaging record), then run it against a real stack.
+  - id: cli
+    name: Command line (`verano`)
+    group: native_sdk
+    status: sample_tested
+    logo: null
+    chip: CLI
+    summary: Scan your code for prompts, push, run, gate a pull request, bring in traces, connect your app.
+    where: cli
+    evidence:
+      - {kind: test, ref: cli/tests/test_run.py, note: "against a fake platform"}
+      - {kind: test, ref: cli/tests/test_init.py}
+      - {kind: record, ref: integrations/evidence/packaging.md, note: "builds and installs in a clean environment"}
+    distribution: not published to PyPI
+    next_step: Publish to PyPI (you run it), then install it on a clean machine with uvx.
+  - id: mcp-server
+    name: MCP server (`verano mcp`)
+    group: native_sdk
+    status: sample_tested
+    logo: modelcontextprotocol
+    summary: Lets an AI agent list projects, read results and, only with `--allow-write`, start runs and move labels.
+    where: cli/src/verano/mcp
+    evidence:
+      - {kind: test, ref: cli/tests/test_integrations.py, note: "protocol, schemas and refusals; no real agent client"}
+    next_step: Try it with a real MCP client (pending check 28).
+
+  # -- Framework adapters -----------------------------------------------------------------------------------------
+  - id: pytest-plugin
+    name: pytest plugin
+    group: framework_adapter
+    status: validated
+    logo: pytest
+    summary: "`verano.test(case, fn)` checks your function in a normal pytest run and writes a JSON report."
+    where: cli/src/verano/pytest_plugin.py
+    evidence:
+      - {kind: test, ref: cli/tests/test_integrations.py, note: "runs the real pytest in a subprocess with the plugin loaded"}
+    verified_with: pytest 9.1.1
+    verified_on: "2026-11-10"
+  - id: langchain-adapter
+    name: LangChain adapter
+    group: framework_adapter
+    status: validated
+    logo: langchain
+    summary: Makes a LangChain runnable or chain callable by `verano.test` and `verano.serve`.
+    where: cli/src/verano/adapters.py
+    evidence:
+      - {kind: test, ref: cli/tests/test_adapters_real.py, note: "a real chain and runnable, no network"}
+      - {kind: test, ref: cli/tests/test_integrations.py, note: "and against a stand-in runnable"}
+      - {kind: record, ref: integrations/evidence/adapter-validation.md}
+    verified_with: langchain-core 1.7.7
+    verified_on: "2026-11-10"
+  - id: llamaindex-adapter
+    name: LlamaIndex adapter
+    group: framework_adapter
+    status: validated
+    logo: null
+    chip: LI
+    summary: Makes a LlamaIndex query engine callable, with the retrieved nodes as chunks.
+    where: cli/src/verano/adapters.py
+    evidence:
+      - {kind: test, ref: cli/tests/test_adapters_real.py, note: "a real index and query engine with a mock model"}
+      - {kind: test, ref: cli/tests/test_integrations.py, note: "and against a stand-in engine"}
+      - {kind: record, ref: integrations/evidence/adapter-validation.md}
+    verified_with: llama-index-core 0.14.25
+    verified_on: "2026-11-10"
+  - id: openai-adapter
+    name: OpenAI SDK adapter
+    group: framework_adapter
+    status: validated
+    logo: null
+    chip: OAI
+    summary: Uses an OpenAI client for chat completions and reports the tool calls a model makes.
+    where: cli/src/verano/adapters.py
+    evidence:
+      - {kind: test, ref: cli/tests/test_adapters_real.py, note: "the real SDK against a local stand-in server"}
+      - {kind: test, ref: cli/tests/test_integrations.py, note: "and against a stand-in client"}
+      - {kind: record, ref: integrations/evidence/adapter-validation.md}
+    verified_with: openai 3.49.0 (against a local stand-in server, not the hosted API)
+    verified_on: "2026-11-10"
+
+  # -- Observability imports --------------------------------------------------------------------------------------
+  - id: opentelemetry
+    name: OpenTelemetry (OTLP/HTTP, protobuf and JSON)
+    group: observability_import
+    status: validated
+    logo: opentelemetry
+    summary: A thin receiver and a file import for GenAI spans, with personal data removed first. Takes the standard Python exporter's protobuf and JSON.
+    where: backend/app/modules/traffic
+    evidence:
+      - {kind: test, ref: backend/tests/integration/traffic/test_receiver.py, note: "the exact bytes the real Python exporter sent"}
+      - {kind: test, ref: backend/tests/unit/traffic/test_adapters.py, note: "and spans we wrote"}
+      - {kind: record, ref: integrations/evidence/otel-validation.md}
+    verified_with: opentelemetry-exporter-otlp-proto-http 1.45.2 (Python). The JavaScript exporter was not run.
+    verified_on: "2026-11-10"
+  - id: openinference-openai
+    name: OpenInference (OpenAI instrumentation)
+    group: observability_import
+    status: validated
+    logo: null
+    chip: OI
+    summary: Spans from an OpenAI SDK call instrumented by OpenInference are read, with the question, answer, model and tokens.
+    where: backend/app/modules/traffic/plugins/otel.py
+    evidence:
+      - {kind: test, ref: backend/tests/integration/traffic/test_receiver.py, note: "bytes captured from the real library"}
+      - {kind: record, ref: integrations/evidence/otel-validation.md}
+    verified_with: openinference-instrumentation-openai 0.1.69 with openai 3.49.0. Only this instrumentation was tried.
+    verified_on: "2026-11-10"
+  - id: openllmetry-openai
+    name: OpenLLMetry (OpenAI instrumentation)
+    group: observability_import
+    status: validated
+    logo: null
+    chip: OLM
+    summary: Spans from an OpenAI SDK call instrumented by OpenLLMetry are read, with the question, answer, model and tokens.
+    where: backend/app/modules/traffic/plugins/otel.py
+    evidence:
+      - {kind: test, ref: backend/tests/integration/traffic/test_receiver.py, note: "bytes captured from the real library"}
+      - {kind: record, ref: integrations/evidence/otel-validation.md}
+    verified_with: opentelemetry-instrumentation-openai 0.63.0 with openai 3.49.0. Only this instrumentation was tried.
+    verified_on: "2026-11-10"
+  - id: har
+    name: HAR files
+    group: observability_import
+    status: sample_tested
+    logo: null
+    chip: HAR
+    summary: Turns recorded browser calls to a model into traces.
+    where: backend/app/modules/traffic
+    evidence:
+      - {kind: test, ref: backend/tests/unit/traffic/test_adapters.py, note: "a file we wrote"}
+    next_step: Import a real export (pending check 31).
+  - id: langfuse-import
+    name: Langfuse export
+    group: observability_import
+    status: sample_tested
+    logo: null
+    chip: LF
+    summary: Imports traces exported from Langfuse.
+    where: backend/app/modules/traffic
+    evidence:
+      - {kind: test, ref: backend/tests/unit/traffic/test_adapters.py, note: "a file we wrote from memory of the format"}
+    next_step: Import a real export (pending check 31).
+  - id: phoenix-import
+    name: Phoenix export
+    group: observability_import
+    status: sample_tested
+    logo: null
+    chip: PX
+    summary: Imports traces exported from Arize Phoenix.
+    where: backend/app/modules/traffic
+    evidence:
+      - {kind: test, ref: backend/tests/unit/traffic/test_adapters.py, note: "a file we wrote from memory of the format"}
+    next_step: Import a real export (pending check 31).
+  - id: langsmith-import
+    name: LangSmith export
+    group: observability_import
+    status: sample_tested
+    logo: null
+    chip: LS
+    summary: Imports runs exported from LangSmith.
+    where: backend/app/modules/traffic
+    evidence:
+      - {kind: test, ref: backend/tests/unit/traffic/test_adapters.py, note: "a file we wrote from memory of the format"}
+    next_step: Import a real export (pending check 31).
+
+  # -- CI integrations --------------------------------------------------------------------------------------------
+  - id: github-action
+    name: GitHub Action
+    group: ci_integration
+    status: built
+    logo: githubactions
+    summary: Runs your prompt tests on a pull request, comments the results table and fails the job when a gate fails.
+    where: .github/actions/verano-run/action.yml
+    next_step: Run it in a real pull request (pending check 29).
+  - id: any-ci
+    name: Any CI (`verano run --ci`)
+    group: ci_integration
+    status: sample_tested
+    logo: null
+    chip: CI
+    summary: Exit code 2 when a quality, cost, speed or security gate fails; it never asks a question.
+    where: cli/src/verano/gate.py
+    evidence:
+      - {kind: test, ref: cli/tests/test_run.py, note: "against a fake platform"}
+      - {kind: test, ref: cli/tests/test_security_gate.py}
+    next_step: Run it in a real pipeline (pending check 13).
+
+  # -- Planned (not built) ----------------------------------------------------------------------------------------
+  - id: go-sdk
+    name: Go SDK
+    group: native_sdk
+    status: planned
+    logo: go
+    summary: The same fetch, cache and fallback client.
+    next_step: Write it and run the shared contract tests against it.
+  - id: java-sdk
+    name: Java SDK
+    group: native_sdk
+    status: planned
+    logo: openjdk
+    summary: The same fetch, cache and fallback client.
+    next_step: Write it and run the shared contract tests against it.
+  - id: csharp-sdk
+    name: C# SDK
+    group: native_sdk
+    status: planned
+    logo: dotnet
+    summary: The same fetch, cache and fallback client.
+    next_step: Write it and run the shared contract tests against it.
+  - id: ruby-sdk
+    name: Ruby SDK
+    group: native_sdk
+    status: planned
+    logo: ruby
+    summary: The same fetch, cache and fallback client.
+    next_step: Write it and run the shared contract tests against it.
+  - id: jest-plugin
+    name: Jest plugin
+    group: framework_adapter
+    status: planned
+    logo: jest
+    summary: What the pytest plugin does, for Jest.
+    next_step: Build it and run it in the real Jest.
+  - id: vitest-plugin
+    name: Vitest plugin
+    group: framework_adapter
+    status: planned
+    logo: vitest
+    summary: What the pytest plugin does, for Vitest.
+    next_step: Build it and run it in the real Vitest.
+  - id: other-instrumentations
+    name: Other OpenInference and OpenLLMetry instrumentations
+    group: observability_import
+    status: planned
+    logo: null
+    chip: OTel
+    summary: The instrumentations for LangChain, LlamaIndex, Anthropic and other frameworks, from either library.
+    next_step: Send real spans from each one to the receiver, and list a framework only once that has worked.
+  - id: gitlab-ci
+    name: GitLab CI template
+    group: ci_integration
+    status: planned
+    logo: gitlab
+    summary: A ready-made job for `verano run --ci`.
+    next_step: Write the template and run it in a real GitLab pipeline.
+  - id: circleci
+    name: CircleCI template
+    group: ci_integration
+    status: planned
+    logo: circleci
+    summary: A ready-made job for `verano run --ci`.
+    next_step: Write the template and run it in a real CircleCI pipeline.
+  - id: jenkins
+    name: Jenkins template
+    group: ci_integration
+    status: planned
+    logo: jenkins
+    summary: A ready-made pipeline step for `verano run --ci`.
+    next_step: Write the template and run it in a real Jenkins.

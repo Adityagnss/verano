@@ -1,11 +1,11 @@
-// Generates the Integrations page from docs/integrations/registry.yaml, the one list of integrations, with the status of each
+// Generates the Integrations page from integrations/registry.yaml, the one list of integrations, with the status of each
 // shown as the registry states it. Evidence under internal paths (verification records) is named but not linked.
 import fs from "node:fs"
 import path from "node:path"
 import YAML from "yaml"
 import { ROOT, WEBSITE, REPO_URL, BRANCH, cell, isPrivate, read, writePage } from "./lib.mjs"
 
-const SOURCE = "docs/integrations/registry.yaml"
+const SOURCE = "integrations/registry.yaml"
 const registry = YAML.parse(read(SOURCE))
 const STATUS = {
   validated: "Validated",
@@ -23,7 +23,7 @@ const GROUPS = {
 // Logos ship with the site (copied from the repository), never loaded from elsewhere.
 const logoDir = path.join(WEBSITE, "public", "logos")
 fs.mkdirSync(logoDir, { recursive: true })
-const logoSrc = path.join(ROOT, "docs/assets/logos")
+const logoSrc = path.join(ROOT, "integrations/logos")
 for (const f of fs.readdirSync(logoSrc)) if (f.endsWith(".svg")) fs.copyFileSync(path.join(logoSrc, f), path.join(logoDir, f))
 
 const counts = Object.fromEntries(Object.keys(STATUS).map((s) => [s, registry.integrations.filter((i) => i.status === s).length]))

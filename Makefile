@@ -66,7 +66,7 @@ test: ## Run only the tests affected by your changes
 test-all: ## Run the full test suite (phase checkpoints)
 	$(BACKEND) uv run pytest -q
 
-integrations: ## Check docs/integrations/registry.yaml and regenerate the README block and docs/integrations/README.md
+integrations: ## Check integrations/registry.yaml and regenerate the README block and integrations/README.md
 	cd backend && PYTHONPATH=. uv run python ../scripts/integrations.py check && PYTHONPATH=. uv run python ../scripts/integrations.py write
 
 test-sdk: ## SDK tests: Python (standard library only, run in the CLI's environment) and TypeScript (the frontend's vitest)
@@ -88,7 +88,7 @@ fmt: ## Auto-format, then auto-fix what can be fixed (formatting always runs fir
 models: ## Pull the local Ollama models (once)
 	scripts/pull_models.sh
 
-api-compat: ## Fail when the API broke its promise since the last release (docs/api/baseline.json)
+api-compat: ## Fail when the API broke its promise since the last release (backend/api-baseline.json)
 	$(BACKEND) PYTHONPATH=. uv run python ../scripts/check_api_compat.py
 
 api-client: ## Regenerate the frontend API types from the backend OpenAPI schema

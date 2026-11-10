@@ -53,7 +53,7 @@ export default defineConfig({
   // Dead internal links fail the build. Do not turn this off.
   // Only the example address of a locally running Verano is exempt; every site link is still checked.
   ignoreDeadLinks: [/^https?:\/\/localhost(:\d+)?\/?$/],
-  srcExclude: ["README.md", "node_modules/**", "scripts/**"],
+  srcExclude: ["README.md", "node_modules/**", "scripts/**", "content/**"],
   head: [
     ["link", { rel: "icon", type: "image/svg+xml", href: `${BASE}logo.svg` }],
     ["meta", { name: "theme-color", content: "#f3f6fb" }],

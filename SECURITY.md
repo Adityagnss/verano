@@ -21,7 +21,7 @@ addresses through "Test your own app", or to read a stored provider key.
 - Problems that need an attacker who already controls the server or has an owner's password.
 - Findings about a third-party provider's API.
 - Running Verano with the development settings on the open internet. Production mode (`VERANO_ENVIRONMENT=production`)
-  refuses the unsafe ones; see the [self-hosting guide](docs/guides/self-hosting.md).
+  refuses the unsafe ones; see the [self-hosting guide](website/content/self-hosting.md).
 
 ## Good to know
 

@@ -5,14 +5,14 @@ const GH_ACTION_NOTE =
   "- The repository's `gate-demo` workflow runs this action in a real GitHub job against Verano with the built-in test provider (a good prompt passes, a regressed one fails the gate). It has not been run against a paid model, and the action is not published to a marketplace yet."
 
 const docs = [
-  { src: "docs/guides/improve-a-prompt.md", out: "guides/improve-a-prompt.md" },
-  { src: "docs/guides/add-a-provider.md", out: "guides/add-a-provider.md" },
+  { src: "website/content/improve-a-prompt.md", out: "guides/improve-a-prompt.md" },
+  { src: "website/content/add-a-provider.md", out: "guides/add-a-provider.md" },
   {
-    src: "docs/guides/add-a-scanner-language.md",
+    src: "website/content/add-a-scanner-language.md",
     out: "guides/add-a-scanner-language.md",
     fix: [[/, and add a row to the decision log in `docs\/DEVELOPMENT\.md`/, ""]],
   },
-  { src: "docs/guides/self-hosting.md", out: "self-hosting/index.md" },
+  { src: "website/content/self-hosting.md", out: "self-hosting/index.md" },
   {
     src: "cli/README.md",
     out: "reference/cli.md",
