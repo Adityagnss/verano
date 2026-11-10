@@ -340,6 +340,24 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
               ) : null}
             </VerdictCard>
           ) : null}
+          {data ? (
+            <div className="flex flex-col gap-2">
+              <p className="text-text-secondary text-sm">
+                This is the best prompt Verano wrote. You can save it as a new version and test it yourself,
+                even if the check could not prove it is better.
+              </p>
+              <CandidateCard
+                candidate={confirmed}
+                baseline={data.baseline_optimize_quality}
+                saving={save.isPending}
+                onSave={async (run) => {
+                  const done = await save.mutateAsync({ sessionId: data.id, candidateId: confirmed.id, run })
+                  if (done.started_experiment_id)
+                    router.push(`/projects/${projectId}/results?experiment=${done.started_experiment_id}`)
+                }}
+              />
+            </div>
+          ) : null}
         </Section>
       ) : null}
       {popUp && winner && data ? (

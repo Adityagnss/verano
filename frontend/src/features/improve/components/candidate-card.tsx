@@ -32,6 +32,30 @@ function PromptText({ label, text }: { label: string; text: string }) {
   )
 }
 
+/** The whole prompt as plain text, system part then user part, for copying or saving to a file. */
+export function promptAsText(candidate: CandidateOut) {
+  const parts: string[] = []
+  if (candidate.system_template) parts.push(`SYSTEM PROMPT\n${candidate.system_template}`)
+  if (candidate.user_template) parts.push(`USER PROMPT\n${candidate.user_template}`)
+  return parts.join("\n\n")
+}
+
+function copyPrompt(candidate: CandidateOut) {
+  navigator.clipboard
+    .writeText(promptAsText(candidate))
+    .then(() => toast.success("Prompt copied"))
+    .catch(() => toast.error("Could not copy. Open the full prompt and select the text instead."))
+}
+
+function downloadPrompt(candidate: CandidateOut) {
+  const url = URL.createObjectURL(new Blob([promptAsText(candidate)], { type: "text/plain" }))
+  const link = document.createElement("a")
+  link.href = url
+  link.download = `prompt-${candidate.strategy.replaceAll(/\W+/g, "-")}.txt`
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
 export function CandidateCard({
   candidate,
   baseline,
@@ -110,6 +134,12 @@ export function CandidateCard({
             }
           >
             {IMPROVE_COPY.save}
+          </Button>
+          <Button variant="ghost" onClick={() => copyPrompt(candidate)}>
+            Copy prompt
+          </Button>
+          <Button variant="ghost" onClick={() => downloadPrompt(candidate)}>
+            Download prompt
           </Button>
         </div>
         <pre className="bg-card ring-border max-h-72 overflow-auto rounded-lg p-2 font-mono text-xs whitespace-pre-wrap ring-1">
