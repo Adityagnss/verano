@@ -5,13 +5,15 @@
  */
 "use client"
 
-import { Search, X } from "lucide-react"
+import { ChevronDown, Search, X } from "lucide-react"
+import { useState } from "react"
 
 import { type Choice, MultiSelect } from "@/components/common/multi-select"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type { LogOptions } from "@/lib/api/types"
 import { sameConfiguration, shortHash } from "@/lib/config"
+import { useBreakpoint } from "@/components/common/use-breakpoint"
 import { cn } from "@/lib/utils"
 
 import { LOGBOOK_COPY } from "../copy"
@@ -70,11 +72,14 @@ export function FilterBar({
   if (filters.date_to)
     chips.push({ key: "to", label: `To ${filters.date_to}`, remove: () => set("date_to", "") })
   const active = activeCount(filters, EMPTY_FILTERS)
+  const { atLeast } = useBreakpoint()
+  const [more, setMore] = useState(false)
+  const showMore = atLeast("md") || more
 
   return (
     <div className="bg-card ring-border flex flex-col gap-3 rounded-xl p-3 ring-1">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-[16rem] flex-1">
+        <div className="relative min-w-0 flex-1 basis-56">
           <Search className="text-text-muted absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
             value={filters.q}
@@ -101,7 +106,18 @@ export function FilterBar({
           ))}
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
+      {!atLeast("md") ? (
+        <Button
+          variant="outline"
+          className="min-h-10 self-start"
+          aria-expanded={more}
+          onClick={() => setMore(!more)}
+        >
+          {more ? "Fewer filters" : "More filters"}
+          <ChevronDown className={more ? "rotate-180" : ""} aria-hidden />
+        </Button>
+      ) : null}
+      <div className={cn("flex flex-wrap items-center gap-2", !showMore && "hidden")}>
         <MultiSelect
           label="Prompt version"
           value={filters.prompt_version_ids}
@@ -167,7 +183,7 @@ export function FilterBar({
             type="date"
             value={filters.date_from}
             onChange={(e) => set("date_from", e.target.value)}
-            className="h-9 w-40"
+            className="h-10 w-40 sm:h-9"
           />
         </label>
         <label className="text-text-secondary flex items-center gap-1.5 text-sm">
@@ -176,7 +192,7 @@ export function FilterBar({
             type="date"
             value={filters.date_to}
             onChange={(e) => set("date_to", e.target.value)}
-            className="h-9 w-40"
+            className="h-10 w-40 sm:h-9"
           />
         </label>
       </div>

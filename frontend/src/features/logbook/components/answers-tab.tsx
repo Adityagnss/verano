@@ -7,12 +7,20 @@
 "use client"
 
 import { ArrowDown, ArrowUp, ChevronsUpDown, Columns3, Download } from "lucide-react"
-import { type ReactNode, useEffect, useRef, useState } from "react"
+import { columnVisibilityFeature, createColumnHelper, tableFeatures, useTable } from "@tanstack/react-table"
+import { type ReactNode, useEffect, useMemo, useState } from "react"
 
 import { EmptyState } from "@/components/common/empty-state"
 import { ErrorMessage } from "@/components/common/error-message"
 import { StatusBadge } from "@/components/common/status-badge"
+import { useBreakpoint } from "@/components/common/use-breakpoint"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { NativeSelect } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { AnswerRow, LogOptions } from "@/lib/api/types"
@@ -193,47 +201,73 @@ function ColumnMenu({
   shown: Set<ColumnKey>
   onChange: (next: Set<ColumnKey>) => void
 }) {
-  const [open, setOpen] = useState(false)
-  const box = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (!open) return
-    const close = (event: MouseEvent) => !box.current?.contains(event.target as Node) && setOpen(false)
-    document.addEventListener("mousedown", close)
-    return () => document.removeEventListener("mousedown", close)
-  }, [open])
   return (
-    <div ref={box} className="relative">
-      <Button variant="outline" onClick={() => setOpen(!open)} aria-expanded={open}>
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<Button variant="outline" className="min-h-10 sm:min-h-0" />}>
         <Columns3 />
         {LOGBOOK_COPY.columnsMenu}
-      </Button>
-      {open ? (
-        <div className="bg-card ring-border shadow-float absolute right-0 z-30 mt-1 grid max-h-80 w-64 gap-0.5 overflow-y-auto rounded-xl p-1 ring-1">
-          {COLUMNS.map((column) => (
-            <label
-              key={column.key}
-              className="hover:bg-subtle flex items-start gap-2 rounded-lg px-2 py-1.5 text-sm"
-            >
-              <input
-                type="checkbox"
-                className="accent-lagoon mt-1"
-                checked={shown.has(column.key)}
-                onChange={() => {
-                  const next = new Set(shown)
-                  if (next.has(column.key)) next.delete(column.key)
-                  else next.add(column.key)
-                  onChange(next)
-                }}
-              />
-              <span className="flex flex-col">
-                {LOGBOOK_COPY.columns[column.key].label}
-                <span className="text-text-muted text-xs">{LOGBOOK_COPY.columns[column.key].hint}</span>
-              </span>
-            </label>
-          ))}
-        </div>
-      ) : null}
-    </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="max-h-80 w-72 overflow-y-auto">
+        {COLUMNS.map((column) => (
+          <DropdownMenuCheckboxItem
+            key={column.key}
+            checked={shown.has(column.key)}
+            closeOnClick={false}
+            onCheckedChange={() => {
+              const next = new Set(shown)
+              if (next.has(column.key)) next.delete(column.key)
+              else next.add(column.key)
+              onChange(next)
+            }}
+          >
+            <span className="flex flex-col">
+              {LOGBOOK_COPY.columns[column.key].label}
+              <span className="text-text-muted text-xs">{LOGBOOK_COPY.columns[column.key].hint}</span>
+            </span>
+          </DropdownMenuCheckboxItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+const features = tableFeatures({ columnVisibilityFeature })
+const helper = createColumnHelper<typeof features, AnswerRow>()
+const TABLE_COLUMNS = helper.columns(
+  COLUMNS.map((c) => helper.display({ id: c.key, header: c.key, cell: ({ row }) => c.cell(row.original) })),
+)
+
+/** One answer as a card, for phones. */
+function AnswerCard({ row, onOpen }: { row: AnswerRow; onOpen: () => void }) {
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={LOGBOOK_COPY.openRow}
+        className="bg-card ring-border hover:bg-subtle flex min-h-10 w-full flex-col gap-2 rounded-xl p-3 text-left text-sm ring-1"
+      >
+        <span className="flex flex-wrap items-center justify-between gap-2">
+          <span className="font-medium break-all">{row.model}</span>
+          {row.passed === null ? null : row.passed ? (
+            <StatusBadge tone="success">Passed</StatusBadge>
+          ) : (
+            <StatusBadge tone="danger">Failed</StatusBadge>
+          )}
+        </span>
+        <span className="text-text-secondary text-xs">
+          {row.experiment} · {versionName(row.prompt_version)} · case #{row.case_number} ·{" "}
+          {new Date(row.created_at).toLocaleString()}
+        </span>
+        <span className="text-text-secondary line-clamp-2 font-mono text-xs break-words">
+          {row.output_preview ?? "—"}
+        </span>
+        <span className="text-text-secondary flex flex-wrap gap-x-4 text-xs tabular-nums">
+          <span>{row.cost === null ? "cost unknown" : formatCost(row.cost)}</span>
+          <span>{row.latency_ms === null ? "—" : formatMs(row.latency_ms)}</span>
+        </span>
+      </button>
+    </li>
   )
 }
 
@@ -262,6 +296,15 @@ export function AnswersTab({
     // eslint-disable-next-line react-hooks/set-state-in-effect -- read the saved choice after mount, so server and client render alike
     setShown(visibleColumns())
   }, [])
+  const { atLeast } = useBreakpoint()
+  const wide = atLeast("md")
+  const visibility = useMemo(() => Object.fromEntries(COLUMNS.map((c) => [c.key, shown.has(c.key)])), [shown])
+  const table = useTable({
+    features,
+    columns: TABLE_COLUMNS,
+    data: answers.data?.items ?? [],
+    state: { columnVisibility: visibility },
+  })
   const columns = COLUMNS.filter((c) => shown.has(c.key))
   const page = answers.data
   const rows = page?.items ?? []
@@ -314,71 +357,87 @@ export function AnswersTab({
               {LOGBOOK_COPY.export}
             </Button>
           </div>
-          <div className="bg-card ring-border max-h-[68vh] overflow-auto rounded-xl ring-1">
-            <table className="w-full min-w-max border-separate border-spacing-0 text-left text-sm">
-              <thead>
-                <tr>
-                  {columns.map((column) => {
-                    const copy = LOGBOOK_COPY.columns[column.key]
-                    const active = column.sort === paging.sort
-                    return (
-                      <th
-                        key={column.key}
-                        title={copy.hint}
-                        aria-sort={active ? (paging.order === "asc" ? "ascending" : "descending") : undefined}
-                        className="bg-subtle border-border text-text-secondary sticky top-0 z-10 border-b px-3 py-2.5 text-xs font-semibold whitespace-nowrap"
-                      >
-                        {column.sort ? (
-                          <button
-                            type="button"
-                            onClick={() => sortBy(column.sort ?? "time")}
-                            className="hover:text-foreground flex items-center gap-1"
-                          >
-                            {copy.label}
-                            {active ? (
-                              paging.order === "asc" ? (
-                                <ArrowUp className="size-3.5" />
+          {!wide ? (
+            <ul className="flex flex-col gap-2" aria-label="Answers">
+              {rows.map((row) => (
+                <AnswerCard key={row.run_id} row={row} onOpen={() => setOpen(row)} />
+              ))}
+            </ul>
+          ) : (
+            <div className="bg-card ring-border max-h-[68vh] overflow-auto rounded-xl ring-1">
+              <table className="w-full min-w-max border-separate border-spacing-0 text-left text-sm">
+                <thead>
+                  <tr>
+                    {columns.map((column) => {
+                      const copy = LOGBOOK_COPY.columns[column.key]
+                      const active = column.sort === paging.sort
+                      return (
+                        <th
+                          key={column.key}
+                          title={copy.hint}
+                          aria-sort={
+                            active ? (paging.order === "asc" ? "ascending" : "descending") : undefined
+                          }
+                          className="bg-subtle border-border text-text-secondary sticky top-0 z-10 border-b px-3 py-2.5 text-xs font-semibold whitespace-nowrap"
+                        >
+                          {column.sort ? (
+                            <button
+                              type="button"
+                              onClick={() => sortBy(column.sort ?? "time")}
+                              className="hover:text-foreground flex items-center gap-1"
+                            >
+                              {copy.label}
+                              {active ? (
+                                paging.order === "asc" ? (
+                                  <ArrowUp className="size-3.5" />
+                                ) : (
+                                  <ArrowDown className="size-3.5" />
+                                )
                               ) : (
-                                <ArrowDown className="size-3.5" />
-                              )
-                            ) : (
-                              <ChevronsUpDown className="size-3.5 opacity-40" />
-                            )}
-                          </button>
-                        ) : (
-                          copy.label
+                                <ChevronsUpDown className="size-3.5 opacity-40" />
+                              )}
+                            </button>
+                          ) : (
+                            copy.label
+                          )}
+                        </th>
+                      )
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {table.getRowModel().rows.map((tableRow, index) => {
+                    const row = tableRow.original
+                    return (
+                      <tr
+                        key={row.run_id}
+                        tabIndex={0}
+                        aria-label={LOGBOOK_COPY.openRow}
+                        onClick={() => setOpen(row)}
+                        onKeyDown={(event) => event.key === "Enter" && setOpen(row)}
+                        className={cn(
+                          "hover:bg-lagoon-soft/50 focus-visible:bg-lagoon-soft/60 cursor-pointer outline-none",
+                          index % 2 === 1 && "bg-subtle/60",
                         )}
-                      </th>
+                      >
+                        {tableRow.getVisibleCells().map((cell) => (
+                          <td
+                            key={cell.id}
+                            className={cn(
+                              "border-border border-b px-3 py-2 align-middle",
+                              COLUMNS.find((c) => c.key === cell.column.id)?.className,
+                            )}
+                          >
+                            <table.FlexRender cell={cell} />
+                          </td>
+                        ))}
+                      </tr>
                     )
                   })}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, index) => (
-                  <tr
-                    key={row.run_id}
-                    tabIndex={0}
-                    aria-label={LOGBOOK_COPY.openRow}
-                    onClick={() => setOpen(row)}
-                    onKeyDown={(event) => event.key === "Enter" && setOpen(row)}
-                    className={cn(
-                      "hover:bg-lagoon-soft/50 focus-visible:bg-lagoon-soft/60 cursor-pointer outline-none",
-                      index % 2 === 1 && "bg-subtle/60",
-                    )}
-                  >
-                    {columns.map((column) => (
-                      <td
-                        key={column.key}
-                        className={cn("border-border border-b px-3 py-2 align-middle", column.className)}
-                      >
-                        {column.cell(row)}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </tbody>
+              </table>
+            </div>
+          )}
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
             <label className="text-text-secondary flex items-center gap-2">
               Rows per page
