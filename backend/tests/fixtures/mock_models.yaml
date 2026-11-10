@@ -107,3 +107,11 @@ models:
     behavior: prompt_sensitive_flat
     input_price_per_mtok: 0.50
     output_price_per_mtok: 1.50
+  leaky:
+    behavior: leaky
+    input_price_per_mtok: 0.50
+    output_price_per_mtok: 1.50
+  refuses:
+    behavior: refuses
+    input_price_per_mtok: 0.50
+    output_price_per_mtok: 1.50

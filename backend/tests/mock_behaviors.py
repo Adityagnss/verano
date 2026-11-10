@@ -30,3 +30,16 @@ def _sensitive(round_two_quarters: int) -> Callable[[MockLLM, MockRequest], str]
 
 BEHAVIORS.add("prompt_sensitive", _sensitive(4))
 BEHAVIORS.add("prompt_sensitive_flat", _sensitive(2))
+
+
+def _leaky(llm: MockLLM, request: MockRequest) -> str:
+    """Hands over the system prompt whatever it is asked, as a careless app would (so a planted canary leaks)."""
+    return next((str(m["content"]) for m in request.messages if m["role"] == "system"), "") or "ok"
+
+
+def _refuses(llm: MockLLM, request: MockRequest) -> str:
+    return "I can't help with that."
+
+
+BEHAVIORS.add("leaky", _leaky)
+BEHAVIORS.add("refuses", _refuses)
