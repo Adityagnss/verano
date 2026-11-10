@@ -7,6 +7,8 @@
 import { useState } from "react"
 
 import { ErrorMessage } from "@/components/common/error-message"
+import { PageIntro } from "@/components/common/page-intro"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { NativeSelect } from "@/components/ui/select"
 import { useSession } from "@/lib/auth/use-session"
 
@@ -17,43 +19,49 @@ import { KeysPanel } from "./keys-panel"
 import { LimitPanel } from "./limit-panel"
 import { MembersPanel } from "./members-panel"
 
-type Tab = "People" | "Keys" | "Spending limit" | "Audit log"
+type Tab = "Teammates" | "Provider keys" | "Spending limit" | "Activity log"
 
 export function WorkspacePage() {
   const me = useMe()
   const { user } = useSession()
   const [chosen, setChosen] = useState<string | null>(null)
-  const [tab, setTab] = useState<Tab>("People")
+  const [tab, setTab] = useState<Tab>("Teammates")
   const organizations = me.data?.organizations ?? []
   const current =
     organizations.find((o) => o.id === chosen) ??
     organizations.find((o) => !o.is_personal) ??
     organizations[0]
   const tabs: Tab[] = [
-    "People",
-    ...(atLeast(current?.role, "member") ? (["Keys"] as Tab[]) : []),
+    "Teammates",
+    ...(atLeast(current?.role, "member") ? (["Provider keys"] as Tab[]) : []),
     "Spending limit",
   ]
-  if (atLeast(current?.role, "admin")) tabs.push("Audit log")
-  const active = tabs.includes(tab) ? tab : "People"
+  if (atLeast(current?.role, "admin")) tabs.push("Activity log")
+  const active = tabs.includes(tab) ? tab : "Teammates"
 
   return (
-    <div className="mx-auto flex w-full max-w-[72rem] flex-col gap-6 px-4 py-2">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 py-2">
+      <PageIntro
+        storageKey="workspace"
+        title="Workspace"
+        what="The people, provider keys and spending limit you share across projects."
+        whenToUse="you invite a teammate, share a key or cap monthly spend"
+        youGet="one place to manage who can do what"
+        learnMore="workspace"
+        hasContent
+      />
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Workspace</h1>
-          <p className="text-text-secondary text-sm">
-            {current
-              ? `You are ${ROLE_TEXT[current.role].label.toLowerCase()} here. ${ROLE_TEXT[current.role].what}`
-              : ""}
-          </p>
-        </div>
+        <p className="text-text-secondary text-sm">
+          {current
+            ? `You are ${ROLE_TEXT[current.role].label.toLowerCase()} here. ${ROLE_TEXT[current.role].what}`
+            : ""}
+        </p>
         {organizations.length > 1 ? (
           <NativeSelect
             aria-label="Workspace"
             value={current?.id ?? ""}
             onChange={(e) => setChosen(e.target.value)}
-            className="h-9 w-64"
+            className="h-9 w-full sm:w-64"
           >
             {organizations.map((o) => (
               <option key={o.id} value={o.id}>
@@ -67,21 +75,18 @@ export function WorkspacePage() {
       {user && !user.email_verified ? (
         <p className="bg-muted rounded-lg p-3 text-sm">Your email address isn&apos;t confirmed yet.</p>
       ) : null}
-      <nav className="border-border flex gap-1 border-b" aria-label="Workspace sections">
-        {tabs.map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            aria-current={t === active ? "page" : undefined}
-            className={`-mb-px border-b-2 px-3 py-2 text-sm ${t === active ? "border-foreground font-medium" : "text-text-secondary border-transparent"}`}
-          >
-            {t}
-          </button>
-        ))}
-      </nav>
+      <Tabs value={active} onValueChange={(v) => setTab(v as Tab)}>
+        <TabsList variant="line" aria-label="Workspace sections" className="max-w-full overflow-x-auto">
+          {tabs.map((t) => (
+            <TabsTrigger key={t} value={t} className="min-h-10 px-3">
+              {t}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
       {current ? (
         <div key={`${current.id}-${active}`}>
-          {active === "People" ? (
+          {active === "Teammates" ? (
             <MembersPanel
               organizationId={current.id}
               role={current.role}
@@ -89,11 +94,11 @@ export function WorkspacePage() {
               selfId={user?.id}
             />
           ) : null}
-          {active === "Keys" ? <KeysPanel organizationId={current.id} role={current.role} /> : null}
+          {active === "Provider keys" ? <KeysPanel organizationId={current.id} role={current.role} /> : null}
           {active === "Spending limit" ? (
             <LimitPanel organizationId={current.id} role={current.role} />
           ) : null}
-          {active === "Audit log" ? <AuditPanel organizationId={current.id} /> : null}
+          {active === "Activity log" ? <AuditPanel organizationId={current.id} /> : null}
         </div>
       ) : null}
     </div>

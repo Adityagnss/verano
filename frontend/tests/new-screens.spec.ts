@@ -117,10 +117,7 @@ test("a token, a spending limit and an ingest token can be made and removed", as
 
   // the workspace spending limit is saved and can be removed
   await page.goto("/workspace")
-  await page
-    .getByRole("navigation", { name: "Workspace sections" })
-    .getByRole("button", { name: "Spending limit" })
-    .click()
+  await page.getByRole("tab", { name: "Spending limit" }).click()
   await page.getByLabel("Monthly limit in dollars").fill("5.5")
   await page.getByRole("button", { name: "Save limit" }).click()
   await expect(page.getByRole("button", { name: "Remove limit" })).toBeVisible()

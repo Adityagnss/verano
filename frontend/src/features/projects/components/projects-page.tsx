@@ -1,104 +1,241 @@
-/** The projects list, with a one-field form to create a project and open its first step. */
+/**
+ * The projects list. First visit: a welcome with three ways to start. Later: a grid of project cards with
+ * progress, last run and spend. A project always starts from one name field.
+ */
 "use client"
 
-import { ArrowRight, FolderKanban, Plus } from "lucide-react"
+import { FolderKanban, GitCompareArrows, MessageSquareText, Terminal } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import type { FormEvent } from "react"
+import { useState, type FormEvent } from "react"
 
-import { EmptyState } from "@/components/common/empty-state"
-import { PageIntro } from "@/components/common/page-intro"
+import { CopyButton } from "@/components/common/copy-button"
 import { ErrorMessage } from "@/components/common/error-message"
+import { PageIntro } from "@/components/common/page-intro"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useExperiments } from "@/features/run/hooks"
+import { formatCost } from "@/lib/format"
 
 import { PROJECTS_COPY } from "../copy"
-import { useCreateProject, useProjects } from "../hooks"
+import { useCostSummary, useCreateProject, useProjects, useStepCompletion } from "../hooks"
 import { AccountFrame } from "./account-frame"
 
-const FIRST_STEP = "keys"
+export const CLI_COMMANDS = ["verano login", "verano init", "verano push"]
+const DEFAULT_NAME = "My first project"
+
+function ProgressRing({ done, total }: { done: number; total: number }) {
+  const radius = 14
+  const length = 2 * Math.PI * radius
+  return (
+    <span className="relative inline-flex size-10 shrink-0 items-center justify-center">
+      <svg viewBox="0 0 36 36" className="size-10 -rotate-90" aria-hidden>
+        <circle cx="18" cy="18" r={radius} fill="none" strokeWidth="3" className="stroke-border" />
+        <circle
+          cx="18"
+          cy="18"
+          r={radius}
+          fill="none"
+          strokeWidth="3"
+          strokeLinecap="round"
+          className="stroke-lagoon"
+          strokeDasharray={length}
+          strokeDashoffset={length * (1 - done / total)}
+        />
+      </svg>
+      <span className="absolute text-[0.65rem] font-semibold">
+        {done}/{total}
+      </span>
+    </span>
+  )
+}
+
+function ProjectCard({ id, name }: { id: string; name: string }) {
+  const steps = useStepCompletion(id)
+  const runs = useExperiments(id)
+  const cost = useCostSummary(id)
+  const done = steps.data ? Object.values(steps.data).filter(Boolean).length : 0
+  const last = runs.data?.[0]
+  return (
+    <Link
+      href={`/projects/${id}`}
+      className="bg-card ring-border hover:ring-lagoon/40 flex min-h-32 flex-col justify-between gap-4 rounded-2xl p-5 ring-1"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <h2 className="min-w-0 truncate text-base font-semibold">{name}</h2>
+        <span role="img" aria-label={`${done} of 7 steps done`}>
+          <ProgressRing done={done} total={7} />
+        </span>
+      </div>
+      <dl className="text-text-secondary grid grid-cols-2 gap-2 text-xs">
+        <div>
+          <dt className="text-text-muted">Last run</dt>
+          <dd>{last ? new Date(last.created_at).toLocaleDateString() : "None yet"}</dd>
+        </div>
+        <div>
+          <dt className="text-text-muted">Spent</dt>
+          <dd>{cost.data ? formatCost(cost.data.cost) : "-"}</dd>
+        </div>
+      </dl>
+    </Link>
+  )
+}
+
+function PathCard({
+  icon: Icon,
+  title,
+  text,
+  onClick,
+  disabled,
+}: {
+  icon: typeof FolderKanban
+  title: string
+  text: string
+  onClick: () => void
+  disabled: boolean
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="bg-card ring-border hover:ring-lagoon/40 focus-visible:ring-ring flex min-h-32 flex-col items-start gap-2 rounded-2xl p-5 text-left ring-1 disabled:opacity-60"
+    >
+      <span className="bg-lagoon-soft text-lagoon-strong flex size-9 items-center justify-center rounded-xl">
+        <Icon className="size-5" aria-hidden />
+      </span>
+      <span className="font-semibold">{title}</span>
+      <span className="text-text-secondary text-sm">{text}</span>
+    </button>
+  )
+}
 
 export function ProjectsPage() {
   const router = useRouter()
   const projects = useProjects()
   const create = useCreateProject()
+  const [name, setName] = useState("")
+  const [cliProject, setCliProject] = useState<string | null>(null)
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
+  async function start(destination: string | null) {
+    const project = await create.mutateAsync(name.trim() || DEFAULT_NAME)
+    if (destination === null) setCliProject(project.id)
+    else router.push(`/projects/${project.id}/${destination}`)
+  }
+  const go = (destination: string | null) => void start(destination).catch(() => undefined)
+
+  function submit(event: FormEvent) {
     event.preventDefault()
-    const name = String(new FormData(event.currentTarget).get("name")).trim()
-    const project = await create.mutateAsync(name)
-    router.push(`/projects/${project.id}/${FIRST_STEP}`)
+    go("keys")
   }
 
   const items = projects.data?.items ?? []
+  const first = projects.isSuccess && items.length === 0
   return (
     <AccountFrame>
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
         <PageIntro
           storageKey="projects"
-          title={PROJECTS_COPY.title}
-          what={PROJECTS_COPY.subtitle}
+          title={first ? "Welcome to Verano" : PROJECTS_COPY.title}
+          what="Verano tests your prompt on the models you choose, using your own test cases, and proves an improvement before you ship it."
           whenToUse="you start testing a new prompt, chatbot or model choice"
           youGet="one place for the keys, prompt, test cases and results of that use case"
           learnMore="projects"
           hasContent={items.length > 0}
         />
         <ErrorMessage error={projects.error} />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <form
-            onSubmit={(event) => void submit(event).catch(() => undefined)}
-            className="border-lagoon/40 bg-card flex flex-col justify-between gap-3 rounded-2xl border border-dashed p-5"
-          >
-            <div className="flex items-center gap-2.5">
-              <span className="bg-lagoon-soft text-lagoon-strong flex size-9 items-center justify-center rounded-xl">
-                <Plus className="size-5" />
-              </span>
-              <Label htmlFor="name" className="text-base font-semibold">
-                {PROJECTS_COPY.nameLabel}
-              </Label>
-            </div>
+        <form onSubmit={submit} className="flex flex-col gap-2 sm:max-w-xl">
+          <Label htmlFor="name" className="text-base font-semibold">
+            {PROJECTS_COPY.nameLabel}
+          </Label>
+          <div className="flex flex-col gap-2 sm:flex-row">
             <Input
               id="name"
               name="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               placeholder={PROJECTS_COPY.namePlaceholder}
-              required
               maxLength={200}
+              className="h-10"
             />
-            <ErrorMessage error={create.error} />
-            <Button type="submit" size="lg" disabled={create.isPending}>
+            <Button type="submit" size="lg" className="min-h-10" disabled={create.isPending}>
               {create.isPending ? PROJECTS_COPY.creating : PROJECTS_COPY.create}
             </Button>
-          </form>
-          {items.map((project) => (
-            <Link
-              key={project.id}
-              href={`/projects/${project.id}/${FIRST_STEP}`}
-              className="bg-card ring-border hover:ring-lagoon/40 group flex flex-col justify-between gap-6 rounded-2xl p-5 ring-1 transition-all hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <span className="from-lagoon to-lagoon-strong flex size-9 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-sm">
-                  <FolderKanban className="size-[1.125rem]" />
-                </span>
-                <ArrowRight className="text-text-muted group-hover:text-lagoon-strong size-4 transition-colors" />
-              </div>
-              <div className="min-w-0">
-                <h2 className="truncate text-base font-semibold">{project.name}</h2>
-                <p className="text-text-muted mt-0.5 text-xs">
-                  {project.description ?? `Created ${new Date(project.created_at).toLocaleDateString()}`}
-                </p>
-              </div>
-            </Link>
-          ))}
-        </div>
-        {projects.isSuccess && items.length === 0 ? (
-          <EmptyState
-            icon={FolderKanban}
-            title={PROJECTS_COPY.emptyTitle}
-            description={PROJECTS_COPY.emptyDescription}
-          />
+          </div>
+          <ErrorMessage error={create.error} />
+        </form>
+
+        {first ? (
+          <section aria-labelledby="paths" className="flex flex-col gap-3">
+            <h2 id="paths" className="text-lg font-semibold">
+              Or pick what you want to do first
+            </h2>
+            <div className="grid gap-4 md:grid-cols-3">
+              <PathCard
+                icon={GitCompareArrows}
+                title="Compare models on a prompt"
+                text="Connect providers, write a prompt and see which model does best."
+                onClick={() => go("keys")}
+                disabled={create.isPending}
+              />
+              <PathCard
+                icon={MessageSquareText}
+                title="Test an app I already run"
+                text="Point Verano at a chatbot, API or RAG app and test it."
+                onClick={() => go("apps")}
+                disabled={create.isPending}
+              />
+              <PathCard
+                icon={Terminal}
+                title="Bring prompts from my code"
+                text="Use the command line to push the prompts in your repository."
+                onClick={() => go(null)}
+                disabled={create.isPending}
+              />
+            </div>
+          </section>
+        ) : null}
+
+        {items.length > 0 ? (
+          <section aria-labelledby="yours" className="flex flex-col gap-3">
+            <h2 id="yours" className="text-lg font-semibold">
+              Your projects
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {items.map((project) => (
+                <ProjectCard key={project.id} id={project.id} name={project.name} />
+              ))}
+            </div>
+          </section>
         ) : null}
       </div>
+
+      <Dialog open={cliProject !== null} onOpenChange={(open) => !open && setCliProject(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Bring prompts from your code</DialogTitle>
+            <DialogDescription>
+              Your project is ready. Run these three commands in your repository.
+            </DialogDescription>
+          </DialogHeader>
+          <ol className="flex flex-col gap-2">
+            {CLI_COMMANDS.map((command) => (
+              <li
+                key={command}
+                className="bg-subtle flex items-center justify-between gap-2 rounded-lg px-3 py-2"
+              >
+                <code className="min-w-0 font-mono text-sm break-all">{command}</code>
+                <CopyButton text={command} label="Copy" size="sm" />
+              </li>
+            ))}
+          </ol>
+          <Button size="lg" className="min-h-10" onClick={() => router.push(`/projects/${cliProject}`)}>
+            Open the project
+          </Button>
+        </DialogContent>
+      </Dialog>
     </AccountFrame>
   )
 }
