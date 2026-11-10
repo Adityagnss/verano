@@ -1,0 +1,17 @@
+node_modules/
+.vitepress/cache/
+.vitepress/dist/
+.vitepress/generated/
+
+# Pages produced by scripts/ on every build; their sources are the files named in scripts/gen-*.mjs
+guides/improve-a-prompt.md
+guides/add-a-provider.md
+guides/add-a-scanner-language.md
+self-hosting/
+reference/cli.md
+reference/verano-yaml.md
+reference/github-action.md
+reference/examples.md
+reference/integrations.md
+reference/api/
+public/logos/

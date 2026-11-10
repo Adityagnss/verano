@@ -1,0 +1,19 @@
+{
+  "name": "verano-website",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "gen": "node scripts/gen-all.mjs",
+    "prebuild": "node scripts/gen-all.mjs",
+    "predev": "node scripts/gen-all.mjs",
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "1.6.4",
+    "vue": "3.5.13",
+    "yaml": "2.9.1"
+  }
+}
