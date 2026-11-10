@@ -19,3 +19,6 @@ test-results/
 backend/data/
 Daywise_logging/
 goldenset.JSON
+
+# virtual environments of any package (a tracked symlink to one wiped real environments once)
+.venv
