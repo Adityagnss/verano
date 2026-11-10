@@ -12,7 +12,7 @@ A patch number (0.2.0 to 0.2.1) only fixes things. The version lives in one plac
 The CLI and the server share the public API's versioning (`/api/v1`): a CLI works with any server
 that serves the same API version.
 
-## 0.2.0 (unreleased)
+## 0.2.0 (2026-11-10)
 
 ### Added
 
