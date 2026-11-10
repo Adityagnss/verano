@@ -109,7 +109,12 @@ make env && make up
 </div>
 
 <div class="honest">
-<strong>Where it stands.</strong> The whole loop is built and runs. It is tested on a built-in mock provider, recorded responses and free local models. Nothing has been proven on a paid model yet, so treat results on paid models as untested by us. Everything on this site describes what is in the repository today.
+<strong>Where it stands.</strong> The whole loop is built and runs. It has been tested on a built-in mock provider, recorded responses, free local models and, in small tests, real Claude models. Those tests could not yet prove an improved prompt, because the held-back set was too small (about 50 test cases are needed), so Verano said "Not proven". Everything on this site describes what is in the repository today.
+</div>
+
+<div class="author">
+<p class="author-line">Open sourced by <strong>adityagnss</strong></p>
+<p class="author-links"><a href="https://github.com/Adityagnss" target="_blank" rel="noopener">GitHub</a><a href="https://www.linkedin.com/in/adityagnss/" target="_blank" rel="noopener">LinkedIn</a><a href="https://github.com/Adityagnss/verano" target="_blank" rel="noopener">Star the project</a></p>
 </div>
 
 </div>

@@ -11,6 +11,12 @@
   Open source · Self-hosted · Apache 2.0 · No code needed to start
 </p>
 
+<p align="center">
+  Open sourced by <b>adityagnss</b> ·
+  <a href="https://github.com/Adityagnss">GitHub</a> ·
+  <a href="https://www.linkedin.com/in/adityagnss/">LinkedIn</a>
+</p>
+
 ---
 
 Give Verano your API key, a prompt and a few examples. It writes the test cases, runs every model you pick,

@@ -1,7 +1,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import { defineConfig } from "vitepress"
-import { BASE, REPO_BRANCH, REPO_URL, SITE_URL } from "./site.config.mts"
+import { AUTHOR_GITHUB, AUTHOR_HANDLE, AUTHOR_LINKEDIN, BASE, REPO_BRANCH, REPO_URL, SITE_URL } from "./site.config.mts"
 
 // Written by scripts/gen-api.mjs before every build and dev start.
 const apiSidebar = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, "generated", "api-sidebar.json"), "utf8"))
@@ -91,7 +91,10 @@ export default defineConfig({
       ],
       "/": sidebar,
     },
-    socialLinks: [{ icon: "github", link: REPO_URL }],
+    socialLinks: [
+      { icon: "github", link: REPO_URL },
+      { icon: "linkedin", link: AUTHOR_LINKEDIN },
+    ],
     search: { provider: "local" },
     editLink: {
       pattern: `${REPO_URL}/edit/${REPO_BRANCH}/:path`,
@@ -101,7 +104,7 @@ export default defineConfig({
     outline: { level: [2, 3] },
     docFooter: { prev: "Previous", next: "Next" },
     footer: {
-      message: "Apache 2.0. Open source and self-hostable.",
+      message: `Apache 2.0. Open sourced by <a href="${AUTHOR_GITHUB}" target="_blank" rel="noopener">${AUTHOR_HANDLE}</a> · <a href="${AUTHOR_GITHUB}" target="_blank" rel="noopener">GitHub</a> · <a href="${AUTHOR_LINKEDIN}" target="_blank" rel="noopener">LinkedIn</a>`,
       copyright: "Verano is built in the open. Nothing here is a promise of a hosted service.",
     },
   },

@@ -788,3 +788,41 @@ html.v-hidden *::after {
     transform: none;
   }
 }
+
+/* The credit under the landing page: who open sourced it, and where to find them. */
+.VPHome .author {
+  margin: 40px auto 8px;
+  max-width: 640px;
+  padding: 22px 24px;
+  text-align: center;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 14px;
+  background: var(--vp-c-bg-soft);
+}
+.VPHome .author-line {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+.VPHome .author-links {
+  margin: 12px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.VPHome .author-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 999px;
+  background: var(--vp-c-bg);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+.VPHome .author-links a:hover {
+  border-color: var(--vp-c-brand-1);
+}
