@@ -6,7 +6,7 @@ pass rates, the gate answer for `--ci`, and what "harden" starts.
 import uuid
 from datetime import datetime
 from enum import StrEnum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -154,3 +154,27 @@ class HardenRequest(BaseModel):
     experiment_id: uuid.UUID
     writer: JudgeChoice | None = None
     rounds: int | None = Field(default=None, ge=1, le=6)
+
+
+class GuardRequest(BaseModel):
+    """One piece of text to screen: what a user will send (`input`) or what the app will show (`output`)."""
+
+    text: str = Field(min_length=1, max_length=50_000)
+    direction: Literal["input", "output"]
+    # output only: the canary planted in the prompt, and hidden instructions that must not be repeated
+    canary: str | None = Field(default=None, min_length=6, max_length=64)
+    secrets: list[str] = Field(default_factory=list, max_length=10)
+    # personal data is always looked for in an output; in an input only when this is on
+    pii_in_input: bool = False
+
+
+class GuardFindingOut(BaseModel):
+    check: str
+    family: str
+    detail: str
+
+
+class GuardOut(BaseModel):
+    allowed: bool
+    findings: list[GuardFindingOut]
+    note: str

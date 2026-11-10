@@ -150,3 +150,16 @@ export function useHarden(projectId: string, packId: string) {
     onSettled: refresh,
   })
 }
+
+/** Screen one piece of text before it reaches the model or the user. Nothing is stored. */
+export function useGuard(projectId: string) {
+  return useMutation({
+    mutationFn: (body: { text: string; direction: "input" | "output" }) =>
+      call(() =>
+        api.POST("/api/v1/projects/{project_id}/security/guard", {
+          params: base(projectId),
+          body: { ...body, pii_in_input: false },
+        }),
+      ),
+  })
+}

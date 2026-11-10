@@ -26,6 +26,7 @@ from app.modules.engine.models import Experiment
 from app.modules.engine.repository import EngineRepository
 from app.modules.engine.schemas import ExperimentCreate, ExperimentOrigin, ExperimentOut, ExperimentStatus
 from app.modules.engine.service import ExperimentService
+from app.modules.evaluation.plugins.rules_extra import pii_kinds
 from app.modules.evaluation.results import ResultsService
 from app.modules.evaluation.schemas import EvaluatorConfigIn
 from app.modules.evaluation.service import EvaluatorSetService
@@ -34,7 +35,16 @@ from app.modules.projects.schemas import ProjectOut
 from app.modules.prompts.schemas import PromptVersionOut
 from app.modules.prompts.service import PromptService
 from app.modules.registry.service import RegistryService
-from app.modules.security.domain import CategoryRate, category_rates, gate, new_canary
+from app.modules.security.checks import ABUSE
+from app.modules.security.domain import (
+    CategoryRate,
+    GuardFinding,
+    category_rates,
+    find_injection,
+    find_leak,
+    gate,
+    new_canary,
+)
 from app.modules.security.models import SecurityCase, SecurityPack
 from app.modules.security.plugins import ATTACKS
 from app.modules.security.repository import SecurityRepository
@@ -48,6 +58,9 @@ from app.modules.security.schemas import (
     CategoryResult,
     GateFailureOut,
     GateOut,
+    GuardFindingOut,
+    GuardOut,
+    GuardRequest,
     HardenRequest,
     PackCreate,
     PackDetail,
@@ -58,6 +71,7 @@ from app.modules.security.schemas import (
 )
 
 load_plugins("app.modules.security.plugins")
+GUARD_NOTE = "A quick screen of obvious cases. It is not a security boundary: keep the app's own limits in place."
 GENERATE_JOB = "security.generate"
 PACK_NOT_FOUND = "This security pack doesn't exist in this project."
 CASE_NOT_FOUND = "This attack case doesn't exist in this pack."
@@ -162,6 +176,30 @@ class SecurityService:
         self._results = ResultsService.from_container(session, container)
         self._improve = ImprovementService(session, container)
         self._jobs: JobQueue = container.jobs
+
+    # -- the runtime screen ----------------------------------------------------------------------------------------
+
+    def guard(self, body: GuardRequest) -> GuardOut:
+        """Obvious cases only, with the same checks the pack uses. Nothing is stored and no model is called."""
+        findings: list[GuardFinding] = []
+        if body.direction == "input":
+            findings.extend(find_injection(body.text))
+        else:
+            leak = find_leak(body.text, body.canary, body.secrets)
+            if leak is not None:
+                findings.append(GuardFinding("prompt_leak", "system_prompt_leak", f"the answer contains {leak.detail}"))
+            abuse = ABUSE.search(body.text)
+            if abuse is not None:
+                findings.append(GuardFinding("toxicity", "harmful_content", f"abusive language (“{abuse.group(0)}”)"))
+        if body.direction == "output" or body.pii_in_input:
+            kinds = pii_kinds(body.text)
+            if kinds:
+                findings.append(GuardFinding("pii", "pii_extraction", f"the text contains {' and '.join(kinds)}"))
+        return GuardOut(
+            allowed=not findings,
+            findings=[GuardFindingOut(check=f.check, family=f.family, detail=f.detail) for f in findings],
+            note=GUARD_NOTE,
+        )
 
     # -- families and packs --------------------------------------------------------------------------------------
 

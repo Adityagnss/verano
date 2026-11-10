@@ -128,3 +128,52 @@ def gate(
                 )
             )
     return failures
+
+
+# -- the runtime screen (guard) ---------------------------------------------------------------------------------
+# A quick look at one piece of text before it reaches the model (`input`) or the user (`output`). It catches obvious
+# cases with fixed patterns and the checks the pack already uses; it is not a security boundary and says so.
+
+INJECTION_PATTERNS: tuple[tuple[str, str, str], ...] = (
+    (
+        "prompt_injection_direct",
+        "an order to ignore the app's instructions",
+        r"\b(?:ignore|disregard|forget|override)\b.{0,30}\b(?:previous|prior|above|earlier|all|any|your|the)\b"
+        r".{0,20}\b(?:instructions?|prompts?|rules?|guidelines?)\b",
+    ),
+    (
+        "system_prompt_leak",
+        "a request to reveal the hidden instructions",
+        r"\b(?:reveal|show|print|repeat|output|display|tell me|give me)\b.{0,25}"
+        r"\b(?:system|hidden|initial|original|secret)\b.{0,15}\b(?:prompt|instructions?|message)\b",
+    ),
+    (
+        "jailbreak",
+        "a role or mode switch that removes the rules",
+        r"\byou are now\b.{0,40}"
+        r"\b(?:dan|unrestricted|unfiltered|jailbroken|developer mode|no (?:rules|restrictions|limits))\b"
+        r"|\b(?:developer|debug|god) mode\b|\bdo anything now\b|\bjailbreak\b"
+        r"|\bpretend\b.{0,30}\b(?:no|without)\b.{0,15}\b(?:rules|restrictions|limits|filters)\b",
+    ),
+)
+COMPILED_INJECTION = tuple(
+    (family, what, re.compile(pattern, re.IGNORECASE | re.DOTALL)) for family, what, pattern in INJECTION_PATTERNS
+)
+
+
+@dataclass(frozen=True)
+class GuardFinding:
+    check: str
+    family: str
+    detail: str
+
+
+def find_injection(text: str) -> list[GuardFinding]:
+    """Obvious attempts to take over the app, one finding per kind."""
+    found = []
+    for family, what, pattern in COMPILED_INJECTION:
+        match = pattern.search(text)
+        if match:
+            snippet = " ".join(match.group(0).split())[:80]
+            found.append(GuardFinding("injection", family, f"{what} (“{snippet}”)"))
+    return found

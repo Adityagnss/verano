@@ -332,6 +332,11 @@ def _pii_kinds(text: str) -> list[str]:
     return kinds
 
 
+def pii_kinds(text: str) -> list[str]:
+    """The kinds of personal data found in `text` (email address, payment card number, phone number)."""
+    return _pii_kinds(text)
+
+
 @rule("no_pii")
 def no_pii(case: EvalCase, config: dict[str, Any], threshold: float) -> Score:
     kinds = _pii_kinds(case.output)

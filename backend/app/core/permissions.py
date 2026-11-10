@@ -134,6 +134,7 @@ RULES: tuple[Rule, ...] = (
     _rule("POST", f"{PROJ}/prompts/inspect", Action.PREVIEW),
     _rule("POST", f"{PROJ}/prompt-versions/*/render", Action.PREVIEW),
     _rule("POST", f"{PROJ}/prompt-versions/*/check", Action.PREVIEW),
+    _rule("POST", f"{PROJ}/security/guard", Action.PREVIEW),
     _rule("POST", f"{PROJ}/experiments", Action.RUN),
     _rule("POST", f"{PROJ}/experiments/*/rerun", Action.RUN),
     _rule("POST", f"{PROJ}/experiments/*/rescore", Action.RUN),

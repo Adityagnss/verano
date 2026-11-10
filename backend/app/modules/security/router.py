@@ -21,6 +21,8 @@ from app.modules.security.schemas import (
     CaseOut,
     CaseUpdate,
     GateOut,
+    GuardOut,
+    GuardRequest,
     HardenRequest,
     PackCreate,
     PackDetail,
@@ -135,3 +137,11 @@ async def harden(
 ) -> ImprovementOut:
     """Improve proposes added instructions and re-tests them on held-back attack cases."""
     return await service.harden(project, pack_id, body)
+
+
+@router.post("/guard")
+async def guard(body: GuardRequest, project: ProjectScope, service: SecurityServiceDep) -> GuardOut:
+    """Screen one piece of text before it reaches the model (`input`) or the user (`output`). It looks for obvious
+    injection phrases, a leaked canary or hidden instructions, personal data and abusive words. It stores nothing and
+    is a quick screen, not a security boundary: a read-only token may call it."""
+    return service.guard(body)

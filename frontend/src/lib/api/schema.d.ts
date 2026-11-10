@@ -2564,6 +2564,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/security/guard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Guard
+         * @description Screen one piece of text before it reaches the model (`input`) or the user (`output`). It looks for obvious
+         *     injection phrases, a leaked canary or hidden instructions, personal data and abusive words. It stores nothing and
+         *     is a quick screen, not a security boundary: a read-only token may call it.
+         */
+        post: operations["guard_api_v1_projects__project_id__security_guard_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/security/packs": {
         parameters: {
             query?: never;
@@ -5539,6 +5561,46 @@ export interface components {
             /** Unknown Price Answers */
             unknown_price_answers: number;
         };
+        /** GuardFindingOut */
+        GuardFindingOut: {
+            /** Check */
+            check: string;
+            /** Detail */
+            detail: string;
+            /** Family */
+            family: string;
+        };
+        /** GuardOut */
+        GuardOut: {
+            /** Allowed */
+            allowed: boolean;
+            /** Findings */
+            findings: components["schemas"]["GuardFindingOut"][];
+            /** Note */
+            note: string;
+        };
+        /**
+         * GuardRequest
+         * @description One piece of text to screen: what a user will send (`input`) or what the app will show (`output`).
+         */
+        GuardRequest: {
+            /** Canary */
+            canary?: string | null;
+            /**
+             * Direction
+             * @enum {string}
+             */
+            direction: "input" | "output";
+            /**
+             * Pii In Input
+             * @default false
+             */
+            pii_in_input: boolean;
+            /** Secrets */
+            secrets?: string[];
+            /** Text */
+            text: string;
+        };
         /** GuardrailsOut */
         GuardrailsOut: {
             /** Limit Reached */
@@ -5971,7 +6033,7 @@ export interface components {
          * ItemSource
          * @enum {string}
          */
-        ItemSource: "golden" | "input_file" | "generated";
+        ItemSource: "golden" | "input_file" | "generated" | "traffic";
         /** ItemUpdate */
         ItemUpdate: {
             /** Category */
@@ -9120,8 +9182,12 @@ export interface operations {
     };
     export_events_api_v1_organizations__organization_id__audit_log_export_get: {
         parameters: {
-            query: {
-                filters: components["schemas"]["AuditFilter"];
+            query?: {
+                actor_id?: string | null;
+                action?: string | null;
+                project_id?: string | null;
+                since?: string | null;
+                until?: string | null;
                 format?: "csv" | "json";
             };
             header?: never;
@@ -14358,6 +14424,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AttackFamilyOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    guard_api_v1_projects__project_id__security_guard_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuardRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuardOut"];
                 };
             };
             /** @description Validation Error */

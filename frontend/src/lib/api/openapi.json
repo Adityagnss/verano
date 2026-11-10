@@ -6514,6 +6514,92 @@
         "title": "GroupStats",
         "type": "object"
       },
+      "GuardFindingOut": {
+        "properties": {
+          "check": {
+            "title": "Check",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "family": {
+            "title": "Family",
+            "type": "string"
+          }
+        },
+        "required": ["check", "family", "detail"],
+        "title": "GuardFindingOut",
+        "type": "object"
+      },
+      "GuardOut": {
+        "properties": {
+          "allowed": {
+            "title": "Allowed",
+            "type": "boolean"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/GuardFindingOut"
+            },
+            "title": "Findings",
+            "type": "array"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": ["allowed", "findings", "note"],
+        "title": "GuardOut",
+        "type": "object"
+      },
+      "GuardRequest": {
+        "description": "One piece of text to screen: what a user will send (`input`) or what the app will show (`output`).",
+        "properties": {
+          "canary": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "minLength": 6,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Canary"
+          },
+          "direction": {
+            "enum": ["input", "output"],
+            "title": "Direction",
+            "type": "string"
+          },
+          "pii_in_input": {
+            "default": false,
+            "title": "Pii In Input",
+            "type": "boolean"
+          },
+          "secrets": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Secrets",
+            "type": "array"
+          },
+          "text": {
+            "maxLength": 50000,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": ["text", "direction"],
+        "title": "GuardRequest",
+        "type": "object"
+      },
       "GuardrailsOut": {
         "properties": {
           "limit_reached": {
@@ -7708,7 +7794,7 @@
         "type": "object"
       },
       "ItemSource": {
-        "enum": ["golden", "input_file", "generated"],
+        "enum": ["golden", "input_file", "generated", "traffic"],
         "title": "ItemSource",
         "type": "string"
       },
@@ -15266,10 +15352,87 @@
           },
           {
             "in": "query",
-            "name": "filters",
-            "required": true,
+            "name": "actor_id",
+            "required": false,
             "schema": {
-              "$ref": "#/components/schemas/AuditFilter"
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Actor Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "action",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            }
+          },
+          {
+            "in": "query",
+            "name": "project_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Project Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "since",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "in": "query",
+            "name": "until",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
             }
           },
           {
@@ -25619,6 +25782,63 @@
           }
         ],
         "summary": "Attack Families",
+        "tags": ["security"]
+      }
+    },
+    "/api/v1/projects/{project_id}/security/guard": {
+      "post": {
+        "description": "Screen one piece of text before it reaches the model (`input`) or the user (`output`). It looks for obvious\ninjection phrases, a leaked canary or hidden instructions, personal data and abusive words. It stores nothing and\nis a quick screen, not a security boundary: a read-only token may call it.",
+        "operationId": "guard_api_v1_projects__project_id__security_guard_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "project_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Project Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuardOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Guard",
         "tags": ["security"]
       }
     },
