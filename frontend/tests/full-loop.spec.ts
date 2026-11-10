@@ -58,7 +58,9 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   await expect(page.getByText("3 answers matched").first()).toBeVisible()
   await page.getByRole("button", { name: "Next: test cases" }).click()
 
-  await page.getByLabel("Model that writes the test cases").selectOption("scripted")
+  // the writer model is a suggested line with a Change button since the review of the Test Cases step
+  await page.locator("button#generator").click()
+  await page.locator("select#generator").selectOption("scripted")
   await page.getByRole("button", { name: "Describe the task" }).click()
   await expect(page.getByLabel("Goal")).toHaveValue("Classify support tickets into categories")
   await page.getByRole("button", { name: "Confirm task" }).click()
@@ -78,8 +80,8 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   await expect(page.getByText(/held back to check the result/)).toBeVisible()
 
   await page.getByRole("link", { name: "Run" }).click()
-  await page.getByRole("checkbox", { name: "Mock Scripted" }).click()
-  await expect(page.getByText(/Estimated total/)).toBeVisible()
+  // both ticked models run by default; the per-model table moved under Expert settings
+  await expect(page.getByText("What will run")).toBeVisible()
   await page.getByRole("button", { name: "Start experiment" }).click()
   await page.getByRole("button", { name: "See results" }).click({ timeout: 90_000 })
 
@@ -97,8 +99,8 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
 
   await page.getByRole("link", { name: /Dashboard/ }).click()
   await expect(page.getByRole("heading", { name: "How your prompts and models are doing" })).toBeVisible()
-  await expect(page.getByText("Best pass rate (latest)")).toBeVisible()
-  await expect(page.getByText("Latest experiment: models side by side")).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Is the prompt getting better?" })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "What this tells you" })).toBeVisible()
   await expect(page.getByText("Where the money went")).toBeVisible()
 
   await page.getByRole("link", { name: /Logbook/ }).click()
@@ -138,8 +140,7 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   await expect(page.getByLabel("Prompt version to test")).toContainText("Version 2 (latest)")
   await expect(page.getByLabel("Prompt version to test")).toContainText("Version 1")
   await expect(page.getByRole("radio", { name: /Repeatable/ })).toBeChecked()
-  await page.getByRole("checkbox", { name: "Mock Scripted" }).click()
-  await expect(page.getByText(/Estimated total/)).toBeVisible()
+  await expect(page.getByText("What will run")).toBeVisible()
   await page.getByRole("button", { name: "Start experiment" }).click()
   await page.getByRole("button", { name: "See results" }).click({ timeout: 90_000 })
   await expect(page.getByRole("columnheader", { name: "Quality" })).toBeVisible({ timeout: 30_000 })
