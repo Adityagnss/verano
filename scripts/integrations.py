@@ -120,7 +120,7 @@ def row(item: dict[str, Any], prefix: str, link_prefix: str) -> str:
         note = f" ({entry['note']})" if entry.get("note") else ""
         detail += f" [{Path(entry['ref']).name}]({link_prefix}{entry['ref']}){note}."
     if item["status"] == "validated":
-        detail += f" Checked with {item['verified_with']} on {item['verified_on']}."
+        detail += f" Checked on {item['verified_on']} with {str(item['verified_with']).rstrip('.')}."
     if item.get("distribution"):
         detail += f" {item['distribution'].capitalize()}."
     if item["status"] != "validated" and item.get("next_step"):
