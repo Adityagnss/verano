@@ -1,0 +1,37 @@
+# Makes a GitHub Release when a version tag is pushed (for example cli-v0.2.0, the tag the changelog names): builds the command-line tool and
+# attaches it, with the changelog entry for that version as the release notes. Nothing is published to PyPI or npm
+# by this workflow; that needs the owner's accounts and is a separate, deliberate step.
+name: release
+
+on:
+  push:
+    tags: ["cli-v*", "v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.19"
+      - name: Build the command-line tool
+        run: uv build --project cli --out-dir dist
+      - name: Notes from the changelog
+        run: |
+          version="${GITHUB_REF_NAME#cli-}"
+          version="${version#v}"
+          awk -v v="$version" '
+            $0 ~ "^## \\[?" v "\\]?" { found=1; next }
+            found && /^## / { exit }
+            found { print }
+          ' cli/CHANGELOG.md > notes.md
+          [ -s notes.md ] || echo "See cli/CHANGELOG.md." > notes.md
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --notes-file notes.md

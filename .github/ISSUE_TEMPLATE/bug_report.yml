@@ -1,0 +1,36 @@
+name: Bug report
+description: Something does not work the way it should
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you saw instead. Paste the exact error text if there is one.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The shortest way to see it again. Which page or command?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: "for example 0.2.0, or the output of git rev-parse --short HEAD"
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where did it happen
+      options: [Web app, Command-line tool, GitHub Action, SDK, Docker setup, Docs]
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Remove any keys or personal data first. `make logs` shows the server logs.
+      render: text

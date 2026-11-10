@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest something Verano should do
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do
+      description: The job you want done, before any idea about how.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help
+      description: What you would like Verano to do. Other tools that do it well are useful to mention.
+  - type: textarea
+    id: today
+    attributes:
+      label: What you do today
+      description: How you get this done now, and what is slow or wrong about it.
