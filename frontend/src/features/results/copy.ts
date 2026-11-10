@@ -190,3 +190,33 @@ export const AGREEMENT_COPY = {
   used: (used: number, all: number) => `${used} of ${all} labelled answers compared`,
   skipped: (n: number) => `${n} left out (not sure, or people disagreed)`,
 }
+
+export const TABS_COPY = {
+  label: "Result views",
+  summary: "Summary",
+  compare: "Compare models",
+  answers: "Answers",
+  details: "Runs and details",
+  winnerTitle: "Best model for this prompt",
+  verdict: {
+    clear: "Clearly better: the other models are worse by more than chance would explain.",
+    close: "No clear difference: at least one other model is close enough that the gap could be chance.",
+    unproven:
+      "It scored highest, but there is not enough data to say it is clearly better. Add test cases to be sure.",
+    single: "Only one model ran, so there is nothing to compare it with yet.",
+    none: "No model could be judged yet.",
+    unfair: "These runs are not a fair comparison, so no model is named the winner.",
+  },
+  bestValue: (model: string) => `Best value for the money: ${model}.`,
+  quality: "Quality",
+  cost: "Cheapest per call",
+  speed: "Fastest average time",
+  nextTitle: "What to do next",
+  nextImprove: "Improve the prompt",
+  nextTests: "Add test cases",
+  nextLabel: "Label answers",
+  qualityCostTitle: "Quality against cost",
+  qualityCostHint: "Higher is better quality, further left is cheaper. The best value is named below.",
+  speedTitle: "Average time per answer",
+  tableAlt: "The same numbers are in the table below.",
+}

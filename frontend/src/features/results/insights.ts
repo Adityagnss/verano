@@ -37,3 +37,37 @@ export function isBest(models: ModelMetricsOut[], model: ModelMetricsOut, column
 export function brokenModels(models: ModelMetricsOut[]): ModelMetricsOut[] {
   return models.filter((m) => m.failed_calls > 0)
 }
+
+export type Verdict =
+  | { kind: "none" }
+  | { kind: "unfair" }
+  | { kind: "single" | "clear" | "close" | "unproven"; winner: ModelMetricsOut }
+
+/** The winner on quality, and how sure we are, in terms the page can say in plain words. */
+export function verdict(models: ModelMetricsOut[], ranked: boolean): Verdict {
+  if (!ranked) return { kind: "unfair" }
+  const winner = bestOn(models, "quality")
+  if (!winner) return { kind: "none" }
+  const others = models.filter(
+    (m) => m.model_profile_id !== winner.model_profile_id && m.failed_calls < m.cases,
+  )
+  if (others.length === 0) return { kind: "single", winner }
+  const labelled = others.filter((m) => m.vs_best)
+  if (labelled.length === 0) return { kind: "unproven", winner }
+  const clear = labelled.every((m) => m.vs_best?.label === "clear difference")
+  return { kind: clear ? "clear" : "close", winner }
+}
+
+/** The model with the most quality for each dollar, or null when cost or quality is missing. */
+export function bestValue(models: ModelMetricsOut[]): ModelMetricsOut | null {
+  const usable = models.filter(
+    (m) =>
+      m.quality !== null &&
+      m.cost_per_call !== null &&
+      Number(m.cost_per_call) > 0 &&
+      m.failed_calls < m.cases,
+  )
+  if (usable.length === 0) return null
+  const score = (m: ModelMetricsOut) => Number(m.quality) / Number(m.cost_per_call)
+  return usable.reduce((a, b) => (score(b) > score(a) ? b : a))
+}
