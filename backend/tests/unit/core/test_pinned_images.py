@@ -28,7 +28,7 @@ def test_every_compose_image_is_pinned_to_an_exact_version() -> None:
 
 
 def test_hosted_ci_service_containers_use_the_compose_images() -> None:
-    ci_services = yaml.safe_load(CI_FILE.read_text())["jobs"]["ci"]["services"]
+    ci_services = yaml.safe_load(CI_FILE.read_text())["jobs"]["backend"]["services"]
     assert {name: spec["image"] for name, spec in ci_services.items()} == {
         name: compose_image(name) for name in ci_services
     }
