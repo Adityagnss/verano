@@ -99,7 +99,7 @@ html.v-hidden *::after {
   max-width: 21em;
 }
 .VPHome .VPHero .tagline {
-  margin-top: 18px;
+  margin-top: 28px !important;
   padding-top: 0;
   font-size: 17px;
   line-height: 1.6;
