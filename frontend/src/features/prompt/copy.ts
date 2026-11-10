@@ -1,6 +1,14 @@
 /** User-facing text for the Prompt step. */
 export const PROMPT_COPY = {
-  title: "Write the prompt to test",
+  title: "Write your prompt",
+  intro: {
+    what: "The instructions you want to test. Write a system prompt, a user prompt, or both.",
+    whenToUse: "you are starting, or want to try a new wording",
+    youGet: "a saved version you can test, compare and go back to",
+  },
+  helpButton: "Help with writing",
+  variablesLine: "Put anything that changes per test case in {{ double braces }}, for example {{ ticket }}.",
+  openGuide: "Open the Prompting guide",
   subtitle:
     "Fill in a system prompt, a user prompt, or both. Use {{ name }} for anything that changes per test case, for example {{ ticket }}.",
   howItWorks: [

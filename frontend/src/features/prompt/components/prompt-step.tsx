@@ -13,7 +13,16 @@ import { PageActions } from "@/components/common/page-actions"
 import { Section } from "@/components/common/section"
 import { DiffView } from "@/components/common/diff-view"
 import { StatusBadge } from "@/components/common/status-badge"
-import { StepHeader } from "@/components/common/step-header"
+import { PageIntro } from "@/components/common/page-intro"
+import { useBreakpoint } from "@/components/common/use-breakpoint"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -22,6 +31,7 @@ import { useModels } from "@/features/keys/hooks"
 import { useFirstCase } from "@/features/tests/hooks"
 import type { PromptVersionOut } from "@/lib/api/types"
 import { diffCounts, lineDiff, promptText } from "@/lib/diff"
+import { ALL_PROJECT_PAGES, docsUrl } from "@/lib/nav"
 import { useDebounced } from "@/lib/use-debounced"
 
 import { PROMPT_COPY } from "../copy"
@@ -66,8 +76,12 @@ function sameAsSaved(draft: Draft, saved: Draft | null): boolean {
   )
 }
 
+const PAGE = ALL_PROJECT_PAGES.find((p) => p.key === "prompt")!
+
 export function PromptStep({ projectId }: { projectId: string }) {
   const router = useRouter()
+  const { atLeast } = useBreakpoint()
+  const wide = atLeast("lg")
   const current = useCurrentPrompt(projectId)
   const models = useModels(projectId)
   const firstCase = useFirstCase(projectId)
@@ -116,13 +130,48 @@ export function PromptStep({ projectId }: { projectId: string }) {
 
   return (
     <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-6">
-      <StepHeader
-        projectId={projectId}
-        step="prompt"
-        title={PROMPT_COPY.title}
-        description={PROMPT_COPY.subtitle}
-        howItWorks={PROMPT_COPY.howItWorks}
+      <PageIntro
+        storageKey="prompt"
+        title={PAGE.label}
+        what={PROMPT_COPY.intro.what}
+        whenToUse={PROMPT_COPY.intro.whenToUse}
+        youGet={PROMPT_COPY.intro.youGet}
+        learnMore="prompt"
+        hasContent={current.data !== undefined && current.data !== null}
+        primaryAction={
+          <Sheet>
+            <SheetTrigger render={<Button variant="outline" size="lg" className="min-h-10" />}>
+              {PROMPT_COPY.helpButton}
+            </SheetTrigger>
+            <SheetContent className="overflow-y-auto p-4">
+              <SheetHeader>
+                <SheetTitle>{PROMPT_COPY.helpButton}</SheetTitle>
+                <SheetDescription>{PROMPT_COPY.variablesLine}</SheetDescription>
+              </SheetHeader>
+              <ul className="flex list-disc flex-col gap-2 pl-5 text-sm">
+                {PROMPT_COPY.howItWorks.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+              <a
+                href={`/projects/${projectId}/guide`}
+                className="text-lagoon-strong min-h-10 text-sm font-medium underline"
+              >
+                {PROMPT_COPY.openGuide}
+              </a>
+              <a
+                href={docsUrl("prompt")}
+                target="_blank"
+                rel="noreferrer"
+                className="text-lagoon-strong min-h-10 text-sm underline"
+              >
+                Learn more
+              </a>
+            </SheetContent>
+          </Sheet>
+        }
       />
+      <p className="text-text-secondary -mt-3 text-sm">{PROMPT_COPY.variablesLine}</p>
       <ErrorMessage error={current.error} />
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
         <Section
@@ -260,18 +309,37 @@ export function PromptStep({ projectId }: { projectId: string }) {
             </div>
           ) : null}
         </Section>
-        <Section
-          number={2}
-          title={PROMPT_COPY.review}
-          description={PROMPT_COPY.reviewHint}
-          className="h-fit lg:sticky lg:top-20 lg:max-h-[calc(100vh-6.5rem)] lg:overflow-y-auto"
-        >
-          <PromptCheck result={empty ? undefined : inspect.data} error={empty ? null : inspect.error} />
-        </Section>
+        {wide ? (
+          <Section
+            number={2}
+            title={PROMPT_COPY.review}
+            description={PROMPT_COPY.reviewHint}
+            className="h-fit lg:sticky lg:top-20 lg:max-h-[calc(100vh-6.5rem)] lg:overflow-y-auto"
+          >
+            <PromptCheck result={empty ? undefined : inspect.data} error={empty ? null : inspect.error} />
+          </Section>
+        ) : null}
       </div>
       <PageActions
         summary={
           <div className="flex flex-col gap-1">
+            {wide ? null : (
+              <Sheet>
+                <SheetTrigger render={<Button variant="outline" className="min-h-10 self-start" />}>
+                  {PROMPT_COPY.review}
+                </SheetTrigger>
+                <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto p-4">
+                  <SheetHeader>
+                    <SheetTitle>{PROMPT_COPY.review}</SheetTitle>
+                    <SheetDescription>{PROMPT_COPY.reviewHint}</SheetDescription>
+                  </SheetHeader>
+                  <PromptCheck
+                    result={empty ? undefined : inspect.data}
+                    error={empty ? null : inspect.error}
+                  />
+                </SheetContent>
+              </Sheet>
+            )}
             {unchanged && current.data ? (
               <span>{PROMPT_COPY.unchangedHint(latestNumber, latestNumber + 1)}</span>
             ) : loaded !== null && loaded !== latestNumber ? (
