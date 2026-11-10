@@ -59,6 +59,7 @@ export default defineConfig({
     ["meta", { name: "theme-color", content: "#f3f6fb" }],
     ["meta", { property: "og:title", content: "Verano" }],
     ["meta", { property: "og:type", content: "website" }],
+    ["meta", { property: "og:description", content: "Open-source prompt and model testing on your own cases. See the cost first, and prove the better prompt." }],
     ["meta", { property: "og:url", content: SITE_URL }],
   ],
   sitemap: { hostname: SITE_URL },
