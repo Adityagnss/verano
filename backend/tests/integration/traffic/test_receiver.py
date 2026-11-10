@@ -2,10 +2,12 @@
 
 import gzip
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 import httpx
 import pytest
+from opentelemetry.proto.collector.trace.v1 import trace_service_pb2 as service
 from sqlalchemy import update
 
 from app.core.container import Container
@@ -95,14 +97,66 @@ async def test_the_token_can_also_be_sent_in_its_own_header(client: httpx.AsyncC
     assert response.status_code == 200
 
 
-async def test_protobuf_is_refused_with_how_to_switch_to_json(client: httpx.AsyncClient, session: Session) -> None:
+REAL = Path(__file__).resolve().parents[2] / "fixtures" / "otlp"
+
+
+@pytest.mark.parametrize(("fixture", "model"), [("openinference.pb", "gpt-4o-mini"), ("openllmetry.pb", "gpt-4o-mini")])
+async def test_protobuf_from_the_real_python_exporter_is_stored_and_answered_in_protobuf(
+    client: httpx.AsyncClient, session: Session, container: Container, fixture: str, model: str
+) -> None:
+    """The bytes are what the real `opentelemetry-exporter-otlp-proto-http` sent for a call made with the real OpenAI
+    SDK, instrumented by OpenInference or OpenLLMetry (see fixtures/otlp/README.md)."""
     token = await token_for(client, session)
-    response = await send_spans(client, token, None, content_type="application/x-protobuf", raw=b"\x0a\x00")
-    assert response.status_code == 415
-    assert "http/json" in response.json()["error"]["message"]
+    raw = (REAL / fixture).read_bytes()
+    response = await send_spans(client, token, None, content_type="application/x-protobuf", raw=raw)
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/x-protobuf"
+    assert response.content == b""  # everything was taken: an empty ExportTraceServiceResponse
+    [row] = await trace_rows(container, session)
+    assert (row.input_text, row.output_text, row.model) == ("How long do refunds take?", "Refunds take 30 days.", model)
+    assert (row.tokens_in, row.tokens_out) == (17, 5)
+    assert (
+        row.source == "otlp" and len((row.external_id or "").split(":")[0]) == 32
+    )  # ids are hex, like the JSON exporters send
 
 
-@pytest.mark.parametrize(("raw", "words"), [(b"{broken", "not valid OTLP"), (b"   ", "empty")])
+async def test_protobuf_can_be_gzipped_is_not_stored_twice_and_reports_dropped_spans_in_protobuf(
+    client: httpx.AsyncClient, session: Session, container: Container, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    token = await token_for(client, session)
+    raw = (REAL / "openllmetry.pb").read_bytes()
+    kind = "application/x-protobuf"
+    assert (await send_spans(client, token, None, content_type=kind, raw=raw, gz=True)).status_code == 200
+    assert (await send_spans(client, token, None, content_type=kind, raw=raw)).status_code == 200
+    assert len(await trace_rows(container, session)) == 1  # the same span sent twice is stored once
+    monkeypatch.setattr(container.settings, "traffic_receiver_max_spans", 1)
+    many = service.ExportTraceServiceRequest()
+    many.ParseFromString(raw)
+    span = many.resource_spans[0].scope_spans[0].spans[0]
+    for number in range(3):
+        extra = many.resource_spans[0].scope_spans[0].spans.add()
+        extra.CopyFrom(span)
+        extra.span_id = bytes([number + 1]) * 8
+    answer = await send_spans(client, token, None, content_type=kind, raw=many.SerializeToString())
+    assert answer.status_code == 200
+    reply = service.ExportTraceServiceResponse()
+    reply.ParseFromString(answer.content)
+    assert reply.partial_success.rejected_spans == 3 and "1 spans" in reply.partial_success.error_message
+
+
+async def test_a_protobuf_body_that_is_not_otlp_is_refused_and_other_media_types_say_what_is_accepted(
+    client: httpx.AsyncClient, session: Session
+) -> None:
+    token = await token_for(client, session)
+    broken = await send_spans(client, token, None, content_type="application/x-protobuf", raw=b"not protobuf at all")
+    assert broken.status_code == 422 and "not a valid OTLP request" in broken.json()["error"]["message"]
+    other = await send_spans(client, token, None, content_type="text/plain", raw=b"hello")
+    assert other.status_code == 415
+    assert "application/x-protobuf" in other.json()["error"]["message"]
+    assert await traces(client, session) == []
+
+
+@pytest.mark.parametrize(("raw", "words"), [(b"{broken", "not a valid OTLP"), (b"   ", "empty")])
 async def test_a_broken_or_empty_body_is_refused_and_nothing_is_stored(
     client: httpx.AsyncClient, session: Session, raw: bytes, words: str
 ) -> None:

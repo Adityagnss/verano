@@ -70,7 +70,7 @@ export const TRAFFIC_COPY = {
   connect: {
     title: "Connect an app",
     description:
-      "Point your OpenTelemetry exporter at Verano with an ingest token. Send JSON (OTEL_EXPORTER_OTLP_PROTOCOL=http/json).",
+      "Point your OpenTelemetry exporter at Verano with an ingest token. Both OTLP protobuf (the default of the Python exporter) and OTLP JSON work.",
     tokenName: "Name for this token",
     create: "Create token",
     shownOnce: "Copy this token now. It is shown only once.",

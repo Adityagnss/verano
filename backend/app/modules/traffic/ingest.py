@@ -63,9 +63,12 @@ UNKNOWN_FORMAT = (
 NOTHING_FOUND = "No {label} traces were found in this file. Check that you chose the right format."
 EMPTY_FILE = "This file is empty."
 BAD_TOKEN = "This ingest token is not valid or was revoked. Create a new one under Traffic, then Ingest tokens."
-NOT_JSON_BODY = "Send the spans as JSON: set OTEL_EXPORTER_OTLP_PROTOCOL=http/json (protobuf is not supported)."
+NOT_JSON_BODY = (
+    "Send the spans as OTLP over HTTP, either JSON (application/json) or protobuf (application/x-protobuf, the "
+    "default of most exporters)."
+)
 TOO_LARGE_BODY = "This request is larger than {limit} MB, so it was dropped. Send smaller batches."
-BAD_BODY = "The body is not valid OTLP JSON, so nothing was stored."
+BAD_BODY = "The body is not a valid OTLP request (JSON or protobuf), so nothing was stored."
 OVER_RATE = "Over the limit of {limit} spans a minute for this project: {count} spans were dropped."
 OVER_SIZE = "A request can carry at most {limit} spans: {count} were dropped."
 

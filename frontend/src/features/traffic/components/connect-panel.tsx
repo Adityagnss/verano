@@ -50,7 +50,7 @@ export function ConnectPanel({ projectId }: { projectId: string }) {
               <br />
               OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer {made.token}
               <br />
-              OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=http/json
+              OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=http/protobuf (or http/json)
             </p>
           </div>
         ) : null}

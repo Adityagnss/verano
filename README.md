@@ -124,7 +124,7 @@ Every integration below shows what has been checked, not what might work. Nothin
 - **Built:** the code exists; no automated test of this integration.
 - **Planned:** not built.
 
-Today: 4 validated · 10 sample-tested · 1 built · 10 planned.
+Today: 7 validated · 9 sample-tested · 1 built · 10 planned.
 
 ### Native SDKs
 
@@ -148,7 +148,9 @@ Today: 4 validated · 10 sample-tested · 1 built · 10 planned.
 
 | | Integration | Status | What it does and what shows it |
 |---|---|---|---|
-| <img src="docs/assets/logos/opentelemetry.svg" alt="" width="20" height="20"> | **OpenTelemetry (OTLP/HTTP JSON)** | Sample-tested | A thin receiver and a file import for GenAI spans, with personal data removed first. [test_receiver.py](backend/tests/integration/traffic/test_receiver.py) (spans we wrote). [test_adapters.py](backend/tests/unit/traffic/test_adapters.py). Next: Send spans from a real instrumented app (pending check 26) and import real exports (pending check 31). |
+| <img src="docs/assets/logos/opentelemetry.svg" alt="" width="20" height="20"> | **OpenTelemetry (OTLP/HTTP, protobuf and JSON)** | Validated | A thin receiver and a file import for GenAI spans, with personal data removed first. Takes the standard Python exporter's protobuf and JSON. [test_receiver.py](backend/tests/integration/traffic/test_receiver.py) (the exact bytes the real Python exporter sent). [test_adapters.py](backend/tests/unit/traffic/test_adapters.py) (and spans we wrote). [otel-validation.md](docs/checkpoints/otel-validation.md). Checked with opentelemetry-exporter-otlp-proto-http 1.45.2 (Python). The JavaScript exporter was not run. on 2026-11-10. |
+| <kbd>OI</kbd> | **OpenInference (OpenAI instrumentation)** | Validated | Spans from an OpenAI SDK call instrumented by OpenInference are read, with the question, answer, model and tokens. [test_receiver.py](backend/tests/integration/traffic/test_receiver.py) (bytes captured from the real library). [otel-validation.md](docs/checkpoints/otel-validation.md). Checked with openinference-instrumentation-openai 0.1.69 with openai 3.49.0. Only this instrumentation was tried. on 2026-11-10. |
+| <kbd>OLM</kbd> | **OpenLLMetry (OpenAI instrumentation)** | Validated | Spans from an OpenAI SDK call instrumented by OpenLLMetry are read, with the question, answer, model and tokens. [test_receiver.py](backend/tests/integration/traffic/test_receiver.py) (bytes captured from the real library). [otel-validation.md](docs/checkpoints/otel-validation.md). Checked with opentelemetry-instrumentation-openai 0.63.0 with openai 3.49.0. Only this instrumentation was tried. on 2026-11-10. |
 | <kbd>HAR</kbd> | **HAR files** | Sample-tested | Turns recorded browser calls to a model into traces. [test_adapters.py](backend/tests/unit/traffic/test_adapters.py) (a file we wrote). Next: Import a real export (pending check 31). |
 | <kbd>LF</kbd> | **Langfuse export** | Sample-tested | Imports traces exported from Langfuse. [test_adapters.py](backend/tests/unit/traffic/test_adapters.py) (a file we wrote from memory of the format). Next: Import a real export (pending check 31). |
 | <kbd>PX</kbd> | **Phoenix export** | Sample-tested | Imports traces exported from Arize Phoenix. [test_adapters.py](backend/tests/unit/traffic/test_adapters.py) (a file we wrote from memory of the format). Next: Import a real export (pending check 31). |
@@ -171,7 +173,7 @@ Today: 4 validated · 10 sample-tested · 1 built · 10 planned.
 | <img src="docs/assets/logos/ruby.svg" alt="" width="20" height="20"> | **Ruby SDK** (native sdks) | Planned | The same fetch, cache and fallback client. Next: Write it and run the shared contract tests against it. |
 | <img src="docs/assets/logos/jest.svg" alt="" width="20" height="20"> | **Jest plugin** (framework adapters) | Planned | What the pytest plugin does, for Jest. Next: Build it and run it in the real Jest. |
 | <img src="docs/assets/logos/vitest.svg" alt="" width="20" height="20"> | **Vitest plugin** (framework adapters) | Planned | What the pytest plugin does, for Vitest. Next: Build it and run it in the real Vitest. |
-| <kbd>OTel</kbd> | **OpenInference and OpenLLMetry instrumentation** (observability imports) | Planned | The auto-instrumentation libraries that make many frameworks emit OpenTelemetry spans. Next: Send real spans from each library to the receiver, and list a framework only once that has worked. |
+| <kbd>OTel</kbd> | **Other OpenInference and OpenLLMetry instrumentations** (observability imports) | Planned | The instrumentations for LangChain, LlamaIndex, Anthropic and other frameworks, from either library. Next: Send real spans from each one to the receiver, and list a framework only once that has worked. |
 | <img src="docs/assets/logos/gitlab.svg" alt="" width="20" height="20"> | **GitLab CI template** (ci integrations) | Planned | A ready-made job for `verano run --ci`. Next: Write the template and run it in a real GitLab pipeline. |
 | <img src="docs/assets/logos/circleci.svg" alt="" width="20" height="20"> | **CircleCI template** (ci integrations) | Planned | A ready-made job for `verano run --ci`. Next: Write the template and run it in a real CircleCI pipeline. |
 | <img src="docs/assets/logos/jenkins.svg" alt="" width="20" height="20"> | **Jenkins template** (ci integrations) | Planned | A ready-made pipeline step for `verano run --ci`. Next: Write the template and run it in a real Jenkins. |

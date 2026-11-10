@@ -11,7 +11,7 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, Header, Query, Request, UploadFile, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 
 from app.core.container import ContainerDep
 from app.core.errors import ValidationFailed
@@ -29,6 +29,7 @@ from app.modules.traffic.dependencies import (
 )
 from app.modules.traffic.ingest import (
     AUTO,
+    BAD_BODY,
     NOT_JSON_BODY,
     PROCESS_JOB,
     TOO_LARGE_BODY,
@@ -38,6 +39,7 @@ from app.modules.traffic.ingest import (
     gunzip_limited,
     read_limited,
 )
+from app.modules.traffic.otlp import PROTOBUF, protobuf_reply, protobuf_to_json
 from app.modules.traffic.repository import TrafficRepository
 from app.modules.traffic.schemas import (
     AlertOut,
@@ -248,10 +250,10 @@ async def receive_traces(
     x_verano_token: Annotated[str | None, Header()] = None,
     x_verano_prompt_version: Annotated[str | None, Header(max_length=100)] = None,
     content_encoding: Annotated[str | None, Header()] = None,
-) -> JSONResponse:
+) -> Response:
     token = await receiver.authenticate(_bearer(authorization, x_verano_token))
     kind = (request.headers.get("content-type") or "").split(";")[0].strip().lower()
-    if kind != "application/json":
+    if kind not in ("application/json", PROTOBUF):
         raise UnsupportedMedia(NOT_JSON_BODY)
     limit = container.settings.traffic_receiver_max_bytes
     declared = request.headers.get("content-length")
@@ -269,5 +271,12 @@ async def receive_traces(
         raise PayloadTooLarge(TOO_LARGE_BODY.format(limit=limit // 1_000_000))
     if not body.strip():
         raise ValidationFailed("The request body is empty.")
+    if kind == PROTOBUF:
+        try:
+            body = protobuf_to_json(body)
+        except ValueError as error:
+            raise ValidationFailed(BAD_BODY) from error
     result = await receiver.receive(token, body, (x_verano_prompt_version or "").strip() or None)
+    if kind == PROTOBUF:
+        return Response(protobuf_reply(result.dropped, result.message), media_type=PROTOBUF)
     return JSONResponse(result.body())
