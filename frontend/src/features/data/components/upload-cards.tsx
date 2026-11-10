@@ -86,7 +86,12 @@ function UploadCard({ projectId, card }: { projectId: string; card: (typeof CARD
             })}
           </fieldset>
         ) : null}
-        <Button variant="outline" onClick={() => input.current?.click()} disabled={upload.isPending}>
+        <Button
+          variant="outline"
+          className="min-h-10"
+          onClick={() => input.current?.click()}
+          disabled={upload.isPending}
+        >
           <Upload />
           {upload.isPending ? DATA_COPY.uploading : DATA_COPY.choose}
         </Button>
@@ -95,10 +100,16 @@ function UploadCard({ projectId, card }: { projectId: string; card: (typeof CARD
   )
 }
 
-export function UploadCards({ projectId }: { projectId: string }) {
+export function UploadCards({
+  projectId,
+  kinds,
+}: {
+  projectId: string
+  kinds?: (keyof typeof DATA_COPY.cards)[]
+}) {
   return (
     <div className="grid gap-3 md:grid-cols-3">
-      {CARDS.map((card) => (
+      {CARDS.filter((card) => !kinds || kinds.includes(card.key)).map((card) => (
         <UploadCard key={card.key} projectId={projectId} card={card} />
       ))}
     </div>

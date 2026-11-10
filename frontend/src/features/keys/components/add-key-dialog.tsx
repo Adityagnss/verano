@@ -13,13 +13,13 @@ import { toast } from "sonner"
 import { ErrorMessage } from "@/components/common/error-message"
 import { Button } from "@/components/ui/button"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { CredentialCreate, ProviderOut } from "@/lib/api/types"
@@ -70,17 +70,17 @@ export function AddKeyDialog({ projectId, provider, onClose }: Props) {
 
   const title = provider?.requires_key ? KEYS_COPY.dialogTitle : KEYS_COPY.connectTitle
   return (
-    <Dialog open={provider !== null} onOpenChange={(open) => (open ? undefined : close())}>
-      <DialogContent>
+    <Sheet open={provider !== null} onOpenChange={(open) => (open ? undefined : close())}>
+      <SheetContent className="overflow-y-auto p-4 data-[side=right]:w-full">
         {provider ? (
           <form
             onSubmit={(event) => void submit(event).catch(() => undefined)}
             className="flex flex-col gap-4"
           >
-            <DialogHeader>
-              <DialogTitle>{title(provider.display_name)}</DialogTitle>
-              <DialogDescription>{KEYS_COPY.dialogDescription}</DialogDescription>
-            </DialogHeader>
+            <SheetHeader>
+              <SheetTitle>{title(provider.display_name)}</SheetTitle>
+              <SheetDescription>{KEYS_COPY.dialogDescription}</SheetDescription>
+            </SheetHeader>
             {provider.requires_key ? (
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="api_key">{KEYS_COPY.apiKey}</Label>
@@ -132,14 +132,14 @@ export function AddKeyDialog({ projectId, provider, onClose }: Props) {
               </div>
             ) : null}
             <ErrorMessage error={add.error} />
-            <DialogFooter>
-              <Button type="submit" disabled={add.isPending}>
+            <SheetFooter>
+              <Button type="submit" size="lg" className="min-h-10" disabled={add.isPending}>
                 {add.isPending ? KEYS_COPY.checking : KEYS_COPY.save}
               </Button>
-            </DialogFooter>
+            </SheetFooter>
           </form>
         ) : null}
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   )
 }

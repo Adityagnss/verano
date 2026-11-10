@@ -1,6 +1,6 @@
 /** User-facing text for the Keys step. */
 export const KEYS_COPY = {
-  title: "Connect your model providers",
+  title: "Connect models",
   subtitle:
     "Add a key for each provider you want to test. Verano checks the key right away and lists the chat models it can reach. Keys are encrypted and only their last 4 characters are ever shown.",
   howItWorks: [
@@ -15,6 +15,15 @@ export const KEYS_COPY = {
   addKey: "Add key",
   connect: "Connect",
   free: "Free · local",
+  connected: (models: number) => `Connected · ${models} ${models === 1 ? "model" : "models"}`,
+  notConnected: "Not connected",
+  intro: {
+    what: "Add a key for each AI provider you use, then pick the models to test. Keys are encrypted and only their last 4 characters are shown.",
+    whenToUse: "you are starting a project or want to compare another model",
+    youGet: "a list of models you can test, with their prices",
+    connectFirst: "Connect a provider",
+  },
+  continueWith: (count: number) => `Continue with ${count} ${count === 1 ? "model" : "models"}`,
   sharedHeading: "Use a key you already added in another project",
   sharedUse: "Use here",
   sharedFrom: (project: string) => `from ${project}`,
