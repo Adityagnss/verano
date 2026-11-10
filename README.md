@@ -12,7 +12,7 @@ Open source · Self-hostable · Apache 2.0
 > checked against people), **real apps** (test your own app over HTTP), **the production loop** (serve the winning
 > prompt, SDKs, a CI action, real traffic, teams) and **security, depth and hardening** (a security pack, Improve in
 > several rounds, pause and resume, recovery from a dead worker). The open-source launch is not started.
-> **Everything is tested on a mock provider, recorded responses and free models** (781 backend, 285 CLI, 28 SDK and 25 frontend
+> **Everything is tested on a mock provider, recorded responses and free models** (795 backend, 286 CLI, 28 SDK and 25 frontend
 > tests pass, and 5 browser tests pass in Chromium, including every screen added since Phase 6); **nothing is proven on a
 > paid model yet** because the spending cap is $0, and the browser tests have not been run in WebKit or Firefox. The CLI is
 > not on PyPI. Evidence and gaps: the
