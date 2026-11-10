@@ -160,7 +160,9 @@ class AuthService:
         return await self._issue(user, family_id=uuid7())
 
     async def refresh(self, raw_token: str | None, client_ip: str) -> IssuedSession:
-        await self._check_throttle("refresh", client_ip, None)
+        # Every page load refreshes the session, so refresh has its own, much more generous limit;
+        # only sign-in and sign-up attempts count towards the strict ones.
+        await self._check_throttle("refresh", client_ip, None, ip_limit=self._settings.auth_refresh_rate_limit_per_ip)
         record = await self._repo.refresh_token_for_update(digest_token(raw_token)) if raw_token else None
         if record is None:
             raise AuthenticationFailed(INVALID_REFRESH)
@@ -272,9 +274,11 @@ class AuthService:
                 details=details,
             )
 
-    async def _check_throttle(self, action: str, client_ip: str, email: str | None) -> None:
+    async def _check_throttle(
+        self, action: str, client_ip: str, email: str | None, *, ip_limit: int | None = None
+    ) -> None:
         settings = self._settings
-        checks = [(f"{action}:ip:{client_ip}", settings.auth_rate_limit_per_ip)]
+        checks = [(f"{action}:ip:{client_ip}", ip_limit or settings.auth_rate_limit_per_ip)]
         if email:
             email_key = hashlib.sha256(normalize_email(email).encode()).hexdigest()
             checks.append((f"{action}:email:{email_key}", settings.auth_rate_limit_per_email))
