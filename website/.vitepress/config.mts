@@ -13,6 +13,7 @@ const sidebar = [
       { text: "What is Verano", link: "/get-started/" },
       { text: "Quickstart", link: "/get-started/quickstart" },
       { text: "How it works", link: "/how-it-works" },
+      { text: "Architecture overview", link: "/get-started/architecture" },
     ],
   },
   {

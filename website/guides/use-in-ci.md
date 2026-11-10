@@ -4,6 +4,8 @@ Fail a pull request when a prompt gets worse. The repository has a GitHub Action
 
 The action is in the repository and is not published to a marketplace. Use it by path from a checkout of this repository, or copy the folder.
 
+<Diagram name="ci" caption="Every pull request runs the gate; a failing gate fails the job." />
+
 ## Set up
 
 1. Have a Verano server your CI can reach (see [Self-hosting](/self-hosting/)) and a `verano.yaml` in your repository ([format](/reference/verano-yaml)).

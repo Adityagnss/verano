@@ -2,6 +2,8 @@
 
 Verano does not trace your app. It takes traces in, so you can turn real questions into test cases and watch quality on live answers. Open the **Traffic** page of a project.
 
+<Diagram name="traffic" caption="Traces in, personal data out, then test cases you approve and live scores that can alert." />
+
 ## Import a file
 
 Press **Import a file** and choose an export from your tracing tool. Supported formats:

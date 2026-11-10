@@ -1,6 +1,8 @@
 # How it works
 
-A short overview of the parts. It describes the system as built.
+A short overview of the parts. It describes the system as built. For a picture of how the services connect, see the [architecture overview](/get-started/architecture).
+
+<Diagram name="loop" caption="The loop, from your prompt to Proven or Not proven." />
 
 ```text
 Browser ─▶ Caddy (the single entry point) ─┬─ /api ─▶ FastAPI ─┬─ PostgreSQL
@@ -24,5 +26,7 @@ verano CLI, libraries, your app's spans ──▶ │                   ├─ V
 2. Answers are scored by rule checks, optionally code checks, and a judge model you choose.
 3. Improve writes candidate prompts from the first part, then tests the best on the held-back part.
 4. A prompt is called better only with a clear difference on enough held-back cases. Otherwise the result is *Not proven*.
+
+<Diagram name="proof" caption="Candidates are tested on the improve part; only the best is checked on the held-back part." />
 
 The source is on [GitHub](https://github.com/Adityagnss/verano).
