@@ -59,6 +59,8 @@ features:
 
 <p class="lede">You bring a prompt and a key. Verano does the testing, and tells you what it could and could not show.</p>
 
+<Diagram name="loop" />
+
 <ol class="loop">
 <li><strong>Prompt and key</strong>Your prompt, and a key for the models you want to compare, or a local model with no key.</li>
 <li><strong>Approve cases</strong>Verano drafts test cases and checks from a few examples. You read and approve them.</li>

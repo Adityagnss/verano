@@ -1,0 +1,790 @@
+/* =====================================================================================================
+   Polish layer: hero, background motion, diagrams, docs typography. Colours come from custom.css tokens.
+   Animations use transform and opacity (the trace and the flowing dashes move a dash offset on thin
+   lines). They pause when the tab is hidden or the hero is off screen, and are off for reduced motion.
+   ===================================================================================================== */
+:root {
+  --v-glow-a: rgb(37 99 235 / 0.16);
+  --v-glow-b: rgb(34 128 74 / 0.13);
+  --v-glow-c: rgb(183 121 31 / 0.12);
+  --v-grid: rgb(20 32 58 / 0.07);
+  --v-trace: rgb(37 99 235 / 0.4);
+  --v-nav-bg: rgb(243 246 251 / 0.78);
+  --v-name-bg: linear-gradient(100deg, #14203a 0%, #1d4ed8 55%, #22804a 100%);
+}
+.dark {
+  --v-glow-a: rgb(79 142 240 / 0.22);
+  --v-glow-b: rgb(56 185 113 / 0.14);
+  --v-glow-c: rgb(217 162 63 / 0.1);
+  --v-grid: rgb(231 236 246 / 0.06);
+  --v-trace: rgb(147 181 255 / 0.4);
+  --v-nav-bg: rgb(13 19 32 / 0.78);
+  --v-name-bg: linear-gradient(100deg, #e7ecf6 0%, #93b5ff 55%, #86dcaa 100%);
+}
+
+html.v-hidden *,
+html.v-hidden *::before,
+html.v-hidden *::after {
+  animation-play-state: paused !important;
+}
+
+/* ---- navigation ---- */
+.VPNavBar .content-body {
+  backdrop-filter: saturate(1.4) blur(10px);
+  -webkit-backdrop-filter: saturate(1.4) blur(10px);
+}
+.VPNavBar.home.top .content-body {
+  background: transparent !important;
+}
+.VPNavBar:not(.home) .content-body,
+.VPNavBar.home:not(.top) .content-body {
+  background: var(--v-nav-bg) !important;
+}
+.VPNavBarTitle .title {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.VPNavBarMenuLink {
+  font-weight: 500;
+  position: relative;
+}
+.VPNavBarMenuLink.active {
+  color: var(--v-ink) !important;
+  font-weight: 600;
+}
+.VPNavBarMenuLink.active::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 14px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--v-lagoon);
+}
+
+/* ---- hero ---- */
+.VPHome {
+  position: relative;
+  overflow-x: clip;
+}
+.VPHome .VPHero {
+  position: relative;
+  z-index: 1;
+  padding-top: calc(var(--vp-nav-height) + 48px) !important;
+  padding-bottom: 24px !important;
+}
+.VPHome .VPHero .container {
+  align-items: center;
+}
+.VPHome .VPHero .name {
+  display: block;
+  font-size: clamp(56px, 9vw, 92px);
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+  font-weight: 800;
+  padding-bottom: 6px;
+  background: var(--v-name-bg);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.VPHome .VPHero .text {
+  margin-top: 14px;
+  font-size: clamp(20px, 2.6vw, 29px);
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--v-ink);
+  max-width: 21em;
+}
+.VPHome .VPHero .tagline {
+  margin-top: 18px;
+  padding-top: 0;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--v-text-2);
+  max-width: 34em;
+}
+.VPHome .VPHero .actions {
+  padding-top: 28px;
+  gap: 4px;
+}
+.VPHome .VPHero .VPButton {
+  min-height: 44px;
+  line-height: 42px;
+  padding: 0 22px;
+  border-radius: 10px;
+  font-weight: 600;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+.VPHome .VPHero .VPButton.brand {
+  box-shadow: 0 6px 18px rgb(20 32 58 / 0.22);
+}
+.VPHome .VPHero .VPButton:hover {
+  transform: translateY(-1px);
+}
+.VPHome .VPHero .VPButton.alt {
+  background: var(--v-bg-surface);
+  border: 1px solid var(--v-border-strong);
+  color: var(--v-ink);
+}
+.VPHome .VPHero .VPButton.alt:hover {
+  border-color: var(--v-lagoon);
+  background: var(--v-bg-surface);
+}
+.VPHome .VPHero .image {
+  order: 2;
+  margin: 8px 0 0;
+  width: 100%;
+}
+.VPHome .VPHero .image-container {
+  width: 100%;
+  height: auto;
+  transform: none;
+}
+.VPHome .VPHero .image-bg {
+  display: none;
+}
+@media (min-width: 960px) {
+  .VPHome .VPHero .image {
+    flex: 0 0 360px;
+    width: 360px;
+    margin-left: 24px;
+  }
+  .VPHome .VPHero .main {
+    max-width: none;
+  }
+}
+@media (min-width: 1280px) {
+  .VPHome .VPHero .image {
+    flex-basis: 400px;
+    width: 400px;
+  }
+}
+@media (max-width: 639px) {
+  .VPHome .VPHero {
+    padding-top: calc(var(--vp-nav-height) + 28px) !important;
+  }
+}
+
+/* readout card */
+.readout {
+  position: relative;
+  border: 1px solid var(--v-border-strong);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--v-bg-surface) 88%, transparent);
+  box-shadow: var(--v-shadow);
+  padding: 14px 16px 6px;
+  backdrop-filter: blur(6px);
+  text-align: left;
+  font-size: 14px;
+}
+.ro-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 12px/1 var(--vp-font-family-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--v-text-2);
+}
+.ro-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--v-ok);
+  animation: ro-pulse 2.4s ease-in-out infinite;
+}
+.ro-tag {
+  margin-left: auto;
+  padding: 2px 8px;
+  border: 1px solid var(--v-border-strong);
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+}
+.ro-trace {
+  display: block;
+  width: 100%;
+  height: 56px;
+  margin: 10px 0 2px;
+}
+.ro-line {
+  fill: none;
+  stroke: var(--v-lagoon);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 500;
+  stroke-dashoffset: 500;
+  animation: ro-draw 5s ease-in-out infinite;
+}
+.readout dl {
+  margin: 0;
+}
+.readout dl > div {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 10px 0;
+  border-top: 1px solid var(--v-border);
+}
+.readout dt {
+  font: 600 12px/1.4 var(--vp-font-family-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--v-text-2);
+}
+.readout dd {
+  margin: 0;
+  text-align: right;
+  color: var(--v-ink);
+  line-height: 1.4;
+}
+.ro-or {
+  margin: 0 6px;
+  color: var(--v-text-2);
+  font-size: 12px;
+}
+.pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 13px;
+  border: 1px solid;
+}
+.pill.ok {
+  background: var(--v-ok-soft);
+  border-color: var(--v-ok);
+  color: var(--v-ok-strong);
+}
+.pill.warn {
+  background: var(--v-warn-soft);
+  border-color: var(--v-warn);
+  color: var(--v-warn-strong);
+}
+@keyframes ro-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes ro-draw {
+  0% {
+    stroke-dashoffset: 500;
+  }
+  60%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ---- the background: drifting colour, a faint grid, signal traces ---- */
+.hero-bg {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 760px;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  contain: layout paint style;
+}
+.hero-bg .blob {
+  position: absolute;
+  width: 62vmax;
+  height: 62vmax;
+  max-width: 900px;
+  max-height: 900px;
+  border-radius: 50%;
+  will-change: transform;
+  animation: blob-drift 38s ease-in-out infinite alternate;
+}
+.hero-bg .b1 {
+  top: -34%;
+  left: -12%;
+  background: radial-gradient(closest-side, var(--v-glow-a), transparent);
+}
+.hero-bg .b2 {
+  top: -22%;
+  right: -16%;
+  background: radial-gradient(closest-side, var(--v-glow-b), transparent);
+  animation-duration: 46s;
+  animation-direction: alternate-reverse;
+}
+.hero-bg .b3 {
+  top: 14%;
+  left: 34%;
+  width: 46vmax;
+  height: 46vmax;
+  background: radial-gradient(closest-side, var(--v-glow-c), transparent);
+  animation-duration: 52s;
+}
+.hero-bg .grid {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(var(--v-grid) 1px, transparent 1px), linear-gradient(90deg, var(--v-grid) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 75% 70% at 50% 30%, #000 30%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 30%, #000 30%, transparent 78%);
+}
+.hero-bg .trace {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.55;
+}
+.hero-bg .t {
+  fill: none;
+  stroke: var(--v-trace);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-dasharray: 90 1400;
+  animation: trace-run 14s linear infinite;
+}
+.hero-bg .t2 {
+  animation-duration: 19s;
+  animation-delay: -6s;
+}
+.hero-bg .t3 {
+  animation-duration: 23s;
+  animation-delay: -11s;
+}
+.hero-bg .fade {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 40%;
+  background: linear-gradient(to bottom, transparent, var(--vp-c-bg));
+}
+.hero-bg.is-off,
+.hero-bg.is-off * {
+  animation-play-state: paused !important;
+}
+@keyframes blob-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(9vw, 6vh, 0) scale(1.14);
+  }
+}
+@keyframes trace-run {
+  from {
+    stroke-dashoffset: 1490;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@media (max-width: 639px) {
+  .hero-bg {
+    height: 640px;
+  }
+  .hero-bg .trace {
+    opacity: 0.4;
+  }
+}
+/* A quiet touch on documentation pages: a soft wash at the top, no motion. */
+.VPDoc {
+  position: relative;
+}
+.VPDoc::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 220px;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(60% 100% at 70% 0, var(--v-glow-a), transparent);
+  opacity: 0.6;
+}
+
+/* ---- landing sections ---- */
+.VPFeatures {
+  position: relative;
+  z-index: 1;
+}
+.VPFeature {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgb(20 32 58 / 0.04);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.VPFeature::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--v-lagoon), var(--v-ok));
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.VPFeature:hover,
+.VPFeature:focus-within {
+  transform: translateY(-3px);
+  border-color: var(--v-border-strong) !important;
+  box-shadow: var(--v-shadow);
+}
+.VPFeature:hover::before,
+.VPFeature:focus-within::before {
+  opacity: 1;
+}
+.VPFeature .title {
+  font-size: 16px;
+  font-weight: 650;
+}
+.VPFeature .details {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--v-text-2);
+}
+.VPFeature .link-text-value {
+  font-weight: 600;
+  color: var(--v-lagoon-strong);
+}
+.home-wrap {
+  padding-top: 72px;
+}
+.home-wrap h2 {
+  margin: 0 0 10px;
+  font-size: 30px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+}
+.home-wrap h2::before {
+  content: "";
+  display: block;
+  width: 28px;
+  height: 3px;
+  margin-bottom: 14px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--v-lagoon), var(--v-ok));
+}
+.home-wrap h2:not(:first-child) {
+  margin-top: 88px;
+}
+.home-wrap .lede {
+  font-size: 16.5px;
+  line-height: 1.65;
+}
+.loop li {
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.loop li:hover {
+  border-color: var(--v-border-strong);
+  transform: translateY(-2px);
+}
+.loop li::before {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--v-bg-elevated);
+  color: var(--v-ink);
+}
+.loop li.end::before {
+  display: none;
+}
+.start-grid > div:first-child div[class*="language-"] {
+  border: 1px solid var(--v-border-strong);
+  border-radius: 12px;
+  box-shadow: var(--v-shadow);
+}
+.honest {
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgb(20 32 58 / 0.04);
+}
+@media (max-width: 639px) {
+  .home-wrap {
+    padding-top: 48px;
+  }
+  .home-wrap h2 {
+    font-size: 25px;
+  }
+  .home-wrap h2:not(:first-child) {
+    margin-top: 64px;
+  }
+  .start-links a {
+    display: inline-block;
+    padding: 9px 0;
+  }
+}
+
+/* ---- footer ---- */
+.VPFooter {
+  border-top: 1px solid var(--v-border) !important;
+  background: var(--v-bg-subtle);
+  padding: 32px 24px !important;
+}
+.VPFooter .message {
+  font-weight: 600;
+  color: var(--v-ink);
+}
+.VPFooter .copyright {
+  margin-top: 4px;
+  color: var(--v-text-2);
+}
+
+/* ---- diagrams ---- */
+.dg {
+  margin: 28px 0;
+  padding: 18px 14px;
+  border: 1px solid var(--v-border);
+  border-radius: 14px;
+  background: var(--v-bg-surface);
+  box-shadow: 0 1px 2px rgb(20 32 58 / 0.04);
+}
+.dg figcaption {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--v-text-2);
+}
+.dg-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0 auto;
+  font-family: var(--vp-font-family-base);
+}
+.dg-narrow {
+  display: none;
+  max-width: 440px;
+}
+@media (max-width: 760px) {
+  .dg-wide {
+    display: none;
+  }
+  .dg-narrow {
+    display: block;
+  }
+  .dg {
+    padding: 14px 8px;
+  }
+}
+.dg-edge {
+  fill: none;
+  stroke: var(--v-border-strong);
+  stroke-width: 1.5;
+}
+.dg-flow {
+  fill: none;
+  stroke: var(--v-text-3);
+  stroke-width: 1.8;
+  stroke-dasharray: 5 7;
+  animation: dg-flow 1.4s linear infinite;
+}
+.dg-head {
+  fill: var(--v-text-3);
+}
+.dg-pill {
+  fill: var(--v-bg-surface);
+  stroke: var(--v-border-strong);
+}
+.dg-elabel {
+  font-size: 12px;
+  fill: var(--v-text-2);
+  font-family: var(--vp-font-family-mono);
+}
+.dg-node rect {
+  fill: var(--v-bg-surface);
+  stroke: var(--v-border-strong);
+  stroke-width: 1.5;
+}
+.dg-label {
+  font-size: 14px;
+  font-weight: 650;
+  fill: var(--v-ink);
+}
+.dg-sub {
+  font-size: 11.5px;
+  fill: var(--v-text-2);
+}
+.k-edge rect {
+  fill: var(--v-lagoon-soft);
+  stroke: var(--v-lagoon);
+}
+.k-core rect {
+  fill: var(--v-violet-soft);
+  stroke: var(--v-violet-strong);
+}
+.k-ok rect {
+  fill: var(--v-ok-soft);
+  stroke: var(--v-ok);
+}
+.k-warn rect {
+  fill: var(--v-warn-soft);
+  stroke: var(--v-warn);
+}
+.k-muted rect {
+  fill: var(--v-bg-subtle);
+  stroke-dasharray: 4 3;
+}
+.k-ok .dg-label {
+  fill: var(--v-ok-strong);
+}
+.k-warn .dg-label {
+  fill: var(--v-warn-strong);
+}
+.k-core .dg-label {
+  fill: var(--v-violet-strong);
+}
+.k-edge .dg-label {
+  fill: var(--v-lagoon-strong);
+}
+@keyframes dg-flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+/* ---- documentation typography ---- */
+.vp-doc p,
+.vp-doc li {
+  line-height: 1.75;
+}
+.vp-doc h1 {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+}
+.vp-doc h2 {
+  margin-top: 52px;
+  padding-top: 28px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+.vp-doc h3 {
+  margin-top: 32px;
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+.vp-doc :not(pre, h1, h2, h3, h4, h5, h6) > code {
+  border: 1px solid var(--v-border);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 0.86em;
+  background: var(--v-bg-subtle);
+  color: var(--v-ink);
+}
+.vp-doc div[class*="language-"] {
+  border: 1px solid var(--v-border);
+  border-radius: 12px;
+  background: var(--v-bg-subtle);
+}
+.vp-doc table {
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--v-border);
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 14.5px;
+}
+.vp-doc th {
+  background: var(--v-bg-subtle);
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--v-text-2);
+}
+.vp-doc th,
+.vp-doc td {
+  border: 0;
+  border-bottom: 1px solid var(--v-border);
+  padding: 10px 14px;
+}
+.vp-doc tr {
+  background: transparent !important;
+}
+.vp-doc tbody tr:nth-child(even) {
+  background: var(--v-bg-subtle) !important;
+}
+.vp-doc tbody tr:last-child td {
+  border-bottom: 0;
+}
+.vp-doc blockquote {
+  border-left: 3px solid var(--v-lagoon);
+  border-radius: 0 10px 10px 0;
+  background: var(--v-bg-subtle);
+  padding: 4px 18px;
+}
+.vp-doc .custom-block {
+  border-radius: 12px;
+  border-left-width: 4px;
+  padding: 14px 18px;
+}
+.vp-doc .custom-block .custom-block-title {
+  font-weight: 700;
+}
+
+/* ---- sidebar ---- */
+.VPSidebar {
+  background: var(--v-bg-subtle) !important;
+}
+.VPSidebarItem.level-0 > .item > .text {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--v-text-2);
+}
+.VPSidebarItem .link {
+  position: relative;
+  border-radius: 8px;
+  padding-left: 12px;
+  margin-left: -12px;
+  min-height: 34px;
+}
+.VPSidebarItem .link:hover {
+  background: var(--v-bg-elevated);
+}
+.VPSidebarItem.is-active > .item > .link {
+  background: var(--v-lagoon-soft);
+}
+.VPSidebarItem.is-active > .item > .link .text {
+  color: var(--v-lagoon-strong);
+  font-weight: 650;
+}
+.VPSidebarItem.is-active > .item > .link::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  bottom: 7px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--v-lagoon);
+}
+.vp-doc a:focus-visible,
+.VPSidebarItem .link:focus-visible,
+.VPButton:focus-visible {
+  outline: 2px solid var(--v-lagoon);
+  outline-offset: 2px;
+}
+@media (max-width: 767px) {
+  .VPNavBarHamburger {
+    min-height: 44px;
+    width: 48px;
+  }
+}
+
+/* ---- reduced motion: show everything, move nothing ---- */
+@media (prefers-reduced-motion: reduce) {
+  .ro-line {
+    stroke-dashoffset: 0;
+  }
+  .hero-bg .t {
+    stroke-dasharray: none;
+  }
+  .VPFeature:hover,
+  .loop li:hover,
+  .VPHome .VPHero .VPButton:hover {
+    transform: none;
+  }
+}

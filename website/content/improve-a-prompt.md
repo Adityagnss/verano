@@ -4,6 +4,8 @@ Improve looks at the test cases your prompt gets wrong, writes better versions o
 whether the best one is really better. It calls a new prompt better only when that is shown on test cases it never saw
 while writing it. If nothing wins, it says so and shows the numbers.
 
+<Diagram name="proof" caption="How Improve decides: candidates are tested on the improve part, the best is checked on the held-back part." />
+
 ## Prerequisites
 
 - A finished run on your approved test cases, with its answers scored. Improve starts from that run.
@@ -57,6 +59,8 @@ hidden: the numbers are on screen so you can judge for yourself.
 
 The `verano mcp` server offers `propose_improvement`, `get_improvement` and `accept_improvement`. The first and the last
 change things, so the server must be started with `--allow-write`. See [the command line](../../cli/README.md).
+
+<Diagram name="mcp" caption="An AI agent reaches Verano through verano mcp." />
 
 ## Practical guidance
 
