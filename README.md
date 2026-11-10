@@ -205,8 +205,8 @@ Logos are the marks of their owners, shown only to say what works with Verano; i
    controls, with a "same configuration" badge, **Re-run with same settings**, and a warning
    when the provider changed the model behind a name.
 7. **Improve** — why cases fail, candidate prompts tested on the "improve" part (a quick check on a small fixed sample
-   first, then a full test for the survivors), the best one checked on the held-back part, over several rounds if you
-   ask, and "Accept as new version" only when it is proven better. Accepting can move a label such as `production`.
+   first, then a full test for the survivors), the best one checked on the held-back part, over up to 3 rounds by
+   default, and "Accept as new version" only when it is proven better. Accepting can move a label such as `production`.
 
 Alongside the steps: **Review** (label answers, blind), **Your apps** (connect an app over HTTP and test one case),
 **Traffic** (imports, ingest tokens, scores, alerts), **Security** (the attack pack and its report), **Tokens** and a
