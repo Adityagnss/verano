@@ -14,6 +14,9 @@ import { ErrorMessage } from "@/components/common/error-message"
 import { Section } from "@/components/common/section"
 import { StatTile } from "@/components/common/stat-tile"
 import { StatusBadge } from "@/components/common/status-badge"
+import { PageIntro } from "@/components/common/page-intro"
+import { buttonVariants } from "@/components/ui/button"
+import { ALL_PROJECT_PAGES } from "@/lib/nav"
 import { Label } from "@/components/ui/label"
 import { NativeSelect } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -35,6 +38,8 @@ import {
 } from "../domain"
 import { ModelBars, SpendBar, TrendChart, colorOf } from "./charts"
 import { VersionsPanel, useComparison } from "./versions-panel"
+
+const PAGE = ALL_PROJECT_PAGES.find((p) => p.key === "dashboard")!
 
 export function DashboardPage({ projectId }: { projectId: string }) {
   const data = useDashboardData(projectId)
@@ -65,17 +70,23 @@ export function DashboardPage({ projectId }: { projectId: string }) {
     }))
 
   return (
-    <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-6">
-      <header className="border-border flex flex-col gap-2 border-b pb-6">
-        <p className="text-text-secondary text-sm">Dashboard</p>
-        <h2 className="text-2xl leading-tight font-semibold sm:text-[1.95rem]">
-          How your prompts and models are doing
-        </h2>
-        <p className="text-text-secondary max-w-[52rem] text-[0.95rem] leading-relaxed">
-          Everything measured in this project: which model answers best, what each answer costs, how long it
-          takes, and whether new prompt versions really help.
-        </p>
-      </header>
+    <div className="mx-auto flex w-full max-w-[96rem] min-w-0 flex-col gap-6">
+      <PageIntro
+        storageKey="dashboard"
+        title={PAGE.label}
+        what="How your prompts and models change over time: pass rate, cost, speed and prompt versions."
+        whenToUse="you have run the test more than once and want to know if things are getting better"
+        youGet="a chart of pass rate across runs, a side-by-side of your latest run, and plain-language findings"
+        primaryAction={
+          latest ? undefined : (
+            <Link href={`/projects/${projectId}/run`} className={buttonVariants({ size: "lg" })}>
+              Run the test
+            </Link>
+          )
+        }
+        learnMore="dashboard"
+        hasContent={finished.length > 0}
+      />
       <ErrorMessage error={data.error} />
       {prompts.length > 1 ? (
         <div className="flex max-w-md flex-col gap-1.5">
@@ -119,11 +130,11 @@ export function DashboardPage({ projectId }: { projectId: string }) {
       {data.loading && finished.length === 0 ? <Skeleton className="h-56 w-full" /> : null}
       {!data.loading && !latest ? (
         <EmptyState
-          title="No finished experiment yet"
-          description="Run your test cases on the models you chose (step 5). The dashboard fills in as soon as one finishes."
+          title="Nothing to show yet"
+          description="Run the test on your models. This page fills in as soon as one run finishes."
           action={
-            <Link href={`/projects/${projectId}/run`} className="text-lagoon-strong text-sm font-medium">
-              Go to Run →
+            <Link href={`/projects/${projectId}/run`} className={buttonVariants({ size: "lg" })}>
+              Run the test
             </Link>
           }
         />
@@ -139,7 +150,7 @@ export function DashboardPage({ projectId }: { projectId: string }) {
                 href={`/projects/${projectId}/results`}
                 className="text-lagoon-strong text-sm font-medium"
               >
-                Open results →
+                Compare results →
               </Link>
             }
           >
