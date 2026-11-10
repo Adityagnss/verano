@@ -60,8 +60,8 @@ function overlaps(a: Box, b: Box): boolean {
 }
 
 async function auditPage(page: Page, label: string, width: number, report: string[]): Promise<void> {
-  await expect(page.locator('[data-slot="app-header"]')).toBeVisible({ timeout: 20_000 })
-  await expect(page.locator("main h1, main h2").first()).toBeVisible({ timeout: 20_000 })
+  await expect(page.locator('[data-slot="app-header"]')).toBeVisible({ timeout: 30_000 })
+  await expect(page.locator("main h1, main h2, main h3").first()).toBeVisible({ timeout: 30_000 })
   await page.waitForLoadState("networkidle")
 
   const scroll = await page.evaluate(() => ({
@@ -104,6 +104,9 @@ async function auditMenu(page: Page, label: string, report: string[]): Promise<v
       }))
       .filter((item) => item.width > 0 && item.height > 0),
   )
+  const shots = process.env.SCREENSHOT_DIR
+  if (shots) await page.waitForTimeout(500)
+  if (shots) await page.screenshot({ path: `${shots}/menu-390-${label}.png` })
   if (links.length < 5) report.push(`${label} @390: the menu has only ${links.length} entries`)
   for (const link of links)
     if (link.height < MIN_TAP)

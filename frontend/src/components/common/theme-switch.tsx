@@ -4,7 +4,7 @@
  */
 "use client"
 
-import { Monitor, Moon, Sun } from "lucide-react"
+import { Check, Monitor, Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useSyncExternalStore } from "react"
 
@@ -12,8 +12,7 @@ import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
@@ -45,14 +44,19 @@ export function ThemeSwitch() {
         }
       />
       <DropdownMenuContent align="end" className="w-56 min-w-56">
-        <DropdownMenuRadioGroup value={theme ?? "system"} onValueChange={setTheme}>
-          {CHOICES.map(({ value, label, Icon }) => (
-            <DropdownMenuRadioItem key={value} value={value} className="min-h-10">
-              <Icon aria-hidden />
-              {label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
+        {CHOICES.map(({ value, label, Icon }) => (
+          <DropdownMenuItem
+            key={value}
+            role="menuitemradio"
+            aria-checked={theme === value}
+            className="min-h-10"
+            onClick={() => setTheme(value)}
+          >
+            <Icon aria-hidden />
+            {label}
+            {theme === value ? <Check aria-hidden className="ml-auto" /> : null}
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   )
