@@ -4,6 +4,7 @@
 import { useState } from "react"
 
 import { ErrorMessage } from "@/components/common/error-message"
+import { StatusBadge } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -28,7 +29,7 @@ export function ImportDialog({ projectId }: { projectId: string }) {
   const report = run.data
   return (
     <Dialog>
-      <DialogTrigger render={<Button>{C.import}</Button>} />
+      <DialogTrigger render={<Button size="lg">{C.import}</Button>} />
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{C.importTitle}</DialogTitle>
@@ -57,8 +58,19 @@ export function ImportDialog({ projectId }: { projectId: string }) {
               ))}
             </select>
             <p className="text-text-muted text-xs">
-              {(formats.data ?? []).find((f) => f.name === format)?.hint}
+              {(formats.data ?? []).find((f) => f.name === format)?.hint ??
+                (format === "auto" ? "Verano looks at the file and picks the format for you." : "")}
             </p>
+            {(formats.data ?? []).length ? (
+              <ul className="flex flex-col gap-1 text-xs" aria-label="Supported formats">
+                {(formats.data ?? []).map((f) => (
+                  <li key={f.name} className="flex flex-wrap items-baseline gap-2">
+                    <StatusBadge>{f.label}</StatusBadge>
+                    <span className="text-text-secondary min-w-0">{f.hint}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="traffic-file">{C.fileLabel}</Label>
@@ -74,7 +86,7 @@ export function ImportDialog({ projectId }: { projectId: string }) {
             <Input id="traffic-version" value={version} onChange={(e) => setVersion(e.target.value)} />
             <p className="text-text-muted text-xs">{C.versionHint}</p>
           </div>
-          <Button type="submit" disabled={!file || run.isPending}>
+          <Button type="submit" size="lg" disabled={!file || run.isPending}>
             {run.isPending ? C.importing : C.import}
           </Button>
         </form>

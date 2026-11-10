@@ -1,10 +1,10 @@
 /** User-facing text for traffic, online scoring and alerts. */
 
 export const TRAFFIC_COPY = {
-  title: "Real traffic",
+  title: "Live traffic",
   subtitle:
     "Bring in what real users asked and what your app answered, turn good examples into test cases, check a sample of live answers with the same checks, and get told when quality drops.",
-  tabs: { list: "Traffic", scoring: "Live scores", alerts: "Alerts", connect: "Connect an app" },
+  tabs: { list: "Traffic", scoring: "Live scores", alerts: "Alerts", connect: "Connect" },
   empty: "No traffic yet.",
   emptyHint: "Import a file from your tracing tool, or connect your app so it sends traffic here.",
   import: "Import a file",

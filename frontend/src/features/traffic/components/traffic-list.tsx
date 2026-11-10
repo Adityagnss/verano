@@ -133,6 +133,7 @@ export function TrafficList({ projectId }: { projectId: string }) {
             <Button
               key={flag}
               size="sm"
+              className="min-h-10 sm:min-h-0"
               variant={filters[flag] ? "default" : "outline"}
               aria-pressed={filters[flag]}
               onClick={() => setFilters((f) => ({ ...f, [flag]: !f[flag] }))}
@@ -141,7 +142,7 @@ export function TrafficList({ projectId }: { projectId: string }) {
             </Button>
           ))}
           <Input
-            className="max-w-xs"
+            className="min-h-10 sm:max-w-xs"
             aria-label={C.filters.search}
             placeholder={C.filters.search}
             value={filters.q}
@@ -150,22 +151,35 @@ export function TrafficList({ projectId }: { projectId: string }) {
         </div>
         <ErrorMessage error={list.error} />
         {rows.length === 0 && !list.isLoading ? (
-          <EmptyState title={C.empty} description={C.emptyHint} />
+          <div className="flex flex-col gap-4">
+            <EmptyState title={C.empty} description={C.emptyHint} />
+            <div className="border-border flex flex-col gap-1 rounded-lg border border-dashed p-3 text-sm">
+              <StatusBadge>Example, not real traffic</StatusBadge>
+              <span className="font-medium">Where is my order? It was due on Monday.</span>
+              <span className="text-text-secondary">
+                Your order shipped on Monday and should arrive tomorrow.
+              </span>
+              <span className="flex flex-wrap gap-1.5">
+                <StatusBadge tone="success">passed</StatusBadge>
+                <StatusBadge tone="violet">1 hidden</StatusBadge>
+              </span>
+            </div>
+          </div>
         ) : (
           <ul className="divide-border flex flex-col divide-y">
             {rows.map((t) => (
               <li key={t.id} className="flex flex-col gap-2 py-3">
-                <div className="flex items-start gap-3">
+                <div className="flex flex-wrap items-start gap-3">
                   <input
                     type="checkbox"
                     aria-label="Select this trace"
                     checked={selected.includes(t.id)}
                     onChange={() => toggle(t.id)}
-                    className="mt-1"
+                    className="mt-1 size-5 sm:size-4"
                   />
                   <button
                     type="button"
-                    className="flex-1 text-left"
+                    className="min-h-10 min-w-0 flex-1 text-left"
                     onClick={() => setOpen(open === t.id ? null : t.id)}
                   >
                     <span className="block text-sm font-medium">{t.input_preview || "(empty question)"}</span>
