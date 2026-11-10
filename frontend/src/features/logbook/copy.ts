@@ -1,6 +1,6 @@
 /** User-facing text for the Logbook: what each column means, so nobody has to guess. */
 export const LOGBOOK_COPY = {
-  title: "Logbook",
+  title: "History",
   subtitle:
     "Every answer every model gave, in one table you can filter, sort and export: which prompt version, which model, what it said, what the right answer was, whether it passed, and what it cost.",
   tabs: { answers: "Answers", analysis: "Analysis", calls: "Model calls" },

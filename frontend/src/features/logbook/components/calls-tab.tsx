@@ -5,14 +5,15 @@
  */
 "use client"
 
-import { Search, X } from "lucide-react"
-import { useEffect, useState } from "react"
+import { Search } from "lucide-react"
+import { useState } from "react"
 
 import { EmptyState } from "@/components/common/empty-state"
 import { ErrorMessage } from "@/components/common/error-message"
 import { MultiSelect } from "@/components/common/multi-select"
 import { StatusBadge } from "@/components/common/status-badge"
 import { Button } from "@/components/ui/button"
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet"
 import { Input } from "@/components/ui/input"
 import { NativeSelect } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -56,29 +57,16 @@ function CallDrawer({
   onClose: () => void
 }) {
   const detail = useCall(projectId, id)
-  useEffect(() => {
-    if (!id) return
-    const escape = (event: KeyboardEvent) => event.key === "Escape" && onClose()
-    document.addEventListener("keydown", escape)
-    return () => document.removeEventListener("keydown", escape)
-  }, [id, onClose])
-  if (!id) return null
   const data = detail.data
   return (
-    <div className="fixed inset-0 z-40" role="dialog" aria-modal="true" aria-label="Model call detail">
-      <button
-        type="button"
-        aria-label="Close"
-        className="absolute inset-0 bg-[#14203a]/40"
-        onClick={onClose}
-      />
-      <aside className="bg-card absolute inset-y-0 right-0 flex w-[min(54rem,100vw)] flex-col shadow-2xl">
-        <header className="border-border flex items-start justify-between gap-3 border-b px-5 py-4">
-          <div>
-            <p className="text-text-secondary text-xs">
+    <Sheet open={id !== null} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent side="right" className="w-full gap-0 sm:max-w-3xl">
+        <header className="border-border flex items-start gap-3 border-b px-5 py-4 pr-14">
+          <div className="min-w-0">
+            <SheetDescription className="text-text-secondary text-xs">
               {data ? new Date(data.row.created_at).toLocaleString() : "Model call"}
-            </p>
-            <h3 className="mt-0.5 flex flex-wrap items-center gap-2 text-lg font-semibold">
+            </SheetDescription>
+            <SheetTitle className="mt-0.5 flex flex-wrap items-center gap-2 text-lg font-semibold">
               {data?.row.model ?? "Loading…"}
               {data ? (
                 <StatusBadge tone="brand">{PURPOSE_LABEL[data.row.purpose] ?? data.row.purpose}</StatusBadge>
@@ -88,13 +76,10 @@ function CallDrawer({
                   {data.row.status}
                 </StatusBadge>
               ) : null}
-            </h3>
+            </SheetTitle>
           </div>
-          <Button variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
-            <X />
-          </Button>
         </header>
-        <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-5">
+        <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-5 py-5">
           <ErrorMessage error={detail.error} />
           {detail.isPending ? <Skeleton className="h-64 w-full" /> : null}
           {data ? (
@@ -145,8 +130,8 @@ function CallDrawer({
             </>
           ) : null}
         </div>
-      </aside>
-    </div>
+      </SheetContent>
+    </Sheet>
   )
 }
 

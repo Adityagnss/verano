@@ -7,11 +7,11 @@
 "use client"
 
 import { Check, X } from "lucide-react"
-import { type ReactNode, useEffect } from "react"
+import type { ReactNode } from "react"
 
 import { ErrorMessage } from "@/components/common/error-message"
 import { StatusBadge } from "@/components/common/status-badge"
-import { Button } from "@/components/ui/button"
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import { formatParams } from "@/lib/config"
 import { formatCost, formatMs, versionName } from "@/lib/format"
@@ -68,31 +68,18 @@ export function AnswerDrawer({
   onOpen: (target: Target) => void
 }) {
   const detail = useAnswer(projectId, target?.experiment_id ?? null, target?.run_id ?? null)
-  useEffect(() => {
-    if (!target) return
-    const escape = (event: KeyboardEvent) => event.key === "Escape" && onClose()
-    document.addEventListener("keydown", escape)
-    return () => document.removeEventListener("keydown", escape)
-  }, [target, onClose])
-  if (!target) return null
   const data = detail.data
   const row = data?.row
   const fields = data ? compareFields(data.golden_answer, data.output) : null
   return (
-    <div className="fixed inset-0 z-40" role="dialog" aria-modal="true" aria-label="Answer detail">
-      <button
-        type="button"
-        aria-label="Close"
-        className="absolute inset-0 bg-[#14203a]/40"
-        onClick={onClose}
-      />
-      <aside className="bg-card absolute inset-y-0 right-0 flex w-[min(54rem,100vw)] flex-col shadow-2xl">
-        <header className="border-border flex items-start justify-between gap-3 border-b px-5 py-4">
+    <Sheet open={target !== null} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent side="right" className="w-full gap-0 sm:max-w-3xl">
+        <header className="border-border flex items-start gap-3 border-b px-5 py-4 pr-14">
           <div className="min-w-0">
-            <p className="text-text-secondary text-xs">
+            <SheetDescription className="text-text-secondary text-xs">
               {row ? `${row.experiment} · ${new Date(row.created_at).toLocaleString()}` : "Answer"}
-            </p>
-            <h3 className="mt-0.5 flex flex-wrap items-center gap-2 text-lg font-semibold">
+            </SheetDescription>
+            <SheetTitle className="mt-0.5 flex flex-wrap items-center gap-2 text-lg font-semibold">
               {row?.model ?? "Loading…"}
               {row ? <StatusBadge tone="brand">Prompt {versionName(row.prompt_version)}</StatusBadge> : null}
               {row ? (
@@ -102,13 +89,10 @@ export function AnswerDrawer({
                   <StatusBadge tone="danger">Failed</StatusBadge>
                 )
               ) : null}
-            </h3>
+            </SheetTitle>
           </div>
-          <Button variant="ghost" size="icon" aria-label="Close" onClick={onClose}>
-            <X />
-          </Button>
         </header>
-        <div className="flex flex-1 flex-col gap-6 overflow-y-auto px-5 py-5">
+        <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-5 py-5">
           <ErrorMessage error={detail.error} />
           {detail.isPending ? <Skeleton className="h-64 w-full" /> : null}
           {data && row ? (
@@ -284,7 +268,7 @@ export function AnswerDrawer({
             </>
           ) : null}
         </div>
-      </aside>
-    </div>
+      </SheetContent>
+    </Sheet>
   )
 }

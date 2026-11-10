@@ -8,8 +8,11 @@
 import { BarChart3, ListTree, Table2 } from "lucide-react"
 import { useState } from "react"
 
+import { PageIntro } from "@/components/common/page-intro"
+import { ALL_PROJECT_PAGES } from "@/lib/nav"
 import { cn } from "@/lib/utils"
 
+import { useAnswers } from "../hooks"
 import { LOGBOOK_COPY } from "../copy"
 import { type AnswerFilters, EMPTY_FILTERS } from "../domain"
 import { type Paging, useLogOptions } from "../hooks"
@@ -24,21 +27,26 @@ const TABS: { key: Tab; icon: typeof Table2 }[] = [
   { key: "calls", icon: ListTree },
 ]
 
+const PAGE = ALL_PROJECT_PAGES.find((p) => p.key === "logbook")!
+
 export function LogbookPage({ projectId }: { projectId: string }) {
   const [tab, setTab] = useState<Tab>("answers")
   const [filters, setFilters] = useState<AnswerFilters>(EMPTY_FILTERS)
   const [paging, setPaging] = useState<Paging>({ sort: "time", order: "desc", offset: 0, limit: 50 })
   const options = useLogOptions(projectId)
+  const answers = useAnswers(projectId, EMPTY_FILTERS, { sort: "time", order: "desc", offset: 0, limit: 1 })
   return (
-    <div className="mx-auto flex w-full max-w-[112rem] flex-col gap-5">
-      <header className="border-border flex flex-col gap-2 border-b pb-5">
-        <p className="text-text-secondary text-sm">Tools</p>
-        <h2 className="text-2xl leading-tight font-semibold sm:text-[1.95rem]">{LOGBOOK_COPY.title}</h2>
-        <p className="text-text-secondary max-w-[56rem] text-[0.95rem] leading-relaxed">
-          {LOGBOOK_COPY.subtitle}
-        </p>
-      </header>
-      <div role="tablist" aria-label="Logbook views" className="flex flex-wrap gap-2">
+    <div className="mx-auto flex w-full max-w-[112rem] min-w-0 flex-col gap-5">
+      <PageIntro
+        storageKey="logbook"
+        title={PAGE.label}
+        what="Every answer every model gave and every model call, in one place you can search, filter and export."
+        whenToUse="you want to see exactly what a model said, or why a test case failed"
+        youGet="a table of answers with scores, cost and time, and the full detail of any one"
+        learnMore="logbook"
+        hasContent={(answers.data?.total ?? 0) > 0}
+      />
+      <div role="tablist" aria-label="History views" className="flex flex-wrap gap-2">
         {TABS.map(({ key, icon: Icon }) => (
           <button
             key={key}
@@ -47,7 +55,7 @@ export function LogbookPage({ projectId }: { projectId: string }) {
             aria-selected={tab === key}
             onClick={() => setTab(key)}
             className={cn(
-              "flex items-center gap-2 rounded-xl px-4 py-2.5 text-left text-sm ring-1 transition-colors",
+              "flex min-h-10 items-center gap-2 rounded-xl px-4 py-2.5 text-left text-sm ring-1 transition-colors",
               tab === key
                 ? "bg-lagoon-soft ring-lagoon/30 text-lagoon-strong"
                 : "bg-card ring-border hover:bg-subtle",

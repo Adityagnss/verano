@@ -6,6 +6,7 @@
 
 import { useMemo, useState } from "react"
 
+import { PageIntro } from "@/components/common/page-intro"
 import { ErrorMessage } from "@/components/common/error-message"
 import { NativeSelect } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -90,22 +91,24 @@ export function ActivityPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-6 px-4 py-2">
+    <div className="mx-auto flex w-full max-w-[96rem] min-w-0 flex-col gap-6 py-2">
+      <PageIntro
+        storageKey="activity"
+        title="Usage and spend"
+        what="Every model call across all your projects: what it cost, how much was sent and received, and where it went."
+        whenToUse="you want to know where the money is going, or whether use is growing"
+        youGet="totals compared with the period before, charts over time, and a breakdown by model, project or key"
+        learnMore="activity"
+        hasContent={(data?.rows.length ?? 0) > 0}
+      />
       <div className="border-border flex flex-col gap-5 border-b pb-0">
-        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
-          <div className="flex flex-col gap-1.5">
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-[1.95rem]">Activity</h1>
-            <p className="text-text-secondary max-w-[48rem] text-[0.95rem]">
-              Every model call across your projects: what it cost, how much was sent and received, and where
-              it went.
-            </p>
-          </div>
+        <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end lg:justify-end">
           <div className="flex flex-wrap items-center gap-2">
             <NativeSelect
               aria-label="Project"
               value={projectId ?? ""}
               onChange={(e) => setProjectId(e.target.value || null)}
-              className="h-9 w-48"
+              className="h-10 w-full sm:h-9 sm:w-48"
             >
               <option value="">All projects</option>
               {(data?.projects ?? []).map((p) => (
@@ -118,7 +121,7 @@ export function ActivityPage() {
               aria-label="Time zone"
               value={tz}
               onChange={(e) => setTz(e.target.value)}
-              className="h-9 w-44"
+              className="h-10 w-full sm:h-9 sm:w-44"
             >
               <option value={local}>Your time ({offsetOf(local)})</option>
               {local !== "UTC" ? <option value="UTC">UTC</option> : null}
@@ -127,7 +130,7 @@ export function ActivityPage() {
               aria-label="Period"
               value={days}
               onChange={(e) => setDays(Number(e.target.value))}
-              className="h-9 w-36"
+              className="h-10 w-full sm:h-9 sm:w-36"
             >
               {PERIODS.map((p) => (
                 <option key={p.days} value={p.days}>
@@ -148,7 +151,7 @@ export function ActivityPage() {
               aria-controls="activity-panel"
               onClick={() => setTab(name)}
               className={cn(
-                "focus-visible:ring-ring/50 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
+                "focus-visible:ring-ring/50 min-h-10 shrink-0 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none",
                 tab === name
                   ? "border-marigold text-foreground"
                   : "text-text-secondary hover:text-foreground border-transparent",

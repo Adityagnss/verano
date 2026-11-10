@@ -27,6 +27,8 @@ const PROJECT_ROUTES = [
   "logbook",
   "dashboard",
   "guide",
+  "guide/start-here",
+  "guide/templates",
 ]
 /** Pages outside a project. Add new ones here. */
 const ACCOUNT_ROUTES = ["/projects", "/workspace", "/tokens", "/activity"]

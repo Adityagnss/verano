@@ -101,13 +101,13 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   })
 
   await goToPage(page, /^Trends/)
-  await expect(page.getByRole("heading", { name: "How your prompts and models are doing" })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Trends", level: 1 })).toBeVisible()
   await expect(page.getByRole("heading", { name: "Is the prompt getting better?" })).toBeVisible()
   await expect(page.getByRole("heading", { name: "What this tells you" })).toBeVisible()
   await expect(page.getByText("Where the money went")).toBeVisible()
 
   await goToPage(page, /^History/)
-  await expect(page.getByRole("heading", { name: "Logbook", level: 2 })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "History", level: 1 })).toBeVisible()
   await expect(page.getByRole("cell", { name: "echo" }).first()).toBeVisible()
   await page.getByRole("row", { name: "Open this answer" }).first().click()
   await expect(page.getByText("Golden answer and model answer")).toBeVisible()
@@ -118,11 +118,15 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   await expect(page.getByRole("cell", { name: "Running your test cases" }).first()).toBeVisible()
 
   await goToPage(page, /^Prompting guide/)
+  await page
+    .getByRole("link", { name: /Start here/ })
+    .first()
+    .click()
   await expect(page.getByRole("heading", { name: "The one habit: measure first" })).toBeVisible()
 
   await openAccountMenu(page)
   await page.getByRole("menuitem", { name: "Usage and spend" }).click()
-  await expect(page.getByRole("heading", { name: "Activity", level: 1 })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Usage and spend", level: 1 })).toBeVisible()
   await expect(page.getByText("Top API keys")).toBeVisible()
   await expect(
     page
