@@ -2,8 +2,20 @@
 
 export const APPS_COPY = {
   title: "Test your own app",
-  subtitle:
-    "Point Verano at your app's address. It sends each test case, then scores the answer, the text your app retrieved and the tools it called.",
+  what: "Test a chatbot, API or RAG app you already run. Verano sends each test case to it and scores the answer, the text it retrieved and the tools it called.",
+  whenToUse: "your product is not just a prompt and a model",
+  youGet: "your app scored on the same test cases as your models",
+  connect: "Connect an app",
+  check: "Check connection",
+  checking: "Checking…",
+  checkNote: "Checking saves the app and sends it one short greeting. Nothing else is stored.",
+  advanced: "Advanced: sign-in, conversation, timeout and request details",
+  previewTitle: "The request Verano will send",
+  previewNote: (path: string) => `Your question replaces the sample. Verano reads the answer from ${path}.`,
+  save: "Save app",
+  testOne: "Test one case",
+  runOn: "Run on my test cases",
+  emptyHint: "Connect your app in three short steps: where it is, what it expects, then try one question.",
   empty: "No app connected yet.",
   addTitle: "Connect an app",
   addDescription:
@@ -13,6 +25,9 @@ export const APPS_COPY = {
     url: "Address",
     urlHint:
       "For example https://my-app.example.com/ask. Addresses inside your network are refused unless the server owner allows them.",
+    templatePick: "Kind of app",
+    timeout: "Timeout (seconds)",
+    timeoutHint: "Leave empty to use the default.",
     template: "What to send",
     templateHint:
       "JSON. Write {{ name | tojson }} where a test case's input goes, using the same names as your prompt's variables.",

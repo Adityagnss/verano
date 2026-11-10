@@ -4,7 +4,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { api, call } from "@/lib/api/client"
+import type { components } from "@/lib/api/schema"
 import type { AppTargetCreate } from "@/lib/api/types"
+
+type AppTargetUpdate = components["schemas"]["AppTargetUpdate"]
 
 export function useApps(projectId: string) {
   return useQuery({
@@ -49,5 +52,19 @@ export function useTryApp(projectId: string) {
           body: { inputs },
         }),
       ),
+  })
+}
+
+export function useChangeApp(projectId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ appId, body }: { appId: string; body: AppTargetUpdate }) =>
+      call(() =>
+        api.PATCH("/api/v1/projects/{project_id}/apps/{app_id}", {
+          params: { path: { project_id: projectId, app_id: appId } },
+          body,
+        }),
+      ),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["projects", projectId] }),
   })
 }
