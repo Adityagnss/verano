@@ -84,25 +84,33 @@ async def gateway_load(container: Container, settings: Settings) -> tuple[list[f
             credential = await registry.add_credential(project, principal, CredentialCreate(provider="mock"))
             await db.commit()
             gateway = build_gateway(container, registry)
+            # as in a run: the target is resolved once and committed, then every call records itself in its own
+            # transaction (ADR 0011); sharing this session between 50 calls at once would not be a fair test
+            target = await registry.call_target(project.id, credential.id, "echo")
             context = CallContext(project_id=project.id)
             limit = asyncio.Semaphore(CONCURRENCY)
             samples: list[float] = []
             failed = 0
+            reasons: dict[str, int] = {}
 
             async def one() -> None:
                 nonlocal failed
                 async with limit:
                     began = time.perf_counter()
                     try:
-                        await gateway.complete(
-                            "echo", MESSAGES, {"temperature": 0}, credential.id, CallPurpose.TEST_RUN, context
+                        await gateway.complete_target(
+                            target, MESSAGES, {"temperature": 0}, CallPurpose.TEST_RUN, context
                         )
                         samples.append((time.perf_counter() - began) * 1000)
-                    except Exception:
+                    except Exception as error:
                         failed += 1
+                        reason = f"{type(error).__name__}: {error}"[:160]
+                        reasons[reason] = reasons.get(reason, 0) + 1
 
             started = time.perf_counter()
             await asyncio.gather(*(one() for _ in range(CALLS)))
+            if reasons:
+                print("Why calls failed:", sorted(reasons.items(), key=lambda item: -item[1])[:3])
             return samples, failed, time.perf_counter() - started
     finally:
         async with container.database.sessions() as db:
