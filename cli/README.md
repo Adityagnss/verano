@@ -41,12 +41,15 @@ A complete, runnable example is in [`examples/support-triage`](../examples/suppo
 | `verano login` | Sign in with a password; keeps a 90-day token (`--days`), not the password. `--token` saves one you already have. |
 | `verano logout` | Revokes the saved token and deletes it from this machine. |
 | `verano whoami` | Who you are, which server, and where the sign-in comes from. |
-| `verano token create --name ci` | A token for CI, printed once on its own line. `list` and `revoke` manage them. |
+| `verano token create --name ci` | A token for CI, printed once on its own line. `--read-only` can look and fetch prompts but change nothing; `-p <project>` limits it to one project; `--days` or `--never-expires` set its life. `list` and `revoke` manage them. |
 | `verano init [folder]` | Scans the code and writes `verano.yaml`. `--print` shows it instead; `--yes` takes everything that can be tested; `--force` replaces an existing file. |
 | `verano validate` | Checks `verano.yaml` with line numbers and "did you mean" hints. Sends nothing. |
-| `verano push [name]` | Makes Verano match the file: project, keys, models, prompt, test cases. Safe to repeat. `--dry-run`, `--no-data`, `--replace-draft`. |
-| `verano run [name]` | Runs each prompt on its test cases. `--yes` skips the question, `--max-cost 2` refuses a dearer run, `--json` prints one JSON document (each model carries `vs_best`, its comparison with the best model), `--ci` is for pipelines. |
+| `verano push [name]` | Makes Verano match the file: project, keys, models, prompt, test cases. Safe to repeat. `--dry-run`, `--no-data`, `--replace-draft`, `--label staging` (point a label at the pushed version), `--prune` (delete prompts an earlier push made that the file no longer lists). A changed key is rotated in Verano. |
+| `verano run [name]` | Runs each prompt on its test cases. `--yes` skips the question, `--max-cost 2` refuses a dearer run, `--json` prints one JSON document (each model carries `vs_best`, its comparison with the best model), `--ci` is for pipelines, `--baseline <run id>` compares with one chosen earlier run, `--markdown-file results.md` also writes the results table, `--security` also runs the approved security pack and gates on it (`--security-min 0.8`). |
 | `verano status [name]` | The latest finished run of each prompt. |
+| `verano app list`, `add`, `test` | Connect your own app over HTTP and test it. `test` sends one test case and shows what was sent, what came back and how the reply was read. |
+| `verano traffic import <file> -p <project>` | Imports traces from an OpenTelemetry, HAR, Langfuse, Phoenix or LangSmith export (`--format auto` looks at the file). Personal data is removed first. `traffic list` shows stored traces. |
+| `verano mcp` | A local MCP server on standard input and output, so an AI agent can use Verano with your token. Read-only unless started with `--allow-write`; `--max-cost` caps a run the agent starts. |
 
 Use `-f other.yaml` on `validate`, `push`, `run` and `status` to use a different file.
 
@@ -77,6 +80,8 @@ prompts:
     runs: 2                        # 1 to 5; more runs show how steady a model is
     budget: 1.00                   # dollars; the run stops when spent
     gate: {min_quality: 0.85, min_pass_rate: 0.9, max_drop: 0.05}   # what --ci demands (0 to 1)
+    #  cost and speed can be gated too: max_cost_per_call, max_latency_ms, max_cost_increase (0.2 = 20% more than the baseline)
+    #  baseline: <run id> pins the comparison to one earlier run instead of the latest comparable run
 ```
 
 Prompt text can be in the file or in files next to it. Every file named must stay inside the
@@ -91,6 +96,17 @@ folder of `verano.yaml`. `data.cases` takes CSV, TSV, JSON or JSONL with up to 5
     VERANO_URL: https://verano.example.com
     VERANO_API_TOKEN: ${{ secrets.VERANO_API_TOKEN }}   # from `verano token create --name ci`
     OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+```
+
+The same job as a ready-made action, which also posts the results table as a pull request comment
+and fails the job when a gate fails (`.github/actions/verano-run` in this repository; it is built
+but has not been run in a real GitHub job yet, and is not published):
+
+```yaml
+- uses: <owner>/<repo>/.github/actions/verano-run@<tag>
+  with:
+    server-url: https://verano.example.com
+    token: ${{ secrets.VERANO_API_TOKEN }}   # a full token limited to one project; a read-only token cannot start a run
 ```
 
 `--ci` never asks a question. Exit codes: **0** done (and the gate passed), **1** an error,

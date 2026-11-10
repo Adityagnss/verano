@@ -7,16 +7,16 @@ data it has never seen.**
 
 Open source · Self-hostable · Apache 2.0
 
-> **Status (2026-10-06):** the **whole loop is built** (keys → prompt → your data → test
-> cases → run → results → improve), with the pre-V1 additions: generation safety,
-> reproducibility, the **`verano` command-line tool**, the credibility items (a chosen and
-> readable judge, unscored answers never passing, one statistical rule for "clear difference")
-> and a workspace **Activity** page. Every feature is tested on a mock provider and in the browser.
-> **Real-model checks are partly done**, at $0: a local model (Ollama), free models on OpenRouter
-> and Gemini's free tier. Paid providers (OpenAI, Anthropic and others), the judge against a
-> person and Improve on a real model are **not checked yet**. The evidence is in
-> [real-model-checks](docs/checkpoints/real-model-checks.md); what is open is in the
-> [pending checks](docs/PENDING_CHECKS.md) and the [backlog](docs/BACKLOG.md).
+> **Status (2026-11-10):** the whole loop is built (keys → prompt → your data → test cases → run → results →
+> improve), and so are the first four of the five planned phases: **proof and trust** (human labels and a judge
+> checked against people), **real apps** (test your own app over HTTP), **the production loop** (serve the winning
+> prompt, SDKs, a CI action, real traffic, teams) and **security, depth and hardening** (a security pack, Improve in
+> several rounds, pause and resume, recovery from a dead worker). The open-source launch is not started.
+> **Everything is tested on a mock provider, recorded responses and free models** (759 backend, 256 CLI and 25 frontend
+> tests pass); **nothing is proven on a paid model yet** because the spending cap is $0, and the newest screens have not
+> been opened in a browser. The CLI is not on PyPI. Evidence and gaps: the
+> [Phase 8 and 9 checkpoint](docs/checkpoints/phase-8-9.md), the [Phase 6 and 7 checkpoint](docs/checkpoints/phase-6-7.md),
+> the [pending checks](docs/PENDING_CHECKS.md) and the [backlog](docs/BACKLOG.md).
 
 ## Why it's different
 
@@ -39,6 +39,18 @@ Open source · Self-hostable · Apache 2.0
   budget cap and a stop button; nothing paid starts without your say-so.
 - **From your codebase.** The `verano` command-line tool looks for the prompts in your code
   (and says how sure it is), sets the project up, and can fail a pull request when quality drops.
+- **A judge you can check.** People label answers (good, bad, unsure), blind review hides the judge's verdict, and
+  Verano shows how often the judge agrees with them (raw agreement and Cohen's kappa), with a warning when it is low.
+- **Your own app, not only a prompt.** Point Verano at an HTTP address and test the whole app: retrieved documents, tool
+  calls and multi-turn conversations with a simulated user. Calls to internal addresses are refused unless you allow them.
+- **The prompt reaches your app.** Production and staging labels, rollback, fetch by name with caching, Python and
+  TypeScript libraries, a GitHub Action and an MCP server for AI agents.
+- **Real traffic comes in.** Import traces (OpenTelemetry, HAR, Langfuse, Phoenix, LangSmith) or send spans to a thin
+  OTLP receiver, turn them into draft test cases, and watch sampled scores and drift alerts. Personal data is removed first.
+- **Teams.** Four roles, invites, sign-in with Google, Microsoft or any OIDC provider, one key store per workspace, a
+  monthly spending limit and an audit log.
+- **A small security pack.** Prompt injection, jailbreak, prompt leak, PII and harmful-content cases, written as ordinary
+  approved cases, with a "harden" step that asks Improve for defensive instructions.
 - **Free to try.** Runs on local models through Ollama, with no provider account and no API key.
 
 ## Quick start
@@ -50,7 +62,9 @@ make up
 ```
 
 This creates `.env` with fresh secrets, builds the images, starts the stack and waits until
-it is healthy. Open **http://localhost:8080** and create an account.
+it is healthy. Open **http://localhost:8080** and create an account. Stop it with `make down` (your data is kept).
+On a network that re-signs HTTPS and `make up` fails with a certificate error, see
+[self-hosting](docs/guides/self-hosting.md#behind-a-company-firewall-that-re-signs-https).
 
 ### Set up on another machine
 
@@ -88,6 +102,11 @@ uv tool install ./cli      # or: pipx install ./cli
 verano login && verano init && verano push && verano run
 ```
 
+Beyond that it connects your own app (`verano app`), brings in traces (`verano traffic import`), runs the security
+pack in the gate (`verano run --security`), gates on cost and speed as well as quality, and starts an MCP server for AI
+agents (`verano mcp`, read-only by default). Python and TypeScript libraries to fetch a prompt by name live in
+[`sdk/`](sdk/), and a GitHub Action in [`.github/actions/verano-run`](.github/actions/verano-run/) (built, not yet run in a real job).
+
 See [`cli/README.md`](cli/README.md) for every command and the `verano.yaml` format, and
 [`examples/support-triage`](examples/support-triage/) for a runnable example. The web app does
 everything the command line does; use whichever you prefer.
@@ -115,10 +134,14 @@ everything the command line does; use whichever you prefer.
    panel shows what you set, what Verano locked and recorded, and what the provider
    controls, with a "same configuration" badge, **Re-run with same settings**, and a warning
    when the provider changed the model behind a name.
-7. **Improve** — why cases fail, 3 candidate prompts tested on the "improve" part, the best one
-   checked on the held-back part, and "Accept as new version" only when it is proven better.
+7. **Improve** — why cases fail, candidate prompts tested on the "improve" part (a quick check on a small fixed sample
+   first, then a full test for the survivors), the best one checked on the held-back part, over several rounds if you
+   ask, and "Accept as new version" only when it is proven better. Accepting can move a label such as `production`.
 
-Alongside the steps: a **Dashboard** (the latest run, pass rate across prompt versions, where
+Alongside the steps: **Review** (label answers, blind), **Your apps** (connect an app over HTTP and test one case),
+**Traffic** (imports, ingest tokens, scores, alerts), **Security** (the attack pack and its report), **Tokens** and a
+**Workspace** page (members, invites, keys, spending limit, audit log). A run can be paused at the budget cap and resumed
+with a higher cap, and a run whose worker died moves on by itself. Also a **Dashboard** (the latest run, pass rate across prompt versions, where
 the money went), a **Logbook** (every answer and every model call, filterable, with CSV
 export) and a **Prompt guide** (a prompting reference with copy-ready templates). Across all
 projects, **Activity** shows spend, requests and tokens over time by model, key, project and
@@ -134,15 +157,16 @@ Running Verano on a server with HTTPS: see [self-hosting](docs/guides/self-hosti
 
 ```text
 Browser ─▶ Caddy (edge: real client IP, HTTPS) ─┬─ /api ─▶ FastAPI ─┬─ PostgreSQL
-verano CLI ───────────────────────────────────▶ │                   ├─ Valkey ◀─▶ Celery workers
+verano CLI, SDKs, your app's spans ───────────▶ │                   ├─ Valkey ◀─▶ Celery workers
                                                 └─ UI ───▶ Next.js  └─ LLM Gateway ─▶ LiteLLM ─▶ providers
+                                                                       └─ your app (HTTP, guarded) · code-check sandbox
 ```
 
 A modular monolith: every feature module has the same shape (`router`, `service`, pure
 `domain`, `repository`, `plugins`), and every LLM call, from test runs, generation, judges
 or the assistant, goes through one gateway that filters parameters, rate-limits per key,
 retries, prices and records it. The command-line tool is a separate package (`cli/`) that
-uses only the public API, so it adds no second path to a model. Details:
+uses only the public API, so it adds no second path to a model; calls to your own app go through a guarded client, and custom code checks run in a separate sandbox service. Details:
 [architecture](docs/architecture.md) · [decisions](docs/adr/).
 
 ## Benchmarks
@@ -153,10 +177,11 @@ Measured, with the hardware stated ([all numbers](docs/benchmarks.md)):
 |---|---:|---:|
 | Gateway overhead per call (p95, full path incl. DB record) | **5.6 ms** | < 20 ms |
 | `verano push` of 100 test cases (upload, pair, approve) | **6.5 s** | none set |
+| Fetch a prompt by name and label (median, 200 and 304) | **7.7 ms** | < 10 ms |
 | Plan 50,000 calls | backlog | < 5 s |
 | Results summary for 50,000 calls (p95) | backlog | < 300 ms |
 
-Resilience (429 storms, bad keys, outages, forged headers): [resilience](docs/resilience.md).
+Resilience (429 storms, bad keys, outages, forged headers, a dead worker, a failing provider): [resilience](docs/resilience.md). The 3,000-call load test has a script but has not been run.
 
 ## Extend it
 
@@ -185,38 +210,22 @@ Chromium, WebKit and Firefox. See
 
 ## Roadmap
 
-The five phases are built (the last three at their base level; what was left for later is in
-the [backlog](docs/BACKLOG.md)). The **pre-V1 plan** ([Part H](docs/DEVELOPMENT.md)) is
-worked through in order:
-
-1. Generation safety fixes — **done**
-2. Reproducibility (settings, configuration fingerprint, re-run and stability, provider model
-   id) — **done**
-3. The `verano` CLI (`login`, `init`, `validate`, `push`, `run`, `status`, the CI gate) —
-   **done**, not yet published to PyPI
-4. Credibility items: judge model choice, editable and readable judge criteria, "clear
-   difference" labels, visible judge failures — **done** ([ADR 0016](docs/adr/0016-judge-unscored-cases-and-significance.md))
-5. The [pending checks](docs/PENDING_CHECKS.md) with real models — **in progress**: the free and
-   local parts are done ([record](docs/checkpoints/real-model-checks.md)); paid providers and the
-   checks that need people are open, and the task-type, judge and Improve checks are left to
-   users after release (decision 70)
-
-**Phases 6 and 7 are built and tested on the mock provider and free models** (decision 91); the checks
-that need a paid model wait for a budget (decision 89), so nothing below is claimed as proven on a real model yet.
-The full plan is in the [backlog](docs/BACKLOG.md); what was built and what is left is in the
-[checkpoint](docs/checkpoints/phase-6-7.md).
+Phases 6 to 9 are built and tested; Phase 10 is next. The earlier **pre-V1 plan** ([Part H](docs/DEVELOPMENT.md)) is
+done except the checks that need paid models or people, which wait for a budget (decision 89) and for users after release.
+The full plan is in the [backlog](docs/BACKLOG.md); what was built and what is left is in the checkpoints for
+[Phases 6 and 7](docs/checkpoints/phase-6-7.md) and [Phases 8 and 9](docs/checkpoints/phase-8-9.md).
 
 | Phase | Name | State |
 |---|---|---|
-| 6 | Proof and trust | **Built, real-model proof waiting for a budget.** People label answers and Verano shows how often the judge agrees with them; "Why this score"; 27 rule checks; Python custom checks in a sandbox; a judge gallery; a judge cache |
-| 7 | Real apps | **Built.** Connect your own app over HTTP (RAG, tool calls, conversations with a simulated user), several inputs per test case, several prompts per project, `verano app` |
-| 8 | The production loop | Planned: serve the winning prompt to your app, a GitHub Action and the CLI on PyPI, real traffic as test cases, teams |
-| 9 | Security, depth and hardening | Planned: a small security pack, several Improve rounds that still prove the result, load and failure tests |
-| 10 | Open-source launch | Planned: public repository, website and documentation on free GitHub services |
+| 6 | Proof and trust | **Built; real-model proof waiting for a budget.** Human labels and judge agreement, "Why this score", 27 rule checks, Python custom checks in a sandbox, a judge gallery, a judge cache |
+| 7 | Real apps | **Built.** Connect your own app over HTTP (RAG, tool calls, conversations with a simulated user), several inputs per test case, several prompts per project, run parameters, `verano app` |
+| 8 | The production loop | **Built and tested; screens not browser-checked.** Prompt labels, SDKs, the GitHub Action, `verano mcp`, trace import and an OTLP receiver, online scoring and drift alerts, teams, an organization key store, a spending limit, an audit log. Not on PyPI; the Action has not run in a real job |
+| 9 | Security, depth and hardening | **Built and tested; load test not run.** A security pack, Improve in several rounds, pause and resume, leases and a sweeper, a circuit breaker, live progress. The security pack and the SDKs still need API-level tests |
+| 10 | Open-source launch | **Not started.** Public repository, website and documentation on free GitHub services, evidence page, outsider test, release gate |
 
-The checks that need real models (Improve, the judge, the seven task types) are part of Phase 6;
-they replace the earlier plan to leave them to users after release. Other projects are read for
-ideas only and nothing is copied from them ([references](docs/REFERENCES.md)).
+What still needs a paid model (Improve, the judge, reproducibility) or people (the seven task types, the outsider test)
+is listed in the [pending checks](docs/PENDING_CHECKS.md). Other projects are read for ideas only and nothing is copied
+from them ([references](docs/REFERENCES.md)).
 
 ## License
 
