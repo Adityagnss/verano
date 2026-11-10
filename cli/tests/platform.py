@@ -49,6 +49,10 @@ class FakePlatform(FakeVerano):
     stall: bool = False
     score_polls: int = 1
     scoring_failed: bool = False
+    security_packs: dict[str, list[dict[str, Any]]] = field(default_factory=dict)
+    security_gate: dict[str, Any] = field(default_factory=dict)
+    security_runs: list[dict[str, Any]] = field(default_factory=list)
+    security_gate_queries: list[dict[str, str]] = field(default_factory=list)
 
     def next_id(self, prefix: str) -> str:
         self.counter += 1
@@ -107,6 +111,8 @@ class FakePlatform(FakeVerano):
             return httpx.Response(204)
         if rest == "/prompts":
             return self.prompt_route(pid, method, body, request)
+        if rest.startswith("/security/packs"):
+            return self.security_route(pid, rest, method, body, request)
         experiment = self.experiment_route(pid, rest, method, body, request)
         if experiment is not None:
             return experiment
@@ -378,6 +384,26 @@ class FakePlatform(FakeVerano):
         if parts[2] == "results":
             return httpx.Response(200, json=self.results(record))
         return None
+
+    def security_route(
+        self, pid: str, rest: str, method: str, body: dict[str, Any], request: httpx.Request
+    ) -> httpx.Response:
+        """Just what `verano run --security` uses: the approved packs, a run of one, and the gate for that run."""
+        parts = rest.strip("/").split("/")
+        if rest == "/security/packs" and method == "GET":
+            return httpx.Response(200, json=self.security_packs.get(pid, []))
+        if len(parts) == 4 and parts[3] == "runs" and method == "POST":
+            self.security_runs.append(body)
+            record: dict[str, Any] = {
+                "id": self.next_id("s"), "status": "running", "stop_reason": None, "polls": 0, "progress": [],
+                "completed_at": None,
+            }  # fmt: skip
+            self.experiments.setdefault(pid, []).append(record)
+            return httpx.Response(201, json=record)
+        if len(parts) == 4 and parts[3] == "gate" and method == "GET":
+            self.security_gate_queries.append(dict(request.url.params))
+            return httpx.Response(200, json=self.security_gate)
+        return error(404, "No such security route in the fake platform.")
 
     def start_experiment(self, pid: str, body: dict[str, Any]) -> httpx.Response:
         self.started.append(body)
