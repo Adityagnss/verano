@@ -1,5 +1,12 @@
 /** User-facing text for the Improve step. */
 export const IMPROVE_COPY = {
+  what: "Find why test cases fail, write better prompts, and prove which one really works better.",
+  whenToUse: "a test run finished and some answers were wrong",
+  youGet: "better prompt versions, each checked on cases it never saw",
+  settingsHeading: "What to improve",
+  advanced: "Advanced: model that writes the improvements",
+  verdict: { better: "Proven better", not_proven: "Not proven", worse: "Worse" },
+  verdictNumbers: (before: string, after: string) => `Held-back cases: ${before} before, ${after} now.`,
   title: "Improve the prompt",
   subtitle:
     "Verano looks at why test cases failed, writes 3 better prompts, tests them, and checks the best one on test cases it has never seen (the held-back part). Only the part set aside for improving is used to write them.",

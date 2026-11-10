@@ -19,12 +19,13 @@ import { DatasetWarnings } from "@/components/common/dataset-warnings"
 import { Section } from "@/components/common/section"
 import { StatTile } from "@/components/common/stat-tile"
 import { StatusBadge } from "@/components/common/status-badge"
-import { StepHeader } from "@/components/common/step-header"
+import { PageIntro } from "@/components/common/page-intro"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { NativeSelect } from "@/components/ui/select"
 import { JudgePicker, useChosenJudge } from "@/features/results/components/judge-picker"
 import { useExperiments } from "@/features/run/hooks"
+import { ALL_PROJECT_PAGES } from "@/lib/nav"
 import { cn } from "@/lib/utils"
 
 import { IMPROVE_COPY } from "../copy"
@@ -44,6 +45,9 @@ import { CandidateCard, percent } from "./candidate-card"
 import { ResultDialog } from "./result-dialog"
 import { SessionTree } from "./session-tree"
 import { StageTracker } from "./stage-tracker"
+import { VerdictCard } from "./verdict-card"
+
+const PAGE = ALL_PROJECT_PAGES.find((p) => p.key === "improve")!
 
 /** Improve tests 3 candidates on the 70% it improves on and re-checks the best on the 30% held back: about 2.4 runs. */
 const COST_FACTOR = 2.4
@@ -154,43 +158,50 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
       : null
   return (
     <div className="mx-auto flex w-full max-w-[96rem] flex-col gap-6">
-      <StepHeader
-        projectId={projectId}
-        step="improve"
-        title={IMPROVE_COPY.title}
-        description={IMPROVE_COPY.subtitle}
-        howItWorks={IMPROVE_COPY.howItWorks}
-        aside={
-          <div className="flex w-80 flex-col gap-1.5">
-            <Label htmlFor="experiment">{IMPROVE_COPY.experiment}</Label>
-            <NativeSelect
-              id="experiment"
-              value={chosen ?? ""}
-              onChange={(e) => router.push(`/projects/${projectId}/improve?experiment=${e.target.value}`)}
-            >
-              {finished.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name} · {new Date(e.created_at).toLocaleString()}
-                </option>
-              ))}
-            </NativeSelect>
-            {!data ? <p className="text-text-muted text-xs">{IMPROVE_COPY.startHint}</p> : null}
-            {!data || stopped ? (
-              <div className="mt-2 flex flex-col gap-1">
-                <JudgePicker
-                  projectId={projectId}
-                  id="writer"
-                  picked={writerKey}
-                  onPick={setWriterKey}
-                  label={IMPROVE_COPY.writerLabel}
-                  forJudging={false}
-                />
-                <p className="text-text-muted text-xs">{IMPROVE_COPY.writerHint(data?.writer_model)}</p>
-              </div>
-            ) : null}
-          </div>
-        }
+      <PageIntro
+        storageKey="improve"
+        title={PAGE.label}
+        what={IMPROVE_COPY.what}
+        whenToUse={IMPROVE_COPY.whenToUse}
+        youGet={IMPROVE_COPY.youGet}
+        learnMore="improve"
+        hasContent={Boolean(data)}
       />
+      <Section title={IMPROVE_COPY.settingsHeading} description={IMPROVE_COPY.subtitle}>
+        <div className="flex w-full flex-col gap-1.5 sm:max-w-md">
+          <Label htmlFor="experiment">{IMPROVE_COPY.experiment}</Label>
+          <NativeSelect
+            id="experiment"
+            value={chosen ?? ""}
+            onChange={(e) => router.push(`/projects/${projectId}/improve?experiment=${e.target.value}`)}
+          >
+            {finished.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.name} · {new Date(e.created_at).toLocaleString()}
+              </option>
+            ))}
+          </NativeSelect>
+          {!data ? <p className="text-text-muted text-xs">{IMPROVE_COPY.startHint}</p> : null}
+        </div>
+        {!data || stopped ? (
+          <details>
+            <summary className="text-accent min-h-10 cursor-pointer py-2 text-sm">
+              {IMPROVE_COPY.advanced}
+            </summary>
+            <div className="flex w-full flex-col gap-1 pt-2 sm:max-w-md">
+              <JudgePicker
+                projectId={projectId}
+                id="writer"
+                picked={writerKey}
+                onPick={setWriterKey}
+                label={IMPROVE_COPY.writerLabel}
+                forJudging={false}
+              />
+              <p className="text-text-muted text-xs">{IMPROVE_COPY.writerHint(data?.writer_model)}</p>
+            </div>
+          </details>
+        ) : null}
+      </Section>
       <ErrorMessage
         error={
           experiments.error ??
@@ -218,7 +229,7 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
       {data && (data.message || running) ? (
         <div
           className={cn(
-            "flex items-start gap-3 rounded-xl p-4 text-sm ring-1",
+            "flex flex-wrap items-start gap-3 rounded-xl p-4 text-sm ring-1",
             better
               ? "bg-success-soft text-success-strong ring-success/25"
               : data.stage === "failed"
@@ -231,7 +242,7 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
           ) : (
             <Info className="text-text-muted mt-0.5 size-5 shrink-0" />
           )}
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <p className="font-semibold">{IMPROVE_COPY.stages[data.stage]}</p>
             {data.message ? <p>{data.message}</p> : null}
             {data.stage === "testing" && data.candidates.length ? (
@@ -244,12 +255,17 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
             ) : null}
           </div>
           {running ? (
-            <Button variant="outline" disabled={stop.isPending} onClick={() => stop.mutate(data.id)}>
+            <Button
+              variant="outline"
+              className="min-h-10"
+              disabled={stop.isPending}
+              onClick={() => stop.mutate(data.id)}
+            >
               {IMPROVE_COPY.stop}
             </Button>
           ) : null}
           {stopped ? (
-            <Button disabled={resume.isPending} onClick={() => resume.mutate(data.id)}>
+            <Button className="min-h-10" disabled={resume.isPending} onClick={() => resume.mutate(data.id)}>
               {IMPROVE_COPY.continue}
             </Button>
           ) : null}
@@ -279,7 +295,7 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
       ) : null}
       {data?.candidates.length ? (
         <Section number={2} title={IMPROVE_COPY.candidatesHeading} description={IMPROVE_COPY.candidatesHint}>
-          <div className="grid gap-3 lg:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {data.candidates.map((candidate) => (
               <CandidateCard
                 key={candidate.id}
@@ -311,14 +327,18 @@ export function ImproveStep({ projectId, experimentId }: { projectId: string; ex
             />
           </div>
           {confirmed.verdict ? (
-            <div className="bg-subtle ring-border mt-3 flex flex-col gap-1.5 rounded-lg p-3 ring-1">
+            <VerdictCard
+              reason={confirmed.verdict.reason}
+              before={data?.baseline_holdout_quality}
+              after={confirmed.holdout_quality}
+            >
               <p className="text-sm font-semibold">
                 {IMPROVE_COPY.verdictHeading} {IMPROVE_COPY.reasons[confirmed.verdict.reason]}
               </p>
               {confirmed.verdict.comparison ? (
                 <ComparisonDetail comparison={confirmed.verdict.comparison} />
               ) : null}
-            </div>
+            </VerdictCard>
           ) : null}
         </Section>
       ) : null}

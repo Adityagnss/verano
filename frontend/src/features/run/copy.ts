@@ -1,5 +1,13 @@
 /** User-facing text for the Run step. */
 export const RUN_COPY = {
+  overall: (done: number, total: number) => `${done} of ${total} answers received`,
+  overallLabel: (pct: number) => `${pct}% of answers received`,
+  latest: "Latest updates",
+  what: "Send every approved test case to every model you chose and score the answers.",
+  whenToUse: "your test cases are approved and you are ready to compare models",
+  youGet: "answers, scores, cost and speed for each model, ready to compare",
+  settingsHeading: "Settings and cost",
+  settingsHint: "The defaults are fine for most tests. Nothing is spent until you press Start experiment.",
   title: "Run your test cases on each model",
   subtitle:
     "Every test case is sent to every chosen model. Run a model more than once to see how consistent it is. You see the cost before anything starts.",
@@ -43,7 +51,7 @@ export const RUN_COPY = {
   runsAll: "Answers per test case, for every model",
   runsAllHint:
     "Each model answers each case this many times, so the pass rate and how consistent it is can be compared fairly. 1 to 5.",
-  expert: "Expert settings: runs, temperature, maximum length and more, model by model",
+  expert: "Expert settings: prompt version, judge, randomness, and settings model by model",
   summaryHeading: "What will run",
   summary: (cases: number, models: string, version: string, judge: string | null) =>
     `${cases} test cases on ${models}, with ${version}${judge ? `, judged by ${judge}` : ""}.`,
