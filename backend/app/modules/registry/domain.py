@@ -156,6 +156,9 @@ def resolve_price(
         candidates.insert(1, (ZERO, ZERO, PriceSource.FREE))
     for input_price, output_price, source in candidates:
         if input_price is not None and output_price is not None:
+            # A table that says a paid model costs nothing is a placeholder, not a price: show it as unknown.
+            if input_price == ZERO and output_price == ZERO and source is PriceSource.LITELLM and not spec.free:
+                continue
             return input_price, output_price, source
     return None, None, PriceSource.UNKNOWN
 

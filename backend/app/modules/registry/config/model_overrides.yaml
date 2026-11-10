@@ -3,4 +3,10 @@
 # price, context window or parameter rule is wrong or missing upstream, and cite the source
 # in the pull request. Fields: context_window, max_output_tokens, input_price_per_mtok,
 # output_price_per_mtok, parameters (name -> {min, max}), unsupported_parameters (list).
-models: {}
+# Source for the entries below: https://platform.claude.com/docs/en/about-claude/pricing (read 2026-11-10).
+# LiteLLM's bundled table lists these Claude models at 0 per million tokens, which would show every run as free.
+models:
+  anthropic/claude-haiku-5-5: {input_price_per_mtok: 0.10, output_price_per_mtok: 0.50}
+  anthropic/claude-sonnet-5-5: {input_price_per_mtok: 2, output_price_per_mtok: 10}
+  anthropic/claude-opus-5-5: {input_price_per_mtok: 4, output_price_per_mtok: 20}
+  anthropic/claude-fable-5-2: {input_price_per_mtok: 8, output_price_per_mtok: 40}

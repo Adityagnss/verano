@@ -159,3 +159,19 @@ def test_claude_5_models_are_not_sent_a_temperature_but_older_claude_models_are(
         assert refuses_temperature(model), model
     for model in ("claude-3-5-haiku-latest", "claude-sonnet-4-5"):
         assert not refuses_temperature(model), model
+
+
+def test_a_zero_price_from_the_bundled_table_is_unknown_for_a_paid_provider() -> None:
+    placeholder = METADATA.model_copy(update={"input_price_per_mtok": Decimal(0), "output_price_per_mtok": Decimal(0)})
+    paid = build_profile(CATALOG, spec(), RawModel(id="m"), placeholder, None)
+    assert (paid.input_price_per_mtok, paid.price_source) == (None, PriceSource.UNKNOWN)
+    free = build_profile(CATALOG, spec(free=True), RawModel(id="m"), placeholder, None)
+    assert free.input_price_per_mtok == Decimal(0)
+    corrected = build_profile(
+        CATALOG,
+        spec(),
+        RawModel(id="m"),
+        placeholder,
+        ModelOverride(input_price_per_mtok=Decimal(2), output_price_per_mtok=Decimal(10)),
+    )
+    assert (corrected.input_price_per_mtok, corrected.price_source) == (Decimal(2), PriceSource.OVERRIDE)
