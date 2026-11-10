@@ -137,7 +137,7 @@ test("a token, a spending limit and an ingest token can be made and removed", as
 
   // an ingest token for real traffic is shown once and can be revoked
   await page.goto(`${project}/traffic`)
-  await page.getByRole("tab", { name: "Connect an app" }).click()
+  await page.getByRole("tab", { name: "Connect", exact: true }).click()
   await page.locator("#token-name").fill("my-app")
   await page
     .locator("form")
