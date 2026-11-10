@@ -1,6 +1,6 @@
 /**
  * Client-side providers for the whole app: the light / dark theme (next-themes, a `.dark` class on
- * <html>), TanStack Query (cached server state; 4xx answers are not retried because they won't
+ * <html>), motion (reduced-motion aware), TanStack Query (cached server state; 4xx answers are not retried because they won't
  * change on retry) and the toast host.
  */
 "use client"
@@ -9,6 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ThemeProvider } from "next-themes"
 import { type ReactNode, useState } from "react"
 
+import { MotionProvider } from "@/components/common/motion-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { ApiError } from "@/lib/api/client"
 
@@ -27,7 +28,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <QueryClientProvider client={client}>
-        {children}
+        <MotionProvider>{children}</MotionProvider>
         <Toaster position="top-right" richColors />
       </QueryClientProvider>
     </ThemeProvider>

@@ -55,6 +55,7 @@ class Settings(BaseSettings):
     auth_rate_window_s: int = 60
     auth_rate_limit_per_ip: int = 20
     auth_rate_limit_per_email: int = 5
+    auth_refresh_rate_limit_per_ip: int = 600
     trusted_proxies: list[str] = []
     personal_org_name_template: str = "{name}'s workspace"
 

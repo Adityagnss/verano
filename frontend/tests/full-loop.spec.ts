@@ -7,7 +7,7 @@
  */
 import { expect, test } from "@playwright/test"
 
-import { signUp, uniqueEmail } from "./helpers"
+import { chooseTheme, goToPage, openAccountMenu, signUp, uniqueEmail } from "./helpers"
 
 const GOLDEN =
   "ticket,expected\nMy card was charged twice,billing\nWhere is my parcel?,shipping\nThe app crashes on start,technical\n"
@@ -30,10 +30,7 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   await page.getByRole("button", { name: "Use 2 selected models" }).click()
   await expect(page.getByText("Selection saved.")).toBeVisible()
 
-  await page
-    .getByRole("navigation", { name: "Steps" })
-    .getByRole("link", { name: /^2 Prompt/ })
-    .click()
+  await goToPage(page, /^Write your prompt/)
   await page.getByLabel("Prompt name").fill("Triage")
   await page.getByLabel("System prompt").fill("Classify the support ticket. Reply with one word.")
   await page.getByRole("button", { name: "Save prompt" }).click()
@@ -79,7 +76,7 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   await expect(page.getByText("Test cases approved (version 1)").first()).toBeVisible()
   await expect(page.getByText(/held back to check the result/)).toBeVisible()
 
-  await page.getByRole("link", { name: "Run" }).click()
+  await goToPage(page, /^Run the test/)
   // both ticked models run by default; the per-model table moved under Expert settings
   await expect(page.getByText("What will run")).toBeVisible()
   await page.getByRole("button", { name: "Start experiment" }).click()
@@ -97,13 +94,13 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
     timeout: 120_000,
   })
 
-  await page.getByRole("link", { name: /Dashboard/ }).click()
+  await goToPage(page, /^Trends/)
   await expect(page.getByRole("heading", { name: "How your prompts and models are doing" })).toBeVisible()
   await expect(page.getByRole("heading", { name: "Is the prompt getting better?" })).toBeVisible()
   await expect(page.getByRole("heading", { name: "What this tells you" })).toBeVisible()
   await expect(page.getByText("Where the money went")).toBeVisible()
 
-  await page.getByRole("link", { name: /Logbook/ }).click()
+  await goToPage(page, /^History/)
   await expect(page.getByRole("heading", { name: "Logbook", level: 2 })).toBeVisible()
   await expect(page.getByRole("cell", { name: "echo" }).first()).toBeVisible()
   await page.getByRole("row", { name: "Open this answer" }).first().click()
@@ -114,10 +111,11 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   await page.getByRole("tab", { name: /Model calls/ }).click()
   await expect(page.getByRole("cell", { name: "Running your test cases" }).first()).toBeVisible()
 
-  await page.getByRole("link", { name: /Prompt guide/ }).click()
+  await goToPage(page, /^Prompting guide/)
   await expect(page.getByRole("heading", { name: "The one habit: measure first" })).toBeVisible()
 
-  await page.getByRole("link", { name: /Activity/ }).click()
+  await openAccountMenu(page)
+  await page.getByRole("menuitem", { name: "Usage and spend" }).click()
   await expect(page.getByRole("heading", { name: "Activity", level: 1 })).toBeVisible()
   await expect(page.getByText("Top API keys")).toBeVisible()
   await expect(
@@ -155,8 +153,8 @@ test("the whole loop runs from keys to an improvement verdict", async ({ page, b
   })
 
   // Light and dark themes
-  await page.getByRole("radio", { name: "Dark" }).click()
+  await chooseTheme(page, "Dark")
   await expect(page.locator("html")).toHaveClass(/dark/)
-  await page.getByRole("radio", { name: "Light" }).click()
+  await chooseTheme(page, "Light")
   await expect(page.locator("html")).not.toHaveClass(/dark/)
 })

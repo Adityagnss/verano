@@ -9,8 +9,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { api, call } from "@/lib/api/client"
 
-export function useProjects() {
+export function useProjects(enabled = true) {
   return useQuery({
+    enabled,
     queryKey: ["projects"],
     queryFn: () => call(() => api.GET("/api/v1/projects", { params: { query: { limit: 100 } } })),
   })

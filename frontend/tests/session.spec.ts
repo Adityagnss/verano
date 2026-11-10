@@ -6,7 +6,7 @@
  */
 import { expect, test } from "@playwright/test"
 
-import { signUp, uniqueEmail } from "./helpers"
+import { openAccountMenu, signOut, signUp, uniqueEmail } from "./helpers"
 
 test("sign-up keeps you signed in across a reload, and sign-out ends the session", async ({ page }) => {
   const email = uniqueEmail("session")
@@ -14,9 +14,11 @@ test("sign-up keeps you signed in across a reload, and sign-out ends the session
 
   await page.reload()
   await expect(page).toHaveURL(/\/projects$/)
-  await expect(page.getByText(email)).toBeVisible()
+  await openAccountMenu(page)
+  await expect(page.getByTestId("account-email")).toHaveText(email)
+  await page.keyboard.press("Escape")
 
-  await page.getByRole("button", { name: "Sign out" }).click()
+  await signOut(page)
   await expect(page).toHaveURL(/\/login$/)
   await page.goto("/projects")
   await expect(page).toHaveURL(/\/login\?next=%2Fprojects$/)

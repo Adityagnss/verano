@@ -1,14 +1,20 @@
 /**
- * Light, dark or the system's choice. Three small buttons so the current choice is always visible; the
- * choice is remembered in the browser by next-themes.
+ * Light, dark or the system's choice, as one icon button with a small menu. The icon shows the
+ * current choice; the choice is remembered in the browser by next-themes.
  */
 "use client"
 
-import { Monitor, Moon, Sun } from "lucide-react"
+import { Check, Monitor, Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useSyncExternalStore } from "react"
 
-import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const CHOICES = [
   { value: "light", label: "Light", Icon: Sun },
@@ -20,36 +26,38 @@ const subscribe = () => () => undefined
 
 export function ThemeSwitch() {
   const { theme, setTheme } = useTheme()
-  // The theme is only known in the browser; render nothing on the server so the markup matches.
+  // The theme is only known in the browser; render a placeholder on the server so the markup matches.
   const mounted = useSyncExternalStore(
     subscribe,
     () => true,
     () => false,
   )
-  if (!mounted) return <span className="h-8 w-[5.75rem]" aria-hidden />
+  const active = CHOICES.find((choice) => choice.value === theme) ?? CHOICES[2]
+  if (!mounted) return <span className="size-10" aria-hidden />
   return (
-    <div
-      role="radiogroup"
-      aria-label="Color theme"
-      className="bg-subtle ring-border flex rounded-lg p-0.5 ring-1"
-    >
-      {CHOICES.map(({ value, label, Icon }) => (
-        <button
-          key={value}
-          type="button"
-          role="radio"
-          aria-checked={theme === value}
-          title={label}
-          aria-label={label}
-          onClick={() => setTheme(value)}
-          className={cn(
-            "text-text-secondary hover:text-foreground focus-visible:ring-ring/50 flex size-7 items-center justify-center rounded-md transition-colors focus-visible:ring-2 focus-visible:outline-none",
-            theme === value && "bg-card text-foreground shadow-sm",
-          )}
-        >
-          <Icon className="size-4" aria-hidden />
-        </button>
-      ))}
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button variant="ghost" className="size-10" aria-label={`Color theme: ${active.label}`}>
+            <active.Icon aria-hidden />
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="end" className="w-56 min-w-56">
+        {CHOICES.map(({ value, label, Icon }) => (
+          <DropdownMenuItem
+            key={value}
+            role="menuitemradio"
+            aria-checked={theme === value}
+            className="min-h-10"
+            onClick={() => setTheme(value)}
+          >
+            <Icon aria-hidden />
+            {label}
+            {theme === value ? <Check aria-hidden className="ml-auto" /> : null}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

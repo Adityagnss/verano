@@ -73,20 +73,13 @@ test("every screen added since Phase 6 opens without errors", async ({ page, bro
   await expect(page).toHaveURL(/\/projects\/[^/]+\//)
   const project = new URL(page.url()).pathname.split("/").slice(0, 3).join("/")
 
-  let loads = 0
-  // every full page load asks for a fresh session, and sign-in calls are limited to 20 a minute per IP
-  const pace = async () => {
-    if (++loads % 8 === 0) await page.waitForTimeout(45_000)
-  }
   for (const screen of PROJECT_SCREENS) {
-    await pace()
     problems.console.length = 0
     problems.requests.length = 0
     await page.goto(`${project}/${screen}`)
     await look(page, `project-${screen}`, problems, report)
   }
   for (const path of WORKSPACE_SCREENS) {
-    await pace()
     problems.console.length = 0
     problems.requests.length = 0
     await page.goto(path)
