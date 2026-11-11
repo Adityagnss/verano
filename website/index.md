@@ -63,6 +63,34 @@ features:
 
 <div class="home-wrap">
 
+## The problem
+
+<p class="lede">Everyone is building on prompts and models. Almost nobody can say if a change made things better.</p>
+
+<div class="ps">
+<div class="ps-head" aria-hidden="true"><span>What happens today</span><span>What people expect</span><span>What Verano does</span></div>
+<div class="ps-row"><p class="ps-today"><b>What happens today</b>A prompt is changed after checking 3 examples by eye.</p><p class="ps-want"><b>What people expect</b>A real test on my own cases.</p><p class="ps-fix"><b>What Verano does</b>Runs the prompt on cases you approve, several times for each model.</p></div>
+<div class="ps-row"><p class="ps-today"><b>What happens today</b>A lucky win looks the same as a real win.</p><p class="ps-want"><b>What people expect</b>Proof, not a feeling.</p><p class="ps-fix"><b>What Verano does</b>Checks on held-back cases. No clear win means "Not proven".</p></div>
+<div class="ps-row"><p class="ps-today"><b>What happens today</b>Models and prices change every month.</p><p class="ps-want"><b>What people expect</b>The best model for my money.</p><p class="ps-fix"><b>What Verano does</b>Compares quality, cost, speed and consistency side by side.</p></div>
+<div class="ps-row"><p class="ps-today"><b>What happens today</b>Testing with paid models ends in a surprise bill.</p><p class="ps-want"><b>What people expect</b>Know the cost before I spend.</p><p class="ps-fix"><b>What Verano does</b>Shows the cost first. Budget cap and a Stop button.</p></div>
+<div class="ps-row"><p class="ps-today"><b>What happens today</b>A prompt edit breaks something and nobody notices.</p><p class="ps-want"><b>What people expect</b>Catch it before users do.</p><p class="ps-fix"><b>What Verano does</b>Fails the pull request. Alerts on live traffic.</p></div>
+<div class="ps-row"><p class="ps-today"><b>What happens today</b>An AI judge gives a score and no reason.</p><p class="ps-want"><b>What people expect</b>A judge I can check.</p><p class="ps-fix"><b>What Verano does</b>Every judge request can be read. You label answers and see if it agrees.</p></div>
+<div class="ps-row"><p class="ps-today"><b>What happens today</b>Writing test cases by hand takes days, so nobody does.</p><p class="ps-want"><b>What people expect</b>A fast start, still in control.</p><p class="ps-fix"><b>What Verano does</b>Drafts cases and answers. You approve every one.</p></div>
+<div class="ps-row"><p class="ps-today"><b>What happens today</b>Tools want a hosted cloud and your data.</p><p class="ps-want"><b>What people expect</b>My data and keys stay with me.</p><p class="ps-fix"><b>What Verano does</b>Open source and self-hosted. Keys are encrypted. Free with local models.</p></div>
+</div>
+
+## The solution
+
+<p class="lede">Three things, in this order.</p>
+
+<ol class="solve">
+<li><strong>Test on your own cases</strong>Your prompt. Your examples. The models you choose.</li>
+<li><strong>See the cost, quality and speed</strong>Side by side. The cost is shown before anything is spent.</li>
+<li><strong>Get proof, or an honest "Not proven"</strong>A better prompt must win on cases it never saw.</li>
+</ol>
+
+See how people use it: [user journeys](/get-started/user-journeys), eight common situations with a chart for each.
+
 ## The loop
 
 <p class="lede">You bring a prompt and a key. Verano does the testing, and tells you what it could and could not show.</p>
@@ -102,6 +130,7 @@ make env && make up
 - [Quickstart: your first project](/get-started/quickstart)
 - [The command line](/reference/cli), from a clone with `uv tool install ./cli`
 - [Self-hosting on a server with HTTPS](/self-hosting/)
+- [What Verano checks, all 37 checks](/reference/checks)
 - [Integrations, and what has been checked](/reference/integrations)
 - [The code on GitHub](https://github.com/Adityagnss/verano)
 

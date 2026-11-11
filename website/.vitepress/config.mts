@@ -11,6 +11,7 @@ const sidebar = [
     text: "Get started",
     items: [
       { text: "What is Verano", link: "/get-started/" },
+      { text: "User journeys", link: "/get-started/user-journeys" },
       { text: "Quickstart", link: "/get-started/quickstart" },
       { text: "How it works", link: "/how-it-works" },
       { text: "Architecture overview", link: "/get-started/architecture" },
@@ -38,6 +39,7 @@ const sidebar = [
       { text: "Command line", link: "/reference/cli" },
       { text: "verano.yaml", link: "/reference/verano-yaml" },
       { text: "GitHub Action", link: "/reference/github-action" },
+      { text: "What Verano checks", link: "/reference/checks" },
       { text: "Integrations", link: "/reference/integrations" },
       { text: "Examples", link: "/reference/examples" },
       { text: "API", link: "/reference/api/" },
@@ -61,6 +63,14 @@ export default defineConfig({
   head: [
     ["link", { rel: "icon", type: "image/svg+xml", href: `${BASE}logo.svg` }],
     ["meta", { name: "theme-color", content: "#f3f6fb" }],
+    [
+      "meta",
+      {
+        name: "keywords",
+        content:
+          "LLM evaluation, LLM evals, prompt testing, prompt optimization, prompt regression testing, LLM as a judge, RAG evaluation, agent evaluation, model comparison, red teaming, prompt injection, LLM cost control, CI for prompts, open source, self-hosted",
+      },
+    ],
     ["meta", { property: "og:title", content: "Verano" }],
     ["meta", { property: "og:type", content: "website" }],
     ["meta", { property: "og:description", content: "Open-source prompt and model testing on your own cases. See the cost first, and prove the better prompt." }],

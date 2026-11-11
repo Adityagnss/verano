@@ -15,6 +15,7 @@ Verano tests prompts and models on your own test cases. You give it your API key
 
 | You want to | Go to |
 |---|---|
+| See which situation is yours | [User journeys](/get-started/user-journeys) |
 | Try it in the browser | [Quickstart](/get-started/quickstart) |
 | Test a prompt that lives in your code | [The command line](/reference/cli) |
 | Test an app you already run | [Test your own app](/guides/test-your-own-app) |
